@@ -300,8 +300,15 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <input type="hidden" id="approvalId">
 
     <div class="grid">
-      <label>Beginn<input id="approvalBeginn" type="date" required></label>
-      <label>Ende<input id="approvalEnde" type="date" required></label>
+<label>
+  Beginn
+  <select id="docBeginn" required></select>
+</label>
+
+<label>
+  Ende
+  <select id="docEnde" required></select>
+</label>
 <label>Gesamt-FLS<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
 <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
 <label>
@@ -420,6 +427,26 @@ document.querySelectorAll('.docs').forEach(
   );
 }
 
+  function fillTimeOptions(){
+  const selects=[$('docBeginn'),$('docEnde')];
+
+  selects.forEach(select=>{
+    select.innerHTML='<option value="">Bitte auswählen</option>';
+
+    for(let hour=0;hour<24;hour++){
+      for(let minute=0;minute<60;minute+=10){
+        const h=String(hour).padStart(2,'0');
+        const m=String(minute).padStart(2,'0');
+        const value=`${h}:${m}`;
+
+        select.insertAdjacentHTML(
+          'beforeend',
+          `<option value="${value}">${value}</option>`
+        );
+      }
+    }
+  });
+}
   function openDocForm(){
   if(!activeDocsClient){
     toast('Kein Klient ausgewählt.');
@@ -622,6 +649,61 @@ $('closeDialog').onclick=()=>$('clientDialog').close();
 };
 $('newDoc').onclick=openDocForm;
 
+  $('docForm').onsubmit=async e=>{
+  e.preventDefault();
+
+  if(!activeDocsClient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
+  const beginn=$('docBeginn').value;
+  const ende=$('docEnde').value;
+
+  if(!beginn||!ende){
+    toast('Bitte Beginn und Ende auswählen.');
+    return;
+  }
+
+  const [bh,bm]=beginn.split(':').map(Number);
+  const [eh,em]=ende.split(':').map(Number);
+  const dauerMinuten=(eh*60+em)-(bh*60+bm);
+
+  if(dauerMinuten<=0){
+    toast('Das Ende muss nach dem Beginn liegen.');
+    return;
+  }
+
+  const row={
+    user_id:user.id,
+    client_id:activeDocsClient.id,
+    bewilligung_id:null,
+    datum:$('docDatum').value,
+    beginn,
+    ende,
+    dauer_minuten:dauerMinuten,
+    leistungsart:$('docLeistungsart').value,
+    dokumentation:$('docText').value.trim(),
+    besonderheiten:$('docBesonderheiten').value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+
+  const id=$('docId').value;
+
+  const query=id
+    ? sb.from('dokumentationen').update(row).eq('id',id)
+    : sb.from('dokumentationen').insert(row);
+
+  const {error}=await query;
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  $('docFormDialog').close();
+  toast('Dokumentation gespeichert');
+};
 $('closeDocForm').onclick=()=>{
   $('docFormDialog').close();
 };
@@ -795,6 +877,7 @@ sb.auth.onAuthStateChange((_event,session)=>{
   }
 });
 
+  fillTimeOptions();
 init();
 </script>
 </body>
