@@ -443,8 +443,15 @@ function openDocForm(id=''){
   $('docId').value=d.id||'';
   $('docDatum').value=d.datum||todayLocal();
   $('docLeistungsart').value=d.leistungsart||'FLS';
-  $('docBeginn').value=String(d.beginn||'').slice(0,5);
-  $('docEnde').value=String(d.ende||'').slice(0,5);
+$('docBeginn').value = d.beginn
+  ? String(d.beginn).slice(0,5)
+  : '09:00';
+
+$('docEnde').value = d.ende
+  ? String(d.ende).slice(0,5)
+  : '10:00';
+
+updateDocDauer();
   $('docText').value=d.dokumentation||'';
   $('docBesonderheiten').value=d.besonderheiten||'';
   $('deleteDoc').classList.toggle('hidden',!id);
