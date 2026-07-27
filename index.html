@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17324d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Leistungsnachweis">
+<title>Leistungsnachweis</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--ink:#17324d;--muted:#657789;--line:#d8e1e8;--bg:#f3f6f9;--card:#fff;--accent:#e7f1f7;--danger:#9d3030}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+.hidden{display:none!important}button,input,textarea{font:inherit}button{cursor:pointer}
+.wrap{max-width:900px;margin:auto;padding:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 25px rgba(23,50,77,.07);margin-bottom:14px}
+.center{max-width:480px;margin:8vh auto}h1,h2,h3{margin:.2em 0 .5em}p{line-height:1.45}label{display:flex;flex-direction:column;gap:6px;font-weight:650;margin:12px 0}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}textarea{resize:vertical}
+.primary,.secondary,.danger{border:0;border-radius:12px;padding:12px 15px}.primary{background:var(--ink);color:#fff}.secondary{background:var(--accent);color:var(--ink)}.danger{background:#fae8e8;color:var(--danger)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.muted{color:var(--muted)}.client{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.client+.client{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.meta{font-size:.9rem;color:var(--muted)}dialog{width:min(94vw,700px);border:0;border-radius:20px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.25)}dialog::backdrop{background:rgba(15,30,45,.45)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.span2{grid-column:1/-1}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.span2{grid-column:auto}.client{flex-direction:column}.client .actions{width:100%}}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<section id="auth" class="wrap center">
+  <div class="card">
+    <h1>Leistungsnachweis</h1>
+    <p class="muted">Melde dich mit deinem App-Konto an.</p>
+    <label>E-Mail<input id="email" type="email" autocomplete="email"></label>
+    <label>Passwort<input id="password" type="password" autocomplete="current-password"></label>
+    <div class="actions">
+      <button id="login" class="primary">Anmelden</button>
+      <button id="signup" class="secondary">Registrieren</button>
+    </div>
+  </div>
+</section>
+
+<section id="app" class="wrap hidden">
+  <div class="card top">
+    <div><div class="muted">Mobile Verwaltung</div><h1>Klienten</h1></div>
+    <button id="logout" class="secondary">Abmelden</button>
+  </div>
+
+  <div class="card">
+    <div class="top">
+      <div><h2>Klientenliste</h2><p class="muted">Die Daten werden in deinem Supabase-Projekt gespeichert.</p></div>
+      <button id="newClient" class="primary">+ Neuer Klient</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</section>
+
+<dialog id="clientDialog">
+  <form id="clientForm">
+    <div class="top">
+      <h2 id="dialogTitle">Klient anlegen</h2>
+      <button type="button" id="closeDialog" class="secondary">Schließen</button>
+    </div>
+    <input type="hidden" id="clientId">
+    <div class="grid">
+      <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
+      <label>Name, Vorname<input id="clientName" required></label>
+      <label>Aktenzeichen<input id="aktenzeichen"></label>
+      <label>Geburtstag<input id="geburtstag" type="date"></label>
+      <label>Telefon<input id="telefon" type="tel"></label>
+      <label>Mobil<input id="mobil" type="tel"></label>
+      <label>Straße<input id="strasse"></label>
+      <label>Hausnummer<input id="hausnummer"></label>
+      <label>PLZ<input id="plz"></label>
+      <label>Ort<input id="ort"></label>
+      <label>Kontaktperson 1<input id="kontaktperson1"></label>
+      <label>Telefon Kontakt 1<input id="telefon1"></label>
+      <label>Kontaktperson 2<input id="kontaktperson2"></label>
+      <label>Telefon Kontakt 2<input id="telefon2"></label>
+      <label class="span2">Bemerkungen<textarea id="bemerkungen" rows="3"></textarea></label>
+    </div>
+    <div class="actions">
+      <button type="button" id="deleteClient" class="danger hidden">Löschen</button>
+      <button type="submit" class="primary">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const SUPABASE_URL='https://bhrygputoysiwchzlygn.supabase.co';
+const SUPABASE_KEY='sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let user=null, clients=[];
+
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
+function esc(v=''){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function showApp(on){$('auth').classList.toggle('hidden',on);$('app').classList.toggle('hidden',!on)}
+
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){user=session.user;showApp(true);await loadClients()}else showApp(false);
+}
+
+async function loadClients(){
+  const {data,error}=await sb.from('clients').select('*').order('name');
+  if(error){toast(error.message);return}
+  clients=data||[];
+  $('list').innerHTML=clients.length?clients.map(c=>`
+    <div class="client">
+      <div>
+        <h3>${esc(c.name)}</h3>
+        <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
+        <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
+      </div>
+      <div class="actions"><button class="secondary edit" data-id="${c.id}">Bearbeiten</button></div>
+    </div>`).join(''):'<p class="muted">Noch keine Klienten angelegt.</p>';
+  document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
+}
+
+function openClient(id=''){
+  const c=clients.find(x=>x.id===id)||{};
+  $('clientId').value=c.id||'';
+  $('clientCode').value=c.client_code||'';
+  $('clientName').value=c.name||'';
+  $('aktenzeichen').value=c.aktenzeichen||'';
+  $('geburtstag').value=c.geburtstag||'';
+  $('telefon').value=c.telefon||'';
+  $('mobil').value=c.mobil||'';
+  $('strasse').value=c.strasse||'';
+  $('hausnummer').value=c.hausnummer||'';
+  $('plz').value=c.plz||'';
+  $('ort').value=c.ort||'';
+  $('kontaktperson1').value=c.kontaktperson1||'';
+  $('telefon1').value=c.telefon1||'';
+  $('kontaktperson2').value=c.kontaktperson2||'';
+  $('telefon2').value=c.telefon2||'';
+  $('bemerkungen').value=c.bemerkungen||'';
+  $('deleteClient').classList.toggle('hidden',!id);
+  $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
+  $('clientDialog').showModal();
+}
+
+$('login').onclick=async()=>{
+  const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
+  if(error)toast(error.message);else location.reload();
+};
+$('signup').onclick=async()=>{
+  const {error}=await sb.auth.signUp({email:$('email').value,password:$('password').value});
+  toast(error?error.message:'Registrierung angelegt. Bitte E-Mail bestätigen.');
+};
+$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+$('newClient').onclick=()=>openClient();
+$('closeDialog').onclick=()=>$('clientDialog').close();
+
+$('clientForm').onsubmit=async e=>{
+  e.preventDefault();
+  const id=$('clientId').value;
+  const row={
+    user_id:user.id,
+    client_code:$('clientCode').value.trim(),
+    name:$('clientName').value.trim(),
+    aktenzeichen:$('aktenzeichen').value.trim()||null,
+    geburtstag:$('geburtstag').value||null,
+    telefon:$('telefon').value.trim()||null,
+    mobil:$('mobil').value.trim()||null,
+    strasse:$('strasse').value.trim()||null,
+    hausnummer:$('hausnummer').value.trim()||null,
+    plz:$('plz').value.trim()||null,
+    ort:$('ort').value.trim()||null,
+    kontaktperson1:$('kontaktperson1').value.trim()||null,
+    telefon1:$('telefon1').value.trim()||null,
+    kontaktperson2:$('kontaktperson2').value.trim()||null,
+    telefon2:$('telefon2').value.trim()||null,
+    bemerkungen:$('bemerkungen').value.trim()||null
+  };
+  const q=id?sb.from('clients').update(row).eq('id',id):sb.from('clients').insert(row);
+  const {error}=await q;
+  if(error){toast(error.message);return}
+  $('clientDialog').close();toast('Gespeichert');await loadClients();
+};
+
+$('deleteClient').onclick=async()=>{
+  const id=$('clientId').value;
+  if(!id||!confirm('Diesen Klienten wirklich löschen?'))return;
+  const {error}=await sb.from('clients').delete().eq('id',id);
+  if(error){toast(error.message);return}
+  $('clientDialog').close();toast('Gelöscht');await loadClients();
+};
+
+init();
+</script>
+</body>
+</html>
