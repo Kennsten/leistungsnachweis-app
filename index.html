@@ -319,7 +319,6 @@ async function loadApprovals(){
 <div class="approval-hours">${formatHours(a.stundenkontingent)} Gesamt-FLS</div>
 <div class="meta">${a.wochen_fls!=null ? formatHours(a.wochen_fls)+' Wochen-FLS' : 'keine Wochen-FLS eingetragen'}</div>
           <div class="meta">${esc(a.kostentraeger||'kein Kostenträger')}</div>
-          ${a.bewilligungsnummer?`<div class="meta">Nr. ${esc(a.bewilligungsnummer)}</div>`:''}
           ${a.ansprechpartner?`<div class="meta">Ansprechpartner: ${esc(a.ansprechpartner)}</div>`:''}
           ${a.bemerkungen?`<p class="small">${esc(a.bemerkungen)}</p>`:''}
         </div>
@@ -356,7 +355,6 @@ function openApprovalForm(id=''){
 $('approvalLeistungstraegerTyp').value=a.leistungstraeger_typ||'';
 $('approvalLeistungstraegerName').value=a.leistungstraeger_name||'';
 updateLeistungstraegerFields();
-  $('approvalNummer').value=a.bewilligungsnummer||'';
   $('approvalAnsprechpartner').value=a.ansprechpartner||'';
   $('approvalBemerkungen').value=a.bemerkungen||'';
 
@@ -515,7 +513,6 @@ kostentraeger:
   $('approvalLeistungstraegerTyp').value==='Sonstiger Leistungsträger'
     ? $('approvalLeistungstraegerName').value.trim()||null
     : $('approvalLeistungstraegerTyp').value||null,
-    bewilligungsnummer:$('approvalNummer').value.trim()||null,
     ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
     bemerkungen:$('approvalBemerkungen').value.trim()||null
   };
