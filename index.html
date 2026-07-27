@@ -148,7 +148,25 @@ $('signup').onclick=async()=>{
   const {error}=await sb.auth.signUp({email:$('email').value,password:$('password').value});
   toast(error?error.message:'Registrierung angelegt. Bitte E-Mail bestätigen.');
 };
-$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+$('logout').onclick=async()=>{
+  const button=$('logout');
+  button.disabled=true;
+
+  const {error}=await sb.auth.signOut({scope:'local'});
+
+  if(error){
+    toast('Abmelden fehlgeschlagen: '+error.message);
+    button.disabled=false;
+    return;
+  }
+
+  user=null;
+  clients=[];
+  $('list').innerHTML='';
+  showApp(false);
+  toast('Du wurdest abgemeldet.');
+  button.disabled=false;
+};
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
 
