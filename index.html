@@ -131,6 +131,96 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <p class="muted">Noch keine Dokumentationen vorhanden.</p>
   </div>
 </dialog>
+  <dialog id="docFormDialog">
+  <form id="docForm">
+    <div class="top">
+      <div>
+        <div class="muted">Einzeltermin</div>
+        <h2 id="docDialogTitle">Dokumentation anlegen</h2>
+      </div>
+
+      <button
+        type="button"
+        id="closeDocForm"
+        class="secondary"
+      >
+        Schließen
+      </button>
+    </div>
+
+    <input type="hidden" id="docId">
+
+    <div class="grid">
+      <label>
+        Datum
+        <input id="docDatum" type="date" required>
+      </label>
+
+      <label>
+        Leistungsart
+        <select id="docLeistungsart" required>
+          <option value="FLS">FLS</option>
+          <option value="Telefonkontakt">Telefonkontakt</option>
+          <option value="Ausfall">Ausfall</option>
+          <option value="Sonstiges">Sonstiges</option>
+        </select>
+      </label>
+
+      <label>
+        Beginn
+        <input id="docBeginn" type="time" required>
+      </label>
+
+      <label>
+        Ende
+        <input id="docEnde" type="time" required>
+      </label>
+
+      <label class="span2">
+        Dauer
+        <input
+          id="docDauer"
+          type="text"
+          placeholder="Wird automatisch berechnet"
+          readonly
+        >
+      </label>
+
+      <label class="span2">
+        Dokumentation
+        <textarea
+          id="docText"
+          rows="7"
+          required
+          placeholder="Inhalt, Verlauf und Ergebnis des Termins"
+        ></textarea>
+      </label>
+
+      <label class="span2">
+        Besonderheiten
+        <textarea
+          id="docBesonderheiten"
+          rows="3"
+          placeholder="Optional"
+        ></textarea>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        id="deleteDoc"
+        class="danger hidden"
+      >
+        Löschen
+      </button>
+
+      <button type="submit" class="primary">
+        Speichern
+      </button>
+    </div>
+  </form>
+</dialog>
 <dialog id="approvalsDialog">
   <div class="top">
     <div>
