@@ -367,6 +367,25 @@ document.querySelectorAll('.docs').forEach(
   );
 }
 
+  function openDocForm(){
+  if(!activeDocsClient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
+  $('docId').value='';
+  $('docDatum').value=new Date().toISOString().slice(0,10);
+  $('docLeistungsart').value='FLS';
+  $('docBeginn').value='';
+  $('docEnde').value='';
+  $('docDauer').value='';
+  $('docText').value='';
+  $('docBesonderheiten').value='';
+
+  $('deleteDoc').classList.add('hidden');
+  $('docDialogTitle').textContent='Dokumentation anlegen';
+  $('docFormDialog').showModal();
+}
   function openDocs(clientId){
   activeDocsClient=clients.find(c=>c.id===clientId)||null;
 
@@ -548,7 +567,40 @@ $('closeDialog').onclick=()=>$('clientDialog').close();
   $('docsDialog').close();
   activeDocsClient=null;
 };
+$('newDoc').onclick=openDocForm;
 
+$('closeDocForm').onclick=()=>{
+  $('docFormDialog').close();
+};
+ function updateDocDauer(){
+  const beginn=$('docBeginn').value;
+  const ende=$('docEnde').value;
+
+  if(!beginn||!ende){
+    $('docDauer').value='';
+    return;
+  }
+
+  const [bh,bm]=beginn.split(':').map(Number);
+  const [eh,em]=ende.split(':').map(Number);
+  const minuten=(eh*60+em)-(bh*60+bm);
+
+  if(minuten<=0){
+    $('docDauer').value='Ende muss nach Beginn liegen';
+    return;
+  }
+
+  const stunden=Math.floor(minuten/60);
+  const rest=minuten%60;
+
+  $('docDauer').value=
+    stunden>0
+      ? `${stunden} Std. ${rest} Min.`
+      : `${rest} Min.`;
+}
+
+$('docBeginn').onchange=updateDocDauer;
+$('docEnde').onchange=updateDocDauer; 
 $('clientForm').onsubmit=async e=>{
   e.preventDefault();
 
