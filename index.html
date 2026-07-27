@@ -248,13 +248,14 @@ async function loadClients(){
   `).join(''):'<p class="muted">Noch keine Klienten angelegt.</p>';
 
   document.querySelectorAll('.edit').forEach(
-    document.querySelectorAll('.docs').forEach(
+  b => b.onclick = () => openClient(b.dataset.id)
+);
+
+document.querySelectorAll('.docs').forEach(
   b => b.onclick = () => {
     toast('Dokumentationsmodul folgt im nächsten Schritt.');
   }
 );
-    b=>b.onclick=()=>openClient(b.dataset.id)
-  );
 
   document.querySelectorAll('.approvals').forEach(
     b=>b.onclick=()=>openApprovals(b.dataset.id)
