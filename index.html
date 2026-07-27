@@ -143,7 +143,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     </div>
     <div class="actions">
       <button type="button" id="deleteClient" class="danger hidden">Löschen</button>
-      <button type="submit" class="primary">Speichern</button>
+<button type="submit" id="docSave" class="primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -251,6 +251,7 @@ let clients=[];
 let approvals=[];
 let docs=[];
 let activeClient=null;
+  let docSaving=false;
 let activeDocsClient=null;
 
 function toast(msg){
@@ -618,35 +619,78 @@ $('docEnde').onchange=updateDocDauer;
 
 $('docForm').onsubmit=async e=>{
   e.preventDefault();
-  if(!activeDocsClient){toast('Kein Klient ausgewählt.');return}
+
+  if(docSaving)return;
+
+  if(!activeDocsClient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
   const beginn=$('docBeginn').value;
   const ende=$('docEnde').value;
   const dauerMinuten=minutesBetween(beginn,ende);
-  if(dauerMinuten<=0){toast('Das Ende muss nach dem Beginn liegen.');return}
   const text=$('docText').value.trim();
-  if(!text){toast('Bitte eine Dokumentation eintragen.');return}
-  const datum=$('docDatum').value;
-  const matchingApprovalId=await findMatchingApprovalId(activeDocsClient.id,datum);
-  const row={
-    user_id:user.id,
-    client_id:activeDocsClient.id,
-    bewilligung_id:matchingApprovalId,
-    datum,
-    beginn,
-    ende,
-    dauer_minuten:dauerMinuten,
-    leistungsart:$('docLeistungsart').value,
-    dokumentation:text,
-    besonderheiten:$('docBesonderheiten').value.trim()||null,
-    updated_at:new Date().toISOString()
-  };
-  const id=$('docId').value;
-  const q=id?sb.from('dokumentationen').update(row).eq('id',id):sb.from('dokumentationen').insert(row);
-  const {error}=await q;
-  if(error){toast(error.message);return}
-  $('docFormDialog').close();
-  toast(id?'Dokumentation aktualisiert':'Dokumentation gespeichert');
-  await loadDocs();
+
+  if(dauerMinuten<=0){
+    toast('Das Ende muss nach dem Beginn liegen.');
+    return;
+  }
+
+  if(!text){
+    toast('Bitte eine Dokumentation eintragen.');
+    return;
+  }
+
+  const saveButton=$('docSave');
+  docSaving=true;
+  saveButton.disabled=true;
+  saveButton.textContent='Wird gespeichert …';
+
+  try{
+    const datum=$('docDatum').value;
+    const matchingApprovalId=
+      await findMatchingApprovalId(activeDocsClient.id,datum);
+
+    const row={
+      user_id:user.id,
+      client_id:activeDocsClient.id,
+      bewilligung_id:matchingApprovalId,
+      datum,
+      beginn,
+      ende,
+      dauer_minuten:dauerMinuten,
+      leistungsart:$('docLeistungsart').value,
+      dokumentation:text,
+      besonderheiten:$('docBesonderheiten').value.trim()||null,
+      updated_at:new Date().toISOString()
+    };
+
+    const id=$('docId').value;
+
+    const query=id
+      ? sb.from('dokumentationen').update(row).eq('id',id)
+      : sb.from('dokumentationen').insert(row);
+
+    const {error}=await query;
+
+    if(error){
+      toast(error.message);
+      return;
+    }
+
+    $('docFormDialog').close();
+    toast(id
+      ? 'Dokumentation aktualisiert'
+      : 'Dokumentation gespeichert'
+    );
+
+    await loadDocs();
+  }finally{
+    docSaving=false;
+    saveButton.disabled=false;
+    saveButton.textContent='Speichern';
+  }
 };
 
 $('deleteDoc').onclick=async()=>{
