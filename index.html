@@ -114,7 +114,23 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     </div>
   </form>
 </dialog>
+<dialog id="docsDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumentationen</div>
+      <h2 id="docsClientName"></h2>
+    </div>
+    <button id="closeDocs" class="secondary">Schließen</button>
+  </div>
 
+  <div class="actions" style="margin:16px 0">
+    <button id="newDoc" class="primary">+ Neue Dokumentation</button>
+  </div>
+
+  <div id="docsList">
+    <p class="muted">Noch keine Dokumentationen vorhanden.</p>
+  </div>
+</dialog>
 <dialog id="approvalsDialog">
   <div class="top">
     <div>
