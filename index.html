@@ -239,14 +239,20 @@ async function loadClients(){
         <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
         <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
       </div>
-      <div class="actions">
-        <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
-        <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
-      </div>
+<div class="actions">
+  <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
+  <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
+  <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
+</div>
     </div>
   `).join(''):'<p class="muted">Noch keine Klienten angelegt.</p>';
 
   document.querySelectorAll('.edit').forEach(
+    document.querySelectorAll('.docs').forEach(
+  b => b.onclick = () => {
+    toast('Dokumentationsmodul folgt im nächsten Schritt.');
+  }
+);
     b=>b.onclick=()=>openClient(b.dataset.id)
   );
 
