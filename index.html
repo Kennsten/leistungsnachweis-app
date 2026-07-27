@@ -336,6 +336,16 @@ async function loadApprovals(){
   );
 }
 
+  function updateLeistungstraegerFields(){
+  const isOther=$('approvalLeistungstraegerTyp').value==='Sonstiger Leistungsträger';
+
+  $('approvalLeistungstraegerNameWrap').classList.toggle('hidden',!isOther);
+  $('approvalLeistungstraegerName').required=isOther;
+
+  if(!isOther){
+    $('approvalLeistungstraegerName').value='';
+  }
+}
 function openApprovalForm(id=''){
   const a=approvals.find(x=>x.id===id)||{};
 
@@ -344,7 +354,9 @@ function openApprovalForm(id=''){
   $('approvalEnde').value=a.ende||'';
   $('approvalStunden').value=a.stundenkontingent??'';
   $('approvalWochenFls').value=a.wochen_fls??'';
-  $('approvalKostentraeger').value=a.kostentraeger||'';
+$('approvalLeistungstraegerTyp').value=a.leistungstraeger_typ||'';
+$('approvalLeistungstraegerName').value=a.leistungstraeger_name||'';
+updateLeistungstraegerFields();
   $('approvalNummer').value=a.bewilligungsnummer||'';
   $('approvalAnsprechpartner').value=a.ansprechpartner||'';
   $('approvalBemerkungen').value=a.bemerkungen||'';
@@ -494,7 +506,15 @@ $('approvalForm').onsubmit=async e=>{
     wochen_fls:$('approvalWochenFls').value
   ? Number(String($('approvalWochenFls').value).replace(',','.'))
   : null,
-    kostentraeger:$('approvalKostentraeger').value.trim()||null,
+leistungstraeger_typ:$('approvalLeistungstraegerTyp').value||null,
+leistungstraeger_name:
+  $('approvalLeistungstraegerTyp').value==='Sonstiger Leistungsträger'
+    ? $('approvalLeistungstraegerName').value.trim()||null
+    : null,
+kostentraeger:
+  $('approvalLeistungstraegerTyp').value==='Sonstiger Leistungsträger'
+    ? $('approvalLeistungstraegerName').value.trim()||null
+    : $('approvalLeistungstraegerTyp').value||null,
     bewilligungsnummer:$('approvalNummer').value.trim()||null,
     ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
     bemerkungen:$('approvalBemerkungen').value.trim()||null
