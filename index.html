@@ -277,7 +277,6 @@ function openClient(id=''){
   $('bemerkungen').value=c.bemerkungen||'';
 
   $('deleteClient').classList.toggle('hidden',!id);
-  $('approvalLeistungstraegerTyp').onchange = updateLeistungstraegerFields;
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
   $('clientDialog').showModal();
 }
