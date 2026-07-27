@@ -196,6 +196,7 @@ let user=null;
 let clients=[];
 let approvals=[];
 let activeClient=null;
+let activeDocsClient=null;
 
 function toast(msg){
   const t=$('toast');
@@ -268,9 +269,7 @@ async function loadClients(){
 );
 
 document.querySelectorAll('.docs').forEach(
-  b => b.onclick = () => {
-    toast('Dokumentationsmodul folgt im nächsten Schritt.');
-  }
+  b => b.onclick = () => openDocs(b.dataset.id)
 );
 
   document.querySelectorAll('.approvals').forEach(
@@ -278,6 +277,17 @@ document.querySelectorAll('.docs').forEach(
   );
 }
 
+  function openDocs(clientId){
+  activeDocsClient=clients.find(c=>c.id===clientId)||null;
+
+  if(!activeDocsClient){
+    toast('Klient nicht gefunden.');
+    return;
+  }
+
+  $('docsClientName').textContent=activeDocsClient.name;
+  $('docsDialog').showModal();
+}
 function openClient(id=''){
   const c=clients.find(x=>x.id===id)||{};
 
@@ -444,6 +454,10 @@ $('logout').onclick=async()=>{
 
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
+  $('closeDocs').onclick=()=>{
+  $('docsDialog').close();
+  activeDocsClient=null;
+};
 
 $('clientForm').onsubmit=async e=>{
   e.preventDefault();
