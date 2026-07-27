@@ -9,18 +9,48 @@
 <title>Leistungsnachweis</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--ink:#17324d;--muted:#657789;--line:#d8e1e8;--bg:#f3f6f9;--card:#fff;--accent:#e7f1f7;--danger:#9d3030}
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
-.hidden{display:none!important}button,input,textarea{font:inherit}button{cursor:pointer}
-.wrap{max-width:900px;margin:auto;padding:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 25px rgba(23,50,77,.07);margin-bottom:14px}
-.center{max-width:480px;margin:8vh auto}h1,h2,h3{margin:.2em 0 .5em}p{line-height:1.45}label{display:flex;flex-direction:column;gap:6px;font-weight:650;margin:12px 0}
-input,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}textarea{resize:vertical}
-.primary,.secondary,.danger{border:0;border-radius:12px;padding:12px 15px}.primary{background:var(--ink);color:#fff}.secondary{background:var(--accent);color:var(--ink)}.danger{background:#fae8e8;color:var(--danger)}
-.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.muted{color:var(--muted)}.client{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.client+.client{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
-.meta{font-size:.9rem;color:var(--muted)}dialog{width:min(94vw,700px);border:0;border-radius:20px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.25)}dialog::backdrop{background:rgba(15,30,45,.45)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.span2{grid-column:1/-1}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
-@media(max-width:650px){.grid{grid-template-columns:1fr}.span2{grid-column:auto}.client{flex-direction:column}.client .actions{width:100%}}
+:root{--ink:#17324d;--muted:#657789;--line:#d8e1e8;--bg:#f3f6f9;--card:#fff;--accent:#e7f1f7;--danger:#9d3030;--success:#2f6f4e}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+.hidden{display:none!important}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.55;cursor:default}
+.wrap{max-width:900px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 25px rgba(23,50,77,.07);margin-bottom:14px}
+.center{max-width:480px;margin:8vh auto}
+h1,h2,h3{margin:.2em 0 .5em}
+p{line-height:1.45}
+label{display:flex;flex-direction:column;gap:6px;font-weight:650;margin:12px 0}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+textarea{resize:vertical}
+.primary,.secondary,.danger{border:0;border-radius:12px;padding:12px 15px}
+.primary{background:var(--ink);color:#fff}
+.secondary{background:var(--accent);color:var(--ink)}
+.danger{background:#fae8e8;color:var(--danger)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions button{flex:1}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.muted{color:var(--muted)}
+.client{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.client+.client{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.meta{font-size:.9rem;color:var(--muted)}
+dialog{width:min(94vw,700px);border:0;border-radius:20px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(15,30,45,.45)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.span2{grid-column:1/-1}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+.approval{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+.approval-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.approval-hours{font-weight:750;color:var(--success)}
+.small{font-size:.88rem}
+@media(max-width:650px){
+  .grid{grid-template-columns:1fr}
+  .span2{grid-column:auto}
+  .client,.approval-head{flex-direction:column}
+  .client .actions,.approval-head .actions{width:100%}
+}
 </style>
 </head>
 <body>
@@ -85,26 +115,110 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:12px;paddin
   </form>
 </dialog>
 
+<dialog id="approvalsDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Klientenakte</div>
+      <h2 id="approvalsClientName">Bewilligungen</h2>
+    </div>
+    <button type="button" id="closeApprovals" class="secondary">Schließen</button>
+  </div>
+
+  <div class="actions">
+    <button type="button" id="newApproval" class="primary">+ Neue Bewilligung</button>
+  </div>
+
+  <div id="approvalsList"></div>
+</dialog>
+
+<dialog id="approvalFormDialog">
+  <form id="approvalForm">
+    <div class="top">
+      <h2 id="approvalDialogTitle">Bewilligung anlegen</h2>
+      <button type="button" id="closeApprovalForm" class="secondary">Schließen</button>
+    </div>
+
+    <input type="hidden" id="approvalId">
+
+    <div class="grid">
+      <label>Beginn<input id="approvalBeginn" type="date" required></label>
+      <label>Ende<input id="approvalEnde" type="date" required></label>
+      <label>Stundenkontingent<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
+      <label>Kostenträger<input id="approvalKostentraeger" placeholder="z. B. Region Hannover"></label>
+      <label>Bewilligungsnummer<input id="approvalNummer"></label>
+      <label>Ansprechpartner<input id="approvalAnsprechpartner"></label>
+      <label class="span2">Bemerkungen<textarea id="approvalBemerkungen" rows="3"></textarea></label>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="deleteApproval" class="danger hidden">Löschen</button>
+      <button type="submit" class="primary">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
 const SUPABASE_URL='https://bhrygputoysiwchzlygn.supabase.co';
 const SUPABASE_KEY='sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let user=null, clients=[];
 
-function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
-function esc(v=''){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function showApp(on){$('auth').classList.toggle('hidden',on);$('app').classList.toggle('hidden',!on)}
+let user=null;
+let clients=[];
+let approvals=[];
+let activeClient=null;
+
+function toast(msg){
+  const t=$('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2300);
+}
+
+function esc(v=''){
+  return String(v??'').replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+function showApp(on){
+  $('auth').classList.toggle('hidden',on);
+  $('app').classList.toggle('hidden',!on);
+}
+
+function formatDate(value){
+  if(!value)return '';
+  const [y,m,d]=value.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+function formatHours(value){
+  return new Intl.NumberFormat('de-DE',{
+    minimumFractionDigits:0,
+    maximumFractionDigits:2
+  }).format(Number(value||0));
+}
 
 async function init(){
   const {data:{session}}=await sb.auth.getSession();
-  if(session){user=session.user;showApp(true);await loadClients()}else showApp(false);
+  if(session){
+    user=session.user;
+    showApp(true);
+    await loadClients();
+  }else{
+    showApp(false);
+  }
 }
 
 async function loadClients(){
   const {data,error}=await sb.from('clients').select('*').order('name');
-  if(error){toast(error.message);return}
+  if(error){
+    toast(error.message);
+    return;
+  }
+
   clients=data||[];
+
   $('list').innerHTML=clients.length?clients.map(c=>`
     <div class="client">
       <div>
@@ -112,13 +226,25 @@ async function loadClients(){
         <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
         <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
       </div>
-      <div class="actions"><button class="secondary edit" data-id="${c.id}">Bearbeiten</button></div>
-    </div>`).join(''):'<p class="muted">Noch keine Klienten angelegt.</p>';
-  document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
+      <div class="actions">
+        <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
+        <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
+      </div>
+    </div>
+  `).join(''):'<p class="muted">Noch keine Klienten angelegt.</p>';
+
+  document.querySelectorAll('.edit').forEach(
+    b=>b.onclick=()=>openClient(b.dataset.id)
+  );
+
+  document.querySelectorAll('.approvals').forEach(
+    b=>b.onclick=()=>openApprovals(b.dataset.id)
+  );
 }
 
 function openClient(id=''){
   const c=clients.find(x=>x.id===id)||{};
+
   $('clientId').value=c.id||'';
   $('clientCode').value=c.client_code||'';
   $('clientName').value=c.name||'';
@@ -135,19 +261,116 @@ function openClient(id=''){
   $('kontaktperson2').value=c.kontaktperson2||'';
   $('telefon2').value=c.telefon2||'';
   $('bemerkungen').value=c.bemerkungen||'';
+
   $('deleteClient').classList.toggle('hidden',!id);
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
   $('clientDialog').showModal();
 }
 
+async function openApprovals(clientId){
+  activeClient=clients.find(c=>c.id===clientId)||null;
+  if(!activeClient){
+    toast('Klient nicht gefunden.');
+    return;
+  }
+
+  $('approvalsClientName').textContent=activeClient.name;
+  $('approvalsDialog').showModal();
+  await loadApprovals();
+}
+
+async function loadApprovals(){
+  if(!activeClient)return;
+
+  $('approvalsList').innerHTML='<p class="muted">Bewilligungen werden geladen …</p>';
+
+  const {data,error}=await sb
+    .from('bewilligungen')
+    .select('*')
+    .eq('client_id',activeClient.id)
+    .order('beginn',{ascending:false});
+
+  if(error){
+    $('approvalsList').innerHTML='';
+    toast(error.message);
+    return;
+  }
+
+  approvals=data||[];
+
+  $('approvalsList').innerHTML=approvals.length?approvals.map(a=>`
+    <div class="approval">
+      <div class="approval-head">
+        <div>
+          <h3>${formatDate(a.beginn)} – ${formatDate(a.ende)}</h3>
+          <div class="approval-hours">${formatHours(a.stundenkontingent)} Stunden</div>
+          <div class="meta">${esc(a.kostentraeger||'kein Kostenträger')}</div>
+          ${a.bewilligungsnummer?`<div class="meta">Nr. ${esc(a.bewilligungsnummer)}</div>`:''}
+          ${a.ansprechpartner?`<div class="meta">Ansprechpartner: ${esc(a.ansprechpartner)}</div>`:''}
+          ${a.bemerkungen?`<p class="small">${esc(a.bemerkungen)}</p>`:''}
+        </div>
+        <div class="actions">
+          <button class="secondary editApproval" data-id="${a.id}">Bearbeiten</button>
+        </div>
+      </div>
+    </div>
+  `).join(''):'<p class="muted">Noch keine Bewilligungen angelegt.</p>';
+
+  document.querySelectorAll('.editApproval').forEach(
+    b=>b.onclick=()=>openApprovalForm(b.dataset.id)
+  );
+}
+
+function openApprovalForm(id=''){
+  const a=approvals.find(x=>x.id===id)||{};
+
+  $('approvalId').value=a.id||'';
+  $('approvalBeginn').value=a.beginn||'';
+  $('approvalEnde').value=a.ende||'';
+  $('approvalStunden').value=a.stundenkontingent??'';
+  $('approvalKostentraeger').value=a.kostentraeger||'';
+  $('approvalNummer').value=a.bewilligungsnummer||'';
+  $('approvalAnsprechpartner').value=a.ansprechpartner||'';
+  $('approvalBemerkungen').value=a.bemerkungen||'';
+
+  $('deleteApproval').classList.toggle('hidden',!id);
+  $('approvalDialogTitle').textContent=id?'Bewilligung bearbeiten':'Bewilligung anlegen';
+  $('approvalFormDialog').showModal();
+}
+
 $('login').onclick=async()=>{
-  const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
-  if(error)toast(error.message);else location.reload();
+  const {error}=await sb.auth.signInWithPassword({
+    email:$('email').value,
+    password:$('password').value
+  });
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  await init();
 };
+
 $('signup').onclick=async()=>{
-  const {error}=await sb.auth.signUp({email:$('email').value,password:$('password').value});
-  toast(error?error.message:'Registrierung angelegt. Bitte E-Mail bestätigen.');
+  const {data,error}=await sb.auth.signUp({
+    email:$('email').value,
+    password:$('password').value
+  });
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  if(data.session){
+    toast('Registrierung erfolgreich.');
+    await init();
+  }else{
+    toast('Registrierung angelegt. Bitte E-Mail bestätigen.');
+  }
 };
+
 $('logout').onclick=async()=>{
   const button=$('logout');
   button.disabled=true;
@@ -162,16 +385,20 @@ $('logout').onclick=async()=>{
 
   user=null;
   clients=[];
+  approvals=[];
+  activeClient=null;
   $('list').innerHTML='';
   showApp(false);
   toast('Du wurdest abgemeldet.');
   button.disabled=false;
 };
+
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
 
 $('clientForm').onsubmit=async e=>{
   e.preventDefault();
+
   const id=$('clientId').value;
   const row={
     user_id:user.id,
@@ -191,19 +418,114 @@ $('clientForm').onsubmit=async e=>{
     telefon2:$('telefon2').value.trim()||null,
     bemerkungen:$('bemerkungen').value.trim()||null
   };
-  const q=id?sb.from('clients').update(row).eq('id',id):sb.from('clients').insert(row);
+
+  const q=id
+    ? sb.from('clients').update(row).eq('id',id)
+    : sb.from('clients').insert(row);
+
   const {error}=await q;
-  if(error){toast(error.message);return}
-  $('clientDialog').close();toast('Gespeichert');await loadClients();
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  $('clientDialog').close();
+  toast('Gespeichert');
+  await loadClients();
 };
 
 $('deleteClient').onclick=async()=>{
   const id=$('clientId').value;
   if(!id||!confirm('Diesen Klienten wirklich löschen?'))return;
+
   const {error}=await sb.from('clients').delete().eq('id',id);
-  if(error){toast(error.message);return}
-  $('clientDialog').close();toast('Gelöscht');await loadClients();
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  $('clientDialog').close();
+  toast('Gelöscht');
+  await loadClients();
 };
+
+$('closeApprovals').onclick=()=>{
+  $('approvalsDialog').close();
+  activeClient=null;
+  approvals=[];
+};
+
+$('newApproval').onclick=()=>openApprovalForm();
+$('closeApprovalForm').onclick=()=>$('approvalFormDialog').close();
+
+$('approvalForm').onsubmit=async e=>{
+  e.preventDefault();
+
+  if(!activeClient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
+  const id=$('approvalId').value;
+  const row={
+    user_id:user.id,
+    client_id:activeClient.id,
+    beginn:$('approvalBeginn').value,
+    ende:$('approvalEnde').value,
+    stundenkontingent:Number(String($('approvalStunden').value).replace(',','.')),
+    kostentraeger:$('approvalKostentraeger').value.trim()||null,
+    bewilligungsnummer:$('approvalNummer').value.trim()||null,
+    ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
+    bemerkungen:$('approvalBemerkungen').value.trim()||null
+  };
+
+  if(row.ende<row.beginn){
+    toast('Das Enddatum darf nicht vor dem Beginn liegen.');
+    return;
+  }
+
+  const q=id
+    ? sb.from('bewilligungen').update(row).eq('id',id)
+    : sb.from('bewilligungen').insert(row);
+
+  const {error}=await q;
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  $('approvalFormDialog').close();
+  toast('Bewilligung gespeichert');
+  await loadApprovals();
+};
+
+$('deleteApproval').onclick=async()=>{
+  const id=$('approvalId').value;
+  if(!id||!confirm('Diese Bewilligung wirklich löschen?'))return;
+
+  const {error}=await sb.from('bewilligungen').delete().eq('id',id);
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  $('approvalFormDialog').close();
+  toast('Bewilligung gelöscht');
+  await loadApprovals();
+};
+
+sb.auth.onAuthStateChange((_event,session)=>{
+  if(session){
+    user=session.user;
+  }else{
+    user=null;
+    showApp(false);
+  }
+});
 
 init();
 </script>
