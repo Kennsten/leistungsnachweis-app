@@ -145,7 +145,20 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
       <label>Ende<input id="approvalEnde" type="date" required></label>
 <label>Gesamt-FLS<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
 <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
-      <label>Kostenträger<input id="approvalKostentraeger" placeholder="z. B. Region Hannover"></label>
+<label>
+  Leistungsträger
+  <select id="approvalLeistungstraegerTyp">
+    <option value="">Bitte auswählen</option>
+    <option value="LH Hannover">LH Hannover</option>
+    <option value="Region Hannover">Region Hannover</option>
+    <option value="Sonstiger Leistungsträger">Sonstiger Leistungsträger</option>
+  </select>
+</label>
+
+<label id="approvalLeistungstraegerNameWrap" class="hidden">
+  Name des sonstigen Leistungsträgers
+  <input id="approvalLeistungstraegerName" placeholder="z. B. Stadt Peine">
+</label>
       <label>Bewilligungsnummer<input id="approvalNummer"></label>
       <label>Ansprechpartner<input id="approvalAnsprechpartner"></label>
       <label class="span2">Bemerkungen<textarea id="approvalBemerkungen" rows="3"></textarea></label>
