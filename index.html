@@ -304,7 +304,8 @@ async function loadApprovals(){
       <div class="approval-head">
         <div>
           <h3>${formatDate(a.beginn)} – ${formatDate(a.ende)}</h3>
-          <div class="approval-hours">${formatHours(a.stundenkontingent)} Stunden</div>
+<div class="approval-hours">${formatHours(a.stundenkontingent)} Gesamt-FLS</div>
+<div class="meta">${a.wochen_fls!=null ? formatHours(a.wochen_fls)+' Wochen-FLS' : 'keine Wochen-FLS eingetragen'}</div>
           <div class="meta">${esc(a.kostentraeger||'kein Kostenträger')}</div>
           ${a.bewilligungsnummer?`<div class="meta">Nr. ${esc(a.bewilligungsnummer)}</div>`:''}
           ${a.ansprechpartner?`<div class="meta">Ansprechpartner: ${esc(a.ansprechpartner)}</div>`:''}
@@ -329,6 +330,7 @@ function openApprovalForm(id=''){
   $('approvalBeginn').value=a.beginn||'';
   $('approvalEnde').value=a.ende||'';
   $('approvalStunden').value=a.stundenkontingent??'';
+  $('approvalWochenFls').value=a.wochen_fls??'';
   $('approvalKostentraeger').value=a.kostentraeger||'';
   $('approvalNummer').value=a.bewilligungsnummer||'';
   $('approvalAnsprechpartner').value=a.ansprechpartner||'';
@@ -476,6 +478,9 @@ $('approvalForm').onsubmit=async e=>{
     beginn:$('approvalBeginn').value,
     ende:$('approvalEnde').value,
     stundenkontingent:Number(String($('approvalStunden').value).replace(',','.')),
+    wochen_fls:$('approvalWochenFls').value
+  ? Number(String($('approvalWochenFls').value).replace(',','.'))
+  : null,
     kostentraeger:$('approvalKostentraeger').value.trim()||null,
     bewilligungsnummer:$('approvalNummer').value.trim()||null,
     ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
