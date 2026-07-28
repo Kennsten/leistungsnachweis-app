@@ -371,6 +371,170 @@
     margin-top:8mm;
   }
 }
+    /* Feinschliff Leistungsnachweis */
+
+.ln-page{
+  padding:22px 28px 18px;
+  font-size:11.5px;
+}
+
+.ln-title{
+  padding:7px 4px;
+}
+
+.ln-main-title{
+  font-size:27px;
+}
+
+.ln-title-description{
+  font-size:10.5px;
+}
+
+.ln-assistance{
+  padding:8px 0;
+  font-size:19px;
+}
+
+.ln-person-row{
+  grid-template-columns:26% 44% 13% 17%;
+  min-height:32px;
+}
+
+.ln-row{
+  min-height:30px;
+}
+
+.ln-budget-row{
+  min-height:36px;
+}
+
+.ln-table{
+  margin-top:11px;
+  font-size:10px;
+}
+
+.ln-table thead th{
+  height:50px;
+  padding:4px 5px;
+}
+
+.ln-table tbody td{
+  height:21px;
+  padding:3px 5px;
+}
+
+.ln-table tfoot th{
+  height:28px;
+}
+
+.ln-summary > div{
+  padding:5px;
+}
+
+.ln-signatures{
+  grid-template-columns:28% 58%;
+  margin-top:48px;
+}
+
+.signature-line{
+  height:27px;
+}
+
+.signature-label{
+  font-size:9.5px;
+}
+
+.confirmation{
+  margin-top:30px;
+  font-size:9.5px;
+}
+
+/* Ausdruck auf A4 quer */
+
+@media print{
+  html,
+  body{
+    width:297mm;
+    height:210mm;
+    margin:0;
+    padding:0;
+  }
+
+  .page-wrap{
+    width:297mm;
+    height:210mm;
+    margin:0;
+    padding:0;
+  }
+
+  .ln-page{
+    box-sizing:border-box;
+    width:297mm;
+    height:210mm;
+    min-height:210mm;
+    margin:0;
+    padding:7mm 8mm 6mm;
+    border:0;
+    box-shadow:none;
+    font-size:9pt;
+  }
+
+  .ln-title{
+    padding:2mm 1mm;
+  }
+
+  .ln-main-title{
+    font-size:18pt;
+  }
+
+  .ln-assistance{
+    padding:2mm 0;
+    font-size:14pt;
+  }
+
+  .ln-person-row,
+  .ln-row{
+    min-height:7mm;
+  }
+
+  .ln-budget-row{
+    min-height:8mm;
+  }
+
+  .ln-table{
+    margin-top:3mm;
+    font-size:7.5pt;
+  }
+
+  .ln-table thead th{
+    height:12mm;
+  }
+
+  .ln-table tbody td{
+    height:5.4mm;
+  }
+
+  .ln-table tfoot th{
+    height:7mm;
+  }
+
+  .ln-signatures{
+    margin-top:9mm;
+  }
+
+  .signature-line{
+    height:7mm;
+  }
+
+  .confirmation{
+    margin-top:8mm;
+  }
+
+  @page{
+    size:A4 landscape;
+    margin:0;
+  }
+}
   </style>
 </head>
 
