@@ -452,6 +452,7 @@ function openDocForm(id=''){
   $('docId').value=d.id||'';
   $('docDatum').value=d.datum||todayLocal();
   $('docLeistungsart').value=d.leistungsart||'FLS';
+  $('docOrt').value = d.ort_der_leistung || 'Wohnung Klient';
 $('docBeginn').value = d.beginn
   ? String(d.beginn).slice(0,5)
   : '09:00';
