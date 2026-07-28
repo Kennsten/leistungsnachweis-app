@@ -1263,7 +1263,7 @@ $('monthlyMonth').onchange=async()=>{
   }
 
   $('monthlyContent').innerHTML=
-    '<p class="muted">Leistungsnachweis wird geladen …</p>';
+    '<p class="muted">Leistungsnachweis wird vorbereitet …</p>';
 
   const [year,month]=value.split('-');
   const startDate=`${year}-${month}-01`;
@@ -1297,7 +1297,7 @@ $('monthlyMonth').onchange=async()=>{
       .from('bewilligungen')
       .select('*')
       .eq('client_id',activeMonthlyClient.id)
-      .lte('beginn',endDate)
+      .lt('beginn',endDate)
       .gte('ende',startDate)
       .order('beginn',{ascending:false})
       .limit(1)
@@ -1322,14 +1322,6 @@ $('monthlyMonth').onchange=async()=>{
   const entries=documentationResult.data||[];
   const approval=(approvalResult.data||[])[0]||null;
 
-  const totalMinutes=entries.reduce(
-    (sum,entry)=>
-      sum+Number(entry.dauer_minuten||0),
-    0
-  );
-
-  const totalFls=minutesToFls(totalMinutes);
-
   const monthNames=[
     'Januar',
     'Februar',
@@ -1348,313 +1340,88 @@ $('monthlyMonth').onchange=async()=>{
   const monthLabel=
     `${monthNames[Number(month)-1]} ${year}`;
 
-  const provider=
-    approval?.kostentraeger ||
-    approval?.leistungstraeger_name ||
-    approval?.leistungstraeger_typ ||
-    '';
+  const totalMinutes=entries.reduce(
+    (sum,entry)=>
+      sum+Number(entry.dauer_minuten||0),
+    0
+  );
 
-  const rows=[];
+  const totalFls=minutesToFls(totalMinutes);
 
-  for(let index=0;index<22;index++){
-    const entry=entries[index];
+  const payload={
+    client:activeMonthlyClient,
+    approval,
+    entries,
+    monthLabel,
+    leistungsanbieter:
+      'SuPA GmbH, Königstraße 6, 30175 Hannover',
+    auftragnehmer:
+      'Stork, Oliver'
+  };
 
-    if(entry){
-      rows.push(`
-        <tr>
-          <td>
-            ${esc(formatDate(entry.datum))}
-          </td>
-
-          <td>
-            ${esc(String(entry.beginn||'').slice(0,5))}
-            –
-            ${esc(String(entry.ende||'').slice(0,5))}
-          </td>
-
-          <td>
-            ${esc(entry.ort_der_leistung||'')}
-          </td>
-
-          <td class="ln-number">
-            ${Number(entry.dauer_minuten||0)}
-          </td>
-
-          <td class="ln-number">
-            ${formatFls(
-              minutesToFls(entry.dauer_minuten)
-            )}
-          </td>
-
-          <td>
-            ${esc(entry.leistungsart||'')}
-          </td>
-
-          <td>
-            Stork, Oliver
-          </td>
-        </tr>
-      `);
-    }else{
-      rows.push(`
-        <tr>
-          <td>&nbsp;</td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-      `);
-    }
-  }
+  sessionStorage.setItem(
+    'leistungsnachweis_payload',
+    JSON.stringify(payload)
+  );
 
   $('monthlyContent').innerHTML=`
-    <section class="ln-page">
-
-      <header class="ln-title">
-        <div class="ln-main-title">
-          Leistungsnachweis
-        </div>
-
-        <div class="ln-title-description">
-          Assistenz beim Wohnen außerhalb der besonderen
-          Wohnform i. S. d. § 42a Abs. 2 Nr. 2 SGB XII
-          – Monatsabrechnung
-        </div>
-      </header>
-
-      <div class="ln-assistance">
-        Qualifizierte Assistenz
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Monat</span>
+        <strong>${esc(monthLabel)}</strong>
       </div>
 
-      <section class="ln-details">
-
-        <div class="ln-detail ln-person">
-          <span>
-            Leistungsberechtigte Person (LP):
-            Name, Vorname
-          </span>
-
-          <strong>
-            ${esc(activeMonthlyClient.name||'')}
-          </strong>
-        </div>
-
-        <div class="ln-detail ln-file-number">
-          <span>
-            Aktenzeichen:
-          </span>
-
-          <strong>
-            ${esc(activeMonthlyClient.aktenzeichen||'')}
-          </strong>
-        </div>
-
-        <div class="ln-detail">
-          <span>
-            Leistungsanbieter:
-          </span>
-
-          <strong>
-            SuPA GmbH, Königstraße 6, 30175 Hannover
-          </strong>
-        </div>
-
-        <div class="ln-detail">
-          <span>
-            Verantwortlicher Auftragnehmer:
-          </span>
-
-          <strong>
-            Stork, Oliver
-          </strong>
-        </div>
-
-        <div class="ln-detail">
-          <span>
-            Zuständiger örtlicher Leistungsträger:
-          </span>
-
-          <strong>
-            ${esc(provider)}
-          </strong>
-        </div>
-
-        <div class="ln-budget-grid">
-
-          <div>
-            <span>
-              Bewilligte Fachleistungsstunden
-              pro Woche
-            </span>
-
-            <strong>
-              ${
-                approval?.wochen_fls!=null
-                  ? formatFls(approval.wochen_fls)
-                  : ''
-              }
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              Gesamtbudget
-            </span>
-
-            <strong>
-              ${
-                approval?.stundenkontingent!=null
-                  ? formatFls(approval.stundenkontingent)
-                  : ''
-              }
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              Monat
-            </span>
-
-            <strong>
-              ${esc(monthLabel)}
-            </strong>
-          </div>
-
-        </div>
-      </section>
-
-      <table class="ln-table">
-        <colgroup>
-          <col class="ln-date">
-          <col class="ln-time">
-          <col class="ln-place">
-          <col class="ln-minutes">
-          <col class="ln-fls">
-          <col class="ln-type">
-          <col class="ln-worker">
-        </colgroup>
-
-        <thead>
-          <tr>
-            <th>
-              Datum
-            </th>
-
-            <th>
-              Uhrzeit
-            </th>
-
-            <th>
-              Ort der Leistung
-            </th>
-
-            <th>
-              Dauer in Minuten<br>
-              direkt mit der LP
-            </th>
-
-            <th>
-              Anzahl direkte FLS<br>
-              qualifizierte Assistenzkraft
-            </th>
-
-            <th>
-              Leistungsart
-            </th>
-
-            <th>
-              Auftragnehmer<br>
-              Name in Klartext
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          ${rows.join('')}
-        </tbody>
-
-        <tfoot>
-          <tr>
-            <th colspan="3">
-              Gesamt
-            </th>
-
-            <th class="ln-number">
-              ${totalMinutes}
-            </th>
-
-            <th class="ln-number">
-              ${formatFls(totalFls)}
-            </th>
-
-            <th colspan="2"></th>
-          </tr>
-        </tfoot>
-      </table>
-
-      <div class="ln-totals">
-        <div>
-          <span>
-            Summe Minuten
-          </span>
-
-          <strong>
-            ${totalMinutes}
-          </strong>
-        </div>
-
-        <div>
-          <span>
-            Summe FLS
-          </span>
-
-          <strong>
-            ${formatFls(totalFls)}
-          </strong>
-        </div>
+      <div class="summary-row">
+        <span>Termine</span>
+        <strong>${entries.length}</strong>
       </div>
 
-      <footer class="ln-signatures">
+      <div class="summary-row">
+        <span>Gesamtminuten</span>
+        <strong>${totalMinutes}</strong>
+      </div>
 
-        <div>
-          <div class="ln-signature-line"></div>
+      <div class="summary-row">
+        <span>Gesamt-FLS</span>
+        <strong>${formatFls(totalFls)} FLS</strong>
+      </div>
+    </div>
 
-          <span>
-            Datum
-          </span>
-        </div>
-
-        <div>
-          <div class="ln-signature-line"></div>
-
-          <span>
-            Unterschrift der leistungsberechtigten Person
-          </span>
-        </div>
-
-        <p>
-          Mit der Unterschrift bestätigt die
-          leistungsberechtigte Person, die aufgeführten
-          Leistungen in Minuten erhalten zu haben.
-        </p>
-      </footer>
-
-      ${
-        entries.length>22
-          ? `
-            <p class="ln-warning">
-              Dieser Monat enthält ${entries.length} Termine.
-              Angezeigt werden die ersten 22 Termine.
-            </p>
-          `
-          : ''
-      }
-
-    </section>
+    ${
+      entries.length
+        ? `
+          <button
+            type="button"
+            id="openLeistungsnachweis"
+            class="primary"
+            style="width:100%;margin-top:16px"
+          >
+            Leistungsnachweis öffnen
+          </button>
+        `
+        : `
+          <p class="muted">
+            Für diesen Monat gibt es noch keine Termine.
+          </p>
+        `
+    }
   `;
+
+  const openButton=$('openLeistungsnachweis');
+
+  if(openButton){
+    openButton.onclick=()=>{
+      sessionStorage.setItem(
+        'leistungsnachweis_payload',
+        JSON.stringify(payload)
+      );
+
+      window.open(
+        'leistungsnachweis.html',
+        '_blank'
+      );
+    };
+  }
 };
 $('approvalLeistungstraegerTyp').onchange=updateLeistungstraegerFields;
 
