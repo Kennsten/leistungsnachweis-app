@@ -342,6 +342,35 @@
         margin:0;
       }
     }
+    /* Drucklayout besser auf A4 quer ausnutzen */
+
+@media print{
+  .ln-page{
+    width:297mm;
+    height:210mm;
+    min-height:210mm;
+    padding:8mm 10mm 6mm;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .ln-table{
+    margin-top:3mm;
+  }
+
+  .ln-table tbody td{
+    height:5.7mm;
+  }
+
+  .ln-signatures{
+    margin-top:auto;
+    padding-top:8mm;
+  }
+
+  .confirmation{
+    margin-top:8mm;
+  }
+}
   </style>
 </head>
 
