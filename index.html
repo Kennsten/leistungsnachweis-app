@@ -469,15 +469,21 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
       <div class="muted">Leistungsnachweis</div>
       <h2 id="monthlyClientName">Monatsnachweis</h2>
     </div>
-    <button type="button" id="closeMonthly" class="secondary">Schließen</button>
+
+    <button type="button" id="closeMonthly" class="secondary">
+      Schließen
+    </button>
   </div>
 
-  <label>Monat
+  <label>
+    Monat
     <input id="monthlyMonth" type="month">
   </label>
 
-  <div id="monthlyContent">
-    <p class="muted">Bitte einen Monat auswählen.</p>
+  <div class="monthly-sheet-wrap">
+    <div id="monthlyContent" class="monthly-sheet">
+      <p class="muted">Bitte einen Monat auswählen.</p>
+    </div>
   </div>
 </dialog>
   
