@@ -80,6 +80,221 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
   .client,.approval-head,.doc-head{flex-direction:column}
   .client .actions,.approval-head .actions,.doc-head .actions{width:100%}
 }
+  /* Monats-Leistungsnachweis */
+
+.monthly-sheet-wrap{
+  width:100%;
+  overflow-x:auto;
+  margin-top:16px;
+  padding-bottom:8px;
+}
+
+.monthly-sheet{
+  width:1050px;
+  min-height:740px;
+  margin:0 auto;
+  padding:22px;
+  background:#fff;
+  color:#111;
+  border:1px solid #777;
+  font-family:Arial,sans-serif;
+  font-size:12px;
+}
+
+.monthly-sheet h2{
+  margin:0 0 14px;
+  text-align:center;
+  font-size:18px;
+  color:#111;
+}
+
+.monthly-sheet-header{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  border:1px solid #555;
+  border-bottom:0;
+}
+
+.monthly-sheet-field{
+  min-height:42px;
+  padding:6px 8px;
+  border-right:1px solid #555;
+  border-bottom:1px solid #555;
+}
+
+.monthly-sheet-field:nth-child(even){
+  border-right:0;
+}
+
+.monthly-sheet-field strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:10px;
+  font-weight:700;
+}
+
+.monthly-sheet-table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  color:#111;
+  background:#fff;
+}
+
+.monthly-sheet-table th,
+.monthly-sheet-table td{
+  border:1px solid #555;
+  padding:4px;
+  text-align:center;
+  vertical-align:middle;
+  overflow-wrap:anywhere;
+}
+
+.monthly-sheet-table th{
+  height:44px;
+  background:#eee;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:700;
+}
+
+.monthly-sheet-table tbody td{
+  height:27px;
+  font-size:10px;
+}
+
+.monthly-sheet-table .col-date{
+  width:76px;
+}
+
+.monthly-sheet-table .col-time{
+  width:100px;
+}
+
+.monthly-sheet-table .col-location{
+  width:170px;
+  text-align:left;
+}
+
+.monthly-sheet-table .col-duration{
+  width:62px;
+}
+
+.monthly-sheet-table .col-fls{
+  width:54px;
+}
+
+.monthly-sheet-table .col-travel{
+  width:82px;
+}
+
+.monthly-sheet-table .col-cancelled{
+  width:65px;
+}
+
+.monthly-sheet-table .col-code{
+  width:76px;
+}
+
+.monthly-sheet-table .col-contractor{
+  width:150px;
+  text-align:left;
+}
+
+.monthly-sheet-table tfoot td{
+  height:32px;
+  font-weight:700;
+  background:#f3f3f3;
+}
+
+.monthly-sheet-summary{
+  display:grid;
+  grid-template-columns:1fr 220px;
+  border:1px solid #555;
+  border-top:0;
+}
+
+.monthly-sheet-summary-label,
+.monthly-sheet-summary-value{
+  min-height:34px;
+  padding:8px;
+  font-weight:700;
+}
+
+.monthly-sheet-summary-value{
+  border-left:1px solid #555;
+  text-align:center;
+}
+
+.monthly-sheet-signatures{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:34px;
+  margin-top:54px;
+}
+
+.monthly-signature-line{
+  padding-top:5px;
+  border-top:1px solid #222;
+  text-align:center;
+  font-size:10px;
+}
+
+.monthly-empty{
+  color:#777;
+}
+
+@media(max-width:650px){
+  .monthly-sheet-wrap{
+    margin-left:-8px;
+    margin-right:-8px;
+    width:calc(100% + 16px);
+  }
+
+  .monthly-sheet{
+    margin-left:0;
+  }
+}
+
+@media print{
+  body{
+    background:#fff;
+  }
+
+  body *{
+    visibility:hidden;
+  }
+
+  #monthlyContent,
+  #monthlyContent *{
+    visibility:visible;
+  }
+
+  #monthlyContent{
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+  }
+
+  .monthly-sheet-wrap{
+    overflow:visible;
+  }
+
+  .monthly-sheet{
+    width:100%;
+    min-height:auto;
+    margin:0;
+    padding:8mm;
+    border:0;
+    box-shadow:none;
+  }
+
+  .monthly-sheet-table th,
+  .monthly-sheet-table td{
+    border-color:#000;
+  }
+}
 </style>
 </head>
 <body>
