@@ -10,532 +10,423 @@
 
   <title>Leistungsnachweis</title>
 
-  <style>
-    *{
-      box-sizing:border-box;
-    }
-
-    html,
-    body{
-      margin:0;
-      padding:0;
-      background:#d9dee3;
-      color:#111;
-      font-family:Arial,Helvetica,sans-serif;
-    }
-
-    .toolbar{
-      position:sticky;
-      top:0;
-      z-index:10;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      padding:12px 16px;
-      background:#fff;
-      border-bottom:1px solid #bbb;
-    }
-
-    .toolbar-title{
-      font-size:17px;
-      font-weight:700;
-    }
-
-    .toolbar-actions{
-      display:flex;
-      gap:10px;
-    }
-
-    button{
-      appearance:none;
-      border:1px solid #9eb2c5;
-      border-radius:10px;
-      padding:10px 16px;
-      background:#eef5fb;
-      color:#18344e;
-      font-size:15px;
-      font-weight:600;
-      cursor:pointer;
-    }
-
-    button.primary{
-      background:#173b5b;
-      border-color:#173b5b;
-      color:#fff;
-    }
-
-    .page-wrap{
-      width:100%;
-      overflow:auto;
-      padding:24px;
-    }
-
-    .ln-page{
-      width:1120px;
-      min-height:792px;
-      margin:0 auto;
-      padding:24px 28px;
-      background:#fff;
-      border:1px solid #777;
-      box-shadow:0 6px 24px rgba(0,0,0,.16);
-      font-size:11px;
-      line-height:1.15;
-    }
-
-    .ln-title{
-      display:grid;
-      grid-template-columns:34% 66%;
-      align-items:start;
-      border-top:1px solid #555;
-      border-bottom:1px solid #555;
-      padding:8px 0;
-    }
-
-    .ln-main-title{
-      padding-left:4px;
-      font-size:26px;
-      font-weight:700;
-    }
-
-    .ln-title-description{
-      padding:0 5px 0 18px;
-      text-align:right;
-      font-size:11px;
-      line-height:1.25;
-    }
-
-    .ln-assistance{
-      padding:9px 0;
-      text-align:center;
-      font-size:19px;
-      font-weight:700;
-    }
-
-    .ln-details{
-      width:100%;
-      border:1px solid #555;
-      border-bottom:0;
-    }
-
-    .ln-row{
-      display:grid;
-      grid-template-columns:33% 67%;
-      min-height:28px;
-      border-bottom:1px solid #666;
-    }
-
-    .ln-label,
-    .ln-value{
-      padding:5px 7px;
-      overflow-wrap:anywhere;
-    }
-
-    .ln-label{
-      border-right:1px solid #666;
-    }
-
-    .ln-value{
-      font-weight:700;
-    }
-
-    .ln-person-row{
-      display:grid;
-      grid-template-columns:26% 44% 13% 17%;
-      min-height:30px;
-      border-bottom:1px solid #666;
-    }
-
-    .ln-person-row > div{
-      padding:5px 7px;
-      border-right:1px solid #666;
-    }
-
-    .ln-person-row > div:last-child{
-      border-right:0;
-    }
-
-    .ln-person-name,
-    .ln-file-value{
-      font-weight:700;
-    }
-
-    .ln-budget-row{
-      display:grid;
-      grid-template-columns:30% 12% 17% 12% 12% 17%;
-      min-height:34px;
-      border-bottom:1px solid #666;
-    }
-
-    .ln-budget-row > div{
-      padding:5px 6px;
-      border-right:1px solid #666;
-    }
-
-    .ln-budget-row > div:last-child{
-      border-right:0;
-    }
-
-    .ln-budget-value{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      font-weight:700;
-    }
-
-    .ln-table{
-      width:100%;
-      table-layout:fixed;
-      border-collapse:collapse;
-      margin-top:10px;
-      font-size:9.5px;
-    }
-
-    .ln-table th,
-    .ln-table td{
-      border:1px solid #555;
-      padding:3px 4px;
-      overflow:hidden;
-      vertical-align:middle;
-    }
-
-    .ln-table thead th{
-      height:48px;
-      background:#eee;
-      text-align:center;
-      font-weight:700;
-    }
-
-    .ln-table tbody td{
-      height:20px;
-    }
-
-    .ln-table tfoot th{
-      height:27px;
-      background:#eee;
-      font-weight:700;
-    }
-
-    .ln-date{
-      width:10%;
-    }
-
-    .ln-time{
-      width:13%;
-    }
-
-    .ln-place{
-      width:24%;
-    }
-
-    .ln-minutes{
-      width:12%;
-    }
-
-    .ln-fls{
-      width:13%;
-    }
-
-    .ln-type{
-      width:12%;
-    }
-
-    .ln-worker{
-      width:16%;
-    }
-
-    .number{
-      text-align:center;
-      white-space:nowrap;
-    }
-
-    .ln-summary{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      border-left:1px solid #555;
-      border-right:1px solid #555;
-      border-bottom:1px solid #555;
-    }
-
-    .ln-summary > div{
-      display:flex;
-      justify-content:center;
-      gap:8px;
-      padding:5px;
-    }
-
-    .ln-summary > div:first-child{
-      border-right:1px solid #555;
-    }
-
-    .ln-signatures{
-      display:grid;
-      grid-template-columns:28% 58%;
-      justify-content:space-between;
-      gap:48px;
-      margin-top:38px;
-    }
-
-    .signature-line{
-      height:25px;
-      border-bottom:1px solid #555;
-    }
-
-    .signature-label{
-      padding-top:5px;
-      font-size:9px;
-    }
-
-    .confirmation{
-      grid-column:1 / -1;
-      margin:26px 0 0;
-      font-size:9px;
-      line-height:1.35;
-    }
-
-    .warning{
-      margin-top:8px;
-      font-weight:700;
-      color:#9a3d00;
-    }
-
-    .error-box{
-      width:min(90vw,700px);
-      margin:60px auto;
-      padding:25px;
-      border-radius:14px;
-      background:#fff;
-      border:1px solid #c7d0d8;
-      box-shadow:0 6px 24px rgba(0,0,0,.12);
-    }
-
-    @media print{
-      html,
-      body{
-        width:297mm;
-        height:210mm;
-        background:#fff;
-      }
-
-      .toolbar{
-        display:none;
-      }
-
-      .page-wrap{
-        margin:0;
-        padding:0;
-        overflow:visible;
-      }
-
-      .ln-page{
-        width:297mm;
-        min-height:210mm;
-        margin:0;
-        padding:7mm 9mm;
-        border:0;
-        box-shadow:none;
-      }
-
-      @page{
-        size:A4 landscape;
-        margin:0;
-      }
-    }
-    /* Drucklayout besser auf A4 quer ausnutzen */
-
-@media print{
-  .ln-page{
-    width:297mm;
-    height:210mm;
-    min-height:210mm;
-    padding:8mm 10mm 6mm;
-    display:flex;
-    flex-direction:column;
+<style>
+  *{
+    box-sizing:border-box;
   }
 
-  .ln-table{
-    margin-top:3mm;
-  }
-
-  .ln-table tbody td{
-    height:5.7mm;
-  }
-
-  .ln-signatures{
-    margin-top:auto;
-    padding-top:8mm;
-  }
-
-  .confirmation{
-    margin-top:8mm;
-  }
-}
-    /* Feinschliff Leistungsnachweis */
-
-.ln-page{
-  padding:22px 28px 18px;
-  font-size:11.5px;
-}
-
-.ln-title{
-  padding:7px 4px;
-}
-
-.ln-main-title{
-  font-size:27px;
-}
-
-.ln-title-description{
-  font-size:10.5px;
-}
-
-.ln-assistance{
-  padding:8px 0;
-  font-size:19px;
-}
-
-.ln-person-row{
-  grid-template-columns:26% 44% 13% 17%;
-  min-height:32px;
-}
-
-.ln-row{
-  min-height:30px;
-}
-
-.ln-budget-row{
-  min-height:36px;
-}
-
-.ln-table{
-  margin-top:11px;
-  font-size:10px;
-}
-
-.ln-table thead th{
-  height:50px;
-  padding:4px 5px;
-}
-
-.ln-table tbody td{
-  height:21px;
-  padding:3px 5px;
-}
-
-.ln-table tfoot th{
-  height:28px;
-}
-
-.ln-summary > div{
-  padding:5px;
-}
-
-.ln-signatures{
-  grid-template-columns:28% 58%;
-  margin-top:48px;
-}
-
-.signature-line{
-  height:27px;
-}
-
-.signature-label{
-  font-size:9.5px;
-}
-
-.confirmation{
-  margin-top:30px;
-  font-size:9.5px;
-}
-
-/* Ausdruck auf A4 quer */
-
-@media print{
   html,
   body{
-    width:297mm;
-    height:210mm;
     margin:0;
     padding:0;
+    background:#d9dee3;
+    color:#111;
+    font-family:Arial,Helvetica,sans-serif;
+  }
+
+  .toolbar{
+    position:sticky;
+    top:0;
+    z-index:10;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    background:#fff;
+    border-bottom:1px solid #bbb;
+  }
+
+  .toolbar-title{
+    font-size:17px;
+    font-weight:700;
+  }
+
+  .toolbar-actions{
+    display:flex;
+    gap:10px;
+  }
+
+  button{
+    appearance:none;
+    border:1px solid #9eb2c5;
+    border-radius:10px;
+    padding:10px 16px;
+    background:#eef5fb;
+    color:#18344e;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  button.primary{
+    background:#173b5b;
+    border-color:#173b5b;
+    color:#fff;
   }
 
   .page-wrap{
-    width:297mm;
-    height:210mm;
-    margin:0;
-    padding:0;
+    width:100%;
+    overflow:auto;
+    padding:20px;
   }
 
   .ln-page{
-    box-sizing:border-box;
-    width:297mm;
-    height:210mm;
-    min-height:210mm;
-    margin:0;
-    padding:7mm 8mm 6mm;
-    border:0;
-    box-shadow:none;
-    font-size:9pt;
+    width:1120px;
+    min-height:792px;
+    margin:0 auto;
+    padding:20px 26px 16px;
+    background:#fff;
+    border:1px solid #777;
+    box-shadow:0 6px 24px rgba(0,0,0,.16);
+    font-size:11px;
+    line-height:1.12;
   }
 
   .ln-title{
-    padding:2mm 1mm;
+    display:grid;
+    grid-template-columns:38% 62%;
+    align-items:center;
+    height:38px;
+    border-top:1px solid #555;
+    border-bottom:1px solid #555;
   }
 
   .ln-main-title{
-    font-size:18pt;
+    padding-left:5px;
+    font-size:25px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+
+  .ln-title-description{
+    padding:0 6px 0 16px;
+    text-align:right;
+    font-size:10px;
+    line-height:1.2;
   }
 
   .ln-assistance{
-    padding:2mm 0;
-    font-size:14pt;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    font-weight:700;
   }
 
-  .ln-person-row,
+  .ln-details{
+    width:100%;
+    border:1px solid #555;
+    border-bottom:0;
+  }
+
+  .ln-person-row{
+    display:grid;
+    grid-template-columns:26% 44% 13% 17%;
+    height:30px;
+    border-bottom:1px solid #666;
+  }
+
+  .ln-person-row > div{
+    display:flex;
+    align-items:center;
+    padding:4px 7px;
+    border-right:1px solid #666;
+    overflow:hidden;
+  }
+
+  .ln-person-row > div:last-child{
+    border-right:0;
+  }
+
+  .ln-person-name,
+  .ln-file-value{
+    font-weight:700;
+  }
+
   .ln-row{
-    min-height:7mm;
+    display:grid;
+    grid-template-columns:33% 67%;
+    height:28px;
+    border-bottom:1px solid #666;
+  }
+
+  .ln-label,
+  .ln-value{
+    display:flex;
+    align-items:center;
+    padding:4px 7px;
+    overflow:hidden;
+  }
+
+  .ln-label{
+    border-right:1px solid #666;
+  }
+
+  .ln-value{
+    font-weight:700;
   }
 
   .ln-budget-row{
-    min-height:8mm;
+    display:grid;
+    grid-template-columns:30% 12% 17% 12% 12% 17%;
+    height:32px;
+    border-bottom:1px solid #666;
+  }
+
+  .ln-budget-row > div{
+    display:flex;
+    align-items:center;
+    padding:4px 6px;
+    border-right:1px solid #666;
+    overflow:hidden;
+  }
+
+  .ln-budget-row > div:last-child{
+    border-right:0;
+  }
+
+  .ln-budget-value{
+    justify-content:center;
+    text-align:center;
+    font-weight:700;
   }
 
   .ln-table{
-    margin-top:3mm;
-    font-size:7.5pt;
+    width:100%;
+    table-layout:fixed;
+    border-collapse:collapse;
+    margin-top:9px;
+    font-size:9.5px;
   }
 
+  .ln-table th,
+  .ln-table td{
+    border:1px solid #555;
+    padding:2px 4px;
+    overflow:hidden;
+    vertical-align:middle;
+  }
+
+  /* Excel-Zeile 12: 77,25 pt */
   .ln-table thead th{
-    height:12mm;
+    height:58px;
+    background:#eee;
+    text-align:center;
+    font-weight:700;
+    line-height:1.15;
   }
 
+  /* Excel-Zeilen 13–34: jeweils 15,75 pt */
   .ln-table tbody td{
-    height:5.4mm;
+    height:21px;
+    line-height:1;
   }
 
+  /* Excel-Zeile 35: 18,75 pt */
   .ln-table tfoot th{
-    height:7mm;
+    height:25px;
+    background:#eee;
+    font-weight:700;
+  }
+
+  .ln-date{
+    width:9%;
+  }
+
+  .ln-time{
+    width:12%;
+  }
+
+  .ln-place{
+    width:27%;
+  }
+
+  .ln-minutes{
+    width:12%;
+  }
+
+  .ln-fls{
+    width:14%;
+  }
+
+  .ln-type{
+    width:10%;
+  }
+
+  .ln-worker{
+    width:16%;
+  }
+
+  .number{
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  .ln-summary{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    min-height:27px;
+    border-left:1px solid #555;
+    border-right:1px solid #555;
+    border-bottom:1px solid #555;
+  }
+
+  .ln-summary > div{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:4px;
+  }
+
+  .ln-summary > div:first-child{
+    border-right:1px solid #555;
   }
 
   .ln-signatures{
-    margin-top:9mm;
+    display:grid;
+    grid-template-columns:29% 60%;
+    justify-content:space-between;
+    column-gap:50px;
+    margin-top:40px;
   }
 
   .signature-line{
-    height:7mm;
+    height:23px;
+    border-bottom:1px solid #555;
+  }
+
+  .signature-label{
+    padding-top:4px;
+    font-size:9px;
   }
 
   .confirmation{
-    margin-top:8mm;
+    grid-column:1 / -1;
+    margin:31px 0 0;
+    font-size:9px;
+    line-height:1.3;
   }
 
-  @page{
-    size:A4 landscape;
-    margin:0;
+  .warning{
+    margin-top:6px;
+    color:#9a3d00;
+    font-weight:700;
   }
-}
-  </style>
+
+  .error-box{
+    width:min(90vw,700px);
+    margin:60px auto;
+    padding:25px;
+    border-radius:14px;
+    background:#fff;
+    border:1px solid #c7d0d8;
+    box-shadow:0 6px 24px rgba(0,0,0,.12);
+  }
+
+  @media print{
+    html,
+    body{
+      width:297mm;
+      height:210mm;
+      margin:0;
+      padding:0;
+      background:#fff;
+    }
+
+    .toolbar{
+      display:none;
+    }
+
+    .page-wrap{
+      width:297mm;
+      height:210mm;
+      margin:0;
+      padding:0;
+      overflow:visible;
+    }
+
+    .ln-page{
+      width:297mm;
+      height:210mm;
+      min-height:210mm;
+      margin:0;
+      padding:6mm 8mm 5mm;
+      border:0;
+      box-shadow:none;
+      font-size:8.5pt;
+    }
+
+    .ln-title{
+      height:9mm;
+    }
+
+    .ln-main-title{
+      font-size:18pt;
+    }
+
+    .ln-title-description{
+      font-size:7.5pt;
+    }
+
+    .ln-assistance{
+      height:8mm;
+      font-size:14pt;
+    }
+
+    .ln-person-row{
+      height:7mm;
+    }
+
+    .ln-row{
+      height:6.3mm;
+    }
+
+    .ln-budget-row{
+      height:7.2mm;
+    }
+
+    .ln-table{
+      margin-top:2.5mm;
+      font-size:7pt;
+    }
+
+    .ln-table thead th{
+      height:18mm;
+    }
+
+    .ln-table tbody td{
+      height:5.56mm;
+    }
+
+    .ln-table tfoot th{
+      height:6.6mm;
+    }
+
+    .ln-summary{
+      min-height:7mm;
+    }
+
+    .ln-signatures{
+      margin-top:8mm;
+    }
+
+    .signature-line{
+      height:6mm;
+    }
+
+    .confirmation{
+      margin-top:7mm;
+    }
+
+    @page{
+      size:A4 landscape;
+      margin:0;
+    }
+  }
+</style>
 </head>
 
 <body>
