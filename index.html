@@ -765,19 +765,100 @@ $('newApproval').onclick=()=>openApprovalForm();
 $('closeApprovalForm').onclick=()=>$('approvalFormDialog').close();
   $('closeMonthly').onclick=()=>$('monthlyDialog').close();
   $('monthlyMonth').onchange=()=>{
+$('monthlyMonth').onchange=async()=>{
   const value=$('monthlyMonth').value;
 
   if(!value){
-    $('monthlyContent').innerHTML='<p class="muted">Bitte einen Monat auswählen.</p>';
+    $('monthlyContent').innerHTML=
+      '<p class="muted">Bitte einen Monat auswählen.</p>';
     return;
   }
 
-  const [year,month]=value.split('-');
+  if(!activeMonthlyClient){
+    $('monthlyContent').innerHTML=
+      '<p class="muted">Kein Klient ausgewählt.</p>';
+    return;
+  }
 
-  const monthNames=[
-    'Januar','Februar','März','April','Mai','Juni',
-    'Juli','August','September','Oktober','November','Dezember'
-  ];
+  $('monthlyContent').innerHTML=
+    '<p class="muted">Termine werden geladen …</p>';
+
+  const [year,month]=value.split('-');
+  const startDate=`${year}-${month}-01`;
+
+  const nextMonth=new Date(Number(year),Number(month),1);
+  const endDate=[
+    nextMonth.getFullYear(),
+    String(nextMonth.getMonth()+1).padStart(2,'0'),
+    '01'
+  ].join('-');
+
+  const {data,error}=await sb
+    .from('dokumentationen')
+    .select('*')
+    .eq('client_id',activeMonthlyClient.id)
+    .gte('datum',startDate)
+    .lt('datum',endDate)
+    .order('datum',{ascending:true})
+    .order('beginn',{ascending:true});
+
+  if(error){
+    $('monthlyContent').innerHTML='';
+    toast('Monatsnachweis konnte nicht geladen werden: '+error.message);
+    return;
+  }
+
+  const entries=data||[];
+
+  if(!entries.length){
+    $('monthlyContent').innerHTML=
+      '<p class="muted">Für diesen Monat gibt es noch keine Termine.</p>';
+    return;
+  }
+
+  const totalMinutes=entries.reduce(
+    (sum,entry)=>sum+Number(entry.dauer_minuten||0),
+    0
+  );
+
+  $('monthlyContent').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Termine</span>
+        <strong>${entries.length}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Gesamtminuten</span>
+        <strong>${totalMinutes}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Gesamt-FLS</span>
+        <strong>${formatFls(minutesToFls(totalMinutes))} FLS</strong>
+      </div>
+    </div>
+
+    ${entries.map(entry=>`
+      <div class="doc-item">
+        <div class="doc-head">
+          <div>
+            <h3>${formatDate(entry.datum)}</h3>
+            <div class="doc-time">
+              ${esc(String(entry.beginn||'').slice(0,5))}
+              –
+              ${esc(String(entry.ende||'').slice(0,5))}
+            </div>
+            <div class="fls-value">
+              ${durationAndFls(entry.dauer_minuten)}
+            </div>
+            <div class="meta">
+              ${esc(entry.ort_der_leistung||'Kein Leistungsort eingetragen')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+};
 
   $('monthlyContent').innerHTML=
     `<p class="muted">Monatsnachweis ${monthNames[Number(month)-1]} ${year} wird vorbereitet …</p>`;
