@@ -678,6 +678,7 @@ $('docForm').onsubmit=async e=>{
       ende,
       dauer_minuten:dauerMinuten,
       leistungsart:$('docLeistungsart').value,
+      ort_der_leistung:$('docOrt').value,
       dokumentation:text,
       besonderheiten:$('docBesonderheiten').value.trim()||null,
       updated_at:new Date().toISOString()
