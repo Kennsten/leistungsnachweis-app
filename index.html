@@ -1010,95 +1010,351 @@ $('monthlyMonth').onchange=async()=>{
   }
 
   $('monthlyContent').innerHTML=
-    '<p class="muted">Termine werden geladen …</p>';
+    '<p class="muted">Leistungsnachweis wird geladen …</p>';
 
   const [year,month]=value.split('-');
   const startDate=`${year}-${month}-01`;
 
-  const nextMonth=new Date(Number(year),Number(month),1);
+  const nextMonth=new Date(
+    Number(year),
+    Number(month),
+    1
+  );
+
   const endDate=[
     nextMonth.getFullYear(),
     String(nextMonth.getMonth()+1).padStart(2,'0'),
     '01'
   ].join('-');
 
-  const {data,error}=await sb
-    .from('dokumentationen')
-    .select('*')
-    .eq('client_id',activeMonthlyClient.id)
-    .gte('datum',startDate)
-    .lt('datum',endDate)
-    .order('datum',{ascending:true})
-    .order('beginn',{ascending:true});
+  const [
+    documentationResult,
+    approvalResult
+  ]=await Promise.all([
+    sb
+      .from('dokumentationen')
+      .select('*')
+      .eq('client_id',activeMonthlyClient.id)
+      .gte('datum',startDate)
+      .lt('datum',endDate)
+      .order('datum',{ascending:true})
+      .order('beginn',{ascending:true}),
 
-  if(error){
+    sb
+      .from('bewilligungen')
+      .select('*')
+      .eq('client_id',activeMonthlyClient.id)
+      .lte('beginn',endDate)
+      .gte('ende',startDate)
+      .order('beginn',{ascending:false})
+      .limit(1)
+  ]);
+
+  if(documentationResult.error){
     $('monthlyContent').innerHTML='';
     toast(
       'Monatsnachweis konnte nicht geladen werden: '+
-      error.message
+      documentationResult.error.message
     );
     return;
   }
 
-  const entries=data||[];
-
-  if(!entries.length){
-    $('monthlyContent').innerHTML=
-      '<p class="muted">Für diesen Monat gibt es noch keine Termine.</p>';
-    return;
+  if(approvalResult.error){
+    toast(
+      'Bewilligung konnte nicht geladen werden: '+
+      approvalResult.error.message
+    );
   }
 
+  const entries=documentationResult.data||[];
+  const approval=(approvalResult.data||[])[0]||null;
+
   const totalMinutes=entries.reduce(
-    (sum,entry)=>sum+Number(entry.dauer_minuten||0),
+    (sum,entry)=>
+      sum+Number(entry.dauer_minuten||0),
     0
   );
 
+  const totalFls=minutesToFls(totalMinutes);
+
+  const monthNames=[
+    'Januar',
+    'Februar',
+    'März',
+    'April',
+    'Mai',
+    'Juni',
+    'Juli',
+    'August',
+    'September',
+    'Oktober',
+    'November',
+    'Dezember'
+  ];
+
+  const monthLabel=
+    `${monthNames[Number(month)-1]} ${year}`;
+
+  const tableRows=[];
+
+  for(let index=0;index<22;index++){
+    const entry=entries[index];
+
+    if(entry){
+      tableRows.push(`
+        <tr>
+          <td>
+            ${esc(formatDate(entry.datum))}
+          </td>
+
+          <td>
+            ${esc(String(entry.beginn||'').slice(0,5))}
+            –
+            ${esc(String(entry.ende||'').slice(0,5))}
+          </td>
+
+          <td>
+            ${esc(entry.ort_der_leistung||'')}
+          </td>
+
+          <td class="number-cell">
+            ${Number(entry.dauer_minuten||0)}
+          </td>
+
+          <td class="number-cell">
+            ${formatFls(
+              minutesToFls(entry.dauer_minuten)
+            )}
+          </td>
+
+          <td>
+            ${esc(entry.leistungsart||'')}
+          </td>
+
+          <td>
+            Stork, Oliver
+          </td>
+        </tr>
+      `);
+    }else{
+      tableRows.push(`
+        <tr class="empty-row">
+          <td>&nbsp;</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      `);
+    }
+  }
+
+  const addressParts=[
+    activeMonthlyClient.strasse,
+    activeMonthlyClient.hausnummer
+  ].filter(Boolean).join(' ');
+
+  const cityParts=[
+    activeMonthlyClient.plz,
+    activeMonthlyClient.ort
+  ].filter(Boolean).join(' ');
+
   $('monthlyContent').innerHTML=`
-    <div class="summary-box">
-      <div class="summary-row">
-        <span>Termine</span>
-        <strong>${entries.length}</strong>
+    <div class="monthly-sheet-header">
+
+      <h1>
+        Leistungsnachweis
+      </h1>
+
+      <div class="monthly-subtitle">
+        Assistenz beim Wohnen außerhalb der besonderen
+        Wohnform i. S. d. § 42a Abs. 2 Nr. 2 SGB XII
+        – Monatsabrechnung
       </div>
 
-      <div class="summary-row">
-        <span>Gesamtminuten</span>
-        <strong>${totalMinutes}</strong>
-      </div>
+      <h2>
+        Qualifizierte Assistenz
+      </h2>
 
-      <div class="summary-row">
-        <span>Gesamt-FLS</span>
-        <strong>
-          ${formatFls(minutesToFls(totalMinutes))} FLS
-        </strong>
+      <div class="monthly-info-grid">
+
+        <div class="monthly-info-label">
+          Leistungsberechtigte Person:
+        </div>
+
+        <div class="monthly-info-value">
+          ${esc(activeMonthlyClient.name||'')}
+        </div>
+
+        <div class="monthly-info-label">
+          Aktenzeichen:
+        </div>
+
+        <div class="monthly-info-value">
+          ${esc(activeMonthlyClient.aktenzeichen||'')}
+        </div>
+
+        <div class="monthly-info-label">
+          Anschrift:
+        </div>
+
+        <div class="monthly-info-value">
+          ${esc(addressParts)}
+          ${addressParts&&cityParts?', ':''}
+          ${esc(cityParts)}
+        </div>
+
+        <div class="monthly-info-label">
+          Leistungsanbieter:
+        </div>
+
+        <div class="monthly-info-value">
+          SuPA GmbH, Königstraße 6,
+          30175 Hannover
+        </div>
+
+        <div class="monthly-info-label">
+          Verantwortlicher Auftragnehmer:
+        </div>
+
+        <div class="monthly-info-value">
+          Stork, Oliver
+        </div>
+
+        <div class="monthly-info-label">
+          Leistungsträger:
+        </div>
+
+        <div class="monthly-info-value">
+          ${esc(
+            approval?.kostentraeger ||
+            approval?.leistungstraeger_name ||
+            approval?.leistungstraeger_typ ||
+            ''
+          )}
+        </div>
+
+        <div class="monthly-info-label">
+          Bewilligte FLS pro Woche:
+        </div>
+
+        <div class="monthly-info-value">
+          ${
+            approval?.wochen_fls!=null
+              ? formatFls(approval.wochen_fls)
+              : ''
+          }
+        </div>
+
+        <div class="monthly-info-label">
+          Gesamtbudget:
+        </div>
+
+        <div class="monthly-info-value">
+          ${
+            approval?.stundenkontingent!=null
+              ? formatFls(approval.stundenkontingent)+' FLS'
+              : ''
+          }
+        </div>
+
+        <div class="monthly-info-label">
+          Monat:
+        </div>
+
+        <div class="monthly-info-value monthly-month-value">
+          ${esc(monthLabel)}
+        </div>
+
       </div>
     </div>
 
-    ${entries.map(entry=>`
-      <div class="doc-item">
-        <div class="doc-head">
-          <div>
-            <h3>${formatDate(entry.datum)}</h3>
+    <table class="monthly-sheet-table">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Uhrzeit</th>
+          <th>Ort der Leistung</th>
+          <th>Dauer<br>Minuten</th>
+          <th>Direkte<br>FLS</th>
+          <th>Leistungsart</th>
+          <th>Auftragnehmer</th>
+        </tr>
+      </thead>
 
-            <div class="doc-time">
-              ${esc(String(entry.beginn||'').slice(0,5))}
-              –
-              ${esc(String(entry.ende||'').slice(0,5))}
-            </div>
+      <tbody>
+        ${tableRows.join('')}
+      </tbody>
 
-            <div class="fls-value">
-              ${durationAndFls(entry.dauer_minuten)}
-            </div>
+      <tfoot>
+        <tr>
+          <th colspan="3">
+            Gesamt
+          </th>
 
-            <div class="meta">
-              ${esc(
-                entry.ort_der_leistung ||
-                'Kein Leistungsort eingetragen'
-              )}
-            </div>
-          </div>
+          <th class="number-cell">
+            ${totalMinutes}
+          </th>
+
+          <th class="number-cell">
+            ${formatFls(totalFls)}
+          </th>
+
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    </table>
+
+    ${
+      entries.length>22
+        ? `
+          <p class="monthly-warning">
+            Achtung: In diesem Monat sind
+            ${entries.length} Termine vorhanden.
+            Auf dem Formular werden zunächst
+            die ersten 22 Termine angezeigt.
+          </p>
+        `
+        : ''
+    }
+
+    <div class="monthly-sheet-summary">
+      <div>
+        <span>Summe Minuten</span>
+        <strong>${totalMinutes}</strong>
+      </div>
+
+      <div>
+        <span>Summe FLS</span>
+        <strong>${formatFls(totalFls)}</strong>
+      </div>
+    </div>
+
+    <div class="monthly-sheet-signatures">
+
+      <div class="signature-field">
+        <div class="signature-line"></div>
+        <div>
+          Datum
         </div>
       </div>
-    `).join('')}
+
+      <div class="signature-field signature-wide">
+        <div class="signature-line"></div>
+        <div>
+          Unterschrift der leistungsberechtigten Person
+        </div>
+      </div>
+
+      <p>
+        Mit der Unterschrift bestätigt die
+        leistungsberechtigte Person, die aufgeführten
+        Leistungen in Minuten erhalten zu haben.
+      </p>
+
+    </div>
   `;
 };
 $('approvalLeistungstraegerTyp').onchange=updateLeistungstraegerFields;
