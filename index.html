@@ -983,8 +983,11 @@ $('closeApprovals').onclick=()=>{
 };
 $('newApproval').onclick=()=>openApprovalForm();
 $('closeApprovalForm').onclick=()=>$('approvalFormDialog').close();
-  $('closeMonthly').onclick=()=>$('monthlyDialog').close();
-  $('monthlyMonth').onchange=()=>{
+$('closeMonthly').onclick=()=>{
+  $('monthlyDialog').close();
+  activeMonthlyClient=null;
+};
+
 $('monthlyMonth').onchange=async()=>{
   const value=$('monthlyMonth').value;
 
@@ -1024,7 +1027,10 @@ $('monthlyMonth').onchange=async()=>{
 
   if(error){
     $('monthlyContent').innerHTML='';
-    toast('Monatsnachweis konnte nicht geladen werden: '+error.message);
+    toast(
+      'Monatsnachweis konnte nicht geladen werden: '+
+      error.message
+    );
     return;
   }
 
@@ -1047,13 +1053,17 @@ $('monthlyMonth').onchange=async()=>{
         <span>Termine</span>
         <strong>${entries.length}</strong>
       </div>
+
       <div class="summary-row">
         <span>Gesamtminuten</span>
         <strong>${totalMinutes}</strong>
       </div>
+
       <div class="summary-row">
         <span>Gesamt-FLS</span>
-        <strong>${formatFls(minutesToFls(totalMinutes))} FLS</strong>
+        <strong>
+          ${formatFls(minutesToFls(totalMinutes))} FLS
+        </strong>
       </div>
     </div>
 
@@ -1062,24 +1072,28 @@ $('monthlyMonth').onchange=async()=>{
         <div class="doc-head">
           <div>
             <h3>${formatDate(entry.datum)}</h3>
+
             <div class="doc-time">
               ${esc(String(entry.beginn||'').slice(0,5))}
               –
               ${esc(String(entry.ende||'').slice(0,5))}
             </div>
+
             <div class="fls-value">
               ${durationAndFls(entry.dauer_minuten)}
             </div>
+
             <div class="meta">
-              ${esc(entry.ort_der_leistung||'Kein Leistungsort eingetragen')}
+              ${esc(
+                entry.ort_der_leistung ||
+                'Kein Leistungsort eingetragen'
+              )}
             </div>
           </div>
         </div>
       </div>
     `).join('')}
   `;
-};
-
 };
 $('approvalLeistungstraegerTyp').onchange=updateLeistungstraegerFields;
 
