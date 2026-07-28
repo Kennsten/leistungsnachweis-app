@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Leistungsnachweis</title>
+
+  <style>
+    *{
+      box-sizing:border-box;
+    }
+
+    html,
+    body{
+      margin:0;
+      padding:0;
+      background:#d9dee3;
+      color:#111;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+
+    .toolbar{
+      position:sticky;
+      top:0;
+      z-index:10;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+      background:#fff;
+      border-bottom:1px solid #bbb;
+    }
+
+    .toolbar-title{
+      font-size:17px;
+      font-weight:700;
+    }
+
+    .toolbar-actions{
+      display:flex;
+      gap:10px;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid #9eb2c5;
+      border-radius:10px;
+      padding:10px 16px;
+      background:#eef5fb;
+      color:#18344e;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    button.primary{
+      background:#173b5b;
+      border-color:#173b5b;
+      color:#fff;
+    }
+
+    .page-wrap{
+      width:100%;
+      overflow:auto;
+      padding:24px;
+    }
+
+    .ln-page{
+      width:1120px;
+      min-height:792px;
+      margin:0 auto;
+      padding:24px 28px;
+      background:#fff;
+      border:1px solid #777;
+      box-shadow:0 6px 24px rgba(0,0,0,.16);
+      font-size:11px;
+      line-height:1.15;
+    }
+
+    .ln-title{
+      display:grid;
+      grid-template-columns:34% 66%;
+      align-items:start;
+      border-top:1px solid #555;
+      border-bottom:1px solid #555;
+      padding:8px 0;
+    }
+
+    .ln-main-title{
+      padding-left:4px;
+      font-size:26px;
+      font-weight:700;
+    }
+
+    .ln-title-description{
+      padding:0 5px 0 18px;
+      text-align:right;
+      font-size:11px;
+      line-height:1.25;
+    }
+
+    .ln-assistance{
+      padding:9px 0;
+      text-align:center;
+      font-size:19px;
+      font-weight:700;
+    }
+
+    .ln-details{
+      width:100%;
+      border:1px solid #555;
+      border-bottom:0;
+    }
+
+    .ln-row{
+      display:grid;
+      grid-template-columns:33% 67%;
+      min-height:28px;
+      border-bottom:1px solid #666;
+    }
+
+    .ln-label,
+    .ln-value{
+      padding:5px 7px;
+      overflow-wrap:anywhere;
+    }
+
+    .ln-label{
+      border-right:1px solid #666;
+    }
+
+    .ln-value{
+      font-weight:700;
+    }
+
+    .ln-person-row{
+      display:grid;
+      grid-template-columns:26% 44% 13% 17%;
+      min-height:30px;
+      border-bottom:1px solid #666;
+    }
+
+    .ln-person-row > div{
+      padding:5px 7px;
+      border-right:1px solid #666;
+    }
+
+    .ln-person-row > div:last-child{
+      border-right:0;
+    }
+
+    .ln-person-name,
+    .ln-file-value{
+      font-weight:700;
+    }
+
+    .ln-budget-row{
+      display:grid;
+      grid-template-columns:30% 12% 17% 12% 12% 17%;
+      min-height:34px;
+      border-bottom:1px solid #666;
+    }
+
+    .ln-budget-row > div{
+      padding:5px 6px;
+      border-right:1px solid #666;
+    }
+
+    .ln-budget-row > div:last-child{
+      border-right:0;
+    }
+
+    .ln-budget-value{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .ln-table{
+      width:100%;
+      table-layout:fixed;
+      border-collapse:collapse;
+      margin-top:10px;
+      font-size:9.5px;
+    }
+
+    .ln-table th,
+    .ln-table td{
+      border:1px solid #555;
+      padding:3px 4px;
+      overflow:hidden;
+      vertical-align:middle;
+    }
+
+    .ln-table thead th{
+      height:48px;
+      background:#eee;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .ln-table tbody td{
+      height:20px;
+    }
+
+    .ln-table tfoot th{
+      height:27px;
+      background:#eee;
+      font-weight:700;
+    }
+
+    .ln-date{
+      width:10%;
+    }
+
+    .ln-time{
+      width:13%;
+    }
+
+    .ln-place{
+      width:24%;
+    }
+
+    .ln-minutes{
+      width:12%;
+    }
+
+    .ln-fls{
+      width:13%;
+    }
+
+    .ln-type{
+      width:12%;
+    }
+
+    .ln-worker{
+      width:16%;
+    }
+
+    .number{
+      text-align:center;
+      white-space:nowrap;
+    }
+
+    .ln-summary{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      border-left:1px solid #555;
+      border-right:1px solid #555;
+      border-bottom:1px solid #555;
+    }
+
+    .ln-summary > div{
+      display:flex;
+      justify-content:center;
+      gap:8px;
+      padding:5px;
+    }
+
+    .ln-summary > div:first-child{
+      border-right:1px solid #555;
+    }
+
+    .ln-signatures{
+      display:grid;
+      grid-template-columns:28% 58%;
+      justify-content:space-between;
+      gap:48px;
+      margin-top:38px;
+    }
+
+    .signature-line{
+      height:25px;
+      border-bottom:1px solid #555;
+    }
+
+    .signature-label{
+      padding-top:5px;
+      font-size:9px;
+    }
+
+    .confirmation{
+      grid-column:1 / -1;
+      margin:26px 0 0;
+      font-size:9px;
+      line-height:1.35;
+    }
+
+    .warning{
+      margin-top:8px;
+      font-weight:700;
+      color:#9a3d00;
+    }
+
+    .error-box{
+      width:min(90vw,700px);
+      margin:60px auto;
+      padding:25px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid #c7d0d8;
+      box-shadow:0 6px 24px rgba(0,0,0,.12);
+    }
+
+    @media print{
+      html,
+      body{
+        width:297mm;
+        height:210mm;
+        background:#fff;
+      }
+
+      .toolbar{
+        display:none;
+      }
+
+      .page-wrap{
+        margin:0;
+        padding:0;
+        overflow:visible;
+      }
+
+      .ln-page{
+        width:297mm;
+        min-height:210mm;
+        margin:0;
+        padding:7mm 9mm;
+        border:0;
+        box-shadow:none;
+      }
+
+      @page{
+        size:A4 landscape;
+        margin:0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <div class="toolbar-title">
+      Leistungsnachweis
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" id="closeButton">
+        Schließen
+      </button>
+
+      <button type="button" id="printButton" class="primary">
+        Drucken / PDF
+      </button>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <script>
+    const app=document.getElementById('app');
+
+    function esc(value){
+      return String(value??'')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function formatFls(value){
+      const number=Number(value||0);
+
+      return number.toLocaleString(
+        'de-DE',
+        {
+          minimumFractionDigits:1,
+          maximumFractionDigits:1
+        }
+      );
+    }
+
+    function formatDate(value){
+      if(!value)return '';
+
+      const parts=String(value).split('-');
+
+      if(parts.length!==3)return value;
+
+      return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+
+    function minutesToFls(minutes){
+      return Math.round(
+        (Number(minutes||0)/50)*10
+      )/10;
+    }
+
+    function readPayload(){
+      const raw=sessionStorage.getItem(
+        'leistungsnachweis_payload'
+      );
+
+      if(!raw)return null;
+
+      try{
+        return JSON.parse(raw);
+      }catch(error){
+        console.error(error);
+        return null;
+      }
+    }
+
+    function showError(){
+      app.innerHTML=`
+        <div class="error-box">
+          <h2>Keine Daten gefunden</h2>
+
+          <p>
+            Öffne den Leistungsnachweis bitte über die
+            Klienten-App.
+          </p>
+        </div>
+      `;
+    }
+
+    function render(){
+      const payload=readPayload();
+
+      if(!payload){
+        showError();
+        return;
+      }
+
+      const client=payload.client||{};
+      const approval=payload.approval||{};
+      const entries=payload.entries||[];
+      const monthLabel=payload.monthLabel||'';
+
+      const totalMinutes=entries.reduce(
+        (sum,entry)=>
+          sum+Number(entry.dauer_minuten||0),
+        0
+      );
+
+      const totalFls=minutesToFls(totalMinutes);
+
+      const rows=[];
+
+      for(let index=0;index<22;index++){
+        const entry=entries[index];
+
+        if(entry){
+          rows.push(`
+            <tr>
+              <td>
+                ${esc(formatDate(entry.datum))}
+              </td>
+
+              <td>
+                ${esc(
+                  String(entry.beginn||'').slice(0,5)
+                )}
+                –
+                ${esc(
+                  String(entry.ende||'').slice(0,5)
+                )}
+              </td>
+
+              <td>
+                ${esc(entry.ort_der_leistung||'')}
+              </td>
+
+              <td class="number">
+                ${Number(entry.dauer_minuten||0)}
+              </td>
+
+              <td class="number">
+                ${formatFls(
+                  minutesToFls(entry.dauer_minuten)
+                )}
+              </td>
+
+              <td>
+                ${esc(entry.leistungsart||'')}
+              </td>
+
+              <td>
+                ${esc(
+                  payload.auftragnehmer ||
+                  'Stork, Oliver'
+                )}
+              </td>
+            </tr>
+          `);
+        }else{
+          rows.push(`
+            <tr>
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          `);
+        }
+      }
+
+      const provider=
+        approval.kostentraeger ||
+        approval.leistungstraeger_name ||
+        approval.leistungstraeger_typ ||
+        '';
+
+      app.innerHTML=`
+        <div class="page-wrap">
+          <section class="ln-page">
+
+            <header class="ln-title">
+              <div class="ln-main-title">
+                Leistungsnachweis
+              </div>
+
+              <div class="ln-title-description">
+                Assistenz beim Wohnen außerhalb der besonderen
+                Wohnform i. S. d. § 42a Abs. 2 Nr. 2 SGB XII
+                – Monatsabrechnung
+              </div>
+            </header>
+
+            <div class="ln-assistance">
+              Qualifizierte Assistenz
+            </div>
+
+            <section class="ln-details">
+
+              <div class="ln-person-row">
+                <div>
+                  Leistungsberechtigte Person (LP):
+                  Name, Vorname
+                </div>
+
+                <div class="ln-person-name">
+                  ${esc(client.name||'')}
+                </div>
+
+                <div>
+                  Aktenzeichen
+                </div>
+
+                <div class="ln-file-value">
+                  ${esc(client.aktenzeichen||'')}
+                </div>
+              </div>
+
+              <div class="ln-row">
+                <div class="ln-label">
+                  Leistungsanbieter
+                </div>
+
+                <div class="ln-value">
+                  ${esc(
+                    payload.leistungsanbieter ||
+                    'SuPA GmbH, Königstraße 6, 30175 Hannover'
+                  )}
+                </div>
+              </div>
+
+              <div class="ln-row">
+                <div class="ln-label">
+                  Verantwortlicher Auftragnehmer
+                </div>
+
+                <div class="ln-value">
+                  ${esc(
+                    payload.auftragnehmer ||
+                    'Stork, Oliver'
+                  )}
+                </div>
+              </div>
+
+              <div class="ln-row">
+                <div class="ln-label">
+                  Zuständiger örtlicher Leistungsträger
+                </div>
+
+                <div class="ln-value">
+                  ${esc(provider)}
+                </div>
+              </div>
+
+              <div class="ln-budget-row">
+                <div>
+                  Bewilligte Fachleistungsstunden pro Woche
+                </div>
+
+                <div class="ln-budget-value">
+                  ${
+                    approval.wochen_fls!=null
+                      ? formatFls(approval.wochen_fls)
+                      : ''
+                  }
+                </div>
+
+                <div>
+                  Gesamtbudget
+                </div>
+
+                <div class="ln-budget-value">
+                  ${
+                    approval.stundenkontingent!=null
+                      ? formatFls(
+                          approval.stundenkontingent
+                        )
+                      : ''
+                  }
+                </div>
+
+                <div>
+                  Monat
+                </div>
+
+                <div class="ln-budget-value">
+                  ${esc(monthLabel)}
+                </div>
+              </div>
+
+            </section>
+
+            <table class="ln-table">
+              <colgroup>
+                <col class="ln-date">
+                <col class="ln-time">
+                <col class="ln-place">
+                <col class="ln-minutes">
+                <col class="ln-fls">
+                <col class="ln-type">
+                <col class="ln-worker">
+              </colgroup>
+
+              <thead>
+                <tr>
+                  <th>Datum</th>
+
+                  <th>Uhrzeit</th>
+
+                  <th>Ort der Leistung</th>
+
+                  <th>
+                    Dauer in Minuten<br>
+                    direkt mit der LP
+                  </th>
+
+                  <th>
+                    Anzahl direkte FLS<br>
+                    qualifizierte Assistenzkraft
+                  </th>
+
+                  <th>Leistungsart</th>
+
+                  <th>
+                    Auftragnehmer<br>
+                    Name in Klartext
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${rows.join('')}
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <th colspan="3">
+                    Gesamt
+                  </th>
+
+                  <th class="number">
+                    ${totalMinutes}
+                  </th>
+
+                  <th class="number">
+                    ${formatFls(totalFls)}
+                  </th>
+
+                  <th colspan="2"></th>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div class="ln-summary">
+              <div>
+                <span>Summe Minuten</span>
+                <strong>${totalMinutes}</strong>
+              </div>
+
+              <div>
+                <span>Summe FLS</span>
+                <strong>${formatFls(totalFls)}</strong>
+              </div>
+            </div>
+
+            <footer class="ln-signatures">
+              <div>
+                <div class="signature-line"></div>
+
+                <div class="signature-label">
+                  Datum
+                </div>
+              </div>
+
+              <div>
+                <div class="signature-line"></div>
+
+                <div class="signature-label">
+                  Unterschrift der leistungsberechtigten Person
+                </div>
+              </div>
+
+              <p class="confirmation">
+                Mit der Unterschrift bestätigt die
+                leistungsberechtigte Person, die aufgeführten
+                Leistungen in Minuten erhalten zu haben.
+              </p>
+            </footer>
+
+            ${
+              entries.length>22
+                ? `
+                  <p class="warning">
+                    Dieser Monat enthält ${entries.length}
+                    Termine. Angezeigt werden die ersten
+                    22 Termine.
+                  </p>
+                `
+                : ''
+            }
+
+          </section>
+        </div>
+      `;
+    }
+
+    document
+      .getElementById('printButton')
+      .addEventListener(
+        'click',
+        ()=>window.print()
+      );
+
+    document
+      .getElementById('closeButton')
+      .addEventListener(
+        'click',
+        ()=>window.close()
+      );
+
+    render();
+  </script>
+</body>
+</html>
