@@ -762,6 +762,24 @@ $('closeApprovals').onclick=()=>{
 $('newApproval').onclick=()=>openApprovalForm();
 $('closeApprovalForm').onclick=()=>$('approvalFormDialog').close();
   $('closeMonthly').onclick=()=>$('monthlyDialog').close();
+  $('monthlyMonth').onchange=()=>{
+  const value=$('monthlyMonth').value;
+
+  if(!value){
+    $('monthlyContent').innerHTML='<p class="muted">Bitte einen Monat auswählen.</p>';
+    return;
+  }
+
+  const [year,month]=value.split('-');
+
+  const monthNames=[
+    'Januar','Februar','März','April','Mai','Juni',
+    'Juli','August','September','Oktober','November','Dezember'
+  ];
+
+  $('monthlyContent').innerHTML=
+    `<p class="muted">Monatsnachweis ${monthNames[Number(month)-1]} ${year} wird vorbereitet …</p>`;
+};
 $('approvalLeistungstraegerTyp').onchange=updateLeistungstraegerFields;
 
 $('approvalForm').onsubmit=async e=>{
