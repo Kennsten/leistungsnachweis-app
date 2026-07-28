@@ -1348,13 +1348,19 @@ $('monthlyMonth').onchange=async()=>{
   const monthLabel=
     `${monthNames[Number(month)-1]} ${year}`;
 
-  const tableRows=[];
+  const provider=
+    approval?.kostentraeger ||
+    approval?.leistungstraeger_name ||
+    approval?.leistungstraeger_typ ||
+    '';
+
+  const rows=[];
 
   for(let index=0;index<22;index++){
     const entry=entries[index];
 
     if(entry){
-      tableRows.push(`
+      rows.push(`
         <tr>
           <td>
             ${esc(formatDate(entry.datum))}
@@ -1370,11 +1376,11 @@ $('monthlyMonth').onchange=async()=>{
             ${esc(entry.ort_der_leistung||'')}
           </td>
 
-          <td class="number-cell">
+          <td class="ln-number">
             ${Number(entry.dauer_minuten||0)}
           </td>
 
-          <td class="number-cell">
+          <td class="ln-number">
             ${formatFls(
               minutesToFls(entry.dauer_minuten)
             )}
@@ -1390,8 +1396,8 @@ $('monthlyMonth').onchange=async()=>{
         </tr>
       `);
     }else{
-      tableRows.push(`
-        <tr class="empty-row">
+      rows.push(`
+        <tr>
           <td>&nbsp;</td>
           <td></td>
           <td></td>
@@ -1404,210 +1410,250 @@ $('monthlyMonth').onchange=async()=>{
     }
   }
 
-  const addressParts=[
-    activeMonthlyClient.strasse,
-    activeMonthlyClient.hausnummer
-  ].filter(Boolean).join(' ');
-
-  const cityParts=[
-    activeMonthlyClient.plz,
-    activeMonthlyClient.ort
-  ].filter(Boolean).join(' ');
-
   $('monthlyContent').innerHTML=`
-    <div class="monthly-sheet-header">
+    <section class="ln-page">
 
-      <h1>
-        Leistungsnachweis
-      </h1>
+      <header class="ln-title">
+        <div class="ln-main-title">
+          Leistungsnachweis
+        </div>
 
-      <div class="monthly-subtitle">
-        Assistenz beim Wohnen außerhalb der besonderen
-        Wohnform i. S. d. § 42a Abs. 2 Nr. 2 SGB XII
-        – Monatsabrechnung
-      </div>
+        <div class="ln-title-description">
+          Assistenz beim Wohnen außerhalb der besonderen
+          Wohnform i. S. d. § 42a Abs. 2 Nr. 2 SGB XII
+          – Monatsabrechnung
+        </div>
+      </header>
 
-      <h2>
+      <div class="ln-assistance">
         Qualifizierte Assistenz
-      </h2>
-
-      <div class="monthly-info-grid">
-
-        <div class="monthly-info-label">
-          Leistungsberechtigte Person:
-        </div>
-
-        <div class="monthly-info-value">
-          ${esc(activeMonthlyClient.name||'')}
-        </div>
-
-        <div class="monthly-info-label">
-          Aktenzeichen:
-        </div>
-
-        <div class="monthly-info-value">
-          ${esc(activeMonthlyClient.aktenzeichen||'')}
-        </div>
-
-        <div class="monthly-info-label">
-          Anschrift:
-        </div>
-
-        <div class="monthly-info-value">
-          ${esc(addressParts)}
-          ${addressParts&&cityParts?', ':''}
-          ${esc(cityParts)}
-        </div>
-
-        <div class="monthly-info-label">
-          Leistungsanbieter:
-        </div>
-
-        <div class="monthly-info-value">
-          SuPA GmbH, Königstraße 6,
-          30175 Hannover
-        </div>
-
-        <div class="monthly-info-label">
-          Verantwortlicher Auftragnehmer:
-        </div>
-
-        <div class="monthly-info-value">
-          Stork, Oliver
-        </div>
-
-        <div class="monthly-info-label">
-          Leistungsträger:
-        </div>
-
-        <div class="monthly-info-value">
-          ${esc(
-            approval?.kostentraeger ||
-            approval?.leistungstraeger_name ||
-            approval?.leistungstraeger_typ ||
-            ''
-          )}
-        </div>
-
-        <div class="monthly-info-label">
-          Bewilligte FLS pro Woche:
-        </div>
-
-        <div class="monthly-info-value">
-          ${
-            approval?.wochen_fls!=null
-              ? formatFls(approval.wochen_fls)
-              : ''
-          }
-        </div>
-
-        <div class="monthly-info-label">
-          Gesamtbudget:
-        </div>
-
-        <div class="monthly-info-value">
-          ${
-            approval?.stundenkontingent!=null
-              ? formatFls(approval.stundenkontingent)+' FLS'
-              : ''
-          }
-        </div>
-
-        <div class="monthly-info-label">
-          Monat:
-        </div>
-
-        <div class="monthly-info-value monthly-month-value">
-          ${esc(monthLabel)}
-        </div>
-
       </div>
-    </div>
 
-    <table class="monthly-sheet-table">
-      <thead>
-        <tr>
-          <th>Datum</th>
-          <th>Uhrzeit</th>
-          <th>Ort der Leistung</th>
-          <th>Dauer<br>Minuten</th>
-          <th>Direkte<br>FLS</th>
-          <th>Leistungsart</th>
-          <th>Auftragnehmer</th>
-        </tr>
-      </thead>
+      <section class="ln-details">
 
-      <tbody>
-        ${tableRows.join('')}
-      </tbody>
+        <div class="ln-detail ln-person">
+          <span>
+            Leistungsberechtigte Person (LP):
+            Name, Vorname
+          </span>
 
-      <tfoot>
-        <tr>
-          <th colspan="3">
-            Gesamt
-          </th>
+          <strong>
+            ${esc(activeMonthlyClient.name||'')}
+          </strong>
+        </div>
 
-          <th class="number-cell">
+        <div class="ln-detail ln-file-number">
+          <span>
+            Aktenzeichen:
+          </span>
+
+          <strong>
+            ${esc(activeMonthlyClient.aktenzeichen||'')}
+          </strong>
+        </div>
+
+        <div class="ln-detail">
+          <span>
+            Leistungsanbieter:
+          </span>
+
+          <strong>
+            SuPA GmbH, Königstraße 6, 30175 Hannover
+          </strong>
+        </div>
+
+        <div class="ln-detail">
+          <span>
+            Verantwortlicher Auftragnehmer:
+          </span>
+
+          <strong>
+            Stork, Oliver
+          </strong>
+        </div>
+
+        <div class="ln-detail">
+          <span>
+            Zuständiger örtlicher Leistungsträger:
+          </span>
+
+          <strong>
+            ${esc(provider)}
+          </strong>
+        </div>
+
+        <div class="ln-budget-grid">
+
+          <div>
+            <span>
+              Bewilligte Fachleistungsstunden
+              pro Woche
+            </span>
+
+            <strong>
+              ${
+                approval?.wochen_fls!=null
+                  ? formatFls(approval.wochen_fls)
+                  : ''
+              }
+            </strong>
+          </div>
+
+          <div>
+            <span>
+              Gesamtbudget
+            </span>
+
+            <strong>
+              ${
+                approval?.stundenkontingent!=null
+                  ? formatFls(approval.stundenkontingent)
+                  : ''
+              }
+            </strong>
+          </div>
+
+          <div>
+            <span>
+              Monat
+            </span>
+
+            <strong>
+              ${esc(monthLabel)}
+            </strong>
+          </div>
+
+        </div>
+      </section>
+
+      <table class="ln-table">
+        <colgroup>
+          <col class="ln-date">
+          <col class="ln-time">
+          <col class="ln-place">
+          <col class="ln-minutes">
+          <col class="ln-fls">
+          <col class="ln-type">
+          <col class="ln-worker">
+        </colgroup>
+
+        <thead>
+          <tr>
+            <th>
+              Datum
+            </th>
+
+            <th>
+              Uhrzeit
+            </th>
+
+            <th>
+              Ort der Leistung
+            </th>
+
+            <th>
+              Dauer in Minuten<br>
+              direkt mit der LP
+            </th>
+
+            <th>
+              Anzahl direkte FLS<br>
+              qualifizierte Assistenzkraft
+            </th>
+
+            <th>
+              Leistungsart
+            </th>
+
+            <th>
+              Auftragnehmer<br>
+              Name in Klartext
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${rows.join('')}
+        </tbody>
+
+        <tfoot>
+          <tr>
+            <th colspan="3">
+              Gesamt
+            </th>
+
+            <th class="ln-number">
+              ${totalMinutes}
+            </th>
+
+            <th class="ln-number">
+              ${formatFls(totalFls)}
+            </th>
+
+            <th colspan="2"></th>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="ln-totals">
+        <div>
+          <span>
+            Summe Minuten
+          </span>
+
+          <strong>
             ${totalMinutes}
-          </th>
+          </strong>
+        </div>
 
-          <th class="number-cell">
+        <div>
+          <span>
+            Summe FLS
+          </span>
+
+          <strong>
             ${formatFls(totalFls)}
-          </th>
-
-          <th colspan="2"></th>
-        </tr>
-      </tfoot>
-    </table>
-
-    ${
-      entries.length>22
-        ? `
-          <p class="monthly-warning">
-            Achtung: In diesem Monat sind
-            ${entries.length} Termine vorhanden.
-            Auf dem Formular werden zunächst
-            die ersten 22 Termine angezeigt.
-          </p>
-        `
-        : ''
-    }
-
-    <div class="monthly-sheet-summary">
-      <div>
-        <span>Summe Minuten</span>
-        <strong>${totalMinutes}</strong>
-      </div>
-
-      <div>
-        <span>Summe FLS</span>
-        <strong>${formatFls(totalFls)}</strong>
-      </div>
-    </div>
-
-    <div class="monthly-sheet-signatures">
-
-      <div class="signature-field">
-        <div class="signature-line"></div>
-        <div>
-          Datum
+          </strong>
         </div>
       </div>
 
-      <div class="signature-field signature-wide">
-        <div class="signature-line"></div>
+      <footer class="ln-signatures">
+
         <div>
-          Unterschrift der leistungsberechtigten Person
+          <div class="ln-signature-line"></div>
+
+          <span>
+            Datum
+          </span>
         </div>
-      </div>
 
-      <p>
-        Mit der Unterschrift bestätigt die
-        leistungsberechtigte Person, die aufgeführten
-        Leistungen in Minuten erhalten zu haben.
-      </p>
+        <div>
+          <div class="ln-signature-line"></div>
 
-    </div>
+          <span>
+            Unterschrift der leistungsberechtigten Person
+          </span>
+        </div>
+
+        <p>
+          Mit der Unterschrift bestätigt die
+          leistungsberechtigte Person, die aufgeführten
+          Leistungen in Minuten erhalten zu haben.
+        </p>
+      </footer>
+
+      ${
+        entries.length>22
+          ? `
+            <p class="ln-warning">
+              Dieser Monat enthält ${entries.length} Termine.
+              Angezeigt werden die ersten 22 Termine.
+            </p>
+          `
+          : ''
+      }
+
+    </section>
   `;
 };
 $('approvalLeistungstraegerTyp').onchange=updateLeistungstraegerFields;
