@@ -374,6 +374,7 @@ async function loadClients(){
   document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
   document.querySelectorAll('.docs').forEach(b=>b.onclick=()=>openDocs(b.dataset.id));
   document.querySelectorAll('.approvals').forEach(b=>b.onclick=()=>openApprovals(b.dataset.id));
+  document.querySelectorAll('.monthly').forEach(b=>b.onclick=()=>toast('Monatsnachweis kommt als Nächstes.'));
 }
 
 function openClient(id=''){
