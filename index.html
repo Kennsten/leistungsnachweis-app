@@ -516,7 +516,23 @@ async function openApprovals(clientId){
   $('approvalsDialog').showModal();
   await loadApprovals();
 }
+function openMonthly(clientId){
+  const client = clients.find(c => c.id === clientId);
 
+  if(!client){
+    toast('Klient nicht gefunden.');
+    return;
+  }
+
+  $('monthlyClientName').textContent = client.name;
+
+  const heute = new Date();
+  $('monthlyMonth').value =
+    heute.getFullYear() + '-' +
+    String(heute.getMonth()+1).padStart(2,'0');
+
+  $('monthlyDialog').showModal();
+}
 async function loadApprovals(){
   if(!activeClient)return;
   $('approvalsList').innerHTML='<p class="muted">Bewilligungen werden geladen …</p>';
@@ -745,6 +761,7 @@ $('closeApprovals').onclick=()=>{
 };
 $('newApproval').onclick=()=>openApprovalForm();
 $('closeApprovalForm').onclick=()=>$('approvalFormDialog').close();
+  $('closeMonthly').onclick=()=>$('monthlyDialog').close();
 $('approvalLeistungstraegerTyp').onchange=updateLeistungstraegerFields;
 
 $('approvalForm').onsubmit=async e=>{
