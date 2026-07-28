@@ -530,10 +530,15 @@ function openMonthly(clientId){
 
   const heute = new Date();
   $('monthlyMonth').value =
-    heute.getFullYear() + '-' +
+    heute.getFullYear() +
+    '-' +
     String(heute.getMonth()+1).padStart(2,'0');
 
   $('monthlyDialog').showModal();
+
+  $('monthlyMonth').dispatchEvent(
+    new Event('change')
+  );
 }
 async function loadApprovals(){
   if(!activeClient)return;
