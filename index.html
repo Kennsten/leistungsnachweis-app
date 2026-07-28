@@ -519,6 +519,7 @@ async function openApprovals(clientId){
 }
 function openMonthly(clientId){
   const client = clients.find(c => c.id === clientId);
+  activeMonthlyClient = client;
 
   if(!client){
     toast('Klient nicht gefunden.');
