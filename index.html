@@ -294,7 +294,259 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
   .monthly-sheet-table td{
     border-color:#000;
   }
-  
+
+  /* Monatsnachweis – korrigiertes A4-Layout */
+
+#monthlyDialog{
+  width:min(96vw,1100px);
+  max-width:1100px;
+  padding:18px;
+}
+
+.monthly-sheet-wrap{
+  width:100%;
+  overflow:auto;
+  margin-top:14px;
+  border-top:1px solid #999;
+  padding-top:14px;
+}
+
+.monthly-sheet{
+  box-sizing:border-box;
+  width:100%;
+  min-width:900px;
+  max-width:1000px;
+  margin:0 auto;
+  padding:20px 22px;
+  background:#fff;
+  color:#111;
+  border:1px solid #777;
+  font-size:12px;
+  line-height:1.2;
+}
+
+.monthly-sheet-header{
+  display:block;
+  margin-bottom:12px;
+}
+
+.monthly-sheet-header h1{
+  margin:0 0 4px;
+  font-size:27px;
+  line-height:1;
+  text-align:left;
+}
+
+.monthly-sheet-header h2{
+  margin:8px 0 14px;
+  font-size:19px;
+  text-align:center;
+}
+
+.monthly-subtitle{
+  margin:0 0 8px;
+  font-size:11px;
+  text-align:right;
+}
+
+.monthly-info-grid{
+  display:grid;
+  grid-template-columns:190px 1fr;
+  column-gap:12px;
+  row-gap:3px;
+  width:100%;
+  margin-top:8px;
+  border-top:1px solid #777;
+  border-bottom:1px solid #777;
+  padding:8px 0;
+}
+
+.monthly-info-label{
+  font-weight:700;
+  text-align:left;
+}
+
+.monthly-info-value{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.monthly-month-value{
+  font-weight:700;
+}
+
+.monthly-sheet-table{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+  margin-top:12px;
+  font-size:10px;
+}
+
+.monthly-sheet-table th,
+.monthly-sheet-table td{
+  box-sizing:border-box;
+  border:1px solid #666;
+  padding:4px 5px;
+  vertical-align:middle;
+  overflow:hidden;
+  overflow-wrap:anywhere;
+}
+
+.monthly-sheet-table thead th{
+  height:42px;
+  background:#eee;
+  text-align:center;
+  font-weight:700;
+}
+
+.monthly-sheet-table tbody td{
+  height:28px;
+}
+
+.monthly-sheet-table th:nth-child(1),
+.monthly-sheet-table td:nth-child(1){
+  width:11%;
+}
+
+.monthly-sheet-table th:nth-child(2),
+.monthly-sheet-table td:nth-child(2){
+  width:15%;
+}
+
+.monthly-sheet-table th:nth-child(3),
+.monthly-sheet-table td:nth-child(3){
+  width:19%;
+}
+
+.monthly-sheet-table th:nth-child(4),
+.monthly-sheet-table td:nth-child(4){
+  width:10%;
+}
+
+.monthly-sheet-table th:nth-child(5),
+.monthly-sheet-table td:nth-child(5){
+  width:9%;
+}
+
+.monthly-sheet-table th:nth-child(6),
+.monthly-sheet-table td:nth-child(6){
+  width:17%;
+}
+
+.monthly-sheet-table th:nth-child(7),
+.monthly-sheet-table td:nth-child(7){
+  width:19%;
+}
+
+.monthly-sheet-table .number-cell{
+  text-align:center;
+  white-space:nowrap;
+}
+
+.monthly-sheet-table tfoot th{
+  height:34px;
+  background:#eee;
+}
+
+.monthly-sheet-summary{
+  display:flex;
+  justify-content:flex-end;
+  gap:24px;
+  margin-top:8px;
+  padding-top:6px;
+  border-top:1px solid #777;
+}
+
+.monthly-sheet-summary div{
+  display:flex;
+  gap:8px;
+}
+
+.monthly-sheet-signatures{
+  display:grid;
+  grid-template-columns:170px 1fr;
+  gap:30px;
+  margin-top:48px;
+}
+
+.signature-field{
+  min-width:0;
+}
+
+.signature-line{
+  height:28px;
+  border-bottom:1px solid #555;
+}
+
+.signature-field div:last-child{
+  margin-top:5px;
+  font-size:10px;
+}
+
+.monthly-sheet-signatures p{
+  grid-column:1 / -1;
+  margin:28px 0 0;
+  font-size:10px;
+  line-height:1.35;
+}
+
+.monthly-warning{
+  margin:8px 0;
+  color:#9b3d00;
+  font-weight:700;
+}
+
+@media print{
+  body *{
+    visibility:hidden;
+  }
+
+  #monthlyDialog,
+  #monthlyDialog *{
+    visibility:visible;
+  }
+
+  #monthlyDialog{
+    position:absolute;
+    inset:0;
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+    border:0;
+    box-shadow:none;
+  }
+
+  #monthlyDialog .top,
+  #monthlyDialog > label{
+    display:none;
+  }
+
+  .monthly-sheet-wrap{
+    overflow:visible;
+    margin:0;
+    padding:0;
+    border:0;
+  }
+
+  .monthly-sheet{
+    width:297mm;
+    min-width:0;
+    max-width:none;
+    min-height:210mm;
+    margin:0;
+    padding:10mm 12mm;
+    border:0;
+    font-size:9pt;
+    transform:none;
+  }
+
+  @page{
+    size:A4 landscape;
+    margin:0;
+  }
+}
 </style>
 </head>
 <body>
