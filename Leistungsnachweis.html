@@ -579,71 +579,170 @@
         <div class="page-wrap">
           <section class="sheet">
 
-            <div class="topline">
-              <div class="top-title">Leistungsnachweis</div>
-              <div class="top-description">
-                Assistenz beim Wohnen außerhalb der besonderen Wohnform i.S.d. § 42a Abs. 2 Nr. 2 SGB XII Monatsabrechnung
-              </div>
-            </div>
+            <table class="form-head">
+              <colgroup>
+                <col class="c-date">
+                <col class="c-time">
+                <col class="c-place">
+                <col class="c-min">
+                <col class="c-fls">
+                <col class="c-way1">
+                <col class="c-way2">
+                <col class="c-cancel">
+                <col class="c-code">
+                <col class="c-worker">
+              </colgroup>
 
-            <div class="assist-row">Qualifizierte Assistenz</div>
+              <tbody>
+                <tr>
+                  <td colspan="2" class="head-title">
+                    Leistungsnachweis
+                  </td>
 
-            <section class="header-grid">
-              <div class="header-row person-row">
-                <div class="label">Leistungsberechtigte Person (LP): (Name, Vorname)</div>
-                <div class="value">${esc(client.name||'')}</div>
-                <div class="label">Aktenzeichen:</div>
-                <div class="value">${esc(client.aktenzeichen||'')}</div>
-              </div>
+                  <td colspan="8" class="head-description">
+                    Assistenz beim Wohnen außerhalb der besonderen Wohnform i.S.d. § 42a Abs. 2 Nr. 2 SGB XII Monatsabrechnung
+                  </td>
+                </tr>
 
-              <div class="header-row simple-row">
-                <div class="label">Leistungsanbieter (Name, Adresse)</div>
-                <div class="value">${esc(payload.leistungsanbieter||'SuPA GmbH Königstraße 6, 30175 Hannover')}</div>
-              </div>
+                <tr>
+                  <td colspan="10" class="head-assist">
+                    Qualifizierte Assistenz
+                  </td>
+                </tr>
 
-              <div class="header-row simple-row">
-                <div class="label">Verantwortliche*r Auftragnehmer*in (Name, Vorname)</div>
-                <div class="value">${esc(payload.auftragnehmer||'Stork, Oliver')}</div>
-              </div>
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Leistungsberechtigte Person (LP): (Name, Vorname)
+                  </td>
 
-              <div class="header-row simple-row">
-                <div class="label">Zuständiger örtlicher Leistungsträger</div>
-                <div class="value">${esc(provider)}</div>
-              </div>
+                  <td colspan="3" class="head-value">
+                    ${esc(client.name||'')}
+                  </td>
 
-              <div class="header-row budget-row">
-                <div class="label">Anzahl der bewilligten Fachleistungsstunden (FLS)/ Woche</div>
-                <div class="value center">${approval.wochen_fls!=null?formatFls(approval.wochen_fls):''}</div>
-                <div class="label center">Zusatzkontingent (ZK)</div>
-                <div class="value blue center">0</div>
-                <div class="label center">Zeitraum ZK</div>
-                <div class="value blue center"></div>
-              </div>
+                  <td colspan="2" class="head-label">
+                    Aktenzeichen:
+                  </td>
 
-              <div class="header-row budget-row-2">
-                <div class="label">Beginn 12 Monatszeitraum</div>
-                <div class="value center">${esc(approvalPeriod)}</div>
-                <div class="label center">Anzahl Monate ZK</div>
-                <div class="value blue center">0</div>
-                <div class="label center">ZK/Monat</div>
-                <div class="value blue center">0,00</div>
-              </div>
+                  <td class="head-value">
+                    ${esc(client.aktenzeichen||'')}
+                  </td>
+                </tr>
 
-              <div class="header-row budget-row-3">
-                <div class="label">Gesamtbudget</div>
-                <div class="value center">${approval.stundenkontingent!=null?formatFls(approval.stundenkontingent):''}</div>
-                <div class="label center">Restbudget Monat</div>
-                <div class="value center"></div>
-                <div></div>
-                <div></div>
-              </div>
-            </section>
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Leistungsanbieter (Name, Adresse)
+                  </td>
 
-            <div class="month-row">
-              <div class="label">Monat:</div>
-              <div class="value center">${esc(monthLabel.split(' ')[0]||'')}</div>
-              <div class="value center">${esc(monthLabel.split(' ')[1]||'')}</div>
-              <div></div>
+                  <td colspan="6" class="head-value">
+                    ${esc(payload.leistungsanbieter||'SuPA GmbH Königstraße 6, 30175 Hannover')}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Verantwortliche*r Auftragnehmer*in (Name, Vorname)
+                  </td>
+
+                  <td colspan="6" class="head-value">
+                    ${esc(payload.auftragnehmer||'Stork, Oliver')}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Zuständiger örtlicher Leistungsträger
+                  </td>
+
+                  <td colspan="6" class="head-value">
+                    ${esc(provider)}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Anzahl der bewilligten Fachleistungsstunden (FLS)/ Woche
+                  </td>
+
+                  <td class="head-value-number">
+                    ${approval.wochen_fls!=null?formatFls(approval.wochen_fls):''}
+                  </td>
+
+                  <td colspan="2" class="head-zk-label">
+                    Zusatzkontingent (ZK)
+                  </td>
+
+                  <td class="head-zk-value">
+                    0
+                  </td>
+
+                  <td class="head-zk-label">
+                    Zeitraum ZK
+                  </td>
+
+                  <td class="head-zk-value"></td>
+                </tr>
+
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Beginn 12 Monatszeitraum
+                  </td>
+
+                  <td class="head-value">
+                    ${esc(approvalPeriod)}
+                  </td>
+
+                  <td colspan="2" class="head-zk-label">
+                    Anzahl Monate ZK
+                  </td>
+
+                  <td class="head-zk-value">
+                    0
+                  </td>
+
+                  <td class="head-zk-label">
+                    ZK/Monat
+                  </td>
+
+                  <td class="head-zk-value">
+                    0,00
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4" class="head-label">
+                    Gesamtbudget
+                  </td>
+
+                  <td class="head-value-number">
+                    ${approval.stundenkontingent!=null?formatFls(approval.stundenkontingent):''}
+                  </td>
+
+                  <td colspan="2" class="head-zk-label">
+                    Restbudget Monat
+                  </td>
+
+                  <td class="head-value-number"></td>
+
+                  <td colspan="2"></td>
+                </tr>
+
+                <tr>
+                  <td class="head-month-label">
+                    Monat:
+                  </td>
+
+                  <td class="head-month-value">
+                    ${esc(monthLabel.split(' ')[0]||'')}
+                  </td>
+
+                  <td colspan="2" class="head-month-value">
+                    ${esc(monthLabel.split(' ')[1]||'')}
+                  </td>
+
+                  <td colspan="6"></td>
+                </tr>
+              </tbody>
+            </table>
             </div>
 
             <table class="ln-table">
