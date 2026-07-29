@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leistungsnachweis</title>
+
+  <style>
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:#d9dee3;
+      color:#111;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+
+    .toolbar{
+      position:sticky;
+      top:0;
+      z-index:10;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+      background:#fff;
+      border-bottom:1px solid #bbb;
+    }
+
+    .toolbar-title{
+      font-size:17px;
+      font-weight:700;
+    }
+
+    .toolbar-actions{
+      display:flex;
+      gap:10px;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid #9eb2c5;
+      border-radius:10px;
+      padding:10px 16px;
+      background:#eef5fb;
+      color:#18344e;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    button.primary{
+      background:#173b5b;
+      border-color:#173b5b;
+      color:#fff;
+    }
+
+    .page-wrap{
+      width:100%;
+      overflow:auto;
+      padding:20px;
+    }
+
+    .sheet{
+      width:1180px;
+      margin:0 auto;
+      padding:18px 22px 15px;
+      background:#fff;
+      border:1px solid #777;
+      box-shadow:0 6px 24px rgba(0,0,0,.16);
+      font-size:10px;
+      line-height:1.12;
+    }
+
+    .form-head,
+    .ln-table{
+      width:100%;
+      table-layout:fixed;
+      border-collapse:collapse;
+      margin:0;
+      break-inside:auto;
+      page-break-inside:auto;
+    }
+
+    .form-head{
+      font-size:10px;
+      line-height:1.1;
+    }
+
+    .form-head td{
+      height:20px;
+      padding:2px 5px;
+      border:1px solid #666;
+      vertical-align:middle;
+      overflow:hidden;
+    }
+
+    .head-label{
+      font-weight:700;
+      text-align:left;
+    }
+
+    .head-value{
+      background:#fff4eb;
+      text-align:left;
+      font-weight:400;
+    }
+
+    .head-value-number{
+      background:#fff4eb;
+      text-align:right;
+      font-weight:400;
+    }
+
+    .head-zk-label{
+      font-weight:700;
+      text-align:center;
+    }
+
+    .head-zk-value{
+      background:#dff2f8;
+      text-align:center;
+      font-weight:400;
+    }
+
+    .head-title{
+      font-weight:400;
+      text-align:left;
+    }
+
+    .head-description{
+      font-weight:400;
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    .head-assist{
+      font-size:11px;
+      font-weight:700;
+      text-align:left;
+    }
+
+    .head-month-label{
+      font-weight:700;
+      text-align:left;
+    }
+
+    .head-spacer td{
+      height:4px;
+      padding:0;
+      background:#fff;
+    }
+
+    .head-month-value{
+      background:#fff4eb;
+      text-align:center;
+      font-weight:400;
+    }
+
+    .ln-table{
+      margin-top:-1px;
+      font-size:9px;
+    }
+
+    .ln-table th,
+    .ln-table td{
+      border:1px solid #666;
+      padding:2px 4px;
+      vertical-align:middle;
+      overflow:hidden;
+    }
+
+    .ln-table thead th{
+      height:74px;
+      text-align:center;
+      font-weight:700;
+      vertical-align:bottom;
+      line-height:1.15;
+      font-size:8.5px;
+    }
+
+    .ln-table tbody td{
+      height:22px;
+      font-size:9px;
+    }
+
+    .ln-table tbody tr:nth-child(even) td{
+      background:#fff4eb;
+    }
+
+    .ln-table tfoot th,
+    .ln-table tfoot td{
+      height:24px;
+      font-weight:700;
+    }
+
+    .c-date{width:5%}
+    .c-time{width:8%}
+    .c-place{width:23%}
+    .c-min{width:8%}
+    .c-fls{width:10%}
+    .c-way1{width:6%}
+    .c-way2{width:9%}
+    .c-cancel{width:6%}
+    .c-code{width:9%}
+    .c-worker{width:16%}
+
+    .number{
+      text-align:right;
+      white-space:nowrap;
+    }
+
+    .center-text{
+      text-align:center;
+    }
+
+    .sum-labels{
+      display:grid;
+      grid-template-columns:5% 8% 23% 8% 10% 6% 9% 6% 9% 16%;
+      border-left:1px solid #666;
+      border-right:1px solid #666;
+      border-bottom:1px solid #666;
+      min-height:48px;
+    }
+
+    .sum-labels > div{
+      padding:5px 4px;
+      border-right:1px solid #666;
+      text-align:left;
+    }
+
+    .sum-labels > div:last-child{
+      border-right:0;
+    }
+
+    .sum-empty-left{grid-column:1 / 4}
+    .sum-minutes{grid-column:4}
+    .sum-fls{grid-column:5}
+    .sum-empty-way{grid-column:6}
+    .sum-way{grid-column:7}
+    .sum-cancel{grid-column:8}
+    .sum-empty-right{grid-column:9 / 11}
+
+    .signature-area{
+      margin-top:24px;
+      display:grid;
+      grid-template-columns:10% 74% 16%;
+      row-gap:4px;
+      font-size:9px;
+    }
+
+    .signature-area .line{
+      min-height:24px;
+      border-bottom:1px solid #666;
+    }
+
+    .confirmation{
+      grid-column:2 / 4;
+      padding-top:2px;
+    }
+
+    .error-box{
+      width:min(90vw,700px);
+      margin:60px auto;
+      padding:25px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid #c7d0d8;
+      box-shadow:0 6px 24px rgba(0,0,0,.12);
+    }
+
+    @media print{
+      html,body{
+        width:297mm;
+        height:auto;
+        margin:0;
+        padding:0;
+        background:#fff;
+      }
+
+      .toolbar{display:none}
+
+      .page-wrap{
+        width:297mm;
+        height:auto;
+        margin:0;
+        padding:0;
+        overflow:visible;
+      }
+
+      .sheet{
+        width:297mm;
+        height:auto;
+        min-height:0;
+        margin:0;
+        padding:5mm 7mm 4mm;
+        border:0;
+        box-shadow:none;
+        font-size:7.5pt;
+      }
+
+      .form-head,
+      .ln-table{
+        break-before:auto;
+        break-after:auto;
+        break-inside:auto;
+        page-break-before:auto;
+        page-break-after:auto;
+        page-break-inside:auto;
+      }
+
+      .form-head td{
+        height:4.3mm;
+        padding:1mm 1.3mm;
+      }
+
+      .ln-table{
+        margin-top:-0.2mm;
+        font-size:6.4pt;
+      }
+
+      .ln-table thead th{
+        height:19mm;
+      }
+
+      .ln-table tbody td{
+        height:4.15mm;
+      }
+
+      .ln-table tfoot th,
+      .ln-table tfoot td{
+        height:5mm;
+      }
+
+      .sum-labels{
+        min-height:12mm;
+      }
+
+      .signature-area{
+        margin-top:5mm;
+      }
+
+      @page{
+        size:A4 landscape;
+        margin:0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <div class="toolbar-title">Leistungsnachweis</div>
+
+    <div class="toolbar-actions">
+      <button type="button" id="closeButton">Schließen</button>
+      <button type="button" id="printButton" class="primary">Drucken / PDF</button>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <script>
+    const app=document.getElementById('app');
+
+    function esc(value){
+      return String(value??'')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function formatFls(value){
+      const number=Number(value||0);
+      return number.toLocaleString(
+        'de-DE',
+        {minimumFractionDigits:2,maximumFractionDigits:2}
+      );
+    }
+
+    function formatDate(value){
+      if(!value)return '';
+      const parts=String(value).split('-');
+      if(parts.length!==3)return value;
+      return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+
+    function minutesToFls(minutes){
+      return Math.round((Number(minutes||0)/50)*100)/100;
+    }
+
+    function readPayload(){
+      const raw=sessionStorage.getItem('leistungsnachweis_payload');
+      if(!raw)return null;
+
+      try{
+        return JSON.parse(raw);
+      }catch(error){
+        console.error(error);
+        return null;
+      }
+    }
+
+    function showError(){
+      app.innerHTML=`
+        <div class="error-box">
+          <h2>Keine Daten gefunden</h2>
+          <p>Öffne den Leistungsnachweis bitte über die Klienten-App.</p>
+        </div>
+      `;
+    }
+
+    function render(){
+      const payload=readPayload();
+
+      if(!payload){
+        showError();
+        return;
+      }
+
+      const client=payload.client||{};
+      const approval=payload.approval||{};
+      const entries=payload.entries||[];
+      const monthLabel=payload.monthLabel||'';
+
+      const totalMinutes=entries.reduce(
+        (sum,entry)=>sum+Number(entry.dauer_minuten||0),
+        0
+      );
+
+      const totalFls=minutesToFls(totalMinutes);
+      const totalWay=entries.reduce(
+        (sum,entry)=>sum+Number(entry.wegepauschale_betrag||0),
+        0
+      );
+      const totalCancel=entries.reduce(
+        (sum,entry)=>sum+Number(entry.ausfallstunde||0),
+        0
+      );
+
+      const rows=[];
+
+      for(let index=0;index<22;index++){
+        const entry=entries[index];
+
+        if(entry){
+          rows.push(`
+            <tr>
+              <td>${esc(formatDate(entry.datum))}</td>
+              <td>${esc(String(entry.beginn||'').slice(0,5))} – ${esc(String(entry.ende||'').slice(0,5))}</td>
+              <td>${esc(entry.ort_der_leistung||'')}</td>
+              <td class="number">${Number(entry.dauer_minuten||0)}</td>
+              <td class="number">${formatFls(minutesToFls(entry.dauer_minuten))}</td>
+              <td class="center-text">${entry.wegepauschale?1:''}</td>
+              <td class="number">${entry.wegepauschale_betrag?formatFls(entry.wegepauschale_betrag):'0,00'}</td>
+              <td class="center-text">${entry.ausfallstunde?1:''}</td>
+              <td>${esc(entry.kennziffer||'')}</td>
+              <td>${esc(payload.auftragnehmer||'Stork, Oliver')}</td>
+            </tr>
+          `);
+        }else{
+          rows.push(`
+            <tr>
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td class="number">0,00</td>
+              <td></td>
+              <td class="number">0,00</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          `);
+        }
+      }
+
+      const provider=
+        approval.kostentraeger ||
+        approval.leistungstraeger_name ||
+        approval.leistungstraeger_typ ||
+        '';
+
+      const approvalStart=approval.beginn?formatDate(approval.beginn):'';
+      const approvalEnd=approval.ende?formatDate(approval.ende):'';
+      const approvalPeriod=
+        approvalStart||approvalEnd
+          ? `${approvalStart} – ${approvalEnd}`
+          : '';
+
+      const weeklyFls=
+        approval.wochen_fls ??
+        approval.fls_pro_woche ??
+        approval.wochenstunden ??
+        '';
+
+      const totalBudget=
+        approval.stundenkontingent ??
+        approval.gesamt_fls ??
+        approval.gesamtbudget ??
+        '';
+
+      app.innerHTML=`
+        <div class="page-wrap">
+          <section class="sheet">
+
+            <table class="form-head">
+              <colgroup>
+                <col class="c-date">
+                <col class="c-time">
+                <col class="c-place">
+                <col class="c-min">
+                <col class="c-fls">
+                <col class="c-way1">
+                <col class="c-way2">
+                <col class="c-cancel">
+                <col class="c-code">
+                <col class="c-worker">
+              </colgroup>
+
+              <tbody>
+                <tr>
+                  <td colspan="2" class="head-title">Leistungsnachweis</td>
+                  <td colspan="8" class="head-description">
+                    Assistenz beim Wohnen außerhalb der besonderen Wohnform i.S.d. § 42a Abs. 2 Nr. 2 SGB XII Monatsabrechnung
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="10" class="head-assist">Qualifizierte Assistenz</td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">Leistungsberechtigte Person (LP): (Name, Vorname)</td>
+                  <td colspan="4" class="head-value">${esc(client.name||'')}</td>
+                  <td colspan="2" class="head-label">Aktenzeichen:</td>
+                  <td class="head-value">${esc(client.aktenzeichen||'')}</td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">Leistungsanbieter (Name, Adresse)</td>
+                  <td colspan="7" class="head-value">
+                    ${esc(payload.leistungsanbieter||'SuPA GmbH, Königstraße 6, 30175 Hannover')}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">Verantwortliche*r Auftragnehmer*in (Name, Vorname)</td>
+                  <td colspan="7" class="head-value">${esc(payload.auftragnehmer||'Stork, Oliver')}</td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">Zuständiger örtlicher Leistungsträger</td>
+                  <td colspan="7" class="head-value">${esc(provider)}</td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">
+                    Anzahl der bewilligten Fachleistungsstunden (FLS)/ Woche
+                  </td>
+                  <td colspan="3" class="head-value-number">
+                    ${weeklyFls!==''?formatFls(weeklyFls):''}
+                  </td>
+                  <td class="head-zk-label">Zusatzkontingent (ZK)</td>
+                  <td class="head-zk-value">0</td>
+                  <td class="head-zk-label">Zeitraum ZK</td>
+                  <td class="head-zk-value"></td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">Beginn 12 Monatszeitraum</td>
+                  <td colspan="3" class="head-value">${esc(approvalPeriod)}</td>
+                  <td class="head-zk-label">Anzahl Monate ZK</td>
+                  <td class="head-zk-value">0</td>
+                  <td class="head-zk-label">ZK/Monat</td>
+                  <td class="head-zk-value">0,00</td>
+                </tr>
+
+                <tr>
+                  <td colspan="3" class="head-label">Gesamtbudget</td>
+                  <td colspan="3" class="head-value-number">
+                    ${totalBudget!==''?formatFls(totalBudget):''}
+                  </td>
+                  <td class="head-zk-label">Restbudget Monat</td>
+                  <td class="head-value-number"></td>
+                  <td colspan="2"></td>
+                </tr>
+
+                <tr class="head-spacer">
+                  <td colspan="10"></td>
+                </tr>
+
+                <tr>
+                  <td class="head-month-label">Monat:</td>
+                  <td class="head-month-value">${esc(monthLabel.split(' ')[0]||'')}</td>
+                  <td colspan="2" class="head-month-value">${esc(monthLabel.split(' ')[1]||'')}</td>
+                  <td colspan="6"></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table class="ln-table">
+              <colgroup>
+                <col class="c-date">
+                <col class="c-time">
+                <col class="c-place">
+                <col class="c-min">
+                <col class="c-fls">
+                <col class="c-way1">
+                <col class="c-way2">
+                <col class="c-cancel">
+                <col class="c-code">
+                <col class="c-worker">
+              </colgroup>
+
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Uhrzeit</th>
+                  <th>Ort der Leistung</th>
+                  <th>Dauer in Minuten<br>direkt mit der LP</th>
+                  <th>
+                    Anzahl direkte FLS<br>
+                    qualifizierte Assistenzkraft.<br>
+                    Eine FLS ist definiert als 50 Minuten mit der LP
+                  </th>
+                  <th>Wege-<br>pauschale ja=1</th>
+                  <th>abzurechnende<br>Wegepauschale</th>
+                  <th>davon<br>"Ausfallstunden"<br>Ja=1</th>
+                  <th>Kennziffer für<br>Kurzbeschreibung</th>
+                  <th>Auftragnehmer*in<br>(Name in Klartext)</th>
+                </tr>
+              </thead>
+
+              <tbody>${rows.join('')}</tbody>
+
+              <tfoot>
+                <tr>
+                  <td colspan="3">Gesamt</td>
+                  <td class="number">${totalMinutes.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+                  <td class="number">${formatFls(totalFls)}</td>
+                  <td></td>
+                  <td class="number">${formatFls(totalWay)}</td>
+                  <td class="center-text">${totalCancel}</td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div class="sum-labels">
+              <div class="sum-empty-left"></div>
+              <div class="sum-minutes">Summe Minuten</div>
+              <div class="sum-fls">Summe FLS</div>
+              <div class="sum-empty-way"></div>
+              <div class="sum-way">Summe Wegepauschalen</div>
+              <div class="sum-cancel">Summe Ausfallstunden</div>
+              <div class="sum-empty-right"></div>
+            </div>
+
+            <div class="signature-area">
+              <div>Datum</div>
+              <div class="line"></div>
+              <div></div>
+
+              <div></div>
+              <div>Unterschrift der leistungsberechtigten Person</div>
+              <div></div>
+
+              <div></div>
+              <div class="confirmation">
+                Mit der Unterschrift bestätigt die leistungsberechtigte Person die aufgeführten Leistungen in Minuten (incl. Ausfallzeiten) erhalten zu haben.
+              </div>
+              <div></div>
+            </div>
+
+          </section>
+        </div>
+      `;
+    }
+
+    document.getElementById('printButton').addEventListener('click',()=>window.print());
+    document.getElementById('closeButton').addEventListener('click',()=>window.close());
+
+    render();
+  </script>
+</body>
+</html>
