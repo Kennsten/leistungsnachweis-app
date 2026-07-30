@@ -964,12 +964,6 @@ function renderTripDocumentationOptions(){
   ];
 
   for(const doc of tripDocumentations){
-        if(
-      doc.ort_der_leistung==='Telefon' ||
-      doc.ort_der_leistung==='Online'
-    ){
-      continue;
-    }
     const beginn=String(doc.beginn||'').slice(0,5);
     const ende=String(doc.ende||'').slice(0,5);
 
