@@ -611,7 +611,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     </div>
     <div class="actions">
       <button type="button" id="deleteClient" class="danger hidden">Löschen</button>
-<button type="submit" id="docSave" class="primary">Speichern</button>
+<button type="submit" class="primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -667,7 +667,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     </div>
     <div class="actions">
       <button type="button" id="deleteDoc" class="danger hidden">Löschen</button>
-      <button type="submit" class="primary">Speichern</button>
+<button type="submit" id="docSave" class="primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -888,7 +888,11 @@ function minutesBetween(beginn,ende){
   const [eh,em]=ende.slice(0,5).split(':').map(Number);
   return (eh*60+em)-(bh*60+bm);
 }
-
+function todayLocal(){
+  const now=new Date();
+  const offset=now.getTimezoneOffset()*60000;
+  return new Date(now-offset).toISOString().slice(0,10);
+}
 async function openTrips(clientId){
   activeTripsClient=clients.find(c=>String(c.id)===String(clientId))||null;
   if(!activeTripsClient){toast('Klient nicht gefunden.');return}
@@ -1131,14 +1135,6 @@ function todayIso(){
 function formatKm(value){
   const number=Number(value||0);
   return number.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
-}
-
-async function openTrips(clientId){
-  activeTripsClient=clients.find(c=>String(c.id)===String(clientId))||null;
-  if(!activeTripsClient){toast('Klient nicht gefunden.');return}
-  $('tripsClientName').textContent=activeTripsClient.name;
-  $('tripsDialog').showModal();
-  await Promise.all([loadTrips(),loadTripStopSuggestions()]);
 }
 
 async function loadTrips(){
