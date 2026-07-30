@@ -744,6 +744,15 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <input type="hidden" id="tripId">
 
 <div class="grid">
+  <label class="span2">Dokumentierten Termin übernehmen
+    <select id="tripDocumentation">
+      <option value="">Termin manuell eintragen</option>
+    </select>
+    <span class="muted small">
+      Datum, Zieladresse und Fahrtzweck werden automatisch übernommen.
+    </span>
+  </label>
+
   <label>Datum
     <input id="tripDate" type="date" required>
   </label>
