@@ -1476,6 +1476,85 @@ function openMonthly(clientId){
     symbol:'🟢'
   };
 }
+  async function loadAllApprovals(){
+  $('allApprovalsList').innerHTML=
+    '<p class="muted">Bewilligungen werden geladen …</p>';
+
+  const {data,error}=await sb
+    .from('bewilligungen')
+    .select('*')
+    .order('ende',{ascending:true});
+
+  if(error){
+    $('allApprovalsList').innerHTML='';
+    toast(
+      'Bewilligungen konnten nicht geladen werden: '+
+      error.message
+    );
+    return;
+  }
+
+  const allApprovals=data||[];
+
+  if(!allApprovals.length){
+    $('allApprovalsList').innerHTML=
+      '<p class="muted">Noch keine Bewilligungen vorhanden.</p>';
+    return;
+  }
+
+  $('allApprovalsList').innerHTML=
+    allApprovals.map(a=>{
+      const client=clients.find(
+        c=>String(c.id)===String(a.client_id)
+      );
+
+      const status=approvalReportStatus(a.ende);
+
+      return `
+        <div class="approval">
+          <div class="approval-head">
+            <div>
+              <h3>
+                ${status.symbol}
+                ${esc(client?.name||'Unbekannter Klient')}
+              </h3>
+
+              <div class="meta">
+                ${formatDate(a.beginn)}
+                –
+                ${formatDate(a.ende)}
+              </div>
+
+              <div class="approval-hours">
+                ${formatFls(a.stundenkontingent||0)}
+                Gesamt-FLS
+              </div>
+
+              <div class="meta">
+                ${status.text}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="secondary openAllApproval"
+              data-client-id="${esc(a.client_id)}">
+              Öffnen
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  document
+    .querySelectorAll('.openAllApproval')
+    .forEach(button=>{
+      button.onclick=()=>{
+        $('allApprovalsDialog').close();
+        openApprovals(button.dataset.clientId);
+      };
+    });
+}
 async function loadApprovals(clientId=activeClient?.id){
   const requestedClientId=String(clientId||'').trim();
   if(!requestedClientId){
@@ -1611,8 +1690,9 @@ $('logout').onclick=async()=>{
   button.disabled=false;
 };
   
-$('allApprovals').onclick=()=>{
+$('allApprovals').onclick=async()=>{
   $('allApprovalsDialog').showModal();
+  await loadAllApprovals();
 };
 
 $('closeAllApprovals').onclick=()=>{
