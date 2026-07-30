@@ -885,11 +885,12 @@ async function openTrips(clientId){
   if(!activeTripsClient){toast('Klient nicht gefunden.');return}
   $('tripsClientName').textContent=activeTripsClient.name;
   $('tripsDialog').showModal();
-  await Promise.all([loadTrips(),loadTripStopSuggestions()]);
-}
+  await Promise.all([
+  loadTrips(),
+  loadTripStopSuggestions(),
   loadTripDocumentations()
-renderTripDocumentationOptions()
-applyTripDocumentation()
+]);
+}
 
 function fillTimeOptions(){
   const options=['<option value="">Bitte auswählen</option>'];
