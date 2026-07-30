@@ -1697,6 +1697,7 @@ $('tripForm').onsubmit=async e=>{
     return;
   }
 
+    try{
   const query=id
     ? sb.from('trip_entries').update(row).eq('id',id)
     : sb.from('trip_entries').insert(row);
@@ -1730,8 +1731,17 @@ $('deleteTrip').onclick=async()=>{
   }
 
   $('tripFormDialog').close();
-  toast('Fahrt gelöscht');
-  await loadTrips();
+  toast(id?'Fahrt aktualisiert':'Fahrt gespeichert');
+
+  await Promise.all([
+    loadTrips(),
+    loadTripDocumentations()
+  ]);
+  }finally{
+    tripSaving=false;
+    saveButton.disabled=false;
+    saveButton.textContent='Speichern';
+  }
 };
 
 $('closeMonthly').onclick=()=>{
