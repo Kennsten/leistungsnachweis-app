@@ -455,7 +455,12 @@
               <td>${esc(entry.ort_der_leistung||'')}</td>
               <td class="number">${Number(entry.dauer_minuten||0)}</td>
               <td class="number">${formatFls(minutesToFls(entry.dauer_minuten))}</td>
-              <td class="center-text">${entry.wegepauschale?1:''}</td>
+<td class="center-text">${
+  entry.ort_der_leistung==='Telefon' ||
+  entry.ort_der_leistung==='Online'
+    ? ''
+    : 1
+}</td>
               <td class="number">${entry.wegepauschale_betrag?formatFls(entry.wegepauschale_betrag):'0,00'}</td>
               <td class="center-text">${entry.ausfallstunde?1:''}</td>
               <td>${esc(entry.kennziffer||'')}</td>
@@ -486,12 +491,17 @@
         approval.leistungstraeger_typ ||
         '';
 
-      const approvalStart=approval.beginn?formatDate(approval.beginn):'';
-      const approvalEnd=approval.ende?formatDate(approval.ende):'';
-      const approvalPeriod=
-        approvalStart||approvalEnd
-          ? `${approvalStart} – ${approvalEnd}`
-          : '';
+      const approvalPeriod=approval.beginn
+  ? new Date(
+      approval.beginn+'T00:00:00'
+    ).toLocaleDateString(
+      'de-DE',
+      {
+        month:'long',
+        year:'numeric'
+      }
+    )
+  : '';
 
       const weeklyFls=
         approval.wochen_fls ??
