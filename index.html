@@ -1654,17 +1654,22 @@ $('tripForm').onsubmit=async e=>{
     return;
   }
 
-  const id=$('tripId').value;
+    const id=$('tripId').value;
   const stopovers=$('tripStopovers').value.trim();
+  const documentationId=
+    $('tripDocumentation').value||null;
 
   const row={
     user_id:user.id,
     client_id:activeTripsClient.id,
+    documentation_id:documentationId,
     trip_date:$('tripDate').value,
     start_address:$('tripStartAddress').value.trim(),
     intermediate_stops:stopovers||null,
     destination_address:$('tripDestination').value.trim(),
-    kilometers:Number(String($('tripKilometers').value).replace(',','.')),
+    kilometers:Number(
+      String($('tripKilometers').value).replace(',','.')
+    ),
     purpose:$('tripPurpose').value.trim(),
     notes:$('tripNotes').value.trim()||null
   };
