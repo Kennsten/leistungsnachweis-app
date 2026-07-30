@@ -576,13 +576,47 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <button id="logout" class="secondary">Abmelden</button>
   </div>
 
-  <div class="card">
-    <div class="top">
-      <div><h2>Klientenliste</h2><p class="muted">Die Daten werden in deinem Supabase-Projekt gespeichert.</p></div>
-      <button id="newClient" class="primary">+ Neuer Klient</button>
+<div class="card">
+  <div class="top">
+    <div>
+      <h2>Übersichten</h2>
+      <p class="muted">
+        Alle Bewilligungen und Fahrten zentral anzeigen.
+      </p>
     </div>
-    <div id="list"></div>
   </div>
+
+  <div class="actions" style="margin-bottom:18px">
+    <button
+      type="button"
+      id="allApprovals"
+      class="secondary">
+      Alle Bewilligungen
+    </button>
+
+    <button
+      type="button"
+      id="allTrips"
+      class="secondary">
+      Gesamt-Fahrtenliste
+    </button>
+  </div>
+
+  <div class="top">
+    <div>
+      <h2>Klientenliste</h2>
+      <p class="muted">
+        Die Daten werden in deinem Supabase-Projekt gespeichert.
+      </p>
+    </div>
+
+    <button id="newClient" class="primary">
+      + Neuer Klient
+    </button>
+  </div>
+
+  <div id="list"></div>
+</div>
 </section>
 
 <dialog id="clientDialog">
