@@ -1828,8 +1828,9 @@ $('logout').onclick=async()=>{
   button.disabled=false;
 };
   
-  $('allTrips').onclick=()=>{
+  $('allTrips').onclick=async()=>{
   $('allTripsDialog').showModal();
+  await loadAllTrips();
 };
 
 $('closeAllTrips').onclick=()=>{
