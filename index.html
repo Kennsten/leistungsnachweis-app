@@ -1386,6 +1386,41 @@ function openMonthly(clientId){
     new Event('change')
   );
 }
+  function approvalReportStatus(endDate){
+  if(!endDate){
+    return {
+      text:'Kein Enddatum',
+      symbol:'⚪'
+    };
+  }
+
+  const today=new Date(todayIso()+'T00:00:00');
+  const end=new Date(endDate+'T00:00:00');
+
+  const differenceMs=end-today;
+  const daysRemaining=Math.ceil(
+    differenceMs/(1000*60*60*24)
+  );
+
+  if(daysRemaining<0){
+    return {
+      text:'Bewilligung abgelaufen',
+      symbol:'🔴'
+    };
+  }
+
+  if(daysRemaining<=56){
+    return {
+      text:'Entwicklungsbericht jetzt erstellen',
+      symbol:'🟡'
+    };
+  }
+
+  return {
+    text:`Noch ${daysRemaining} Tage bis zum Ende`,
+    symbol:'🟢'
+  };
+}
 async function loadApprovals(clientId=activeClient?.id){
   const requestedClientId=String(clientId||'').trim();
   if(!requestedClientId){
