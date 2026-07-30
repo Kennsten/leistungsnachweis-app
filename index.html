@@ -1458,12 +1458,17 @@ async function loadApprovals(clientId=activeClient?.id){
     const usedFls=minutesToFls(usedMinutes);
     const totalFls=Number(a.stundenkontingent||0);
     const restFls=Math.round((totalFls-usedFls)*10)/10;
+  const reportStatus=approvalReportStatus(a.ende);
     return `
     <div class="approval">
       <div class="approval-head">
         <div>
           <h3>${formatDate(a.beginn)} – ${formatDate(a.ende)}</h3>
           <div class="approval-hours">${formatFls(totalFls)} Gesamt-FLS</div>
+          <div class="meta">
+  ${reportStatus.symbol}
+  ${reportStatus.text}
+</div>
           <div class="meta">Verbraucht: ${formatFls(usedFls)} FLS</div>
           <div class="meta">Verbleibend: ${formatFls(restFls)} FLS</div>
           <div class="meta">${a.wochen_fls!=null?formatFls(a.wochen_fls)+' Wochen-FLS':'keine Wochen-FLS eingetragen'}</div>
