@@ -891,7 +891,144 @@ async function openTrips(clientId){
   loadTripDocumentations()
 ]);
 }
+async function loadTripDocumentations(){
+  if(!activeTripsClient){
+    tripDocumentations=[];
+    renderTripDocumentationOptions();
+    return;
+  }
 
+  const {data,error}=await sb
+    .from('dokumentationen')
+    .select(`
+      id,
+      datum,
+      beginn,
+      ende,
+      leistungsart,
+      ort_der_leistung,
+      dokumentation
+    `)
+    .eq('client_id',activeTripsClient.id)
+    .order('datum',{ascending:false})
+    .order('beginn',{ascending:false})
+    .limit(100);
+
+  if(error){
+    tripDocumentations=[];
+    renderTripDocumentationOptions();
+
+    toast(
+      'Dokumentierte Termine konnten nicht geladen werden: '+
+      error.message
+    );
+
+    return;
+  }
+
+  tripDocumentations=data||[];
+  renderTripDocumentationOptions();
+}
+
+function renderTripDocumentationOptions(){
+  const select=$('tripDocumentation');
+
+  if(!select)return;
+
+  const options=[
+    '<option value="">Termin manuell eintragen</option>'
+  ];
+
+  for(const doc of tripDocumentations){
+    const beginn=String(doc.beginn||'').slice(0,5);
+    const ende=String(doc.ende||'').slice(0,5);
+
+    const zeit=[beginn,ende]
+      .filter(Boolean)
+      .join('–');
+
+    const beschreibung=[
+      formatDate(doc.datum),
+      zeit,
+      doc.leistungsart||'Termin',
+      doc.ort_der_leistung||''
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+    options.push(
+      `<option value="${esc(doc.id)}">${esc(beschreibung)}</option>`
+    );
+  }
+
+  select.innerHTML=options.join('');
+}
+
+function applyTripDocumentation(documentationId){
+  if(!documentationId)return;
+
+  const doc=tripDocumentations.find(
+    item=>String(item.id)===String(documentationId)
+  );
+
+  if(!doc){
+    toast('Der dokumentierte Termin wurde nicht gefunden.');
+    return;
+  }
+
+  const beginn=String(doc.beginn||'').slice(0,5);
+  const ende=String(doc.ende||'').slice(0,5);
+
+  const zeit=[beginn,ende]
+    .filter(Boolean)
+    .join('–');
+
+  $('tripDate').value=doc.datum||todayIso();
+
+  $('tripDestination').value=
+    clientDestination(activeTripsClient);
+
+  const leistungsort=doc.ort_der_leistung||'';
+  let zweck='';
+
+  if(leistungsort==='Begleitung außer Haus'){
+    zweck='Begleitung außer Haus';
+  }else if(leistungsort==='Wohnung Klient'){
+    zweck='Hausbesuch';
+  }else if(leistungsort==='Telefon'){
+    zweck='Telefontermin – keine Fahrt';
+  }else if(leistungsort==='Online'){
+    zweck='Onlinetermin – keine Fahrt';
+  }else{
+    zweck=doc.leistungsart||'Termin';
+  }
+
+  $('tripPurpose').value=zweck;
+
+  const bemerkungen=[];
+
+  if(zeit){
+    bemerkungen.push(`Terminzeit: ${zeit} Uhr`);
+  }
+
+  if(leistungsort){
+    bemerkungen.push(`Leistungsort: ${leistungsort}`);
+  }
+
+  $('tripNotes').value=bemerkungen.join('\n');
+
+  if(
+    leistungsort==='Telefon'||
+    leistungsort==='Online'
+  ){
+    toast(
+      'Bitte prüfen: Bei diesem Termin ist möglicherweise keine Fahrt erforderlich.'
+    );
+  }else{
+    toast('Dokumentierter Termin wurde übernommen.');
+  }
+}
+  
 function fillTimeOptions(){
   const options=['<option value="">Bitte auswählen</option>'];
   for(let hour=0;hour<24;hour++){
