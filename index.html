@@ -1752,28 +1752,36 @@ $('deleteTrip').onclick=async()=>{
   const id=$('tripId').value;
   if(!id||!confirm('Diese Fahrt wirklich löschen?'))return;
 
+$('deleteTrip').onclick=async()=>{
+  const id=$('tripId').value;
+
+  if(
+    !id ||
+    !confirm('Diese Fahrt wirklich löschen?')
+  ){
+    return;
+  }
+
   const {error}=await sb
     .from('trip_entries')
     .delete()
     .eq('id',id);
 
   if(error){
-    toast('Fahrt konnte nicht gelöscht werden: '+error.message);
+    toast(
+      'Fahrt konnte nicht gelöscht werden: '+
+      error.message
+    );
     return;
   }
 
   $('tripFormDialog').close();
-  toast(id?'Fahrt aktualisiert':'Fahrt gespeichert');
+  toast('Fahrt gelöscht');
 
   await Promise.all([
     loadTrips(),
     loadTripDocumentations()
   ]);
-  }finally{
-    tripSaving=false;
-    saveButton.disabled=false;
-    saveButton.textContent='Speichern';
-  }
 };
 
 $('closeMonthly').onclick=()=>{
