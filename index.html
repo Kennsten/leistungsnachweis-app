@@ -910,7 +910,16 @@ async function loadTripDocumentations(){
     renderTripDocumentationOptions();
     return;
   }
+  const {data:usedTrips}=await sb
+    .from('trip_entries')
+    .select('documentation_id')
+    .eq('client_id',activeTripsClient.id);
 
+  const usedDocumentationIds=new Set(
+    (usedTrips||[])
+      .map(t=>t.documentation_id)
+      .filter(Boolean)
+  );
   const {data,error}=await sb
     .from('dokumentationen')
     .select(`
@@ -939,7 +948,9 @@ async function loadTripDocumentations(){
     return;
   }
 
-  tripDocumentations=data||[];
+tripDocumentations=(data||[]).filter(
+  doc=>!usedDocumentationIds.has(doc.id)
+);
   renderTripDocumentationOptions();
 }
 
