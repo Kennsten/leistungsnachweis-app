@@ -1443,7 +1443,30 @@ async function loadApprovals(clientId=activeClient?.id){
   }
 
   approvals=data||[];
+  
+approvals.sort((a,b)=>{
+  const statusA=approvalReportStatus(a.ende);
+  const statusB=approvalReportStatus(b.ende);
 
+  const priority={
+    '🟡':0,
+    '🟢':1,
+    '🔴':2,
+    '⚪':3
+  };
+
+  const priorityDifference=
+    priority[statusA.symbol]-
+    priority[statusB.symbol];
+
+  if(priorityDifference!==0){
+    return priorityDifference;
+  }
+
+  return String(a.ende||'').localeCompare(
+    String(b.ende||'')
+  );
+});
   const {data:docData,error:docError}=await sb
     .from('dokumentationen')
     .select('bewilligung_id,datum,dauer_minuten')
