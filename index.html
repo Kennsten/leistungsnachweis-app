@@ -1711,6 +1711,13 @@ $('logout').onclick=async()=>{
   button.disabled=false;
 };
   
+  $('allTrips').onclick=()=>{
+  $('allTripsDialog').showModal();
+};
+
+$('closeAllTrips').onclick=()=>{
+  $('allTripsDialog').close();
+};
 $('allApprovals').onclick=async()=>{
   $('allApprovalsDialog').showModal();
   await loadAllApprovals();
