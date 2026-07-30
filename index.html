@@ -1663,10 +1663,6 @@ $('tripForm').onsubmit=async e=>{
   }
 
   const saveButton=$('tripSave');
-  tripSaving=true;
-  saveButton.disabled=true;
-  saveButton.textContent='Wird gespeichert …';
-
   const id=$('tripId').value;
   const stopovers=$('tripStopovers').value.trim();
   const documentationId=
@@ -1687,33 +1683,69 @@ $('tripForm').onsubmit=async e=>{
     notes:$('tripNotes').value.trim()||null
   };
 
-  if(!row.trip_date||!row.start_address||!row.destination_address||!row.purpose){
+  if(
+    !row.trip_date ||
+    !row.start_address ||
+    !row.destination_address ||
+    !row.purpose
+  ){
     toast('Bitte alle Pflichtfelder ausfüllen.');
     return;
   }
 
-  if(!Number.isFinite(row.kilometers)||row.kilometers<=0){
+  if(
+    !Number.isFinite(row.kilometers) ||
+    row.kilometers<=0
+  ){
     toast('Bitte die gefahrenen Kilometer eintragen.');
     return;
   }
 
-    try{
-  const query=id
-    ? sb.from('trip_entries').update(row).eq('id',id)
-    : sb.from('trip_entries').insert(row);
+  tripSaving=true;
+  saveButton.disabled=true;
+  saveButton.textContent='Wird gespeichert …';
 
-  const {error}=await query;
+  try{
+    const query=id
+      ? sb
+          .from('trip_entries')
+          .update(row)
+          .eq('id',id)
+      : sb
+          .from('trip_entries')
+          .insert(row);
 
-  if(error){
-    toast('Fahrt konnte nicht gespeichert werden: '+error.message);
-    return;
+    const {error}=await query;
+
+    if(error){
+      toast(
+        'Fahrt konnte nicht gespeichert werden: '+
+        error.message
+      );
+      return;
+    }
+
+    if(stopovers){
+      await learnStopovers(stopovers);
+    }
+
+    $('tripFormDialog').close();
+
+    toast(
+      id
+        ? 'Fahrt aktualisiert'
+        : 'Fahrt gespeichert'
+    );
+
+    await Promise.all([
+      loadTrips(),
+      loadTripDocumentations()
+    ]);
+  }finally{
+    tripSaving=false;
+    saveButton.disabled=false;
+    saveButton.textContent='Speichern';
   }
-
-  if(stopovers)await learnStopovers(stopovers);
-
-  $('tripFormDialog').close();
-  toast('Fahrt gespeichert');
-  await loadTrips();
 };
 
 $('deleteTrip').onclick=async()=>{
