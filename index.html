@@ -1610,7 +1610,14 @@ $('logout').onclick=async()=>{
   toast('Du wurdest abgemeldet.');
   button.disabled=false;
 };
+  
+$('allApprovals').onclick=()=>{
+  $('allApprovalsDialog').showModal();
+};
 
+$('closeAllApprovals').onclick=()=>{
+  $('allApprovalsDialog').close();
+};
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
 
