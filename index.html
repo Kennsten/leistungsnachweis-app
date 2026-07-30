@@ -1224,7 +1224,124 @@ function formatKm(value){
   const number=Number(value||0);
   return number.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
 }
+  
+async function loadAllTrips(){
+  $('allTripsList').innerHTML=
+    '<p class="muted">Fahrten werden geladen …</p>';
 
+  const {data,error}=await sb
+    .from('trip_entries')
+    .select('*')
+    .order('trip_date',{ascending:false})
+    .order('created_at',{ascending:false});
+
+  if(error){
+    $('allTripsList').innerHTML='';
+    toast(
+      'Fahrten konnten nicht geladen werden: '+
+      error.message
+    );
+    return;
+  }
+
+  const allTrips=data||[];
+
+  if(!allTrips.length){
+    $('allTripsList').innerHTML=
+      '<p class="muted">Noch keine Fahrten vorhanden.</p>';
+    return;
+  }
+
+  const totalKm=allTrips.reduce(
+    (sum,trip)=>
+      sum+Number(trip.kilometers||0),
+    0
+  );
+
+  $('allTripsList').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Fahrten gesamt</span>
+        <strong>${allTrips.length}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Kilometer gesamt</span>
+        <strong>${formatKm(totalKm)} km</strong>
+      </div>
+    </div>
+
+    ${allTrips.map(trip=>{
+      const client=clients.find(
+        c=>String(c.id)===String(trip.client_id)
+      );
+
+      return `
+        <div class="doc-item">
+          <div class="doc-head">
+            <div>
+              <h3>
+                ${formatDate(trip.trip_date)}
+                ·
+                ${formatKm(trip.kilometers)} km
+              </h3>
+
+              <div class="meta">
+                Klient:
+                ${esc(client?.name||'Unbekannter Klient')}
+              </div>
+
+              <div class="meta">
+                ${esc(trip.start_address||'')}
+                →
+                ${esc(
+                  trip.destination_address||
+                  trip.destination||
+                  ''
+                )}
+              </div>
+
+              ${
+                trip.intermediate_stops||
+                trip.stopovers
+                  ? `
+                    <div class="meta">
+                      Zwischenstopps:
+                      ${esc(
+                        trip.intermediate_stops||
+                        trip.stopovers
+                      )}
+                    </div>
+                  `
+                  : ''
+              }
+
+              <div class="meta">
+                ${esc(trip.purpose||'')}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="secondary openAllTrip"
+              data-client-id="${esc(trip.client_id)}">
+              Öffnen
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+
+  document
+    .querySelectorAll('.openAllTrip')
+    .forEach(button=>{
+      button.onclick=async()=>{
+        $('allTripsDialog').close();
+        await openTrips(button.dataset.clientId);
+      };
+    });
+}
 async function loadTrips(){
   if(!activeTripsClient)return;
   $('tripsList').innerHTML='<p class="muted">Fahrten werden geladen …</p>';
