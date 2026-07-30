@@ -743,10 +743,10 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 
     <input type="hidden" id="tripId">
 
-    <div class="grid">
-      <label>Datum
-        <input id="tripDate" type="date" required>
-      </label>
+<div class="grid">
+  <label>Datum
+    <input id="tripDate" type="date" required>
+  </label>
 
       <label>Kilometer gesamt
         <input id="tripKilometers" type="number" min="0" step="0.1" inputmode="decimal" required>
@@ -821,6 +821,7 @@ let activeDocsClient=null;
 let activeTripsClient=null;
 let trips=[];
 let tripStopSuggestions=[];
+  let tripDocumentations=[];
 let activeMonthlyClient=null;
 
 function toast(msg){
@@ -879,11 +880,16 @@ function minutesBetween(beginn,ende){
   return (eh*60+em)-(bh*60+bm);
 }
 
-function todayLocal(){
-  const now=new Date();
-  const offset=now.getTimezoneOffset()*60000;
-  return new Date(now-offset).toISOString().slice(0,10);
+async function openTrips(clientId){
+  activeTripsClient=clients.find(c=>String(c.id)===String(clientId))||null;
+  if(!activeTripsClient){toast('Klient nicht gefunden.');return}
+  $('tripsClientName').textContent=activeTripsClient.name;
+  $('tripsDialog').showModal();
+  await Promise.all([loadTrips(),loadTripStopSuggestions()]);
 }
+  loadTripDocumentations()
+renderTripDocumentationOptions()
+applyTripDocumentation()
 
 function fillTimeOptions(){
   const options=['<option value="">Bitte auswählen</option>'];
