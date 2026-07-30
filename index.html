@@ -1634,7 +1634,15 @@ $('closeTrips').onclick=()=>{
 
 $('newTrip').onclick=()=>openTripForm();
 
-$('closeTripForm').onclick=()=>$('tripFormDialog').close();
+$('closeTripForm').onclick=()=>{
+  $('tripFormDialog').close();
+};
+
+$('tripDocumentation').onchange=()=>{
+  applyTripDocumentation(
+    $('tripDocumentation').value
+  );
+};
 
 $('tripForm').onsubmit=async e=>{
   e.preventDefault();
