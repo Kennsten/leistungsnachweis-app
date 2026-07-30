@@ -787,11 +787,37 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     </button>
   </div>
 
-  <div id="allTripsList">
-    <p class="muted">
-      Fahrten werden später hier angezeigt.
-    </p>
-  </div>
+<div class="grid">
+  <label>
+    Jahr
+    <select id="allTripsYear"></select>
+  </label>
+
+  <label>
+    Monat
+    <select id="allTripsMonth">
+      <option value="">Alle Monate</option>
+      <option value="01">Januar</option>
+      <option value="02">Februar</option>
+      <option value="03">März</option>
+      <option value="04">April</option>
+      <option value="05">Mai</option>
+      <option value="06">Juni</option>
+      <option value="07">Juli</option>
+      <option value="08">August</option>
+      <option value="09">September</option>
+      <option value="10">Oktober</option>
+      <option value="11">November</option>
+      <option value="12">Dezember</option>
+    </select>
+  </label>
+</div>
+
+<div id="allTripsList">
+  <p class="muted">
+    Fahrten werden geladen …
+  </p>
+</div>
 </dialog>
 <dialog id="tripsDialog">
   <div class="top">
@@ -1229,9 +1255,42 @@ async function loadAllTrips(){
   $('allTripsList').innerHTML=
     '<p class="muted">Fahrten werden geladen …</p>';
 
-  const {data,error}=await sb
+  const year=$('allTripsYear').value;
+  const month=$('allTripsMonth').value;
+
+  let query=sb
     .from('trip_entries')
-    .select('*')
+    .select('*');
+
+  if(year){
+    const startDate=month
+      ? `${year}-${month}-01`
+      : `${year}-01-01`;
+
+    let endDate;
+
+    if(month){
+      const nextMonth=new Date(
+        Number(year),
+        Number(month),
+        1
+      );
+
+      endDate=[
+        nextMonth.getFullYear(),
+        String(nextMonth.getMonth()+1).padStart(2,'0'),
+        '01'
+      ].join('-');
+    }else{
+      endDate=`${Number(year)+1}-01-01`;
+    }
+
+    query=query
+      .gte('trip_date',startDate)
+      .lt('trip_date',endDate);
+  }
+
+  const {data,error}=await query
     .order('trip_date',{ascending:false})
     .order('created_at',{ascending:false});
 
@@ -1248,7 +1307,7 @@ async function loadAllTrips(){
 
   if(!allTrips.length){
     $('allTripsList').innerHTML=
-      '<p class="muted">Noch keine Fahrten vorhanden.</p>';
+      '<p class="muted">Für diesen Zeitraum sind keine Fahrten vorhanden.</p>';
     return;
   }
 
@@ -1261,7 +1320,7 @@ async function loadAllTrips(){
   $('allTripsList').innerHTML=`
     <div class="summary-box">
       <div class="summary-row">
-        <span>Fahrten gesamt</span>
+        <span>Fahrten</span>
         <strong>${allTrips.length}</strong>
       </div>
 
@@ -1828,10 +1887,27 @@ $('logout').onclick=async()=>{
   button.disabled=false;
 };
   
-  $('allTrips').onclick=async()=>{
+$('allTrips').onclick=async()=>{
+  const currentYear=new Date().getFullYear();
+
+  $('allTripsYear').innerHTML='';
+
+  for(let year=currentYear;year>=2024;year--){
+    $('allTripsYear').insertAdjacentHTML(
+      'beforeend',
+      `<option value="${year}">${year}</option>`
+    );
+  }
+
+  $('allTripsYear').value=String(currentYear);
+  $('allTripsMonth').value='';
+
   $('allTripsDialog').showModal();
+
   await loadAllTrips();
 };
+  $('allTripsYear').onchange=loadAllTrips;
+$('allTripsMonth').onchange=loadAllTrips;
 
 $('closeAllTrips').onclick=()=>{
   $('allTripsDialog').close();
