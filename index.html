@@ -785,7 +785,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 
     <div class="actions">
       <button type="button" id="deleteTrip" class="danger hidden">Löschen</button>
-      <button type="submit" class="primary">Speichern</button>
+<button type="submit" id="tripSave" class="primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -829,6 +829,7 @@ let activeClient=null;
 let activeDocsClient=null;
 let activeTripsClient=null;
 let trips=[];
+  let tripSaving=false;
 let tripStopSuggestions=[];
   let tripDocumentations=[];
 let activeMonthlyClient=null;
@@ -1654,12 +1655,19 @@ $('tripDocumentation').onchange=()=>{
 $('tripForm').onsubmit=async e=>{
   e.preventDefault();
 
+  if(tripSaving)return;
+
   if(!activeTripsClient){
     toast('Kein Klient ausgewählt.');
     return;
   }
 
-    const id=$('tripId').value;
+  const saveButton=$('tripSave');
+  tripSaving=true;
+  saveButton.disabled=true;
+  saveButton.textContent='Wird gespeichert …';
+
+  const id=$('tripId').value;
   const stopovers=$('tripStopovers').value.trim();
   const documentationId=
     $('tripDocumentation').value||null;
