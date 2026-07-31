@@ -692,13 +692,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <option value="Sonstiges">Sonstiges</option>
   </select>
 </label>
-<label>
-  Wegepauschale
-  <select id="docWegepauschale">
-    <option value="0">keine</option>
-    <option value="1">Wegepauschale 1</option>
-  </select>
-</label>
+
       <label>Beginn<select id="docBeginn" required></select></label>
       <label>Ende<select id="docEnde" required></select></label>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
@@ -1574,9 +1568,6 @@ function openDocForm(id=''){
   $('docDatum').value=d.datum||todayLocal();
   $('docLeistungsart').value=d.leistungsart||'FLS';
   $('docOrt').value = d.ort_der_leistung || 'Wohnung Klient';
-
-  $('docWegepauschale').value =
-  d.wegepauschale ? '1' : '0';
   
 $('docBeginn').value = d.beginn
   ? String(d.beginn).slice(0,5)
