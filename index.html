@@ -1830,6 +1830,7 @@ approvals.sort((a,b)=>{
     const usedFls=minutesToFls(usedMinutes);
     const totalFls=Number(a.stundenkontingent||0);
     const restFls=Math.round((totalFls-usedFls)*10)/10;
+    const usedPercent=totalFls>0?Math.min(100,Math.round((usedFls/totalFls)*100)):0;
   const reportStatus=approvalReportStatus(a.ende);
     return `
     <div class="approval">
