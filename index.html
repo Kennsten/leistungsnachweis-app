@@ -1842,8 +1842,8 @@ approvals.sort((a,b)=>{
   ${reportStatus.symbol}
   ${reportStatus.text}
 </div>
-          <div class="meta">Verbraucht: ${formatFls(usedFls)} FLS</div>
-          <div class="meta">Verbleibend: ${formatFls(restFls)} FLS</div>
+<div class="meta">Verbraucht: ${formatFls(usedFls)} FLS (${usedPercent} %)</div>
+<div class="meta">Verbleibend: ${formatFls(restFls)} FLS</div>
           <div class="meta">${a.wochen_fls!=null?formatFls(a.wochen_fls)+' Wochen-FLS':'keine Wochen-FLS eingetragen'}</div>
           <div class="meta">${esc(a.kostentraeger||a.leistungstraeger_name||a.leistungstraeger_typ||'kein Leistungsträger')}</div>
           ${a.ansprechpartner?`<div class="meta">Ansprechpartner: ${esc(a.ansprechpartner)}</div>`:''}
