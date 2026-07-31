@@ -433,10 +433,16 @@
       );
 
       const totalFls=minutesToFls(totalMinutes);
-      const totalWay=entries.reduce(
-        (sum,entry)=>sum+Number(entry.wegepauschale_betrag||0),
-        0
-      );
+const totalWay=entries.reduce(
+  (sum,entry)=>{
+    const ort=String(entry.ort_der_leistung||'')
+      .trim()
+      .toLowerCase();
+
+    return sum+(ort==='telefon'||ort==='online'?0:1);
+  },
+  0
+);
       const totalCancel=entries.reduce(
         (sum,entry)=>sum+Number(entry.ausfallstunde||0),
         0
@@ -461,7 +467,12 @@
     ? ''
     : 1
 }</td>
-              <td class="number">${entry.wegepauschale_betrag?formatFls(entry.wegepauschale_betrag):'0,00'}</td>
+<td class="number">${
+  entry.ort_der_leistung==='Telefon' ||
+  entry.ort_der_leistung==='Online'
+    ? '0,00'
+    : '1,00'
+}</td>
               <td class="center-text">${entry.ausfallstunde?1:''}</td>
               <td>${esc(entry.kennziffer||'')}</td>
               <td>${esc(payload.auftragnehmer||'Stork, Oliver')}</td>
