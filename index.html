@@ -1705,8 +1705,11 @@ function openMonthly(clientId){
     symbol:'🟢'
   };
 }
-  function isOtherLeistungstraeger(approval){
-    function calculateApprovalBudget(approval, approvalDocs){
+function isOtherLeistungstraeger(approval){
+  return approval?.leistungstraeger_typ==='Sonstiger Leistungsträger';
+}
+
+function calculateApprovalBudget(approval, approvalDocs){
 
   const usedMinutes=approvalDocs
     .filter(d=>
@@ -1718,7 +1721,6 @@ function openMonthly(clientId){
     .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
 
   const usedFls=minutesToFls(usedMinutes);
-
   const totalFls=Number(approval.stundenkontingent||0);
 
   return {
@@ -1729,8 +1731,6 @@ function openMonthly(clientId){
       ?Math.min(100,Math.round((usedFls/totalFls)*100))
       :0
   };
-}
-  return approval?.leistungstraeger_typ==='Sonstiger Leistungsträger';
 }
   async function loadAllApprovals(){
   $('allApprovalsList').innerHTML=
