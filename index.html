@@ -1053,6 +1053,7 @@ async function loadTripDocumentations(){
       .map(t=>t.documentation_id)
       .filter(Boolean)
   );
+  console.log('usedTrips', usedTrips, usedDocumentationIds);
   const {data,error}=await sb
     .from('dokumentationen')
     .select(`
