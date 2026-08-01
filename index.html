@@ -1037,7 +1037,7 @@ async function openTrips(clientId){
   loadTripDocumentations()
 ]);
 }
-async function loadTripDocumentations(){
+async function loadTripDocumentations(currentTripId=''){
   if(!activeTripsClient){
     tripDocumentations=[];
     renderTripDocumentationOptions();
@@ -1053,6 +1053,11 @@ async function loadTripDocumentations(){
       .map(t=>t.documentation_id)
       .filter(Boolean)
   );
+  const currentTrip = trips.find(
+  t => String(t.id) === String(currentTripId)
+);
+const currentDocumentationId =
+  currentTrip?.documentation_id || null;
   console.log('usedTrips', usedTrips, usedDocumentationIds);
   const {data,error}=await sb
     .from('dokumentationen')
