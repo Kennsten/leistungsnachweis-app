@@ -1706,6 +1706,30 @@ function openMonthly(clientId){
   };
 }
   function isOtherLeistungstraeger(approval){
+    function calculateApprovalBudget(approval, approvalDocs){
+
+  const usedMinutes=approvalDocs
+    .filter(d=>
+      d.bewilligung_id===approval.id ||
+      (!d.bewilligung_id &&
+       d.datum>=approval.beginn &&
+       d.datum<=approval.ende)
+    )
+    .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
+
+  const usedFls=minutesToFls(usedMinutes);
+
+  const totalFls=Number(approval.stundenkontingent||0);
+
+  return {
+    usedFls,
+    totalFls,
+    restFls:Math.round((totalFls-usedFls)*10)/10,
+    usedPercent:totalFls>0
+      ?Math.min(100,Math.round((usedFls/totalFls)*100))
+      :0
+  };
+}
   return approval?.leistungstraeger_typ==='Sonstiger Leistungsträger';
 }
   async function loadAllApprovals(){
