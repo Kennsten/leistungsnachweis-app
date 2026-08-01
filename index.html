@@ -562,6 +562,53 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     margin:0;
   }
 }
+.print-only{display:none}
+
+.trip-print-head h1{font-size:16pt;margin:0 0 6px}
+.trip-print-head p{margin:0 0 3px;font-size:10pt}
+
+.trip-print-table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:10px}
+.trip-print-table th,
+.trip-print-table td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top}
+.trip-print-table th{background:#eee}
+.trip-print-table td.num,
+.trip-print-table th:last-child{text-align:right;white-space:nowrap}
+
+@media print{
+  @page{size:A4 landscape;margin:12mm}
+
+  #allTripsDialog,
+  #allTripsDialog *{
+    visibility:visible;
+  }
+
+  #allTripsDialog{
+    position:absolute;
+    inset:0;
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+    border:0;
+    box-shadow:none;
+    overflow:visible;
+  }
+
+  #allTripsDialog .top,
+  #allTripsDialog .grid,
+  #allTripsList .summary-box,
+  #allTripsList .doc-item{
+    display:none;
+  }
+
+  #allTripsList .print-only{
+    display:block;
+  }
+
+  .trip-print-table thead{display:table-header-group}
+  .trip-print-table tr{page-break-inside:avoid}
+}
+
 </style>
 </head>
 <body>
@@ -809,12 +856,21 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
       <h2>Gesamt-Fahrtenliste</h2>
     </div>
 
-    <button
-      type="button"
-      id="closeAllTrips"
-      class="secondary">
-      Schließen
-    </button>
+    <div class="actions">
+      <button
+        type="button"
+        id="printAllTrips"
+        class="primary">
+        Drucken / PDF
+      </button>
+
+      <button
+        type="button"
+        id="closeAllTrips"
+        class="secondary">
+        Schließen
+      </button>
+    </div>
   </div>
 
 <div class="grid">
@@ -1354,6 +1410,76 @@ async function loadAllTrips(){
     0
   );
 
+  const monthNames=[
+    'Januar','Februar','März','April','Mai','Juni',
+    'Juli','August','September','Oktober','November','Dezember'
+  ];
+
+  const zeitraum=year
+    ? (month
+        ? `${monthNames[Number(month)-1]} ${year}`
+        : `Jahr ${year}`)
+    : 'Gesamter Zeitraum';
+
+  const clientName=clientId=>{
+    const client=clients.find(
+      c=>String(c.id)===String(clientId)
+    );
+    return client?client.name:'Unbekannter Klient';
+  };
+
+  const printRows=allTrips
+    .slice()
+    .sort((a,b)=>
+      String(a.trip_date).localeCompare(String(b.trip_date))
+    )
+    .map(trip=>`
+      <tr>
+        <td>${formatDate(trip.trip_date)}</td>
+        <td>${esc(clientName(trip.client_id))}</td>
+        <td>${esc(trip.start_address||'')}</td>
+        <td>${esc(trip.intermediate_stops||trip.stopovers||'')}</td>
+        <td>${esc(trip.destination_address||trip.destination||'')}</td>
+        <td>${esc(trip.purpose||'')}</td>
+        <td class="num">${formatKm(trip.kilometers)}</td>
+      </tr>
+    `)
+    .join('');
+
+  const printBlock=`
+    <div class="print-only">
+      <div class="trip-print-head">
+        <h1>Fahrtenbuch – Gesamtübersicht</h1>
+        <p>Zeitraum: ${esc(zeitraum)}</p>
+        <p>Fahrten: ${allTrips.length} · Kilometer gesamt: ${formatKm(totalKm)} km</p>
+        <p>Erstellt am ${formatDate(todayIso())}</p>
+      </div>
+
+      <table class="trip-print-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Klient</th>
+            <th>Startadresse</th>
+            <th>Zwischenstopps</th>
+            <th>Zieladresse</th>
+            <th>Zweck der Fahrt</th>
+            <th>km</th>
+          </tr>
+        </thead>
+
+        <tbody>${printRows}</tbody>
+
+        <tfoot>
+          <tr>
+            <td colspan="6"><strong>Summe</strong></td>
+            <td class="num"><strong>${formatKm(totalKm)}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+
   $('allTripsList').innerHTML=`
     <div class="summary-box">
       <div class="summary-row">
@@ -1367,66 +1493,53 @@ async function loadAllTrips(){
       </div>
     </div>
 
-    ${allTrips.map(trip=>{
-      const client=clients.find(
-        c=>String(c.id)===String(trip.client_id)
-      );
+    ${allTrips.map(trip=>`
+      <div class="doc-item">
+        <div class="doc-head">
+          <div>
+            <h3>
+              ${formatDate(trip.trip_date)}
+              ·
+              ${formatKm(trip.kilometers)} km
+            </h3>
 
-      return `
-        <div class="doc-item">
-          <div class="doc-head">
-            <div>
-              <h3>
-                ${formatDate(trip.trip_date)}
-                ·
-                ${formatKm(trip.kilometers)} km
-              </h3>
-
-              <div class="meta">
-                Klient:
-                ${esc(client?.name||'Unbekannter Klient')}
-              </div>
-
-              <div class="meta">
-                ${esc(trip.start_address||'')}
-                →
-                ${esc(
-                  trip.destination_address||
-                  trip.destination||
-                  ''
-                )}
-              </div>
-
-              ${
-                trip.intermediate_stops||
-                trip.stopovers
-                  ? `
-                    <div class="meta">
-                      Zwischenstopps:
-                      ${esc(
-                        trip.intermediate_stops||
-                        trip.stopovers
-                      )}
-                    </div>
-                  `
-                  : ''
-              }
-
-              <div class="meta">
-                ${esc(trip.purpose||'')}
-              </div>
+            <div class="meta">
+              Klient: ${esc(clientName(trip.client_id))}
             </div>
 
-            <button
-              type="button"
-              class="secondary openAllTrip"
-              data-client-id="${esc(trip.client_id)}">
-              Öffnen
-            </button>
+            <div class="meta">
+              ${esc(trip.start_address||'')}
+              →
+              ${esc(trip.destination_address||trip.destination||'')}
+            </div>
+
+            ${
+              trip.intermediate_stops||trip.stopovers
+                ? `
+                  <div class="meta">
+                    Zwischenstopps:
+                    ${esc(trip.intermediate_stops||trip.stopovers)}
+                  </div>
+                `
+                : ''
+            }
+
+            <div class="meta">
+              ${esc(trip.purpose||'')}
+            </div>
           </div>
+
+          <button
+            type="button"
+            class="secondary openAllTrip"
+            data-client-id="${esc(trip.client_id)}">
+            Öffnen
+          </button>
         </div>
-      `;
-    }).join('')}
+      </div>
+    `).join('')}
+
+    ${printBlock}
   `;
 
   document
@@ -1981,34 +2094,9 @@ function openApprovalForm(id=''){
 }
 
 $('login').onclick=async()=>{
-  const button=$('login');
-  button.disabled=true;
-
-  try{
-    const {data,error}=await sb.auth.signInWithPassword({
-      email:$('email').value.trim(),
-      password:$('password').value
-    });
-
-    if(error){
-      toast('Anmeldung fehlgeschlagen: '+error.message);
-      return;
-    }
-
-    if(!data||!data.session){
-      toast(
-        'Anmeldung ohne gültige Sitzung. Bitte in den Safari-Einstellungen '+
-        'Cookies und Websitedaten für diese Seite zulassen.'
-      );
-      return;
-    }
-
-    user=data.session.user;
-    showApp(true);
-    await loadClients();
-  }finally{
-    button.disabled=false;
-  }
+  const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
+  if(error){toast(error.message);return}
+  await init();
 };
 
 $('signup').onclick=async()=>{
@@ -2051,6 +2139,10 @@ $('allTrips').onclick=async()=>{
 };
   $('allTripsYear').onchange=loadAllTrips;
 $('allTripsMonth').onchange=loadAllTrips;
+
+$('printAllTrips').onclick=()=>{
+  window.print();
+};
 
 $('closeAllTrips').onclick=()=>{
   $('allTripsDialog').close();
@@ -2341,6 +2433,7 @@ $('tripForm').onsubmit=async e=>{
     saveButton.textContent='Speichern';
   }
 };
+
 
 $('deleteTrip').onclick=async()=>{
   const id=$('tripId').value;
