@@ -1981,9 +1981,34 @@ function openApprovalForm(id=''){
 }
 
 $('login').onclick=async()=>{
-  const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
-  if(error){toast(error.message);return}
-  await init();
+  const button=$('login');
+  button.disabled=true;
+
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({
+      email:$('email').value.trim(),
+      password:$('password').value
+    });
+
+    if(error){
+      toast('Anmeldung fehlgeschlagen: '+error.message);
+      return;
+    }
+
+    if(!data||!data.session){
+      toast(
+        'Anmeldung ohne gültige Sitzung. Bitte in den Safari-Einstellungen '+
+        'Cookies und Websitedaten für diese Seite zulassen.'
+      );
+      return;
+    }
+
+    user=data.session.user;
+    showApp(true);
+    await loadClients();
+  }finally{
+    button.disabled=false;
+  }
 };
 
 $('signup').onclick=async()=>{
