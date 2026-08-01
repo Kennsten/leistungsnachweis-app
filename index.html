@@ -1863,7 +1863,12 @@ approvals.sort((a,b)=>{
   style="--progress:${usedPercent}%;--progress-color:${usedPercent>=90?'#c62828':usedPercent>=70?'#f9a825':'#2f6f4e'}">
   </div>
 </div>
-<div class="meta">Verbleibend: ${formatFls(restFls)} FLS</div>
+<div class="meta">
+Verbleibend:
+<strong style="color:${restFls<=0?'#c62828':restFls<=5?'#f9a825':'#2f6f4e'}">
+${formatFls(restFls)} FLS
+</strong>
+</div>
           <div class="meta">${a.wochen_fls!=null?formatFls(a.wochen_fls)+' Wochen-FLS':'keine Wochen-FLS eingetragen'}</div>
           <div class="meta">${esc(a.kostentraeger||a.leistungstraeger_name||a.leistungstraeger_typ||'kein Leistungsträger')}</div>
           ${a.ansprechpartner?`<div class="meta">Ansprechpartner: ${esc(a.ansprechpartner)}</div>`:''}
