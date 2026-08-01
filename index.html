@@ -2342,15 +2342,6 @@ $('tripForm').onsubmit=async e=>{
   }
 };
 
-      loadTripDocumentations()
-    ]);
-  }finally{
-    tripSaving=false;
-    saveButton.disabled=false;
-    saveButton.textContent='Speichern';
-  }
-};
-
 $('deleteTrip').onclick=async()=>{
   const id=$('tripId').value;
 
