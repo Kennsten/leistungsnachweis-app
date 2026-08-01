@@ -1900,7 +1900,7 @@ const firstHalfCarry=Math.max(
 const availableSecondHalf=
   secondHalfFls+firstHalfCarry;
 
-    const restFls=Math.round((totalFls-usedFls)*10)/10;
+const restFls=budget.restFls;
     const usedPercent=totalFls>0?Math.min(100,Math.round((usedFls/totalFls)*100)):0;
   const reportStatus=approvalReportStatus(a.ende);
     return `
