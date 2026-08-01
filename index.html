@@ -2213,7 +2213,8 @@ $('tripForm').onsubmit=async e=>{
   const stopovers=$('tripStopovers').value.trim();
   const documentationId=
     $('tripDocumentation').value||null;
-
+alert('documentationId: ' + documentationId);
+  
   const row={
     user_id:user.id,
     client_id:activeTripsClient.id,
