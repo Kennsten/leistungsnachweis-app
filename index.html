@@ -1519,7 +1519,7 @@ function openTripForm(id=''){
   $('tripKilometers').value=trip.kilometers??'';
   $('tripPurpose').value=trip.purpose||'';
   $('tripNotes').value=trip.notes||'';
-
+$('tripDocumentation').value=trip.documentation_id||'';
   $('tripDialogTitle').textContent=id?'Fahrt bearbeiten':'Fahrt anlegen';
   $('deleteTrip').classList.toggle('hidden',!id);
   $('tripFormDialog').showModal();
