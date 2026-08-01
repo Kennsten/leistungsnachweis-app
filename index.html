@@ -1167,13 +1167,6 @@ function applyTripDocumentation(documentationId){
     return;
   }
 
-  const beginn=String(doc.beginn||'').slice(0,5);
-  const ende=String(doc.ende||'').slice(0,5);
-
-  const zeit=[beginn,ende]
-    .filter(Boolean)
-    .join('–');
-
   $('tripDate').value=doc.datum||todayIso();
 
   $('tripDestination').value=
@@ -1195,18 +1188,6 @@ function applyTripDocumentation(documentationId){
   }
 
   $('tripPurpose').value=zweck;
-
-  const bemerkungen=[];
-
-  if(zeit){
-    bemerkungen.push(`Terminzeit: ${zeit} Uhr`);
-  }
-
-  if(leistungsort){
-    bemerkungen.push(`Leistungsort: ${leistungsort}`);
-  }
-
-  $('tripNotes').value=bemerkungen.join('\n');
 
   if(
     leistungsort==='Telefon'||
