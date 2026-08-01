@@ -1081,8 +1081,15 @@ async function loadTripDocumentations(){
     return;
   }
 
+const currentDocumentationId=$('tripId').value
+  ? trips.find(t=>String(t.id)===String($('tripId').value))?.documentation_id
+  : null;
+
 tripDocumentations=(data||[]).filter(
-  doc=>!usedDocumentationIds.has(doc.id)
+  doc =>
+    !usedDocumentationIds.has(doc.id) ||
+    String(doc.id)===String(currentDocumentationId)
+);
 );
   renderTripDocumentationOptions();
 }
