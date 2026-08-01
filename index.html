@@ -1849,10 +1849,10 @@ approvals.sort((a,b)=>{
     const isOther=isOtherLeistungstraeger(a);
 const firstHalfFls=Number(a.fls_halbjahr_1||0);
 const secondHalfFls=Number(a.fls_halbjahr_2||0);
+
     const approvalStart=new Date(a.beginn+'T00:00:00');
 const firstHalfEnd=new Date(approvalStart);
 firstHalfEnd.setMonth(firstHalfEnd.getMonth()+6);
-
 const firstHalfMinutes=approvalDocs
   .filter(d=>
     (d.bewilligung_id===a.id || (!d.bewilligung_id && d.datum>=a.beginn && d.datum<=a.ende)) &&
@@ -1869,12 +1869,7 @@ const firstHalfCarry=Math.max(
 
 const availableSecondHalf=
   secondHalfFls+firstHalfCarry;
-    const approvalStart=new Date(a.beginn+'T00:00:00');
-const halfYearEnd=new Date(approvalStart);
-halfYearEnd.setMonth(halfYearEnd.getMonth()+6);
 
-const today=new Date(todayIso+'T00:00:00');
-const inFirstHalf=today<halfYearEnd;
     const restFls=Math.round((totalFls-usedFls)*10)/10;
     const usedPercent=totalFls>0?Math.min(100,Math.round((usedFls/totalFls)*100)):0;
   const reportStatus=approvalReportStatus(a.ende);
