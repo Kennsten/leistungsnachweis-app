@@ -1058,7 +1058,6 @@ async function loadTripDocumentations(currentTripId=''){
 );
 const currentDocumentationId =
   currentTrip?.documentation_id || null;
-  console.log('usedTrips', usedTrips, usedDocumentationIds);
   const {data,error}=await sb
     .from('dokumentationen')
     .select(`
@@ -1086,10 +1085,6 @@ const currentDocumentationId =
 
     return;
   }
-
-const currentDocumentationId=$('tripId').value
-  ? trips.find(t=>String(t.id)===String($('tripId').value))?.documentation_id
-  : null;
 
 tripDocumentations=(data||[]).filter(
   doc =>
@@ -1524,7 +1519,7 @@ async function openTripForm(id=''){
   $('tripKilometers').value=trip.kilometers??'';
   $('tripPurpose').value=trip.purpose||'';
   $('tripNotes').value=trip.notes||'';
-  await loadTripDocumentations();
+await loadTripDocumentations(id);
 $('tripDocumentation').value=trip.documentation_id||'';
   $('tripDialogTitle').textContent=id?'Fahrt bearbeiten':'Fahrt anlegen';
   $('deleteTrip').classList.toggle('hidden',!id);
