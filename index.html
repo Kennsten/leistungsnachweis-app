@@ -567,12 +567,14 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 .trip-print-head h1{font-size:16pt;margin:0 0 6px}
 .trip-print-head p{margin:0 0 3px;font-size:10pt}
 
-.trip-print-table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:10px}
+.trip-print-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9.5pt;margin-top:10px}
 .trip-print-table th,
-.trip-print-table td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top}
+.trip-print-table td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top;overflow-wrap:break-word}
 .trip-print-table th{background:#eee}
 .trip-print-table td.num,
 .trip-print-table th:last-child{text-align:right;white-space:nowrap}
+.trip-print-table td.nowrap{white-space:nowrap}
+.trip-print-table td.dito{text-align:center;color:#555}
 
 @media print{
   @page{size:A4 landscape;margin:12mm}
@@ -1428,6 +1430,19 @@ async function loadAllTrips(){
     return client?client.name:'Unbekannter Klient';
   };
 
+  const previousValues={};
+
+  const repeatCell=(key,value)=>{
+    const text=String(value||'');
+
+    if(text && previousValues[key]===text){
+      return '<td class="dito">\u201E</td>';
+    }
+
+    previousValues[key]=text;
+    return `<td>${esc(text)}</td>`;
+  };
+
   const printRows=allTrips
     .slice()
     .sort((a,b)=>
@@ -1435,12 +1450,12 @@ async function loadAllTrips(){
     )
     .map(trip=>`
       <tr>
-        <td>${formatDate(trip.trip_date)}</td>
-        <td>${esc(clientName(trip.client_id))}</td>
-        <td>${esc(trip.start_address||'')}</td>
-        <td>${esc(trip.intermediate_stops||trip.stopovers||'')}</td>
-        <td>${esc(trip.destination_address||trip.destination||'')}</td>
-        <td>${esc(trip.purpose||'')}</td>
+        <td class="nowrap">${formatDate(trip.trip_date)}</td>
+        ${repeatCell('client',clientName(trip.client_id))}
+        ${repeatCell('start',trip.start_address)}
+        ${repeatCell('stops',trip.intermediate_stops||trip.stopovers)}
+        ${repeatCell('ziel',trip.destination_address||trip.destination)}
+        ${repeatCell('zweck',trip.purpose)}
         <td class="num">${formatKm(trip.kilometers)}</td>
       </tr>
     `)
@@ -1456,6 +1471,16 @@ async function loadAllTrips(){
       </div>
 
       <table class="trip-print-table">
+        <colgroup>
+          <col style="width:9%">
+          <col style="width:12%">
+          <col style="width:20%">
+          <col style="width:13%">
+          <col style="width:20%">
+          <col style="width:18%">
+          <col style="width:8%">
+        </colgroup>
+
         <thead>
           <tr>
             <th>Datum</th>
