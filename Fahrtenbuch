@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fahrtenbuch</title>
+
+  <style>
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:#d9dee3;
+      color:#111;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+
+    .toolbar{
+      position:sticky;
+      top:0;
+      z-index:10;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+      background:#fff;
+      border-bottom:1px solid #bbb;
+    }
+
+    .toolbar-title{
+      font-size:17px;
+      font-weight:700;
+    }
+
+    .toolbar-actions{
+      display:flex;
+      gap:10px;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid #9eb2c5;
+      border-radius:10px;
+      padding:10px 16px;
+      background:#eef5fb;
+      color:#18344e;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    button.primary{
+      background:#173b5b;
+      border-color:#173b5b;
+      color:#fff;
+    }
+
+    .page-wrap{
+      width:100%;
+      overflow-x:auto;
+      padding:18px 12px 40px;
+    }
+
+    .sheet{
+      width:210mm;
+      margin:0 auto;
+      padding:14mm 12mm;
+      background:#fff;
+      border:1px solid #c7d0d8;
+      box-shadow:0 6px 24px rgba(0,0,0,.12);
+    }
+
+    .sheet-head{
+      border-bottom:2px solid #111;
+      padding-bottom:8px;
+      margin-bottom:12px;
+    }
+
+    .sheet-head h1{
+      font-size:15pt;
+      margin:0 0 6px;
+    }
+
+    .sheet-head p{
+      margin:0 0 3px;
+      font-size:9.5pt;
+    }
+
+    table{
+      width:100%;
+      table-layout:fixed;
+      border-collapse:collapse;
+      font-size:8.5pt;
+    }
+
+    th,td{
+      border:1px solid #000;
+      padding:4px 5px;
+      text-align:left;
+      vertical-align:top;
+      overflow-wrap:break-word;
+      hyphens:auto;
+    }
+
+    th{
+      background:#eee;
+      font-size:8pt;
+    }
+
+    td.nowrap{
+      white-space:nowrap;
+    }
+
+    td.num,
+    th.num{
+      text-align:right;
+      white-space:nowrap;
+    }
+
+    td.dito{
+      text-align:center;
+      color:#555;
+    }
+
+    tfoot td{
+      background:#f4f4f4;
+      font-weight:700;
+    }
+
+    .footnote{
+      margin-top:10px;
+      font-size:8pt;
+      color:#444;
+    }
+
+    .error-box{
+      width:min(90vw,700px);
+      margin:60px auto;
+      padding:25px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid #c7d0d8;
+      box-shadow:0 6px 24px rgba(0,0,0,.12);
+    }
+
+    @media print{
+      @page{
+        size:A4 portrait;
+        margin:12mm;
+      }
+
+      html,body{
+        width:auto;
+        height:auto;
+        margin:0;
+        padding:0;
+        background:#fff;
+      }
+
+      .toolbar{display:none}
+
+      .page-wrap{
+        width:auto;
+        margin:0;
+        padding:0;
+        overflow:visible;
+      }
+
+      .sheet{
+        width:auto;
+        margin:0;
+        padding:0;
+        border:0;
+        box-shadow:none;
+      }
+
+      thead{display:table-header-group}
+      tfoot{display:table-footer-group}
+      tr{page-break-inside:avoid}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <div class="toolbar-title">Fahrtenbuch</div>
+
+    <div class="toolbar-actions">
+      <button type="button" id="closeButton">Schließen</button>
+      <button type="button" id="printButton" class="primary">Drucken / PDF</button>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <script>
+    const app=document.getElementById('app');
+
+    function esc(value){
+      return String(value??'')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function formatDate(value){
+      if(!value)return '';
+
+      const parts=String(value).split('-');
+      if(parts.length!==3)return String(value);
+
+      return parts[2]+'.'+parts[1]+'.'+parts[0];
+    }
+
+    function formatKm(value){
+      return Number(value||0)
+        .toFixed(1)
+        .replace('.',',');
+    }
+
+    function readPayload(){
+      const raw=sessionStorage.getItem('fahrtenbuch_payload');
+      if(!raw)return null;
+
+      try{
+        return JSON.parse(raw);
+      }catch(error){
+        console.error(error);
+        return null;
+      }
+    }
+
+    function showError(){
+      app.innerHTML=`
+        <div class="error-box">
+          <h2>Keine Daten gefunden</h2>
+          <p>Öffne das Fahrtenbuch bitte über die Klienten-App.</p>
+        </div>
+      `;
+    }
+
+    function render(){
+      const payload=readPayload();
+
+      if(!payload||!Array.isArray(payload.trips)||!payload.trips.length){
+        showError();
+        return;
+      }
+
+      const trips=payload.trips;
+
+      const totalKm=trips.reduce(
+        (sum,trip)=>sum+Number(trip.km||0),
+        0
+      );
+
+      const previousValues={};
+
+      const cell=(key,value,extraClass)=>{
+        const text=String(value||'');
+
+        if(text && previousValues[key]===text){
+          return '<td class="dito">\u201E</td>';
+        }
+
+        previousValues[key]=text;
+
+        return '<td'+(extraClass?' class="'+extraClass+'"':'')+'>'+
+          esc(text)+
+          '</td>';
+      };
+
+      const rows=trips.map(trip=>`
+        <tr>
+          <td class="nowrap">${formatDate(trip.date)}</td>
+          ${cell('client',trip.client)}
+          ${cell('start',trip.start)}
+          ${cell('stops',trip.stops)}
+          ${cell('destination',trip.destination)}
+          ${cell('purpose',trip.purpose)}
+          <td class="num">${formatKm(trip.km)}</td>
+        </tr>
+      `).join('');
+
+      app.innerHTML=`
+        <div class="page-wrap">
+          <div class="sheet">
+            <div class="sheet-head">
+              <h1>Fahrtenbuch – Gesamtübersicht</h1>
+              <p>Zeitraum: ${esc(payload.zeitraum||'')}</p>
+              <p>
+                Fahrten: ${trips.length}
+                ·
+                Kilometer gesamt: ${formatKm(totalKm)} km
+              </p>
+              <p>Erstellt am ${formatDate(payload.createdAt)}</p>
+            </div>
+
+            <table>
+              <colgroup>
+                <col style="width:11%">
+                <col style="width:14%">
+                <col style="width:19%">
+                <col style="width:11%">
+                <col style="width:19%">
+                <col style="width:17%">
+                <col style="width:9%">
+              </colgroup>
+
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Klient</th>
+                  <th>Start&shy;adresse</th>
+                  <th>Zwischen&shy;stopps</th>
+                  <th>Ziel&shy;adresse</th>
+                  <th>Zweck</th>
+                  <th class="num">km</th>
+                </tr>
+              </thead>
+
+              <tbody>${rows}</tbody>
+
+              <tfoot>
+                <tr>
+                  <td colspan="6">Summe</td>
+                  <td class="num">${formatKm(totalKm)}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <p class="footnote">
+              Das Zeichen &bdquo; bedeutet, dass der Wert der Zeile darüber
+              unverändert gilt.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById('printButton')
+      .addEventListener('click',()=>window.print());
+
+    document.getElementById('closeButton')
+      .addEventListener('click',()=>window.close());
+
+    render();
+  </script>
+</body>
+</html>
