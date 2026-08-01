@@ -72,12 +72,11 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 .summary-box{border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;background:var(--accent)}
 .summary-row{display:flex;justify-content:space-between;gap:12px;margin:5px 0}
 .summary-row strong{text-align:right}
-  .approval-progress{
-  margin-top:8px;
-  height:10px;
-  background:#e4e9ee;
-  border-radius:999px;
-  overflow:hidden;
+.approval-progress-fill{
+  height:100%;
+  width:var(--progress,0%);
+  background:var(--progress-color,#2f6f4e);
+  transition:width .25s ease;
 }
 
 .approval-progress-fill{
@@ -1858,7 +1857,9 @@ approvals.sort((a,b)=>{
 </div>
 <div class="meta">Verbraucht: ${formatFls(usedFls)} FLS (${usedPercent} %)</div>
 <div class="approval-progress">
-  <div class="approval-progress-fill" style="--progress:${usedPercent}%">
+<div
+  class="approval-progress-fill"
+  style="--progress:${usedPercent}%;--progress-color:${usedPercent>=90?'#c62828':usedPercent>=70?'#f9a825':'#2f6f4e'}">
   </div>
 </div>
 <div class="meta">Verbleibend: ${formatFls(restFls)} FLS</div>
