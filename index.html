@@ -512,6 +512,24 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
   font-weight:700;
 }
 
+.monthly-checks{
+  margin-top:10px;
+}
+
+.monthly-check-ok{
+  margin:8px 0;
+  color:#1d6b3a;
+  font-weight:600;
+}
+
+.monthly-check-details{
+  margin-top:4px;
+  padding-left:18px;
+  font-weight:400;
+  font-size:13px;
+  color:#5a4030;
+}
+
 @media print{
   body *{
     visibility:hidden;
@@ -2406,6 +2424,224 @@ $('closeMonthly').onclick=()=>{
   activeMonthlyClient=null;
 };
 
+const KENNZIFFER_NICHT_ERFORDERLICH=['Ausfall'];
+const FAHRT_ERWARTET_BEI_ORT=[
+  'Wohnung Klient',
+  'Begleitung außer Haus',
+  'Sonstiges'
+];
+
+function buildMonthlyChecks(context){
+  const entries=context.entries||[];
+  const trips=context.trips||[];
+  const approval=context.approval||null;
+  const startDate=context.startDate;
+  const endDate=context.endDate;
+  const monthlyRestBudget=context.monthlyRestBudget;
+
+  const checks=[];
+
+  const linkedDocumentationIds=new Set(
+    trips
+      .filter(trip=>trip.documentation_id)
+      .map(trip=>String(trip.documentation_id))
+  );
+
+  const documentationsWithoutTrip=entries.filter(entry=>
+    FAHRT_ERWARTET_BEI_ORT.includes(entry.ort_der_leistung) &&
+    !linkedDocumentationIds.has(String(entry.id))
+  );
+
+  checks.push({
+    ok:documentationsWithoutTrip.length===0,
+    text:documentationsWithoutTrip.length===0
+      ? 'Alle Termine mit erwarteter Fahrt sind verknüpft'
+      : `${documentationsWithoutTrip.length} Dokumentationen ohne Fahrt`,
+    details:documentationsWithoutTrip.map(entry=>
+      formatDate(entry.datum)+' · '+(entry.ort_der_leistung||'')
+    )
+  });
+
+  const tripsWithoutDocumentation=trips.filter(
+    trip=>!trip.documentation_id
+  );
+
+  checks.push({
+    ok:tripsWithoutDocumentation.length===0,
+    text:tripsWithoutDocumentation.length===0
+      ? 'Keine Fahrt ohne Dokumentation'
+      : `${tripsWithoutDocumentation.length} Fahrten ohne Dokumentation`,
+    details:tripsWithoutDocumentation.map(trip=>
+      formatDate(trip.trip_date)+' · '+(trip.purpose||'')
+    )
+  });
+
+  const seenDocumentationIds=new Set();
+  const duplicateLinks=[];
+
+  trips.forEach(trip=>{
+    if(!trip.documentation_id)return;
+
+    const key=String(trip.documentation_id);
+
+    if(seenDocumentationIds.has(key)){
+      duplicateLinks.push(trip);
+      return;
+    }
+
+    seenDocumentationIds.add(key);
+  });
+
+  checks.push({
+    ok:duplicateLinks.length===0,
+    text:duplicateLinks.length===0
+      ? 'Keine doppelten Verknüpfungen'
+      : `${duplicateLinks.length} doppelte Verknüpfungen`,
+    details:duplicateLinks.map(trip=>
+      formatDate(trip.trip_date)+' · '+(trip.purpose||'')
+    )
+  });
+
+  const missingKennziffer=entries.filter(entry=>
+    !KENNZIFFER_NICHT_ERFORDERLICH.includes(entry.leistungsart) &&
+    !entry.kennziffer
+  );
+
+  checks.push({
+    ok:missingKennziffer.length===0,
+    text:missingKennziffer.length===0
+      ? 'Alle Kennziffern vorhanden'
+      : `${missingKennziffer.length} Dokumentationen ohne Kennziffer`,
+    details:missingKennziffer.map(entry=>
+      formatDate(entry.datum)+' · '+(entry.leistungsart||'')
+    )
+  });
+
+  const missingOrt=entries.filter(
+    entry=>!entry.ort_der_leistung
+  );
+
+  checks.push({
+    ok:missingOrt.length===0,
+    text:missingOrt.length===0
+      ? 'Alle Leistungsorte vorhanden'
+      : `${missingOrt.length} Dokumentationen ohne Leistungsort`,
+    details:missingOrt.map(entry=>
+      formatDate(entry.datum)
+    )
+  });
+
+  const tripsWithoutKilometers=trips.filter(trip=>
+    !Number(trip.kilometers||0)
+  );
+
+  checks.push({
+    ok:tripsWithoutKilometers.length===0,
+    text:tripsWithoutKilometers.length===0
+      ? 'Alle Fahrten mit Kilometerangabe'
+      : `${tripsWithoutKilometers.length} Fahrten ohne Kilometer`,
+    details:tripsWithoutKilometers.map(trip=>
+      formatDate(trip.trip_date)+' · '+(trip.destination_address||'')
+    )
+  });
+
+  const lastDayOfMonth=new Date(
+    new Date(endDate+'T00:00:00').getTime()-86400000
+  );
+
+  const lastDayIso=[
+    lastDayOfMonth.getFullYear(),
+    String(lastDayOfMonth.getMonth()+1).padStart(2,'0'),
+    String(lastDayOfMonth.getDate()).padStart(2,'0')
+  ].join('-');
+
+  const approvalCoversMonth=Boolean(
+    approval &&
+    approval.beginn<=startDate &&
+    approval.ende>=lastDayIso
+  );
+
+  checks.push({
+    ok:approvalCoversMonth,
+    text:!approval
+      ? 'Keine Bewilligung für diesen Monat gefunden'
+      : approvalCoversMonth
+        ? 'Bewilligung gilt für den ganzen Monat'
+        : 'Bewilligung deckt den Monat nur teilweise ab',
+    details:approval
+      ? ['Zeitraum: '+formatDate(approval.beginn)+' bis '+formatDate(approval.ende)]
+      : []
+  });
+
+  if(monthlyRestBudget!=null){
+    checks.push({
+      ok:monthlyRestBudget>=0,
+      text:monthlyRestBudget>=0
+        ? `Restkontingent im Monat: ${formatFls(monthlyRestBudget)} FLS`
+        : `Monatskontingent überschritten um ${formatFls(Math.abs(monthlyRestBudget))} FLS`,
+      details:[]
+    });
+  }else{
+    checks.push({
+      ok:false,
+      text:'Kein Wochenkontingent hinterlegt – Restkontingent nicht prüfbar',
+      details:[]
+    });
+  }
+
+  if(approval&&approval.ende){
+    const status=approvalReportStatus(approval.ende);
+
+    checks.push({
+      ok:status.symbol==='🟢',
+      text:status.symbol==='🟢'
+        ? 'Verlaufsbericht nicht fällig'
+        : 'Verlaufsbericht: '+status.text,
+      details:['Bewilligung endet am '+formatDate(approval.ende)]
+    });
+  }
+
+  return checks;
+}
+
+function renderMonthlyChecks(checks){
+  const warnings=checks.filter(check=>!check.ok);
+
+  return `
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Monatsprüfung</span>
+        <strong>
+          ${
+            warnings.length
+              ? warnings.length+' Hinweise'
+              : 'Ohne Beanstandung'
+          }
+        </strong>
+      </div>
+
+      <div class="monthly-checks">
+        ${checks.map(check=>`
+          <div class="${check.ok?'monthly-check-ok':'monthly-warning'}">
+            ${check.ok?'✓':'⚠'} ${esc(check.text)}
+            ${
+              !check.ok && check.details && check.details.length
+                ? `
+                  <div class="monthly-check-details">
+                    ${check.details.map(detail=>
+                      '<div>'+esc(detail)+'</div>'
+                    ).join('')}
+                  </div>
+                `
+                : ''
+            }
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 $('monthlyMonth').onchange=async()=>{
   const value=$('monthlyMonth').value;
 
@@ -2441,7 +2677,8 @@ $('monthlyMonth').onchange=async()=>{
 
   const [
     documentationResult,
-    approvalResult
+    approvalResult,
+    tripResult
   ]=await Promise.all([
     sb
       .from('dokumentationen')
@@ -2459,7 +2696,15 @@ $('monthlyMonth').onchange=async()=>{
       .lt('beginn',endDate)
       .gte('ende',startDate)
       .order('beginn',{ascending:false})
-      .limit(1)
+      .limit(1),
+
+    sb
+      .from('trip_entries')
+      .select('*')
+      .eq('client_id',activeMonthlyClient.id)
+      .gte('trip_date',startDate)
+      .lt('trip_date',endDate)
+      .order('trip_date',{ascending:true})
   ]);
 
   if(documentationResult.error){
@@ -2478,8 +2723,16 @@ $('monthlyMonth').onchange=async()=>{
     );
   }
 
+  if(tripResult.error){
+    toast(
+      'Fahrten konnten nicht geladen werden: '+
+      tripResult.error.message
+    );
+  }
+
   const entries=documentationResult.data||[];
   const approval=(approvalResult.data||[])[0]||null;
+  const monthTrips=tripResult.data||[];
 
   const monthNames=[
     'Januar',
@@ -2547,7 +2800,18 @@ $('monthlyMonth').onchange=async()=>{
     JSON.stringify(payload)
   );
 
+  const monthlyChecks=buildMonthlyChecks({
+    entries,
+    trips:monthTrips,
+    approval,
+    startDate,
+    endDate,
+    monthlyRestBudget
+  });
+
   $('monthlyContent').innerHTML=`
+    ${renderMonthlyChecks(monthlyChecks)}
+
     <div class="summary-box">
       <div class="summary-row">
         <span>Monat</span>
