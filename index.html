@@ -1860,7 +1860,15 @@ const firstHalfMinutes=approvalDocs
   )
   .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
 
-const firstHalfFlsUsed=minutesToFls(firstHalfMinutes);
+const firstHalfFlsUsed=minutesToFls(firstHalfMinutes);const secondHalfFlsUsed=Math.max(0,usedFls-firstHalfFlsUsed);
+
+const firstHalfCarry=Math.max(
+  0,
+  firstHalfFls-firstHalfFlsUsed
+);
+
+const availableSecondHalf=
+  secondHalfFls+firstHalfCarry;
     const approvalStart=new Date(a.beginn+'T00:00:00');
 const halfYearEnd=new Date(approvalStart);
 halfYearEnd.setMonth(halfYearEnd.getMonth()+6);
