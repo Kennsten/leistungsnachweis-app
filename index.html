@@ -1901,7 +1901,7 @@ const availableSecondHalf=
   secondHalfFls+firstHalfCarry;
 
 const restFls=budget.restFls;
-    const usedPercent=totalFls>0?Math.min(100,Math.round((usedFls/totalFls)*100)):0;
+const usedPercent=budget.usedPercent;
   const reportStatus=approvalReportStatus(a.ende);
     return `
     <div class="approval">
