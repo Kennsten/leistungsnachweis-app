@@ -1870,6 +1870,7 @@ approvals.sort((a,b)=>{
       .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
     const usedFls=minutesToFls(usedMinutes);
     const totalFls=Number(a.stundenkontingent||0);
+    const budget=calculateApprovalBudget(a,approvalDocs);
     const isOther=isOtherLeistungstraeger(a);
 const firstHalfFls=Number(a.fls_halbjahr_1||0);
 const secondHalfFls=Number(a.fls_halbjahr_2||0);
