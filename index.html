@@ -1850,6 +1850,18 @@ approvals.sort((a,b)=>{
 const firstHalfFls=Number(a.fls_halbjahr_1||0);
 const secondHalfFls=Number(a.fls_halbjahr_2||0);
     const approvalStart=new Date(a.beginn+'T00:00:00');
+const firstHalfEnd=new Date(approvalStart);
+firstHalfEnd.setMonth(firstHalfEnd.getMonth()+6);
+
+const firstHalfMinutes=approvalDocs
+  .filter(d=>
+    (d.bewilligung_id===a.id || (!d.bewilligung_id && d.datum>=a.beginn && d.datum<=a.ende)) &&
+    new Date(d.datum+'T00:00:00')<firstHalfEnd
+  )
+  .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
+
+const firstHalfFlsUsed=minutesToFls(firstHalfMinutes);
+    const approvalStart=new Date(a.beginn+'T00:00:00');
 const halfYearEnd=new Date(approvalStart);
 halfYearEnd.setMonth(halfYearEnd.getMonth()+6);
 
