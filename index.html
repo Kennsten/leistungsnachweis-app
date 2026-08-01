@@ -1722,7 +1722,16 @@ function calculateApprovalBudget(approval, approvalDocs){
 
   const usedFls=minutesToFls(usedMinutes);
   const totalFls=Number(approval.stundenkontingent||0);
-
+if(!isOtherLeistungstraeger(approval)){
+  return {
+    usedFls,
+    totalFls,
+    restFls:Math.round((totalFls-usedFls)*10)/10,
+    usedPercent:totalFls>0
+      ?Math.min(100,Math.round((usedFls/totalFls)*100))
+      :0
+  };
+}
   return {
     usedFls,
     totalFls,
