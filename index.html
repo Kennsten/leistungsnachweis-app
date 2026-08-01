@@ -2211,10 +2211,14 @@ $('tripForm').onsubmit=async e=>{
   const saveButton=$('tripSave');
   const id=$('tripId').value;
   const stopovers=$('tripStopovers').value.trim();
+
+  const select=$('tripDocumentation');
+  const selectedOption=select.selectedOptions[0]||null;
   const documentationId=
-    $('tripDocumentation').value||null;
-alert('documentationId: ' + documentationId);
-  
+    (selectedOption?selectedOption.value:select.value)||null;
+
+  console.log('[trip] gesendete documentation_id:',documentationId);
+
   const row={
     user_id:user.id,
     client_id:activeTripsClient.id,
@@ -2258,18 +2262,36 @@ alert('documentationId: ' + documentationId);
           .from('trip_entries')
           .update(row)
           .eq('id',id)
+          .select('id,documentation_id')
+          .single()
       : sb
           .from('trip_entries')
-          .insert(row);
+          .insert(row)
+          .select('id,documentation_id')
+          .single();
 
-    const {error}=await query;
+    const {data:saved,error}=await query;
 
     if(error){
+      console.error('[trip] Supabase-Fehler:',error);
       toast(
         'Fahrt konnte nicht gespeichert werden: '+
         error.message
       );
       return;
+    }
+
+    console.log('[trip] von der Datenbank zurückgegeben:',saved);
+
+    if(documentationId && !saved?.documentation_id){
+      console.warn(
+        '[trip] documentation_id wurde von der Datenbank verworfen.',
+        {gesendet:documentationId,gespeichert:saved}
+      );
+      toast(
+        'Fahrt gespeichert, aber die Verknüpfung zum Termin wurde '+
+        'von der Datenbank nicht übernommen.'
+      );
     }
 
     if(stopovers){
@@ -2278,14 +2300,23 @@ alert('documentationId: ' + documentationId);
 
     $('tripFormDialog').close();
 
-    toast(
-      id
-        ? 'Fahrt aktualisiert'
-        : 'Fahrt gespeichert'
-    );
+    if(!documentationId || saved?.documentation_id){
+      toast(
+        id
+          ? 'Fahrt aktualisiert'
+          : 'Fahrt gespeichert'
+      );
+    }
 
-    await Promise.all([
-      loadTrips(),
+    await loadTrips();
+    await loadTripDocumentations();
+  }finally{
+    tripSaving=false;
+    saveButton.disabled=false;
+    saveButton.textContent='Speichern';
+  }
+};
+
       loadTripDocumentations()
     ]);
   }finally{
