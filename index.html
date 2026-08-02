@@ -1653,10 +1653,20 @@ async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilo
       {onConflict:'user_id,start_key,stops_key,destination_key'}
     );
 
-  if(error){
-    toast('Strecke nicht gelernt: '+error.message);
+    if(error){
+    alert(
+      'Strecke NICHT gelernt\n\n'+
+      'code: '+String(error.code)+'\n'+
+      'message: '+String(error.message)+'\n'+
+      'details: '+String(error.details)+'\n'+
+      'hint: '+String(error.hint)
+    );
+    return;
   }
+
+  alert('Strecke gelernt: '+startKey+' | '+stopsKey+' | '+destinationKey);
 }
+
 
 async function suggestTripKilometers(){
   if($('tripKilometers').value.trim())return;
