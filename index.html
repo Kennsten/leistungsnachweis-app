@@ -997,7 +997,17 @@ let trips=[];
 let tripStopSuggestions=[];
 let allTripsPayload=null;
 
-const SUPA_BUERO_ADRESSE='Königstr. 4, 30175 Hannover';
+const SUPA_UMZUG_AB='2026-08-01';
+const SUPA_ADRESSE_ALT='Königstr. 6, 30175 Hannover';
+const SUPA_ADRESSE_NEU='Königstr. 4, 30175 Hannover';
+
+function supaAdresse(datum){
+  const tag=String(datum||todayIso()).slice(0,10);
+
+  return tag<SUPA_UMZUG_AB
+    ? SUPA_ADRESSE_ALT
+    : SUPA_ADRESSE_NEU;
+}
   let tripDocumentations=[];
 let activeMonthlyClient=null;
 
@@ -1179,7 +1189,7 @@ function applyTripDocumentation(documentationId){
 
   $('tripDestination').value=
     doc.ort_der_leistung==='SuPA Büro'
-      ? SUPA_BUERO_ADRESSE
+      ? supaAdresse(doc.datum)
       : clientDestination(activeTripsClient);
 
   const leistungsort=doc.ort_der_leistung||'';
@@ -2951,7 +2961,7 @@ $('monthlyMonth').onchange=async()=>{
     monthlyBudget,
     monthlyRestBudget,
     leistungsanbieter:
-      'SuPA GmbH, Königstr. 4, 30175 Hannover',
+      'SuPA GmbH, '+supaAdresse(startDate),
     auftragnehmer:
       'Stork, Oliver'
   };
