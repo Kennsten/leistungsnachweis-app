@@ -778,6 +778,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <div class="grid">
       <label>Beginn<input id="approvalBeginn" type="date" required></label>
       <label>Ende<input id="approvalEnde" type="date" required></label>
+      <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
       <label>Gesamt-FLS<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
       <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
       <label>Leistungsträger
@@ -1952,7 +1953,15 @@ function openMonthly(clientId){
     new Event('change')
   );
 }
-  function approvalReportStatus(endDate){
+function approvalReportStatus(approval){
+  const endDate=typeof approval==='string'
+    ? approval
+    : approval&&approval.ende;
+
+  const versendetAm=typeof approval==='string'
+    ? null
+    : approval&&approval.verlaufsbericht_am;
+
   if(!endDate){
     return {
       text:'Kein Enddatum',
@@ -1969,17 +1978,29 @@ function openMonthly(clientId){
   );
 
   if(daysRemaining<0){
-    return {
-      text:'Bewilligung abgelaufen',
-      symbol:'🔴'
-    };
+    return versendetAm
+      ? {
+          text:'Abgelaufen · Verlaufsbericht versendet am '+
+            formatDate(versendetAm),
+          symbol:'🟡'
+        }
+      : {
+          text:'Bewilligung abgelaufen',
+          symbol:'🔴'
+        };
   }
 
   if(daysRemaining<=56){
-    return {
-      text:'Entwicklungsbericht jetzt erstellen',
-      symbol:'🟡'
-    };
+    return versendetAm
+      ? {
+          text:'Verlaufsbericht versendet am '+
+            formatDate(versendetAm),
+          symbol:'🟢'
+        }
+      : {
+          text:'Verlaufsbericht jetzt erstellen',
+          symbol:'🟡'
+        };
   }
 
   return {
@@ -2055,7 +2076,7 @@ if(!isOtherLeistungstraeger(approval)){
         c=>String(c.id)===String(a.client_id)
       );
 
-      const status=approvalReportStatus(a.ende);
+      const status=approvalReportStatus(a);
 
       return `
         <div class="approval">
@@ -2126,8 +2147,8 @@ async function loadApprovals(clientId=activeClient?.id){
   approvals=data||[];
   
 approvals.sort((a,b)=>{
-  const statusA=approvalReportStatus(a.ende);
-  const statusB=approvalReportStatus(b.ende);
+  const statusA=approvalReportStatus(a);
+  const statusB=approvalReportStatus(b);
 
   const priority={
     '🟡':0,
@@ -2193,7 +2214,7 @@ const availableSecondHalf=
 
 const restFls=budget.restFls;
 const usedPercent=budget.usedPercent;
-  const reportStatus=approvalReportStatus(a.ende);
+  const reportStatus=approvalReportStatus(a);
     return `
     <div class="approval">
       <div class="approval-head">
@@ -2242,6 +2263,7 @@ function openApprovalForm(id=''){
   $('approvalId').value=a.id||'';
   $('approvalBeginn').value=a.beginn||'';
   $('approvalEnde').value=a.ende||'';
+  $('approvalVerlaufsbericht').value=a.verlaufsbericht_am||'';
   $('approvalStunden').value=a.stundenkontingent??'';
   $('approvalWochenFls').value=a.wochen_fls??'';
   $('approvalLeistungstraegerTyp').value=a.leistungstraeger_typ||'';
@@ -2850,7 +2872,7 @@ function buildMonthlyChecks(context){
   }
 
   if(approval&&approval.ende){
-    const status=approvalReportStatus(approval.ende);
+    const status=approvalReportStatus(approval);
 
     checks.push({
       ok:status.symbol==='🟢',
@@ -3173,6 +3195,7 @@ $('approvalForm').onsubmit=async e=>{
     client_id:savedClientId,
     beginn:$('approvalBeginn').value,
     ende:$('approvalEnde').value,
+    verlaufsbericht_am:$('approvalVerlaufsbericht').value||null,
     stundenkontingent:Number(String($('approvalStunden').value).replace(',','.')),
     wochen_fls:$('approvalWochenFls').value?Number(String($('approvalWochenFls').value).replace(',','.')):null,
     leistungstraeger_typ:type||null,
