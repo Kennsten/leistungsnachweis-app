@@ -124,6 +124,12 @@
       color:#555;
     }
 
+    td.stops,
+    td.long{
+      font-size:7.5pt;
+      line-height:1.25;
+    }
+
     tfoot td{
       background:#f4f4f4;
       font-weight:700;
@@ -269,7 +275,12 @@
 
         previousValues[key]=text;
 
-        return '<td'+(extraClass?' class="'+extraClass+'"':'')+'>'+
+        const classes=[];
+
+        if(extraClass)classes.push(extraClass);
+        if(text.length>28)classes.push('long');
+
+        return '<td'+(classes.length?' class="'+classes.join(' ')+'"':'')+'>'+
           esc(text)+
           '</td>';
       };
@@ -279,7 +290,7 @@
           <td class="nowrap">${formatDate(trip.date)}</td>
           ${cell('client',trip.client)}
           ${cell('start',trip.start)}
-          ${cell('stops',trip.stops)}
+          ${cell('stops',trip.stops,'stops')}
           ${cell('destination',trip.destination)}
           ${cell('purpose',trip.purpose)}
           <td class="num">${formatKm(trip.km)}</td>
@@ -303,11 +314,11 @@
             <table>
               <colgroup>
                 <col style="width:11%">
-                <col style="width:14%">
-                <col style="width:19%">
-                <col style="width:11%">
-                <col style="width:19%">
-                <col style="width:17%">
+                <col style="width:13%">
+                <col style="width:18%">
+                <col style="width:16%">
+                <col style="width:18%">
+                <col style="width:15%">
                 <col style="width:9%">
               </colgroup>
 
