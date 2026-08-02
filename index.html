@@ -743,6 +743,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 </label>
       <label>Beginn<select id="docBeginn" required></select></label>
       <label>Ende<select id="docEnde" required></select></label>
+      <label>FLS<input id="docFls" type="number" min="0" step="0.25" inputmode="decimal" placeholder="z. B. 1,25"></label>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
@@ -1023,6 +1024,7 @@ let allTripsPayload=null;
 let pendingTripForDoc=null;
 
 const START_ADRESSE='Lichtenbergplatz 7, 30449 Hannover';
+const FLS_VIERTEL_BIS='2026-06-30';
 const SUPA_UMZUG_AB='2026-08-01';
 const SUPA_ADRESSE_ALT='Königstr. 6, 30175 Hannover';
 const SUPA_ADRESSE_NEU='Königstr. 4, 30175 Hannover';
@@ -1084,6 +1086,61 @@ function formatFls(value){
 
 function durationAndFls(minutes){
   return `${formatDuration(minutes)} · ${formatFls(minutesToFls(minutes))} FLS`;
+}
+
+function viertelRasterGilt(datum){
+  const tag=String(datum||todayLocal()).slice(0,10);
+
+  return tag<=FLS_VIERTEL_BIS;
+}
+
+function snapFls(wert,datum){
+  const zahl=Number(wert||0);
+
+  return viertelRasterGilt(datum)
+    ? Math.round(zahl*4)/4
+    : Math.round(zahl*100)/100;
+}
+
+function flsToMinutes(fls,datum){
+  return Math.round(snapFls(fls,datum)*50);
+}
+
+function minutesToSnappedFls(minutes,datum){
+  return snapFls(Number(minutes||0)/50,datum);
+}
+
+function addMinutes(zeit,minuten){
+  if(!zeit)return '';
+
+  const [h,m]=zeit.slice(0,5).split(':').map(Number);
+  const gesamt=h*60+m+Number(minuten||0);
+
+  if(gesamt<0||gesamt>=24*60)return '';
+
+  return String(Math.floor(gesamt/60)).padStart(2,'0')+
+    ':'+
+    String(gesamt%60).padStart(2,'0');
+}
+
+function ensureTimeOption(select,value){
+  if(!select||!value)return;
+
+  const vorhanden=Array.from(select.options).some(
+    option=>option.value===value
+  );
+
+  if(vorhanden)return;
+
+  const option=document.createElement('option');
+  option.value=value;
+  option.textContent=value;
+
+  const spaeter=Array.from(select.options).find(
+    other=>other.value&&other.value>value
+  );
+
+  select.insertBefore(option,spaeter||null);
 }
 
 function minutesBetween(beginn,ende){
@@ -1911,9 +1968,12 @@ $('docBeginn').value = d.beginn
   ? String(d.beginn).slice(0,5)
   : '09:00';
 
-$('docEnde').value = d.ende
+const docEndeWert=d.ende
   ? String(d.ende).slice(0,5)
   : '10:00';
+
+ensureTimeOption($('docEnde'),docEndeWert);
+$('docEnde').value=docEndeWert;
 
 updateDocDauer();
   $('docText').value=d.dokumentation||'';
@@ -1964,8 +2024,56 @@ async function openDocFromTrip(tripId){
 
 function updateDocDauer(){
   const minutes=minutesBetween($('docBeginn').value,$('docEnde').value);
-  if(!$('docBeginn').value||!$('docEnde').value){$('docDauer').value='';return}
-  $('docDauer').value=minutes>0?durationAndFls(minutes):'Ende muss nach Beginn liegen';
+
+  if(!$('docBeginn').value||!$('docEnde').value){
+    $('docDauer').value='';
+    $('docFls').value='';
+    return;
+  }
+
+  $('docDauer').value=minutes>0
+    ?durationAndFls(minutes)
+    :'Ende muss nach Beginn liegen';
+
+  $('docFls').value=minutes>0
+    ?String(minutesToSnappedFls(minutes,$('docDatum').value))
+    :'';
+
+  $('docFls').step=viertelRasterGilt($('docDatum').value)
+    ?'0.25'
+    :'0.01';
+}
+
+function applyDocFls(){
+  const datum=$('docDatum').value;
+
+  const fls=snapFls(
+    Number(String($('docFls').value).replace(',','.')),
+    datum
+  );
+
+  if(!Number.isFinite(fls)||fls<=0)return;
+
+  $('docFls').value=String(fls);
+
+  const beginn=$('docBeginn').value;
+
+  if(!beginn){
+    toast('Bitte zuerst den Beginn auswählen.');
+    return;
+  }
+
+  const ende=addMinutes(beginn,flsToMinutes(fls,datum));
+
+  if(!ende){
+    toast('Die Dauer passt nicht mehr in den Tag.');
+    return;
+  }
+
+  ensureTimeOption($('docEnde'),ende);
+  $('docEnde').value=ende;
+
+  updateDocDauer();
 }
 
 async function findMatchingApprovalId(clientId,datum){
@@ -2538,6 +2646,8 @@ $('closeDocForm').onclick=()=>{
 };
 $('docBeginn').onchange=updateDocDauer;
 $('docEnde').onchange=updateDocDauer;
+$('docFls').onchange=applyDocFls;
+$('docDatum').onchange=updateDocDauer;
 
 $('docForm').onsubmit=async e=>{
   e.preventDefault();
