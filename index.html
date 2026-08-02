@@ -719,6 +719,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
   <select id="docOrt">
     <option value="Wohnung Klient">Wohnung Klient</option>
     <option value="Begleitung außer Haus">Begleitung außer Haus</option>
+    <option value="Büro">Büro</option>
     <option value="Telefon">Telefon</option>
     <option value="Online">Online</option>
   </select>
@@ -1179,6 +1180,8 @@ function applyTripDocumentation(documentationId){
     zweck='Begleitung außer Haus';
   }else if(leistungsort==='Wohnung Klient'){
     zweck='Hausbesuch';
+  }else if(leistungsort==='Büro'){
+    zweck='Bürotermin';
   }else if(leistungsort==='Telefon'){
     zweck='Telefontermin – keine Fahrt';
   }else if(leistungsort==='Online'){
