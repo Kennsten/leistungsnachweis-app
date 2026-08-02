@@ -777,9 +777,10 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
     <input type="hidden" id="approvalId">
     <div class="grid">
       <label>Beginn<input id="approvalBeginn" type="date" required></label>
-      <label>Ende<input id="approvalEnde" type="date" required></label>
+      <label>Ende (optional)<input id="approvalEnde" type="date"></label>
+      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
       <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
-      <label>Gesamt-FLS<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
+      <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
       <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
       <label>Leistungsträger
         <select id="approvalLeistungstraegerTyp" required>
@@ -1913,7 +1914,7 @@ async function findMatchingApprovalId(clientId,datum){
     .select('id,beginn,ende')
     .eq('client_id',clientId)
     .lte('beginn',datum)
-    .gte('ende',datum)
+    .or('ende.is.null,ende.gte.'+datum)
     .order('beginn',{ascending:false})
     .limit(1);
   if(error){toast('Bewilligung konnte nicht zugeordnet werden: '+error.message);return null}
@@ -1954,73 +1955,102 @@ function openMonthly(clientId){
   );
 }
 function approvalReportStatus(approval){
-  const endDate=typeof approval==='string'
-    ? approval
-    : approval&&approval.ende;
+  const faellig=approval&&approval.verlaufsbericht_faellig_am;
+  const ende=approval&&approval.ende;
+  const heute=todayIso();
 
-  const versendetAm=typeof approval==='string'
-    ? null
-    : approval&&approval.verlaufsbericht_am;
-
-  if(!endDate){
+  if(ende&&ende<heute){
     return {
-      text:'Kein Enddatum',
+      text:'Bewilligung beendet am '+formatDate(ende),
+      symbol:'🔴'
+    };
+  }
+
+  if(!faellig){
+    return {
+      text:'Kein Termin für den Verlaufsbericht hinterlegt',
       symbol:'⚪'
     };
   }
 
-  const today=new Date(todayIso()+'T00:00:00');
-  const end=new Date(endDate+'T00:00:00');
-
-  const differenceMs=end-today;
-  const daysRemaining=Math.ceil(
-    differenceMs/(1000*60*60*24)
+  const tage=Math.ceil(
+    (new Date(faellig+'T00:00:00')-new Date(heute+'T00:00:00'))/
+    (1000*60*60*24)
   );
 
-  if(daysRemaining<0){
-    return versendetAm
-      ? {
-          text:'Abgelaufen · Verlaufsbericht versendet am '+
-            formatDate(versendetAm),
-          symbol:'🟡'
-        }
-      : {
-          text:'Bewilligung abgelaufen',
-          symbol:'🔴'
-        };
+  if(tage<0){
+    return {
+      text:'Verlaufsbericht überfällig seit '+formatDate(faellig),
+      symbol:'🔴'
+    };
   }
 
-  if(daysRemaining<=56){
-    return versendetAm
-      ? {
-          text:'Verlaufsbericht versendet am '+
-            formatDate(versendetAm),
-          symbol:'🟢'
-        }
-      : {
-          text:'Verlaufsbericht jetzt erstellen',
-          symbol:'🟡'
-        };
+  if(tage<=56){
+    return {
+      text:'Verlaufsbericht fällig am '+formatDate(faellig),
+      symbol:'🟡'
+    };
   }
 
   return {
-    text:`Noch ${daysRemaining} Tage bis zum Ende`,
+    text:'Verlaufsbericht fällig am '+formatDate(faellig)+
+      ' · noch '+tage+' Tage',
     symbol:'🟢'
   };
 }
+
+function approvalPeriod(approval,referenceDate){
+  const beginn=String((approval&&approval.beginn)||'').slice(0,10);
+
+  if(!beginn)return null;
+
+  const teile=beginn.split('-').map(Number);
+  const ref=String(referenceDate||todayIso()).slice(0,10);
+
+  const isoNachJahren=jahre=>{
+    const d=new Date(teile[0]+jahre,teile[1]-1,teile[2]);
+
+    return [
+      d.getFullYear(),
+      String(d.getMonth()+1).padStart(2,'0'),
+      String(d.getDate()).padStart(2,'0')
+    ].join('-');
+  };
+
+  let jahre=Number(ref.slice(0,4))-teile[0];
+
+  if(jahre<0)jahre=0;
+  if(ref<isoNachJahren(jahre))jahre=Math.max(0,jahre-1);
+
+  return {
+    nummer:jahre+1,
+    start:isoNachJahren(jahre),
+    ende:isoNachJahren(jahre+1)
+  };
+}
+
+function docGehoertZuBewilligung(doc,approval,period){
+  const gehoert=doc.bewilligung_id
+    ? doc.bewilligung_id===approval.id
+    : (doc.datum>=approval.beginn &&
+       (!approval.ende || doc.datum<=approval.ende));
+
+  if(!gehoert)return false;
+  if(!period)return true;
+
+  return doc.datum>=period.start && doc.datum<period.ende;
+}
+
 function isOtherLeistungstraeger(approval){
   return approval?.leistungstraeger_typ==='Sonstiger Leistungsträger';
 }
 
-function calculateApprovalBudget(approval, approvalDocs){
+function calculateApprovalBudget(approval, approvalDocs, referenceDate){
+
+  const period=approvalPeriod(approval,referenceDate);
 
   const usedMinutes=approvalDocs
-    .filter(d=>
-      d.bewilligung_id===approval.id ||
-      (!d.bewilligung_id &&
-       d.datum>=approval.beginn &&
-       d.datum<=approval.ende)
-    )
+    .filter(d=>docGehoertZuBewilligung(d,approval,period))
     .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
 
   const usedFls=minutesToFls(usedMinutes);
@@ -2051,7 +2081,7 @@ if(!isOtherLeistungstraeger(approval)){
   const {data,error}=await sb
     .from('bewilligungen')
     .select('*')
-    .order('ende',{ascending:true});
+    .order('beginn',{ascending:false});
 
   if(error){
     $('allApprovalsList').innerHTML='';
@@ -2090,7 +2120,7 @@ if(!isOtherLeistungstraeger(approval)){
               <div class="meta">
                 ${formatDate(a.beginn)}
                 –
-                ${formatDate(a.ende)}
+                ${a.ende?formatDate(a.ende):'unbefristet'}
               </div>
 
               <div class="approval-hours">
@@ -2165,8 +2195,8 @@ approvals.sort((a,b)=>{
     return priorityDifference;
   }
 
-  return String(a.ende||'').localeCompare(
-    String(b.ende||'')
+  return String(a.beginn||'').localeCompare(
+    String(b.beginn||'')
   );
 });
   const {data:docData,error:docError}=await sb
@@ -2178,7 +2208,7 @@ approvals.sort((a,b)=>{
 
   $('approvalsList').innerHTML=approvals.length?approvals.map(a=>{
     const usedMinutes=approvalDocs
-      .filter(d=>d.bewilligung_id===a.id || (!d.bewilligung_id && d.datum>=a.beginn && d.datum<=a.ende))
+      .filter(d=>docGehoertZuBewilligung(d,a,approvalPeriod(a)))
       .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
     const usedFls=minutesToFls(usedMinutes);
     const totalFls=Number(a.stundenkontingent||0);
@@ -2192,7 +2222,7 @@ const firstHalfEnd=new Date(approvalStart);
 firstHalfEnd.setMonth(firstHalfEnd.getMonth()+6);
 const firstHalfMinutes=approvalDocs
   .filter(d=>
-    (d.bewilligung_id===a.id || (!d.bewilligung_id && d.datum>=a.beginn && d.datum<=a.ende)) &&
+    docGehoertZuBewilligung(d,a,approvalPeriod(a)) &&
     new Date(d.datum+'T00:00:00')<firstHalfEnd
   )
   .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
@@ -2219,8 +2249,8 @@ const usedPercent=budget.usedPercent;
     <div class="approval">
       <div class="approval-head">
         <div>
-          <h3>${formatDate(a.beginn)} – ${formatDate(a.ende)}</h3>
-          <div class="approval-hours">${formatFls(totalFls)} Gesamt-FLS</div>
+          <h3>${formatDate(a.beginn)} – ${a.ende?formatDate(a.ende):'unbefristet'}</h3>
+          <div class="approval-hours">${formatFls(totalFls)} FLS pro 12 Monate</div>
           <div class="meta">
   ${reportStatus.symbol}
   ${reportStatus.text}
@@ -2264,6 +2294,7 @@ function openApprovalForm(id=''){
   $('approvalBeginn').value=a.beginn||'';
   $('approvalEnde').value=a.ende||'';
   $('approvalVerlaufsbericht').value=a.verlaufsbericht_am||'';
+  $('approvalBerichtFaellig').value=a.verlaufsbericht_faellig_am||'';
   $('approvalStunden').value=a.stundenkontingent??'';
   $('approvalWochenFls').value=a.wochen_fls??'';
   $('approvalLeistungstraegerTyp').value=a.leistungstraeger_typ||'';
@@ -2840,7 +2871,7 @@ function buildMonthlyChecks(context){
   const approvalCoversMonth=Boolean(
     approval &&
     approval.beginn<=startDate &&
-    approval.ende>=lastDayIso
+    (!approval.ende || approval.ende>=lastDayIso)
   );
 
   checks.push({
@@ -2851,7 +2882,8 @@ function buildMonthlyChecks(context){
         ? 'Bewilligung gilt für den ganzen Monat'
         : 'Bewilligung deckt den Monat nur teilweise ab',
     details:approval
-      ? ['Zeitraum: '+formatDate(approval.beginn)+' bis '+formatDate(approval.ende)]
+      ? ['Zeitraum: '+formatDate(approval.beginn)+' bis '+
+          (approval.ende?formatDate(approval.ende):'unbefristet')]
       : []
   });
 
@@ -2871,7 +2903,7 @@ function buildMonthlyChecks(context){
     });
   }
 
-  if(approval&&approval.ende){
+  if(approval){
     const status=approvalReportStatus(approval);
 
     checks.push({
@@ -2879,7 +2911,9 @@ function buildMonthlyChecks(context){
       text:status.symbol==='🟢'
         ? 'Verlaufsbericht nicht fällig'
         : 'Verlaufsbericht: '+status.text,
-      details:['Bewilligung endet am '+formatDate(approval.ende)]
+      details:approval.verlaufsbericht_faellig_am
+        ? ['Termin: '+formatDate(approval.verlaufsbericht_faellig_am)]
+        : []
     });
   }
 
@@ -2976,7 +3010,7 @@ $('monthlyMonth').onchange=async()=>{
       .select('*')
       .eq('client_id',activeMonthlyClient.id)
       .lt('beginn',endDate)
-      .gte('ende',startDate)
+      .or('ende.is.null,ende.gte.'+startDate)
       .order('beginn',{ascending:false})
       .limit(1),
 
@@ -3196,6 +3230,7 @@ $('approvalForm').onsubmit=async e=>{
     beginn:$('approvalBeginn').value,
     ende:$('approvalEnde').value,
     verlaufsbericht_am:$('approvalVerlaufsbericht').value||null,
+    verlaufsbericht_faellig_am:$('approvalBerichtFaellig').value||null,
     stundenkontingent:Number(String($('approvalStunden').value).replace(',','.')),
     wochen_fls:$('approvalWochenFls').value?Number(String($('approvalWochenFls').value).replace(',','.')):null,
     leistungstraeger_typ:type||null,
@@ -3204,7 +3239,7 @@ $('approvalForm').onsubmit=async e=>{
     ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
     bemerkungen:$('approvalBemerkungen').value.trim()||null
   };
-  if(!row.beginn||!row.ende){toast('Bitte Beginn und Ende eintragen.');return}
+  if(!row.beginn){toast('Bitte den Beginn eintragen.');return}
   if(row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
