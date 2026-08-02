@@ -934,6 +934,12 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
         </select>
       </label>
 
+      <div class="span2">
+        <button type="button" id="manageStops" class="secondary">
+          Gespeicherte Stopps verwalten
+        </button>
+      </div>
+
       <label class="span2">Zieladresse
         <input id="tripDestination" required>
       </label>
@@ -952,6 +958,20 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 <button type="submit" id="tripSave" class="primary">Speichern</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="stopManagerDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Fahrtenbuch</div>
+      <h2>Gespeicherte Stopps</h2>
+    </div>
+    <button type="button" id="closeStopManager" class="secondary">
+      Schließen
+    </button>
+  </div>
+
+  <div id="stopManagerList"></div>
 </dialog>
 
 <dialog id="monthlyDialog">
@@ -1578,6 +1598,67 @@ function renderStopPicker(){
       )
     )
     .join('');
+}
+
+function openStopManager(){
+  renderStopManager();
+  $('stopManagerDialog').showModal();
+}
+
+function renderStopManager(){
+  if(!tripStopSuggestions.length){
+    $('stopManagerList').innerHTML=
+      '<p class="muted">Es sind noch keine Stopps gespeichert.</p>';
+    return;
+  }
+
+  $('stopManagerList').innerHTML=tripStopSuggestions
+    .map(name=>`
+      <div class="doc-item">
+        <div class="doc-head">
+          <div><strong>${esc(name)}</strong></div>
+
+          <button
+            type="button"
+            class="secondary deleteStop"
+            data-name="${esc(name)}">
+            Löschen
+          </button>
+        </div>
+      </div>
+    `)
+    .join('');
+
+  document
+    .querySelectorAll('.deleteStop')
+    .forEach(button=>{
+      button.onclick=()=>deleteStopover(button.dataset.name);
+    });
+}
+
+async function deleteStopover(name){
+  if(!name)return;
+
+  if(!confirm('Stopp "'+name+'" wirklich löschen?'))return;
+
+  const {error}=await sb
+    .from('trip_stop_suggestions')
+    .delete()
+    .eq('user_id',user.id)
+    .eq('name',name);
+
+  if(error){
+    toast('Stopp konnte nicht gelöscht werden: '+error.message);
+    return;
+  }
+
+  tripStopSuggestions=tripStopSuggestions.filter(
+    entry=>entry!==name
+  );
+
+  renderStopPicker();
+  renderStopManager();
+  toast('Stopp gelöscht');
 }
 
 function appendStopover(name){
@@ -2397,6 +2478,14 @@ $('newTrip').onclick=()=>openTripForm();
 
 $('closeTripForm').onclick=()=>{
   $('tripFormDialog').close();
+};
+
+$('manageStops').onclick=()=>{
+  openStopManager();
+};
+
+$('closeStopManager').onclick=()=>{
+  $('stopManagerDialog').close();
 };
 
 $('tripStopPicker').onchange=()=>{
