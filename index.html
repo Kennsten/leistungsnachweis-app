@@ -779,6 +779,7 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
       <label>Beginn<input id="approvalBeginn" type="date" required></label>
       <label>Ende (optional)<input id="approvalEnde" type="date"></label>
       <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
+      <label>Bewilligungsjahr beginnt am (nur falls abweichend)<input id="approvalJahrBeginn" type="date"></label>
       <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
       <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
       <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
@@ -1954,10 +1955,17 @@ function openMonthly(clientId){
     new Event('change')
   );
 }
-function approvalReportStatus(approval){
+function approvalReportStatus(approval,abgeloestAm){
   const faellig=approval&&approval.verlaufsbericht_faellig_am;
   const ende=approval&&approval.ende;
   const heute=todayIso();
+
+  if(abgeloestAm){
+    return {
+      text:'Abgelöst durch neue Bewilligung am '+formatDate(abgeloestAm),
+      symbol:'⚪'
+    };
+  }
 
   if(ende&&ende<heute){
     return {
@@ -2000,7 +2008,9 @@ function approvalReportStatus(approval){
 }
 
 function approvalPeriod(approval,referenceDate){
-  const beginn=String((approval&&approval.beginn)||'').slice(0,10);
+  const beginn=String(
+    (approval&&(approval.bewilligungsjahr_beginn||approval.beginn))||''
+  ).slice(0,10);
 
   if(!beginn)return null;
 
@@ -2027,6 +2037,19 @@ function approvalPeriod(approval,referenceDate){
     start:isoNachJahren(jahre),
     ende:isoNachJahren(jahre+1)
   };
+}
+
+function nachfolgerBeginn(approval,liste){
+  const spaetere=(liste||[])
+    .filter(a=>
+      String(a.client_id)===String(approval.client_id) &&
+      String(a.id)!==String(approval.id) &&
+      String(a.beginn||'')>String(approval.beginn||'')
+    )
+    .map(a=>String(a.beginn))
+    .sort();
+
+  return spaetere[0]||null;
 }
 
 function docGehoertZuBewilligung(doc,approval,period){
@@ -2106,7 +2129,10 @@ if(!isOtherLeistungstraeger(approval)){
         c=>String(c.id)===String(a.client_id)
       );
 
-      const status=approvalReportStatus(a);
+      const status=approvalReportStatus(
+        a,
+        nachfolgerBeginn(a,allApprovals)
+      );
 
       return `
         <div class="approval">
@@ -2217,7 +2243,10 @@ approvals.sort((a,b)=>{
 const firstHalfFls=Number(a.fls_halbjahr_1||0);
 const secondHalfFls=Number(a.fls_halbjahr_2||0);
 
-    const approvalStart=new Date(a.beginn+'T00:00:00');
+    const periodA=approvalPeriod(a);
+    const approvalStart=new Date(
+      (periodA?periodA.start:a.beginn)+'T00:00:00'
+    );
 const firstHalfEnd=new Date(approvalStart);
 firstHalfEnd.setMonth(firstHalfEnd.getMonth()+6);
 const firstHalfMinutes=approvalDocs
@@ -2244,7 +2273,10 @@ const availableSecondHalf=
 
 const restFls=budget.restFls;
 const usedPercent=budget.usedPercent;
-  const reportStatus=approvalReportStatus(a);
+  const reportStatus=approvalReportStatus(
+      a,
+      nachfolgerBeginn(a,approvals)
+    );
     return `
     <div class="approval">
       <div class="approval-head">
@@ -2295,6 +2327,7 @@ function openApprovalForm(id=''){
   $('approvalEnde').value=a.ende||'';
   $('approvalVerlaufsbericht').value=a.verlaufsbericht_am||'';
   $('approvalBerichtFaellig').value=a.verlaufsbericht_faellig_am||'';
+  $('approvalJahrBeginn').value=a.bewilligungsjahr_beginn||'';
   $('approvalStunden').value=a.stundenkontingent??'';
   $('approvalWochenFls').value=a.wochen_fls??'';
   $('approvalLeistungstraegerTyp').value=a.leistungstraeger_typ||'';
@@ -3228,9 +3261,10 @@ $('approvalForm').onsubmit=async e=>{
     user_id:user.id,
     client_id:savedClientId,
     beginn:$('approvalBeginn').value,
-    ende:$('approvalEnde').value,
+    ende:$('approvalEnde').value||null,
     verlaufsbericht_am:$('approvalVerlaufsbericht').value||null,
     verlaufsbericht_faellig_am:$('approvalBerichtFaellig').value||null,
+    bewilligungsjahr_beginn:$('approvalJahrBeginn').value||null,
     stundenkontingent:Number(String($('approvalStunden').value).replace(',','.')),
     wochen_fls:$('approvalWochenFls').value?Number(String($('approvalWochenFls').value).replace(',','.')):null,
     leistungstraeger_typ:type||null,
@@ -3240,7 +3274,7 @@ $('approvalForm').onsubmit=async e=>{
     bemerkungen:$('approvalBemerkungen').value.trim()||null
   };
   if(!row.beginn){toast('Bitte den Beginn eintragen.');return}
-  if(row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
+  if(row.ende&&row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
   const q=id
