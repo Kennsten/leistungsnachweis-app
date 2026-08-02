@@ -2359,12 +2359,17 @@ $('closeTripForm').onclick=()=>{
   $('tripFormDialog').close();
 };
 
-$('tripStopovers').onchange=()=>{
-  $('tripStopovers').value=
-    normalizeStopovers($('tripStopovers').value);
+$('tripStopovers').onblur=()=>{
+  const feld=$('tripStopovers');
+  const bereinigt=normalizeStopovers(feld.value);
+
+  if(bereinigt!==feld.value){
+    feld.value=bereinigt;
+  }
 
   suggestTripKilometers();
 };
+
 
 $('tripStartAddress').onchange=()=>{
   suggestTripKilometers();
