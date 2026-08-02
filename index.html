@@ -1981,10 +1981,26 @@ function approvalReportStatus(approval,abgeloestAm){
     };
   }
 
+  const versendet=approval&&approval.verlaufsbericht_am;
+
   const tage=Math.ceil(
     (new Date(faellig+'T00:00:00')-new Date(heute+'T00:00:00'))/
     (1000*60*60*24)
   );
+
+  if(versendet){
+    const abstand=Math.round(
+      (new Date(faellig+'T00:00:00')-new Date(versendet+'T00:00:00'))/
+      (1000*60*60*24)
+    );
+
+    if(abstand<=365){
+      return {
+        text:'Verlaufsbericht versendet am '+formatDate(versendet),
+        symbol:'🟢'
+      };
+    }
+  }
 
   if(tage<0){
     return {
@@ -3262,7 +3278,6 @@ $('approvalForm').onsubmit=async e=>{
     client_id:savedClientId,
     beginn:$('approvalBeginn').value,
     ende:$('approvalEnde').value||null,
-    
     verlaufsbericht_am:$('approvalVerlaufsbericht').value||null,
     verlaufsbericht_faellig_am:$('approvalBerichtFaellig').value||null,
     bewilligungsjahr_beginn:$('approvalJahrBeginn').value||null,
@@ -3274,6 +3289,7 @@ $('approvalForm').onsubmit=async e=>{
     ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
     bemerkungen:$('approvalBemerkungen').value.trim()||null
   };
+  if(!row.beginn){toast('Bitte den Beginn eintragen.');return}
   if(row.ende&&row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
