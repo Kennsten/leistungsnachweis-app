@@ -925,8 +925,13 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
       </label>
 
       <label class="span2">Zwischenstopps
-        <input id="tripStopovers" list="tripStopSuggestions" placeholder="z. B. Apotheke - Sparkasse">
-        <datalist id="tripStopSuggestions"></datalist>
+        <input id="tripStopovers" placeholder="z. B. Apotheke - Sparkasse">
+      </label>
+
+      <label class="span2">Gespeicherten Stopp anhängen
+        <select id="tripStopPicker">
+          <option value="">Bitte auswählen</option>
+        </select>
       </label>
 
       <label class="span2">Zieladresse
@@ -1546,9 +1551,36 @@ async function loadTripStopSuggestions(){
   }
 
   tripStopSuggestions=(data||[]).map(x=>x.name).filter(Boolean);
-  $('tripStopSuggestions').innerHTML=tripStopSuggestions
-    .map(name=>`<option value="${esc(name)}"></option>`)
+  renderStopPicker();
+}
+
+function renderStopPicker(){
+  const picker=$('tripStopPicker');
+
+  if(!picker)return;
+
+  picker.innerHTML=[
+    '<option value="">Bitte auswählen</option>'
+  ]
+    .concat(
+      tripStopSuggestions.map(
+        name=>`<option value="${esc(name)}">${esc(name)}</option>`
+      )
+    )
     .join('');
+}
+
+function appendStopover(name){
+  if(!name)return;
+
+  const feld=$('tripStopovers');
+  const vorhanden=feld.value.trim();
+
+  feld.value=vorhanden
+    ? vorhanden+' - '+name
+    : name;
+
+  suggestTripKilometers();
 }
 
 async function openTripForm(id=''){
@@ -1699,9 +1731,7 @@ async function learnStopovers(value){
   }
 
   tripStopSuggestions.sort((a,b)=>a.localeCompare(b,'de'));
-  $('tripStopSuggestions').innerHTML=tripStopSuggestions
-    .map(name=>`<option value="${esc(name)}"></option>`)
-    .join('');
+  renderStopPicker();
 }
 
 async function openDocs(clientId){
@@ -2359,9 +2389,20 @@ $('closeTripForm').onclick=()=>{
   $('tripFormDialog').close();
 };
 
-$('tripStopovers').onchange=()=>{
-  $('tripStopovers').value=
-    normalizeStopovers($('tripStopovers').value);
+$('tripStopPicker').onchange=()=>{
+  const picker=$('tripStopPicker');
+
+  appendStopover(picker.value);
+  picker.value='';
+};
+
+$('tripStopovers').onblur=()=>{
+  const feld=$('tripStopovers');
+  const bereinigt=normalizeStopovers(feld.value);
+
+  if(bereinigt!==feld.value){
+    feld.value=bereinigt;
+  }
 
   suggestTripKilometers();
 };
