@@ -1606,23 +1606,23 @@ async function lookupRouteDistance(startAddress,stopovers,destinationAddress){
 
   if(!startKey||!destinationKey)return null;
 
-  const {data,error}=await sb
-    .from('route_distances')
-    .select('kilometers')
-    .eq('user_id',user.id)
-    .eq('start_key',startKey)
-    .eq('stops_key',stopsKey)
-    .eq('destination_key',destinationKey)
-    .limit(1);
+  try{
+    const {data,error}=await sb
+      .from('route_distances')
+      .select('kilometers')
+      .eq('user_id',user.id)
+      .eq('start_key',startKey)
+      .eq('stops_key',stopsKey)
+      .eq('destination_key',destinationKey)
+      .limit(1);
 
-  if(error){
-    toast('Strecken-Abfrage: '+error.message);
+    if(error)return null;
+    if(!data||!data.length)return null;
+
+    return Number(data[0].kilometers);
+  }catch(fehler){
     return null;
   }
-
-  if(!data||!data.length)return null;
-
-  return Number(data[0].kilometers);
 }
 
 async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilometers){
@@ -1636,37 +1636,27 @@ async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilo
   if(!startKey||!destinationKey)return;
   if(!Number.isFinite(value)||value<=0)return;
 
-  const {error}=await sb
-    .from('route_distances')
-    .upsert(
-      {
-        user_id:user.id,
-        start_key:startKey,
-        stops_key:stopsKey,
-        destination_key:destinationKey,
-        start_address:String(startAddress).trim(),
-        intermediate_stops:normalizeStopovers(stopovers)||null,
-        destination_address:String(destinationAddress).trim(),
-        kilometers:value,
-        updated_at:new Date().toISOString()
-      },
-      {onConflict:'user_id,start_key,stops_key,destination_key'}
-    );
-
-    if(error){
-    alert(
-      'Strecke NICHT gelernt\n\n'+
-      'code: '+String(error.code)+'\n'+
-      'message: '+String(error.message)+'\n'+
-      'details: '+String(error.details)+'\n'+
-      'hint: '+String(error.hint)
-    );
+  try{
+    await sb
+      .from('route_distances')
+      .upsert(
+        {
+          user_id:user.id,
+          start_key:startKey,
+          stops_key:stopsKey,
+          destination_key:destinationKey,
+          start_address:String(startAddress).trim(),
+          intermediate_stops:normalizeStopovers(stopovers)||null,
+          destination_address:String(destinationAddress).trim(),
+          kilometers:value,
+          updated_at:new Date().toISOString()
+        },
+        {onConflict:'user_id,start_key,stops_key,destination_key'}
+      );
+  }catch(fehler){
     return;
   }
-
-  alert('Strecke gelernt: '+startKey+' | '+stopsKey+' | '+destinationKey);
 }
-
 
 async function suggestTripKilometers(){
   if($('tripKilometers').value.trim())return;
@@ -2369,17 +2359,12 @@ $('closeTripForm').onclick=()=>{
   $('tripFormDialog').close();
 };
 
-$('tripStopovers').onblur=()=>{
-  const feld=$('tripStopovers');
-  const bereinigt=normalizeStopovers(feld.value);
-
-  if(bereinigt!==feld.value){
-    feld.value=bereinigt;
-  }
+$('tripStopovers').onchange=()=>{
+  $('tripStopovers').value=
+    normalizeStopovers($('tripStopovers').value);
 
   suggestTripKilometers();
 };
-
 
 $('tripStartAddress').onchange=()=>{
   suggestTripKilometers();
