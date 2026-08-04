@@ -1810,6 +1810,7 @@ async function lookupRouteDistance(startAddress,stopovers,destinationAddress){
   const stopsKey=stopoverKey(stopovers);
 
   if(!startKey||!destinationKey)return null;
+    if(!stopsKey && startKey===destinationKey)return;
 
   try{
     const {data,error}=await sb
@@ -1840,6 +1841,7 @@ async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilo
 
   if(!startKey||!destinationKey)return;
   if(!Number.isFinite(value)||value<=0)return;
+    if(!stopsKey && startKey===destinationKey)return;
 
   try{
     await sb
