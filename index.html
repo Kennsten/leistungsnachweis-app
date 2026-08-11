@@ -596,6 +596,16 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
       <button id="login" class="primary">Anmelden</button>
       <button id="signup" class="secondary">Registrieren</button>
     </div>
+
+    <p class="small" style="margin-top:14px">
+      <button
+        type="button"
+        id="resetPassword"
+        class="secondary"
+        style="width:100%">
+        Passwort vergessen
+      </button>
+    </p>
   </div>
 </section>
 
@@ -2577,6 +2587,37 @@ $('login').onclick=async()=>{
   await init();
 };
 
+$('resetPassword').onclick=async()=>{
+  const email=$('email').value.trim();
+
+  if(!email){
+    toast('Bitte zuerst die E-Mail-Adresse eintragen.');
+    return;
+  }
+
+  const button=$('resetPassword');
+  button.disabled=true;
+
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(
+      email,
+      {redirectTo:window.location.origin+window.location.pathname}
+    );
+
+    if(error){
+      toast('Zurücksetzen fehlgeschlagen: '+error.message);
+      return;
+    }
+
+    toast(
+      'Falls ein Konto zu dieser Adresse besteht, wurde eine '+
+      'E-Mail mit einem Link verschickt.'
+    );
+  }finally{
+    button.disabled=false;
+  }
+};
+
 $('signup').onclick=async()=>{
   const {data,error}=await sb.auth.signUp({email:$('email').value,password:$('password').value});
   if(error){toast(error.message);return}
@@ -2675,10 +2716,80 @@ $('clientForm').onsubmit=async e=>{
 
 $('deleteClient').onclick=async()=>{
   const id=$('clientId').value;
-  if(!id||!confirm('Diesen Klienten wirklich löschen?'))return;
-  const {error}=await sb.from('clients').delete().eq('id',id);
-  if(error){toast(error.message);return}
-  $('clientDialog').close();toast('Gelöscht');await loadClients();
+
+  if(!id)return;
+
+  const button=$('deleteClient');
+  button.disabled=true;
+
+  try{
+    const [docResult,tripResult,approvalResult]=await Promise.all([
+      sb.from('dokumentationen')
+        .select('id',{count:'exact',head:true})
+        .eq('client_id',id),
+
+      sb.from('trip_entries')
+        .select('id',{count:'exact',head:true})
+        .eq('client_id',id),
+
+      sb.from('bewilligungen')
+        .select('id',{count:'exact',head:true})
+        .eq('client_id',id)
+    ]);
+
+    if(docResult.error||tripResult.error||approvalResult.error){
+      toast(
+        'Verknüpfte Daten konnten nicht geprüft werden. '+
+        'Löschen abgebrochen.'
+      );
+      return;
+    }
+
+    const anzahlDocs=docResult.count||0;
+    const anzahlTrips=tripResult.count||0;
+    const anzahlApprovals=approvalResult.count||0;
+    const gesamt=anzahlDocs+anzahlTrips+anzahlApprovals;
+
+    const name=$('clientName').value.trim()||'diesen Klienten';
+
+    if(gesamt>0){
+      const frage=
+        'ACHTUNG\n\n'+
+        'Zu '+name+' sind gespeichert:\n\n'+
+        anzahlDocs+' Dokumentationen\n'+
+        anzahlTrips+' Fahrten\n'+
+        anzahlApprovals+' Bewilligungen\n\n'+
+        'Diese Daten werden für Steuer und Abrechnung benötigt.\n\n'+
+        'Zum Löschen bitte LOESCHEN eingeben.';
+
+      const antwort=prompt(frage,'');
+
+      if(String(antwort||'').trim().toUpperCase()!=='LOESCHEN'){
+        toast('Löschen abgebrochen.');
+        return;
+      }
+    }else{
+      if(!confirm(name+' wirklich löschen?')){
+        return;
+      }
+    }
+
+    const {error}=await sb.from('clients').delete().eq('id',id);
+
+    if(error){
+      toast(
+        'Klient konnte nicht gelöscht werden: '+error.message+
+        ' – möglicherweise hängen noch Daten daran.'
+      );
+      return;
+    }
+
+    $('clientDialog').close();
+    toast('Klient gelöscht');
+    await loadClients();
+  }finally{
+    button.disabled=false;
+  }
 };
 
 $('closeDocs').onclick=()=>{
