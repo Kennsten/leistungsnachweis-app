@@ -697,6 +697,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </button>
   </div>
 
+  <label>Suchen
+    <input id="clientSearch" type="search" placeholder="Name, Klienten-ID oder Aktenzeichen">
+  </label>
+
   <div id="list"></div>
 </div>
 </section>
@@ -772,6 +776,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="newDoc" class="primary">+ Neue Dokumentation</button>
     <button type="button" id="printDocs" class="secondary">Dokumentationen drucken</button>
   </div>
+  <label>Suchen
+    <input id="docSearch" type="search" placeholder="Datum, Text, Leistungsart oder Kennziffer">
+  </label>
+
   <div id="docsList"><p class="muted">Noch keine Dokumentationen vorhanden.</p></div>
 </dialog>
 
@@ -1417,7 +1425,23 @@ async function loadClients(){
   const {data,error}=await sb.from('clients').select('*').order('name');
   if(error){toast(error.message);return}
   clients=data||[];
-  $('list').innerHTML=clients.length?clients.map(c=>`
+  renderClients();
+}
+
+function renderClients(){
+  const suche=$('clientSearch')?$('clientSearch').value:'';
+
+  const gefiltert=clients.filter(c=>
+    passtZurSuche(suche,[
+      c.name,
+      c.client_code,
+      c.aktenzeichen,
+      c.ort,
+      c.strasse
+    ])
+  );
+
+  $('list').innerHTML=gefiltert.length?gefiltert.map(c=>`
     <div class="client">
       <div>
         <h3>${esc(c.name)}</h3>
@@ -1432,7 +1456,11 @@ async function loadClients(){
         <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
       </div>
     </div>
-  `).join(''):'<p class="muted">Noch keine Klienten angelegt.</p>';
+  `).join(''):(
+    clients.length
+      ? '<p class="muted">Kein Klient passt zur Suche.</p>'
+      : '<p class="muted">Noch keine Klienten angelegt.</p>'
+  );
 
   document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
   document.querySelectorAll('.docs').forEach(b=>b.onclick=()=>openDocs(b.dataset.id));
@@ -1464,6 +1492,21 @@ function openClient(id=''){
   $('clientDialog').showModal();
 }
 
+
+function passtZurSuche(suchtext,felder){
+  const begriff=String(suchtext||'').trim().toLowerCase();
+
+  if(!begriff)return true;
+
+  const heuhaufen=felder
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return begriff
+    .split(/\s+/)
+    .every(teil=>heuhaufen.includes(teil));
+}
 
 function clientDestination(client){
   if(!client)return '';
@@ -1985,6 +2028,7 @@ async function openDocs(clientId){
   activeDocsClient=clients.find(c=>c.id===clientId)||null;
   if(!activeDocsClient){toast('Klient nicht gefunden.');return}
   $('docsClientName').textContent=activeDocsClient.name;
+  $('docSearch').value='';
   $('docsDialog').showModal();
   await loadDocs();
 }
@@ -2001,8 +2045,27 @@ async function loadDocs(){
 
   if(error){$('docsList').innerHTML='';toast(error.message);return}
   docs=data||[];
-  const totalMinuten=docs.reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
-  const docsHtml=docs.length?docs.map(d=>`
+  renderDocs();
+}
+
+function renderDocs(){
+  const suche=$('docSearch')?$('docSearch').value:'';
+
+  const gefiltert=docs.filter(d=>
+    passtZurSuche(suche,[
+      d.datum,
+      formatDate(d.datum),
+      String(d.beginn||'').slice(0,5),
+      d.leistungsart,
+      d.ort_der_leistung,
+      d.kennziffer?'kennziffer '+d.kennziffer:'',
+      d.dokumentation,
+      d.besonderheiten
+    ])
+  );
+
+  const totalMinuten=gefiltert.reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
+  const docsHtml=gefiltert.length?gefiltert.map(d=>`
     <div class="doc-item">
       <div class="doc-head">
         <div>
@@ -2015,11 +2078,15 @@ async function loadDocs(){
         <div class="actions"><button class="secondary editDoc" data-id="${d.id}">Bearbeiten</button></div>
       </div>
     </div>
-  `).join(''):'<p class="muted">Noch keine Dokumentationen vorhanden.</p>';
+  `).join(''):(
+    docs.length
+      ? '<p class="muted">Keine Dokumentation passt zur Suche.</p>'
+      : '<p class="muted">Noch keine Dokumentationen vorhanden.</p>'
+  );
 
-  const summary=docs.length?`
+  const summary=gefiltert.length?`
     <div class="summary-box">
-      <div class="summary-row"><span>Termine</span><strong>${docs.length}</strong></div>
+      <div class="summary-row"><span>Termine</span><strong>${gefiltert.length}</strong></div>
       <div class="summary-row"><span>Gesamtdauer</span><strong>${formatDuration(totalMinuten)}</strong></div>
       <div class="summary-row"><span>Gesamt-FLS</span><strong>${formatFls(minutesToFls(totalMinuten))} FLS</strong></div>
     </div>`:'';
@@ -2815,6 +2882,9 @@ $('allApprovals').onclick=async()=>{
 $('closeAllApprovals').onclick=()=>{
   $('allApprovalsDialog').close();
 };
+$('clientSearch').oninput=renderClients;
+$('docSearch').oninput=renderDocs;
+
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
 
