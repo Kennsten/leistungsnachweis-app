@@ -506,6 +506,23 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
   line-height:1.35;
 }
 
+.kennziffer-text{
+  margin-top:8px;
+  padding:10px 12px;
+  background:var(--accent);
+  border:1px solid var(--line);
+  border-radius:12px;
+  font-weight:400;
+  font-size:.88rem;
+  line-height:1.4;
+  color:var(--ink);
+}
+
+.kennziffer-text strong{
+  display:block;
+  margin-bottom:4px;
+}
+
 .monthly-warning{
   margin:8px 0;
   color:#9b3d00;
@@ -765,19 +782,21 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 <label>Kennziffer
   <select id="docKennziffer">
     <option value="">Bitte auswählen…</option>
-    <option value="1">1 – Beratung und Unterstützung im Wohnbereich …</option>
-    <option value="2">2 – Entwicklung einer individuellen Tagesstruktur …</option>
-    <option value="3">3 – Organisation der Mobilität …</option>
-    <option value="4">4 – Inanspruchnahme medizinischer und sozialer Dienste …</option>
-    <option value="5">5 – Behörden, Banken und Sozialleistungsträger …</option>
-    <option value="6">6 – Teilnahme an Veranstaltungen …</option>
-    <option value="7">7 – Erweiterung des Lebenskreises …</option>
-    <option value="8">8 – Unterstützung bei Wohnformwechsel …</option>
-    <option value="9">9 – Reflexion der persönlichen Situation …</option>
-    <option value="10">10 – Krisen, Konflikte und Veränderungen …</option>
-    <option value="11">11 – Kontaktsicherung bei längerer Abwesenheit …</option>
-    <option value="12">12 – Sonstige Assistenzleistungen …</option>
+    <option value="1">1 – Beratung und Unterstützung im Wohnbereich</option>
+    <option value="2">2 – Entwicklung einer individuellen Tagesstruktur</option>
+    <option value="3">3 – Organisation und Planung der eigenen Mobilität</option>
+    <option value="4">4 – Medizinische und soziale Dienste, Pflegeleistungen</option>
+    <option value="5">5 – Behörden, Banken, Sozialleistungsträger</option>
+    <option value="6">6 – Gesamtplankonferenzen</option>
+    <option value="7">7 – Erweiterung des Lebenskreises, Kontakte</option>
+    <option value="8">8 – Wechsel der Wohn- und Lebensform</option>
+    <option value="9">9 – Reflexion der persönlichen Situation</option>
+    <option value="10">10 – Konflikt-, Krisen- und Veränderungssituationen</option>
+    <option value="11">11 – Kontaktsicherung bei Krankenhaus oder Reha</option>
+    <option value="12">12 – Sonstiges</option>
   </select>
+
+  <div id="docKennzifferText" class="kennziffer-text hidden"></div>
 </label>
       <label>Beginn<select id="docBeginn" required></select></label>
       <label>Ende<select id="docEnde" required></select></label>
@@ -1997,6 +2016,7 @@ function openDocForm(id=''){
   $('docLeistungsart').value=d.leistungsart||'Face-to-Face';
   $('docOrt').value = d.ort_der_leistung || 'Wohnung Klient';
 $('docKennziffer').value = d.kennziffer || '';
+updateKennzifferText();
   
 $('docBeginn').value = d.beginn
   ? String(d.beginn).slice(0,5)
@@ -2015,6 +2035,38 @@ $('docEnde').value=docEndeWert;
   $('docDialogTitle').textContent=id?'Dokumentation bearbeiten':'Dokumentation anlegen';
   updateDocDauer();
   $('docFormDialog').showModal();
+}
+
+const KENNZIFFER_TEXTE={
+  '1':'Beratung und Unterstützung im Wohnbereich, insbesondere im Zusammenhang mit Selbstversorgung, Ernährung, Gesundheitsvorsorge, persönlicher Hygiene, Umgang mit Geld, Haushaltsführung, Konflikten mit Mitbewohnerinnen und Mitbewohnern und Nachbarinnen und Nachbarn',
+  '2':'Beratung und Unterstützung bei der Entwicklung einer individuellen Tagesstruktur, z. B. Einüben von Tag- und Nachtrhythmus, Ruhe- und Aktivitätszeiten, Einhaltung von Mahlzeiten, Erkennen und Einhalten von fremdbestimmten Tagesabschnitten',
+  '3':'Unterstützung / Assistenz bei der Organisation und Planung der eigenen Mobilität (Nutzung von Nahverkehrsmitteln, Fahrrad etc.)',
+  '4':'Unterstützung bei der notwendigen Inanspruchnahme medizinischer und sozialer Dienste und Leistungen sowie von Pflegeleistungen nach § 103 Abs. 2 SGB IX',
+  '5':'Unterstützung beim Umgang mit Behörden, Banken, anderen Sozialleistungsträgern und sonstigen Institutionen',
+  '6':'Begleitung und Teilnahme bei den Gesamtplankonferenzen',
+  '7':'Anregung und Unterstützung bei der Erweiterung des Lebenskreises, Förderung von Kontakt- und Kommunikationsfähigkeiten (z. B. Hilfen beim Aufbau und der Pflege von Kontakten und sozialen Beziehungen, Auflösung von Isolation, Abbau und Entgegenwirken von Rückzugstendenzen)',
+  '8':'Begleitung und Unterstützung beim Wechsel in die/eine neue Wohn- und Lebensform (Unterstützung bei der Wohnungssuche, beim Einzug/Umzug etc.)',
+  '9':'Reflexion der persönlichen Situation, Krankheit und Ängste im Alltagsgeschehen',
+  '10':'Beratung in Konflikt-, Krisen- und Veränderungssituationen',
+  '11':'Kontaktsicherung bei stationären Krankenhausaufenthalten oder Rehabilitationsmaßnahmen in einem angemessenen Umfang',
+  '12':'Sonstiges'
+};
+
+function updateKennzifferText(){
+  const feld=$('docKennzifferText');
+  const wert=$('docKennziffer').value;
+  const text=KENNZIFFER_TEXTE[wert];
+
+  if(!text){
+    feld.classList.add('hidden');
+    feld.innerHTML='';
+    return;
+  }
+
+  feld.classList.remove('hidden');
+  feld.innerHTML=
+    '<strong>Kennziffer '+esc(wert)+'</strong>'+
+    esc(text);
 }
 
 function ortAusFahrtzweck(zweck){
@@ -2828,6 +2880,7 @@ $('closeDocForm').onclick=()=>{
 $('docBeginn').onchange=updateDocDauer;
 $('docEnde').onchange=updateDocDauer;
 $('docFls').onchange=applyDocFls;
+$('docKennziffer').onchange=updateKennzifferText;
 $('docDatum').onchange=updateDocDauer;
 
 $('docForm').onsubmit=async e=>{
