@@ -662,6 +662,34 @@ dialog::backdrop{background:rgba(15,30,45,.45)}
 </div>
 </section>
 
+<dialog id="newPasswordDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Konto</div>
+      <h2>Neues Passwort festlegen</h2>
+    </div>
+  </div>
+
+  <p class="muted">
+    Du bist über einen Wiederherstellungslink angemeldet.
+    Bitte lege jetzt ein neues Passwort fest.
+  </p>
+
+  <label>Neues Passwort
+    <input id="newPassword1" type="password" autocomplete="new-password">
+  </label>
+
+  <label>Neues Passwort wiederholen
+    <input id="newPassword2" type="password" autocomplete="new-password">
+  </label>
+
+  <div class="actions">
+    <button type="button" id="saveNewPassword" class="primary">
+      Passwort speichern
+    </button>
+  </div>
+</dialog>
+
 <dialog id="clientDialog">
   <form id="clientForm">
     <div class="top">
@@ -3677,9 +3705,61 @@ $('deleteApproval').onclick=async()=>{
   $('approvalFormDialog').close();toast('Bewilligung gelöscht');await loadApprovals();
 };
 
-sb.auth.onAuthStateChange((_event,session)=>{
+function istWiederherstellung(){
+  return window.location.hash.includes('type=recovery');
+}
+
+function openNewPasswordDialog(){
+  $('newPassword1').value='';
+  $('newPassword2').value='';
+  $('newPasswordDialog').showModal();
+}
+
+$('saveNewPassword').onclick=async()=>{
+  const erstes=$('newPassword1').value;
+  const zweites=$('newPassword2').value;
+
+  if(erstes.length<8){
+    toast('Das Passwort muss mindestens 8 Zeichen haben.');
+    return;
+  }
+
+  if(erstes!==zweites){
+    toast('Die beiden Eingaben stimmen nicht überein.');
+    return;
+  }
+
+  const button=$('saveNewPassword');
+  button.disabled=true;
+
+  try{
+    const {error}=await sb.auth.updateUser({password:erstes});
+
+    if(error){
+      toast('Passwort konnte nicht geändert werden: '+error.message);
+      return;
+    }
+
+    history.replaceState(
+      null,
+      '',
+      window.location.pathname+window.location.search
+    );
+
+    $('newPasswordDialog').close();
+    toast('Passwort geändert. Du bist angemeldet.');
+  }finally{
+    button.disabled=false;
+  }
+};
+
+sb.auth.onAuthStateChange((event,session)=>{
   if(session){user=session.user}
   else{user=null;showApp(false)}
+
+  if(event==='PASSWORD_RECOVERY'||(session&&istWiederherstellung())){
+    openNewPasswordDialog();
+  }
 });
 
 fillTimeOptions();
