@@ -216,32 +216,14 @@
       text-align:center;
     }
 
-    .sum-labels{
-      display:grid;
-      grid-template-columns:5% 8% 23% 8% 10% 6% 9% 6% 9% 16%;
-      border-left:1px solid #666;
-      border-right:1px solid #666;
-      border-bottom:1px solid #666;
-      min-height:48px;
-    }
-
-    .sum-labels > div{
-      padding:5px 4px;
-      border-right:1px solid #666;
+    .ln-table tfoot .sum-row td{
+      height:44px;
+      font-weight:400;
       text-align:left;
+      vertical-align:top;
+      white-space:normal;
+      line-height:1.2;
     }
-
-    .sum-labels > div:last-child{
-      border-right:0;
-    }
-
-    .sum-empty-left{grid-column:1 / 4}
-    .sum-minutes{grid-column:4}
-    .sum-fls{grid-column:5}
-    .sum-empty-way{grid-column:6}
-    .sum-way{grid-column:7}
-    .sum-cancel{grid-column:8}
-    .sum-empty-right{grid-column:9 / 11}
 
     .signature-area{
       margin-top:24px;
@@ -334,8 +316,8 @@
         height:5mm;
       }
 
-      .sum-labels{
-        min-height:12mm;
+      .ln-table tfoot .sum-row td{
+        height:11mm;
       }
 
       .signature-area{
@@ -701,18 +683,18 @@ const totalWay=entries.reduce(
                   <td></td>
                   <td></td>
                 </tr>
+                                <tr class="sum-row">
+                  <td colspan="3"></td>
+                  <td>Summe Minuten</td>
+                  <td>Summe FLS</td>
+                  <td></td>
+                  <td>Summe Wegepauschalen</td>
+                  <td>Summe Ausfallstunden</td>
+                  <td colspan="2"></td>
+                </tr>
+
               </tfoot>
             </table>
-
-            <div class="sum-labels">
-              <div class="sum-empty-left"></div>
-              <div class="sum-minutes">Summe Minuten</div>
-              <div class="sum-fls">Summe FLS</div>
-              <div class="sum-empty-way"></div>
-              <div class="sum-way">Summe Wegepauschalen</div>
-              <div class="sum-cancel">Summe Ausfallstunden</div>
-              <div class="sum-empty-right"></div>
-            </div>
 
             <div class="signature-area">
               <div>Datum</div>
