@@ -1101,10 +1101,6 @@ function formatDate(value){
   return `${d}.${m}.${y}`;
 }
 
-function formatHours(value){
-  return new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:2}).format(Number(value||0));
-}
-
 function formatDuration(minutes){
   const total=Number(minutes||0);
   const hours=Math.floor(total/60);
@@ -2013,7 +2009,6 @@ const docEndeWert=d.ende
 ensureTimeOption($('docEnde'),docEndeWert);
 $('docEnde').value=docEndeWert;
 
-updateDocDauer();
   $('docText').value=d.dokumentation||'';
   $('docBesonderheiten').value=d.besonderheiten||'';
   $('deleteDoc').classList.toggle('hidden',!id);
@@ -3024,8 +3019,6 @@ $('tripForm').onsubmit=async e=>{
   const documentationId=
     (selectedOption?selectedOption.value:select.value)||null;
 
-  console.log('[trip] gesendete documentation_id:',documentationId);
-
   const row={
     user_id:user.id,
     client_id:activeTripsClient.id,
@@ -3080,7 +3073,6 @@ $('tripForm').onsubmit=async e=>{
     const {data:saved,error}=await query;
 
     if(error){
-      console.error('[trip] Supabase-Fehler:',error);
       toast(
         'Fahrt konnte nicht gespeichert werden: '+
         error.message
@@ -3088,13 +3080,7 @@ $('tripForm').onsubmit=async e=>{
       return;
     }
 
-    console.log('[trip] von der Datenbank zurückgegeben:',saved);
-
     if(documentationId && !saved?.documentation_id){
-      console.warn(
-        '[trip] documentation_id wurde von der Datenbank verworfen.',
-        {gesendet:documentationId,gespeichert:saved}
-      );
       toast(
         'Fahrt gespeichert, aber die Verknüpfung zum Termin wurde '+
         'von der Datenbank nicht übernommen.'
