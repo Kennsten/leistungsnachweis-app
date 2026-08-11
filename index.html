@@ -60,8 +60,53 @@ textarea{resize:vertical}
 .actions button{flex:1}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .muted{color:var(--muted)}
-.client{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.client+.client{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.client{padding:14px 0}
+.client+.client{border-top:1px solid var(--line)}
+
+.client-head{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.client-avatar{
+  flex:0 0 46px;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--accent);
+  color:var(--brand-dark);
+  font-size:19px;
+  font-weight:700;
+  letter-spacing:.5px;
+}
+
+.client-name{
+  min-width:0;
+}
+
+.client-name h3{
+  margin:0 0 2px;
+  overflow-wrap:anywhere;
+}
+
+.client-buttons{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:8px;
+}
+
+.client-buttons button{
+  padding:11px 10px;
+  font-size:.92rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 .meta{font-size:.9rem;color:var(--muted)}
 dialog{width:min(94vw,700px);max-height:92vh;overflow:auto;border:0;border-radius:24px;padding:22px;background:var(--card);box-shadow:0 20px 50px rgba(47,58,52,.22)}
 dialog::backdrop{background:rgba(47,58,52,.38)}
@@ -100,8 +145,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 @media(max-width:650px){
   .grid{grid-template-columns:1fr}
   .span2{grid-column:auto}
-  .client,.approval-head,.doc-head{flex-direction:column}
-  .client .actions,.approval-head .actions,.doc-head .actions{width:100%}
+  .approval-head,.doc-head{flex-direction:column}
+  .approval-head .actions,.doc-head .actions{width:100%}
+  .client-buttons{grid-template-columns:1fr 1fr}
 }
   /* Monats-Leistungsnachweis */
 
@@ -1443,12 +1489,17 @@ function renderClients(){
 
   $('list').innerHTML=gefiltert.length?gefiltert.map(c=>`
     <div class="client">
-      <div>
-        <h3>${esc(c.name)}</h3>
-        <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
-        <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
+      <div class="client-head">
+        <div class="client-avatar">${esc(clientInitialen(c.name))}</div>
+
+        <div class="client-name">
+          <h3>${esc(c.name)}</h3>
+          <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
+          <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
+        </div>
       </div>
-      <div class="actions">
+
+      <div class="client-buttons">
         <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
         <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
         <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
@@ -1506,6 +1557,21 @@ function passtZurSuche(suchtext,felder){
   return begriff
     .split(/\s+/)
     .every(teil=>heuhaufen.includes(teil));
+}
+
+function clientInitialen(name){
+  const teile=String(name||'')
+    .split(',')
+    .map(t=>t.trim())
+    .filter(Boolean);
+
+  const nachname=teile[0]||'';
+  const vorname=teile[1]||'';
+
+  const erster=(vorname||nachname).charAt(0);
+  const zweiter=vorname?nachname.charAt(0):'';
+
+  return (erster+zweiter).toUpperCase()||'?';
 }
 
 function clientDestination(client){
