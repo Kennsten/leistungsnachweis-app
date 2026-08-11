@@ -78,8 +78,8 @@ textarea{resize:vertical}
   display:flex;
   align-items:center;
   justify-content:center;
-  background:var(--accent);
-  color:var(--brand-dark);
+  background:var(--avatar-bg,var(--accent));
+  color:var(--avatar-ink,var(--brand-dark));
   font-size:19px;
   font-weight:700;
   letter-spacing:.5px;
@@ -1490,7 +1490,11 @@ function renderClients(){
   $('list').innerHTML=gefiltert.length?gefiltert.map(c=>`
     <div class="client">
       <div class="client-head">
-        <div class="client-avatar">${esc(clientInitialen(c.name))}</div>
+        <div
+          class="client-avatar"
+          style="--avatar-bg:${avatarFarbe(c.client_code||c.name).bg};--avatar-ink:${avatarFarbe(c.client_code||c.name).ink}">
+          ${esc(clientInitialen(c.name))}
+        </div>
 
         <div class="client-name">
           <h3>${esc(c.name)}</h3>
@@ -1557,6 +1561,28 @@ function passtZurSuche(suchtext,felder){
   return begriff
     .split(/\s+/)
     .every(teil=>heuhaufen.includes(teil));
+}
+
+const AVATAR_FARBEN=[
+  {bg:'#e3ebe2',ink:'#4a6350'},
+  {bg:'#f0e6dc',ink:'#7a5a44'},
+  {bg:'#e4e8f0',ink:'#4d5c74'},
+  {bg:'#f1e6ea',ink:'#7a4f5e'},
+  {bg:'#eeecdd',ink:'#6b6636'},
+  {bg:'#dfeaea',ink:'#42636a'},
+  {bg:'#ece4f0',ink:'#5f4d70'},
+  {bg:'#f0eadf',ink:'#71603f'}
+];
+
+function avatarFarbe(text){
+  const wert=String(text||'');
+  let summe=0;
+
+  for(let i=0;i<wert.length;i++){
+    summe+=wert.charCodeAt(i);
+  }
+
+  return AVATAR_FARBEN[summe%AVATAR_FARBEN.length];
 }
 
 function clientInitialen(name){
