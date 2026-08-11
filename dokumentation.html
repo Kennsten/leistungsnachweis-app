@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumentationen</title>
+
+  <style>
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:#d9dee3;
+      color:#111;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+
+    .toolbar{
+      position:sticky;
+      top:0;
+      z-index:10;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+      background:#fff;
+      border-bottom:1px solid #bbb;
+    }
+
+    .toolbar-title{
+      font-size:17px;
+      font-weight:700;
+    }
+
+    .toolbar-actions{
+      display:flex;
+      gap:10px;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid #9eb2c5;
+      border-radius:10px;
+      padding:10px 16px;
+      background:#eef5fb;
+      color:#18344e;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    button.primary{
+      background:#173b5b;
+      border-color:#173b5b;
+      color:#fff;
+    }
+
+    .page-wrap{
+      width:100%;
+      overflow-x:auto;
+      padding:18px 12px 40px;
+    }
+
+    .sheet{
+      width:210mm;
+      margin:0 auto;
+      padding:14mm 12mm;
+      background:#fff;
+      border:1px solid #c7d0d8;
+      box-shadow:0 6px 24px rgba(0,0,0,.12);
+    }
+
+    .sheet-head{
+      border-bottom:2px solid #111;
+      padding-bottom:8px;
+      margin-bottom:14px;
+    }
+
+    .sheet-head h1{
+      font-size:15pt;
+      margin:0 0 6px;
+    }
+
+    .sheet-head p{
+      margin:0 0 3px;
+      font-size:9.5pt;
+    }
+
+    .entry{
+      border:1px solid #444;
+      border-radius:4px;
+      padding:9px 11px;
+      margin-bottom:11px;
+    }
+
+    .entry-head{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid #999;
+      padding-bottom:5px;
+      margin-bottom:6px;
+      font-size:10pt;
+      font-weight:700;
+    }
+
+    .entry-meta{
+      margin-bottom:6px;
+      font-size:8.5pt;
+      color:#333;
+    }
+
+    .entry-kennziffer{
+      margin-bottom:6px;
+      font-size:8.5pt;
+      color:#333;
+    }
+
+    .entry-text{
+      white-space:pre-wrap;
+      font-size:9.5pt;
+      line-height:1.4;
+    }
+
+    .entry-extra{
+      margin-top:6px;
+      padding-top:5px;
+      border-top:1px dashed #999;
+      font-size:8.5pt;
+    }
+
+    .footnote{
+      margin-top:12px;
+      font-size:8pt;
+      color:#444;
+    }
+
+    .error-box{
+      width:min(90vw,700px);
+      margin:60px auto;
+      padding:25px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid #c7d0d8;
+      box-shadow:0 6px 24px rgba(0,0,0,.12);
+    }
+
+    @media print{
+      @page{
+        size:A4 portrait;
+        margin:14mm;
+      }
+
+      html,body{
+        width:auto;
+        height:auto;
+        margin:0;
+        padding:0;
+        background:#fff;
+      }
+
+      .toolbar{display:none}
+
+      .page-wrap{
+        width:auto;
+        margin:0;
+        padding:0;
+        overflow:visible;
+      }
+
+      .sheet{
+        width:auto;
+        margin:0;
+        padding:0;
+        border:0;
+        box-shadow:none;
+      }
+
+      .entry{
+        page-break-inside:avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <div class="toolbar-title">Dokumentationen</div>
+
+    <div class="toolbar-actions">
+      <button type="button" id="closeButton">Schließen</button>
+      <button type="button" id="printButton" class="primary">Drucken / PDF</button>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <script>
+    const app=document.getElementById('app');
+
+    function esc(value){
+      return String(value??'')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function formatDate(value){
+      if(!value)return '';
+
+      const parts=String(value).split('-');
+      if(parts.length!==3)return String(value);
+
+      return parts[2]+'.'+parts[1]+'.'+parts[0];
+    }
+
+    function formatFls(value){
+      return Number(value||0)
+        .toFixed(1)
+        .replace('.',',');
+    }
+
+    function formatDuration(minutes){
+      const total=Number(minutes||0);
+      const hours=Math.floor(total/60);
+      const rest=total%60;
+
+      if(hours&&rest)return hours+' Std. '+rest+' Min.';
+      if(hours)return hours+' Std.';
+
+      return rest+' Min.';
+    }
+
+    function readPayload(){
+      const raw=sessionStorage.getItem('dokumentation_payload');
+      if(!raw)return null;
+
+      try{
+        return JSON.parse(raw);
+      }catch(error){
+        console.error(error);
+        return null;
+      }
+    }
+
+    function showError(){
+      app.innerHTML=`
+        <div class="error-box">
+          <h2>Keine Daten gefunden</h2>
+          <p>Öffne die Dokumentationen bitte über die Klienten-App.</p>
+        </div>
+      `;
+    }
+
+    function render(){
+      const payload=readPayload();
+
+      if(!payload||!Array.isArray(payload.entries)||!payload.entries.length){
+        showError();
+        return;
+      }
+
+      const entries=payload.entries;
+
+      const totalMinutes=entries.reduce(
+        (sum,entry)=>sum+Number(entry.dauerMinuten||0),
+        0
+      );
+
+      const totalFls=Math.round((totalMinutes/50)*10)/10;
+
+      const blocks=entries.map(entry=>`
+        <div class="entry">
+          <div class="entry-head">
+            <span>${formatDate(entry.datum)}</span>
+            <span>
+              ${esc(entry.beginn||'')}–${esc(entry.ende||'')}
+              ·
+              ${formatDuration(entry.dauerMinuten)}
+              ·
+              ${formatFls(Number(entry.dauerMinuten||0)/50)} FLS
+            </span>
+          </div>
+
+          <div class="entry-meta">
+            ${esc(entry.leistungsart||'')}
+            ·
+            ${esc(entry.ort||'—')}
+          </div>
+
+          ${
+            entry.kennziffer
+              ? `<div class="entry-kennziffer">
+                   Kennziffer ${esc(entry.kennziffer)}${
+                     entry.kennzifferText
+                       ? ': '+esc(entry.kennzifferText)
+                       : ''
+                   }
+                 </div>`
+              : ''
+          }
+
+          <div class="entry-text">${esc(entry.text||'')}</div>
+
+          ${
+            entry.besonderheiten
+              ? `<div class="entry-extra">
+                   Besonderheiten: ${esc(entry.besonderheiten)}
+                 </div>`
+              : ''
+          }
+        </div>
+      `).join('');
+
+      app.innerHTML=`
+        <div class="page-wrap">
+          <div class="sheet">
+            <div class="sheet-head">
+              <h1>Dokumentation der Assistenzleistungen</h1>
+              <p>Klient: ${esc(payload.clientName||'')}${
+                payload.clientCode
+                  ? ' ('+esc(payload.clientCode)+')'
+                  : ''
+              }</p>
+              <p>Zeitraum: ${esc(payload.zeitraum||'')}</p>
+              <p>
+                Termine: ${entries.length}
+                ·
+                Gesamtdauer: ${formatDuration(totalMinutes)}
+                ·
+                ${formatFls(totalFls)} FLS
+              </p>
+              <p>Erstellt am ${formatDate(payload.createdAt)}</p>
+            </div>
+
+            ${blocks}
+
+            <p class="footnote">
+              Erstellt mit der Assistenz-Verwaltung.
+              Enthält personenbezogene Sozialdaten nach SGB IX –
+              vertraulich behandeln.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById('printButton')
+      .addEventListener('click',()=>window.print());
+
+    document.getElementById('closeButton')
+      .addEventListener('click',()=>window.close());
+
+    render();
+  </script>
+</body>
+</html>
