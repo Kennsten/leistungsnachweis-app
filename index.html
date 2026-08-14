@@ -886,6 +886,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="button" id="deleteDoc" class="danger hidden">Löschen</button>
 <button type="submit" id="docSave" class="primary">Speichern</button>
     </div>
+
+    <div style="margin-top:10px">
+      <button type="button" id="saveDocAndTrip" class="secondary" style="width:100%">
+        Speichern und Fahrt eintragen
+      </button>
+    </div>
   </form>
 </dialog>
 
@@ -1073,7 +1079,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         </select>
       </label>
 
-      <div class="span2">
+      <div class="span2" style="margin:12px 0">
         <button type="button" id="manageStops" class="secondary">
           Gespeicherte Stopps verwalten
         </button>
@@ -1154,6 +1160,7 @@ let trips=[];
 let tripStopSuggestions=[];
 let allTripsPayload=null;
 let pendingTripForDoc=null;
+let fahrtNachSpeichern=false;
 
 const START_ADRESSE='Lichtenbergplatz 7, 30449 Hannover';
 const FLS_VIERTEL_BIS='2026-06-30';
@@ -3115,8 +3122,19 @@ $('printDocs').onclick=()=>{
 };
 $('closeDocForm').onclick=()=>{
   pendingTripForDoc=null;
+  fahrtNachSpeichern=false;
   $('docFormDialog').close();
 };
+$('saveDocAndTrip').onclick=()=>{
+  if(!confirm(
+    'Die Dokumentation wird gespeichert. '+
+    'Danach öffnet sich das Fahrtenbuch, um die Fahrt einzutragen.'
+  ))return;
+
+  fahrtNachSpeichern=true;
+  $('docForm').requestSubmit();
+};
+
 $('docBeginn').onchange=updateDocDauer;
 $('docEnde').onchange=updateDocDauer;
 $('docFls').onchange=applyDocFls;
@@ -3218,6 +3236,21 @@ $('docForm').onsubmit=async e=>{
     );
 
     await loadDocs();
+
+    if(fahrtNachSpeichern){
+      const klient=activeDocsClient;
+
+      fahrtNachSpeichern=false;
+
+      $('docsDialog').close();
+      await openTrips(klient.id);
+      await openTripForm();
+
+      if(saved&&saved.id){
+        $('tripDocumentation').value=saved.id;
+        applyTripDocumentation(saved.id);
+      }
+    }
   }finally{
     docSaving=false;
     saveButton.disabled=false;
