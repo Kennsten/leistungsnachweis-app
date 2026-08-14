@@ -882,15 +882,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
     </div>
-    <div class="actions">
-      <button type="button" id="deleteDoc" class="danger hidden">Löschen</button>
-<button type="submit" id="docSave" class="primary">Speichern</button>
-    </div>
-
-    <div style="margin-top:10px">
+    <div style="margin-bottom:10px">
       <button type="button" id="saveDocAndTrip" class="secondary" style="width:100%">
         Speichern und Fahrt eintragen
       </button>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="deleteDoc" class="danger hidden">Löschen</button>
+<button type="submit" id="docSave" class="primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1079,11 +1079,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         </select>
       </label>
 
-      <div class="span2" style="margin:12px 0">
+      <label class="span2">
         <button type="button" id="manageStops" class="secondary">
           Gespeicherte Stopps verwalten
         </button>
-      </div>
+      </label>
 
       <label class="span2">Zieladresse
         <input id="tripDestination" required>
