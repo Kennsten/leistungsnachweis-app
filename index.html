@@ -3241,6 +3241,7 @@ $('docForm').onsubmit=async e=>{
 
     if(fahrtNachSpeichern){
       const klient=activeDocsClient;
+      const docId=saved&&saved.id;
 
       fahrtNachSpeichern=false;
 
@@ -3248,11 +3249,26 @@ $('docForm').onsubmit=async e=>{
       await openTrips(klient.id);
       await openTripForm();
 
-      if(saved&&saved.id){
-        $('tripDocumentation').value=saved.id;
-        applyTripDocumentation(saved.id);
+      if(docId){
+        await loadTripDocumentations();
+
+        const select=$('tripDocumentation');
+        const vorhanden=Array.from(select.options).some(
+          option=>option.value===String(docId)
+        );
+
+        if(!vorhanden){
+          const option=document.createElement('option');
+          option.value=String(docId);
+          option.textContent='Gerade gespeicherter Termin';
+          select.insertBefore(option,select.firstChild.nextSibling);
+        }
+
+        select.value=String(docId);
+        applyTripDocumentation(docId);
       }
     }
+
   }finally{
     docSaving=false;
     saveButton.disabled=false;
