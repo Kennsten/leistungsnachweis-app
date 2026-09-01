@@ -755,6 +755,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </button>
   </div>
 
+    <button
+      type="button"
+      id="allExpenses"
+      class="secondary">
+      Betriebsausgaben
+    </button>
+
   <div class="top">
     <div>
       <h2>Klientenliste</h2>
@@ -1144,7 +1151,120 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="stopManagerList"></div>
 </dialog>
 
-<dialog id="monthlyDialog">
+<dialog id="expensesDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Steuer</div>
+      <h2>Betriebsausgaben</h2>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="newExpense" class="primary">
+        + Neue Ausgabe
+      </button>
+
+      <button type="button" id="closeExpenses" class="secondary">
+        Schließen
+      </button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <label>
+      Jahr
+      <select id="expensesYear"></select>
+    </label>
+
+    <label>
+      Kategorie
+      <select id="expensesCategory">
+        <option value="">Alle Kategorien</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="expensesList">
+    <p class="muted">Ausgaben werden geladen …</p>
+  </div>
+</dialog>
+
+<dialog id="expenseFormDialog">
+  <form id="expenseForm">
+    <div class="top">
+      <div>
+        <div class="muted">Betriebsausgabe</div>
+        <h2 id="expenseDialogTitle">Ausgabe anlegen</h2>
+      </div>
+      <button type="button" id="closeExpenseForm" class="secondary">
+        Schließen
+      </button>
+    </div>
+
+    <input type="hidden" id="expenseId">
+
+    <div id="expenseBelegHint" class="kennziffer-text hidden"></div>
+
+    <div class="grid">
+      <label>Datum
+        <input id="expenseDate" type="date" required>
+      </label>
+
+      <label>Betrag in Euro
+        <input id="expenseAmount" type="number" min="0" step="0.01" inputmode="decimal" required>
+      </label>
+
+      <label class="span2">Kategorie
+        <select id="expenseCategory" required></select>
+      </label>
+
+      <label class="span2">Verwendungszweck
+        <input id="expensePurpose" required placeholder="z. B. Parkhaus Amtsgericht">
+      </label>
+
+      <label class="span2">Klient (optional)
+        <select id="expenseClient">
+          <option value="">Kein Klientenbezug</option>
+        </select>
+      </label>
+
+      <label class="span2">Termin verknüpfen (optional)
+        <select id="expenseDocumentation">
+          <option value="">Keine Verknüpfung</option>
+        </select>
+      </label>
+
+      <label class="span2">Fahrt verknüpfen (optional)
+        <select id="expenseTrip">
+          <option value="">Keine Verknüpfung</option>
+        </select>
+      </label>
+
+      <label class="span2 hidden" id="expenseHostReasonWrap">Anlass der Bewirtung
+        <input id="expenseHostReason" placeholder="z. B. Fallbesprechung">
+      </label>
+
+      <label class="span2 hidden" id="expenseHostGuestsWrap">Teilnehmer
+        <input id="expenseHostGuests" placeholder="Namen aller Teilnehmenden">
+      </label>
+
+      <label class="span2">Bemerkungen
+        <textarea id="expenseNotes" rows="2" placeholder="Optional"></textarea>
+      </label>
+
+      <label class="span2" style="flex-direction:row;align-items:center;gap:10px">
+        <input id="expenseReceipt" type="checkbox" style="width:auto;margin:0">
+        Beleg liegt vor
+      </label>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="deleteExpense" class="danger hidden">Löschen</button>
+      <button type="submit" id="expenseSave" class="primary">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+  <dialog id="monthlyDialog">
   <div class="top">
     <div>
       <div class="muted">Leistungsnachweis</div>
