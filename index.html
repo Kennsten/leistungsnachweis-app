@@ -753,7 +753,6 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       class="secondary">
       Gesamt-Fahrtenliste
     </button>
-  </div>
 
     <button
       type="button"
@@ -761,6 +760,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       class="secondary">
       Betriebsausgaben
     </button>
+  </div>
 
   <div class="top">
     <div>
@@ -4522,7 +4522,7 @@ function renderExpenses(){
         <div class="doc-head">
           <div>
             <h3>
-              ${esc(belegNummer(e))}
+              Beleg ${esc(String(e.beleg_nr||'').padStart(3,'0'))}
               ·
               ${formatEuro(e.betrag)}
             </h3>
