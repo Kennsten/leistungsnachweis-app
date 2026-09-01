@@ -56,6 +56,18 @@ input:focus,textarea:focus,select:focus{
   border-color:var(--brand);
   box-shadow:0 0 0 3px rgba(111,133,113,.15);
 }
+
+input[type="date"],
+input[type="month"],
+input[type="time"]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  min-width:0;
+  text-align:left;
+  height:48px;
+}
+
 textarea{resize:vertical}
 .primary,.secondary,.danger{border:0;border-radius:14px;padding:13px 17px;font-weight:600}
 .primary{background:var(--brand);color:#fff}
