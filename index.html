@@ -2327,7 +2327,12 @@ function renderDocs(){
           <p class="doc-text">${esc(d.dokumentation)}</p>
           ${d.besonderheiten?`<div class="meta">Vereinbarungen / Besonderheiten: ${esc(d.besonderheiten)}</div>`:''}
         </div>
-        <div class="actions"><button class="secondary editDoc" data-id="${d.id}">Bearbeiten</button></div>
+          <div class="actions">
+            <button class="secondary editDoc" data-id="${d.id}">Bearbeiten</button>
+            <button class="secondary expenseParkFromDoc" data-id="${d.id}">Parkticket</button>
+            <button class="secondary expenseHostFromDoc" data-id="${d.id}">Bewirtung</button>
+          </div>
+
       </div>
     </div>
   `).join(''):(
@@ -2345,7 +2350,16 @@ function renderDocs(){
 
   $('docsList').innerHTML=summary+docsHtml;
 
-  document.querySelectorAll('.editDoc').forEach(b=>b.onclick=()=>openDocForm(b.dataset.id));
+    document.querySelectorAll('.editDoc').forEach(b=>b.onclick=()=>openDocForm(b.dataset.id));
+
+    document.querySelectorAll('.expenseParkFromDoc').forEach(
+      b=>b.onclick=()=>openExpenseFromDoc(b.dataset.id,'Parken')
+    );
+
+    document.querySelectorAll('.expenseHostFromDoc').forEach(
+      b=>b.onclick=()=>openExpenseFromDoc(b.dataset.id,'Bewirtung')
+    );
+
 }
 
 function openDocForm(id=''){
