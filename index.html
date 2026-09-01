@@ -1986,13 +1986,16 @@ async function loadTrips(){
               ${t.intermediate_stops||t.stopovers?`<div class="meta">Zwischenstopps: ${esc(t.intermediate_stops||t.stopovers)}</div>`:''}
               <div class="meta">${esc(t.purpose||'')}</div>
             </div>
-            <div>
+                <div class="actions">
+
               <button type="button" class="secondary editTrip" data-id="${t.id}">Bearbeiten</button>
               ${
                 t.documentation_id
                   ? ''
                   : `<button type="button" class="secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
               }
+                                <button type="button" class="secondary expenseFromTrip" data-id="${t.id}">Parkticket</button>
+
             </div>
           </div>
         </div>
