@@ -4238,9 +4238,498 @@ sb.auth.onAuthStateChange((event,session)=>{
   }
 });
 
+const AUSGABEN_KATEGORIEN=[
+  'Parken',
+  'Öffentliche Verkehrsmittel',
+  'Bewirtung',
+  'Bürobedarf',
+  'Fachliteratur / Fortbildung',
+  'Porto',
+  'Telefon / Internet',
+  'Sonstiges'
+];
+
+const BEWIRTUNG_ABZUGSFAEHIG=0.7;
+
+let expenses=[];
+let expenseSaving=false;
+let expenseDocOptions=[];
+let expenseTripOptions=[];
+
+function formatEuro(value){
+  return new Intl.NumberFormat('de-DE',{
+    style:'currency',
+    currency:'EUR'
+  }).format(Number(value||0));
+}
+
+function belegNummer(expense){
+  if(!expense||!expense.beleg_jahr)return '';
+
+  return expense.beleg_jahr+
+    '-'+
+    String(expense.beleg_nr).padStart(3,'0');
+}
+
+function fillExpenseCategories(){
+  const optionen=AUSGABEN_KATEGORIEN
+    .map(name=>`<option value="${esc(name)}">${esc(name)}</option>`)
+    .join('');
+
+  $('expenseCategory').innerHTML=
+    '<option value="">Bitte auswählen</option>'+optionen;
+
+  $('expensesCategory').innerHTML=
+    '<option value="">Alle Kategorien</option>'+optionen;
+}
+
+function fillExpenseClients(){
+  $('expenseClient').innerHTML=
+    '<option value="">Kein Klientenbezug</option>'+
+    clients
+      .map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`)
+      .join('');
+}
+
+async function naechsteBelegNummer(jahr){
+  const {data,error}=await sb
+    .from('ausgaben')
+    .select('beleg_nr')
+    .eq('user_id',user.id)
+    .eq('beleg_jahr',jahr)
+    .order('beleg_nr',{ascending:false})
+    .limit(1);
+
+  if(error)return 1;
+
+  return (data?.[0]?.beleg_nr||0)+1;
+}
+
+async function loadExpenseLinkOptions(clientId){
+  const docSelect=$('expenseDocumentation');
+  const tripSelect=$('expenseTrip');
+
+  if(!clientId){
+    expenseDocOptions=[];
+    expenseTripOptions=[];
+    docSelect.innerHTML='<option value="">Keine Verknüpfung</option>';
+    tripSelect.innerHTML='<option value="">Keine Verknüpfung</option>';
+    return;
+  }
+
+  const [docResult,tripResult]=await Promise.all([
+    sb.from('dokumentationen')
+      .select('id,datum,beginn,leistungsart,ort_der_leistung')
+      .eq('client_id',clientId)
+      .order('datum',{ascending:false})
+      .limit(60),
+
+    sb.from('trip_entries')
+      .select('id,trip_date,purpose,destination_address')
+      .eq('client_id',clientId)
+      .order('trip_date',{ascending:false})
+      .limit(60)
+  ]);
+
+  expenseDocOptions=docResult.data||[];
+  expenseTripOptions=tripResult.data||[];
+
+  docSelect.innerHTML=
+    '<option value="">Keine Verknüpfung</option>'+
+    expenseDocOptions.map(d=>{
+      const text=[
+        formatDate(d.datum),
+        String(d.beginn||'').slice(0,5),
+        d.ort_der_leistung||d.leistungsart||''
+      ].filter(Boolean).join(' · ');
+
+      return `<option value="${esc(d.id)}">${esc(text)}</option>`;
+    }).join('');
+
+  tripSelect.innerHTML=
+    '<option value="">Keine Verknüpfung</option>'+
+    expenseTripOptions.map(t=>{
+      const text=[
+        formatDate(t.trip_date),
+        t.purpose||t.destination_address||''
+      ].filter(Boolean).join(' · ');
+
+      return `<option value="${esc(t.id)}">${esc(text)}</option>`;
+    }).join('');
+}
+
+function updateExpenseCategoryFields(){
+  const istBewirtung=$('expenseCategory').value==='Bewirtung';
+
+  $('expenseHostReasonWrap').classList.toggle('hidden',!istBewirtung);
+  $('expenseHostGuestsWrap').classList.toggle('hidden',!istBewirtung);
+  $('expenseHostReason').required=istBewirtung;
+  $('expenseHostGuests').required=istBewirtung;
+}
+
+async function openExpenses(){
+  const currentYear=new Date().getFullYear();
+
+  $('expensesYear').innerHTML='';
+
+  for(let year=currentYear;year>=2024;year--){
+    $('expensesYear').insertAdjacentHTML(
+      'beforeend',
+      `<option value="${year}">${year}</option>`
+    );
+  }
+
+  $('expensesYear').value=String(currentYear);
+  $('expensesCategory').value='';
+
+  $('expensesDialog').showModal();
+
+  await loadExpenses();
+}
+
+async function loadExpenses(){
+  $('expensesList').innerHTML=
+    '<p class="muted">Ausgaben werden geladen …</p>';
+
+  const jahr=$('expensesYear').value;
+  const kategorie=$('expensesCategory').value;
+
+  let query=sb
+    .from('ausgaben')
+    .select('*')
+    .eq('beleg_jahr',Number(jahr));
+
+  if(kategorie){
+    query=query.eq('kategorie',kategorie);
+  }
+
+  const {data,error}=await query
+    .order('datum',{ascending:false})
+    .order('beleg_nr',{ascending:false});
+
+  if(error){
+    $('expensesList').innerHTML='';
+    toast('Ausgaben konnten nicht geladen werden: '+error.message);
+    return;
+  }
+
+  expenses=data||[];
+
+  renderExpenses();
+}
+
+function renderExpenses(){
+  if(!expenses.length){
+    $('expensesList').innerHTML=
+      '<p class="muted">Für diesen Zeitraum sind keine Ausgaben erfasst.</p>';
+    return;
+  }
+
+  const summeBrutto=expenses.reduce(
+    (sum,e)=>sum+Number(e.betrag||0),
+    0
+  );
+
+  const summeAbzugsfaehig=expenses.reduce((sum,e)=>{
+    const betrag=Number(e.betrag||0);
+
+    return sum+(e.kategorie==='Bewirtung'
+      ? betrag*BEWIRTUNG_ABZUGSFAEHIG
+      : betrag);
+  },0);
+
+  const ohneBeleg=expenses.filter(e=>!e.beleg_vorhanden).length;
+
+  const proKategorie={};
+
+  for(const e of expenses){
+    const key=e.kategorie||'Sonstiges';
+    proKategorie[key]=(proKategorie[key]||0)+Number(e.betrag||0);
+  }
+
+  const kategorieZeilen=Object.entries(proKategorie)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([name,betrag])=>`
+      <div class="summary-row">
+        <span>${esc(name)}</span>
+        <strong>${formatEuro(betrag)}</strong>
+      </div>
+    `).join('');
+
+  const clientName=id=>{
+    const c=clients.find(x=>String(x.id)===String(id));
+    return c?c.name:'';
+  };
+
+  $('expensesList').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Belege</span>
+        <strong>${expenses.length}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Summe gesamt</span>
+        <strong>${formatEuro(summeBrutto)}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Davon absetzbar</span>
+        <strong>${formatEuro(summeAbzugsfaehig)}</strong>
+      </div>
+
+      ${
+        ohneBeleg
+          ? `<div class="monthly-warning">
+               ⚠ ${ohneBeleg} Einträge ohne Belegbestätigung
+             </div>`
+          : ''
+      }
+    </div>
+
+    <div class="summary-box">
+      <div class="summary-row">
+        <span><strong>Nach Kategorie</strong></span>
+        <strong></strong>
+      </div>
+      ${kategorieZeilen}
+    </div>
+
+    ${expenses.map(e=>`
+      <div class="doc-item">
+        <div class="doc-head">
+          <div>
+            <h3>
+              ${esc(belegNummer(e))}
+              ·
+              ${formatEuro(e.betrag)}
+            </h3>
+
+            <div class="meta">
+              ${formatDate(e.datum)} · ${esc(e.kategorie||'')}
+            </div>
+
+            <div class="meta">${esc(e.zweck||'')}</div>
+
+            ${
+              e.client_id
+                ? `<div class="meta">Klient: ${esc(clientName(e.client_id))}</div>`
+                : ''
+            }
+
+            ${
+              e.kategorie==='Bewirtung'
+                ? `<div class="meta">
+                     Absetzbar: ${formatEuro(Number(e.betrag||0)*BEWIRTUNG_ABZUGSFAEHIG)}
+                     (70 %)
+                   </div>`
+                : ''
+            }
+
+            <div class="meta">
+              ${e.beleg_vorhanden?'✓ Beleg vorhanden':'⚠ Beleg fehlt'}
+            </div>
+          </div>
+
+          <div class="actions">
+            <button
+              type="button"
+              class="secondary editExpense"
+              data-id="${esc(e.id)}">
+              Bearbeiten
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  document.querySelectorAll('.editExpense').forEach(
+    b=>b.onclick=()=>openExpenseForm(b.dataset.id)
+  );
+}
+
+async function openExpenseForm(id='',vorgabe={}){
+  const e=expenses.find(x=>String(x.id)===String(id))||{};
+
+  fillExpenseCategories();
+  fillExpenseClients();
+
+  $('expenseId').value=e.id||'';
+  $('expenseDate').value=e.datum||vorgabe.datum||todayIso();
+  $('expenseAmount').value=e.betrag??'';
+  $('expenseCategory').value=e.kategorie||vorgabe.kategorie||'';
+  $('expensePurpose').value=e.zweck||vorgabe.zweck||'';
+  $('expenseClient').value=e.client_id||vorgabe.clientId||'';
+  $('expenseHostReason').value=e.bewirtung_anlass||'';
+  $('expenseHostGuests').value=e.bewirtung_teilnehmer||'';
+  $('expenseNotes').value=e.notizen||'';
+  $('expenseReceipt').checked=Boolean(e.beleg_vorhanden);
+
+  await loadExpenseLinkOptions($('expenseClient').value);
+
+  $('expenseDocumentation').value=
+    e.documentation_id||vorgabe.documentationId||'';
+
+  $('expenseTrip').value=e.trip_id||vorgabe.tripId||'';
+
+  updateExpenseCategoryFields();
+
+  const hinweis=$('expenseBelegHint');
+
+  if(id){
+    hinweis.classList.remove('hidden');
+    hinweis.innerHTML=
+      '<strong>Belegnummer '+esc(belegNummer(e))+'</strong>'+
+      'Diese Nummer steht auf deinem Zettel.';
+  }else{
+    hinweis.classList.remove('hidden');
+    hinweis.innerHTML=
+      '<strong>Belegnummer</strong>'+
+      'Wird beim Speichern vergeben. Schreibe sie danach auf den Zettel.';
+  }
+
+  $('deleteExpense').classList.toggle('hidden',!id);
+
+  $('expenseDialogTitle').textContent=id
+    ? 'Ausgabe bearbeiten'
+    : 'Ausgabe anlegen';
+
+  $('expenseFormDialog').showModal();
+}
+
+$('allExpenses').onclick=openExpenses;
+$('closeExpenses').onclick=()=>$('expensesDialog').close();
+$('newExpense').onclick=()=>openExpenseForm();
+$('closeExpenseForm').onclick=()=>$('expenseFormDialog').close();
+$('expensesYear').onchange=loadExpenses;
+$('expensesCategory').onchange=loadExpenses;
+$('expenseCategory').onchange=updateExpenseCategoryFields;
+
+$('expenseClient').onchange=async()=>{
+  await loadExpenseLinkOptions($('expenseClient').value);
+};
+
+$('expenseForm').onsubmit=async e=>{
+  e.preventDefault();
+
+  if(expenseSaving)return;
+
+  const datum=$('expenseDate').value;
+  const betrag=Number(String($('expenseAmount').value).replace(',','.'));
+  const kategorie=$('expenseCategory').value;
+  const zweck=$('expensePurpose').value.trim();
+
+  if(!datum||!kategorie||!zweck){
+    toast('Bitte alle Pflichtfelder ausfüllen.');
+    return;
+  }
+
+  if(!Number.isFinite(betrag)||betrag<=0){
+    toast('Bitte einen gültigen Betrag eintragen.');
+    return;
+  }
+
+  if(kategorie==='Bewirtung'){
+    if(!$('expenseHostReason').value.trim()||
+       !$('expenseHostGuests').value.trim()){
+      toast('Bei Bewirtung sind Anlass und Teilnehmer Pflicht.');
+      return;
+    }
+  }
+
+  const id=$('expenseId').value;
+  const jahr=Number(datum.slice(0,4));
+
+  const saveButton=$('expenseSave');
+  expenseSaving=true;
+  saveButton.disabled=true;
+  saveButton.textContent='Wird gespeichert …';
+
+  try{
+    const row={
+      user_id:user.id,
+      datum,
+      betrag,
+      kategorie,
+      zweck,
+      client_id:$('expenseClient').value||null,
+      documentation_id:$('expenseDocumentation').value||null,
+      trip_id:$('expenseTrip').value||null,
+      bewirtung_anlass:kategorie==='Bewirtung'
+        ? $('expenseHostReason').value.trim()
+        : null,
+      bewirtung_teilnehmer:kategorie==='Bewirtung'
+        ? $('expenseHostGuests').value.trim()
+        : null,
+      beleg_vorhanden:$('expenseReceipt').checked,
+      notizen:$('expenseNotes').value.trim()||null,
+      updated_at:new Date().toISOString()
+    };
+
+    let query;
+
+    if(id){
+      query=sb.from('ausgaben')
+        .update(row)
+        .eq('id',id)
+        .select('*')
+        .single();
+    }else{
+      row.beleg_jahr=jahr;
+      row.beleg_nr=await naechsteBelegNummer(jahr);
+
+      query=sb.from('ausgaben')
+        .insert(row)
+        .select('*')
+        .single();
+    }
+
+    const {data:saved,error}=await query;
+
+    if(error){
+      toast('Ausgabe konnte nicht gespeichert werden: '+error.message);
+      return;
+    }
+
+    $('expenseFormDialog').close();
+
+    toast(id
+      ? 'Ausgabe aktualisiert'
+      : 'Gespeichert als Beleg '+belegNummer(saved)
+    );
+
+    if($('expensesDialog').open){
+      await loadExpenses();
+    }
+  }finally{
+    expenseSaving=false;
+    saveButton.disabled=false;
+    saveButton.textContent='Speichern';
+  }
+};
+
+$('deleteExpense').onclick=async()=>{
+  const id=$('expenseId').value;
+
+  if(!id||!confirm('Diese Ausgabe wirklich löschen?'))return;
+
+  const {error}=await sb.from('ausgaben').delete().eq('id',id);
+
+  if(error){
+    toast('Ausgabe konnte nicht gelöscht werden: '+error.message);
+    return;
+  }
+
+  $('expenseFormDialog').close();
+  toast('Ausgabe gelöscht');
+  await loadExpenses();
+};
+
 fillTimeOptions();
 init();
 </script>
+
           <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
