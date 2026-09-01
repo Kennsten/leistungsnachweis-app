@@ -2007,7 +2007,12 @@ async function loadTrips(){
   document.querySelectorAll('.docFromTrip').forEach(
     b=>b.onclick=()=>openDocFromTrip(b.dataset.id)
   );
+
+  document.querySelectorAll('.expenseFromTrip').forEach(
+    b=>b.onclick=()=>openExpenseFromTrip(b.dataset.id)
+  );
 }
+
 
 async function loadTripStopSuggestions(){
   const {data,error}=await sb
