@@ -4619,6 +4619,51 @@ async function openExpenseForm(id='',vorgabe={}){
 
   $('expenseFormDialog').showModal();
 }
+async function openExpenseFromTrip(tripId){
+  const trip=trips.find(t=>String(t.id)===String(tripId));
+
+  if(!trip){
+    toast('Fahrt nicht gefunden.');
+    return;
+  }
+
+  const ziel=trip.intermediate_stops||
+    trip.destination_address||
+    '';
+
+  await openExpenseForm('',{
+    datum:trip.trip_date,
+    kategorie:'Parken',
+    zweck:ziel?'Parken · '+ziel:'Parken',
+    clientId:trip.client_id,
+    tripId:trip.id,
+    documentationId:trip.documentation_id||''
+  });
+}
+
+async function openExpenseFromDoc(docId,kategorie){
+  const doc=docs.find(d=>String(d.id)===String(docId));
+
+  if(!doc){
+    toast('Dokumentation nicht gefunden.');
+    return;
+  }
+
+  const ort=doc.ort_der_leistung||'';
+
+  const zweck=kategorie==='Bewirtung'
+    ? 'Bewirtung · '+(activeDocsClient?activeDocsClient.name:'')
+    : (ort?'Parken · '+ort:'Parken');
+
+  await openExpenseForm('',{
+    datum:doc.datum,
+    kategorie:kategorie,
+    zweck:zweck,
+    clientId:doc.client_id,
+    documentationId:doc.id
+  });
+}
+
 
 $('allExpenses').onclick=openExpenses;
 $('closeExpenses').onclick=()=>$('expensesDialog').close();
