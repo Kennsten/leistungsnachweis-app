@@ -1159,7 +1159,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="newExpense" class="primary">
+      <button type="button" id="printExpenses" class="primary">
+        Übersicht öffnen
+      </button>
+
+      <button type="button" id="newExpense" class="secondary">
         + Neue Ausgabe
       </button>
 
@@ -3783,6 +3787,43 @@ function buildMonthlyChecks(context){
     )
   });
 
+  const monatsAusgaben=context.expenses||[];
+
+  if(monatsAusgaben.length){
+    const ausgabenOhneBeleg=monatsAusgaben.filter(
+      ausgabe=>!ausgabe.beleg_vorhanden
+    );
+
+    checks.push({
+      ok:ausgabenOhneBeleg.length===0,
+      text:ausgabenOhneBeleg.length===0
+        ? `Alle ${monatsAusgaben.length} Ausgaben mit Beleg`
+        : `${ausgabenOhneBeleg.length} Ausgaben ohne Beleg`,
+      details:ausgabenOhneBeleg.map(ausgabe=>
+        'Beleg '+String(ausgabe.beleg_nr||'').padStart(3,'0')+
+        ' · '+formatDate(ausgabe.datum)+
+        ' · '+formatEuro(ausgabe.betrag)+
+        ' · '+(ausgabe.kategorie||'')
+      )
+    });
+
+    const bewirtungOhneAngaben=monatsAusgaben.filter(ausgabe=>
+      ausgabe.kategorie==='Bewirtung' &&
+      (!ausgabe.bewirtung_anlass||!ausgabe.bewirtung_teilnehmer)
+    );
+
+    if(bewirtungOhneAngaben.length){
+      checks.push({
+        ok:false,
+        text:`${bewirtungOhneAngaben.length} Bewirtungen ohne Anlass oder Teilnehmer`,
+        details:bewirtungOhneAngaben.map(ausgabe=>
+          'Beleg '+String(ausgabe.beleg_nr||'').padStart(3,'0')+
+          ' · '+formatDate(ausgabe.datum)
+        )
+      });
+    }
+  }
+
   const lastDayOfMonth=new Date(
     new Date(endDate+'T00:00:00').getTime()-86400000
   );
@@ -3919,7 +3960,8 @@ $('monthlyMonth').onchange=async()=>{
   const [
     documentationResult,
     approvalResult,
-    tripResult
+    tripResult,
+    expenseResult
   ]=await Promise.all([
     sb
       .from('dokumentationen')
@@ -3945,7 +3987,15 @@ $('monthlyMonth').onchange=async()=>{
       .eq('client_id',activeMonthlyClient.id)
       .gte('trip_date',startDate)
       .lt('trip_date',endDate)
-      .order('trip_date',{ascending:true})
+      .order('trip_date',{ascending:true}),
+
+    sb
+      .from('ausgaben')
+      .select('*')
+      .eq('client_id',activeMonthlyClient.id)
+      .gte('datum',startDate)
+      .lt('datum',endDate)
+      .order('datum',{ascending:true})
   ]);
 
   if(documentationResult.error){
@@ -3974,6 +4024,7 @@ $('monthlyMonth').onchange=async()=>{
   const entries=documentationResult.data||[];
   const approval=(approvalResult.data||[])[0]||null;
   const monthTrips=tripResult.data||[];
+  const monthExpenses=(expenseResult&&expenseResult.data)||[];
 
   const monthNames=[
     'Januar',
@@ -4044,6 +4095,7 @@ $('monthlyMonth').onchange=async()=>{
   const monthlyChecks=buildMonthlyChecks({
     entries,
     trips:monthTrips,
+    expenses:monthExpenses,
     approval,
     startDate,
     endDate,
@@ -4681,6 +4733,61 @@ async function openExpenseFromDoc(docId,kategorie){
 
 $('allExpenses').onclick=openExpenses;
 $('closeExpenses').onclick=()=>$('expensesDialog').close();
+
+$('printExpenses').onclick=()=>{
+  if(!expenses.length){
+    toast('Für diesen Zeitraum sind keine Ausgaben erfasst.');
+    return;
+  }
+
+  const jahr=$('expensesYear').value;
+  const kategorie=$('expensesCategory').value;
+
+  const klientName=id=>{
+    const c=clients.find(x=>String(x.id)===String(id));
+    return c?c.name:'';
+  };
+
+  const payload={
+    zeitraum:kategorie
+      ? kategorie+' · Jahr '+jahr
+      : 'Jahr '+jahr,
+    person:'Stork, Oliver',
+    erstelltAm:todayIso(),
+    eintraege:expenses
+      .slice()
+      .sort((a,b)=>
+        String(a.datum).localeCompare(String(b.datum)) ||
+        Number(a.beleg_nr||0)-Number(b.beleg_nr||0)
+      )
+      .map(e=>{
+        const betrag=Number(e.betrag||0);
+
+        return {
+          belegNr:e.beleg_nr,
+          datum:e.datum,
+          kategorie:e.kategorie||'',
+          zweck:e.zweck||'',
+          klient:klientName(e.client_id),
+          betrag:betrag,
+          absetzbar:e.kategorie==='Bewirtung'
+            ? Math.round(betrag*BEWIRTUNG_ABZUGSFAEHIG*100)/100
+            : betrag,
+          bewirtungAnlass:e.bewirtung_anlass||'',
+          bewirtungTeilnehmer:e.bewirtung_teilnehmer||'',
+          belegVorhanden:Boolean(e.beleg_vorhanden)
+        };
+      })
+  };
+
+  sessionStorage.setItem(
+    'ausgaben_payload',
+    JSON.stringify(payload)
+  );
+
+  window.open('ausgaben.html','_blank');
+};
+
 $('newExpense').onclick=()=>openExpenseForm();
 $('closeExpenseForm').onclick=()=>$('expenseFormDialog').close();
 $('expensesYear').onchange=loadExpenses;
