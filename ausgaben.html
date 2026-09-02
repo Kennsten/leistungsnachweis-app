@@ -1,1 +1,439 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Betriebsausgaben</title>
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  padding:16px;
+  background:#eee;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#111;
+}
+
+.toolbar{
+  max-width:210mm;
+  margin:0 auto 14px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.toolbar button{
+  flex:1;
+  min-width:140px;
+  padding:13px 17px;
+  border:0;
+  border-radius:14px;
+  font:inherit;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.toolbar .print{
+  background:#6f8571;
+  color:#fff;
+}
+
+.toolbar .back{
+  background:#eaefe6;
+  color:#2f3a34;
+}
+
+.sheet{
+  width:210mm;
+  min-height:297mm;
+  margin:0 auto;
+  padding:14mm 12mm;
+  background:#fff;
+  border:1px solid #777;
+  font-size:11px;
+  line-height:1.25;
+}
+
+.sheet-head{
+  border-bottom:1px solid #777;
+  padding-bottom:8px;
+  margin-bottom:12px;
+}
+
+.sheet-head h1{
+  margin:0 0 2px;
+  font-size:22px;
+  line-height:1.1;
+}
+
+.sheet-head .sub{
+  font-size:11px;
+}
+
+.info-grid{
+  display:grid;
+  grid-template-columns:150px 1fr;
+  row-gap:3px;
+  column-gap:12px;
+  margin-bottom:14px;
+}
+
+.info-label{
+  font-weight:700;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  font-size:10px;
+}
+
+th,td{
+  border:1px solid #666;
+  padding:4px 5px;
+  vertical-align:top;
+  overflow-wrap:anywhere;
+}
+
+thead th{
+  background:#eee;
+  height:34px;
+  text-align:left;
+  font-weight:700;
+}
+
+tbody td{
+  height:26px;
+}
+
+.col-nr{width:9%}
+.col-date{width:11%}
+.col-cat{width:17%}
+.col-purpose{width:25%}
+.col-client{width:16%}
+.col-sum{width:11%;text-align:right}
+.col-net{width:11%;text-align:right}
+
+.num{
+  text-align:right;
+  white-space:nowrap;
+}
+
+tfoot td{
+  height:30px;
+  background:#eee;
+  font-weight:700;
+}
+
+.section-title{
+  margin:18px 0 6px;
+  font-size:13px;
+  font-weight:700;
+}
+
+.totals{
+  width:100%;
+  border-collapse:collapse;
+  font-size:11px;
+}
+
+.totals td{
+  border:1px solid #666;
+  padding:5px 7px;
+  height:26px;
+}
+
+.totals .label{
+  width:60%;
+}
+
+.totals .value{
+  text-align:right;
+  white-space:nowrap;
+}
+
+.totals tr.sum td{
+  background:#eee;
+  font-weight:700;
+}
+
+.note{
+  margin-top:16px;
+  padding-top:8px;
+  border-top:1px solid #777;
+  font-size:9px;
+  line-height:1.4;
+}
+
+.missing{
+  margin-top:10px;
+  padding:7px 9px;
+  border:1px solid #999;
+  font-size:10px;
+}
+
+.signature{
+  margin-top:34px;
+  width:70mm;
+}
+
+.signature .line{
+  height:26px;
+  border-bottom:1px solid #555;
+}
+
+.signature .caption{
+  margin-top:4px;
+  font-size:9px;
+}
+
+.empty{
+  padding:40px 0;
+  text-align:center;
+  color:#666;
+}
+
+@media print{
+  body{
+    margin:0;
+    padding:0;
+    background:#fff;
+  }
+
+  .toolbar{
+    display:none;
+  }
+
+  .sheet{
+    width:auto;
+    min-height:0;
+    margin:0;
+    padding:12mm 10mm;
+    border:0;
+  }
+
+  thead{
+    display:table-header-group;
+  }
+
+  tr{
+    break-inside:avoid;
+  }
+
+  @page{
+    size:A4 portrait;
+    margin:0;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button type="button" class="print" onclick="window.print()">Drucken</button>
+  <button type="button" class="back" onclick="window.close()">Schließen</button>
+</div>
+
+<div class="sheet" id="sheet">
+  <p class="empty">Übersicht wird geladen …</p>
+</div>
+
+<script>
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+
+function euro(value){
+  return new Intl.NumberFormat('de-DE',{
+    style:'currency',
+    currency:'EUR'
+  }).format(Number(value||0));
+}
+
+function datum(value){
+  if(!value)return '';
+  var teile=String(value).slice(0,10).split('-');
+  return teile[2]+'.'+teile[1]+'.'+teile[0];
+}
+
+function belegNr(eintrag){
+  return String(eintrag.belegNr||'').padStart(3,'0');
+}
+
+function render(){
+  var roh=sessionStorage.getItem('ausgaben_payload');
+
+  if(!roh){
+    document.getElementById('sheet').innerHTML=
+      '<p class="empty">Keine Daten vorhanden. '+
+      'Bitte die Übersicht erneut aus der App heraus öffnen.</p>';
+    return;
+  }
+
+  var daten=JSON.parse(roh);
+  var eintraege=daten.eintraege||[];
+
+  if(!eintraege.length){
+    document.getElementById('sheet').innerHTML=
+      '<p class="empty">Für diesen Zeitraum sind keine Ausgaben erfasst.</p>';
+    return;
+  }
+
+  var summeBrutto=0;
+  var summeAbsetzbar=0;
+  var proKategorie={};
+  var ohneBeleg=[];
+
+  eintraege.forEach(function(e){
+    var betrag=Number(e.betrag||0);
+    var absetzbar=Number(e.absetzbar||betrag);
+
+    summeBrutto+=betrag;
+    summeAbsetzbar+=absetzbar;
+
+    var kat=e.kategorie||'Sonstiges';
+
+    if(!proKategorie[kat]){
+      proKategorie[kat]={brutto:0,absetzbar:0,anzahl:0};
+    }
+
+    proKategorie[kat].brutto+=betrag;
+    proKategorie[kat].absetzbar+=absetzbar;
+    proKategorie[kat].anzahl+=1;
+
+    if(!e.belegVorhanden){
+      ohneBeleg.push(belegNr(e));
+    }
+  });
+
+  var zeilen=eintraege.map(function(e){
+    var betrag=Number(e.betrag||0);
+    var absetzbar=Number(e.absetzbar||betrag);
+
+    return ''+
+      '<tr>'+
+        '<td>'+esc(belegNr(e))+'</td>'+
+        '<td>'+esc(datum(e.datum))+'</td>'+
+        '<td>'+esc(e.kategorie||'')+'</td>'+
+        '<td>'+esc(e.zweck||'')+
+          (e.bewirtungAnlass
+            ? '<br>Anlass: '+esc(e.bewirtungAnlass)
+            : '')+
+          (e.bewirtungTeilnehmer
+            ? '<br>Teilnehmer: '+esc(e.bewirtungTeilnehmer)
+            : '')+
+        '</td>'+
+        '<td>'+esc(e.klient||'')+'</td>'+
+        '<td class="num">'+euro(betrag)+'</td>'+
+        '<td class="num">'+euro(absetzbar)+'</td>'+
+      '</tr>';
+  }).join('');
+
+  var kategorieZeilen=Object.keys(proKategorie)
+    .sort(function(a,b){
+      return proKategorie[b].brutto-proKategorie[a].brutto;
+    })
+    .map(function(name){
+      var k=proKategorie[name];
+
+      return ''+
+        '<tr>'+
+          '<td class="label">'+esc(name)+
+            ' ('+k.anzahl+(k.anzahl===1?' Beleg':' Belege')+')</td>'+
+          '<td class="value">'+euro(k.brutto)+'</td>'+
+          '<td class="value">'+euro(k.absetzbar)+'</td>'+
+        '</tr>';
+    }).join('');
+
+  document.getElementById('sheet').innerHTML=''+
+    '<div class="sheet-head">'+
+      '<h1>Betriebsausgaben</h1>'+
+      '<div class="sub">Aufstellung für die Einnahmenüberschussrechnung</div>'+
+    '</div>'+
+
+    '<div class="info-grid">'+
+      '<div class="info-label">Zeitraum</div>'+
+      '<div>'+esc(daten.zeitraum||'')+'</div>'+
+
+      '<div class="info-label">Steuerpflichtige Person</div>'+
+      '<div>'+esc(daten.person||'')+'</div>'+
+
+      '<div class="info-label">Anzahl Belege</div>'+
+      '<div>'+eintraege.length+'</div>'+
+
+      '<div class="info-label">Erstellt am</div>'+
+      '<div>'+esc(datum(daten.erstelltAm))+'</div>'+
+    '</div>'+
+
+    '<table>'+
+      '<thead>'+
+        '<tr>'+
+          '<th class="col-nr">Beleg</th>'+
+          '<th class="col-date">Datum</th>'+
+          '<th class="col-cat">Kategorie</th>'+
+          '<th class="col-purpose">Verwendungszweck</th>'+
+          '<th class="col-client">Klient</th>'+
+          '<th class="col-sum">Betrag</th>'+
+          '<th class="col-net">Absetzbar</th>'+
+        '</tr>'+
+      '</thead>'+
+      '<tbody>'+zeilen+'</tbody>'+
+      '<tfoot>'+
+        '<tr>'+
+          '<td colspan="5">Summe</td>'+
+          '<td class="num">'+euro(summeBrutto)+'</td>'+
+          '<td class="num">'+euro(summeAbsetzbar)+'</td>'+
+        '</tr>'+
+      '</tfoot>'+
+    '</table>'+
+
+    '<div class="section-title">Zusammenstellung nach Kategorien</div>'+
+
+    '<table class="totals">'+
+      '<tr>'+
+        '<td class="label"><strong>Kategorie</strong></td>'+
+        '<td class="value"><strong>Betrag</strong></td>'+
+        '<td class="value"><strong>Absetzbar</strong></td>'+
+      '</tr>'+
+      kategorieZeilen+
+      '<tr class="sum">'+
+        '<td class="label">Gesamt</td>'+
+        '<td class="value">'+euro(summeBrutto)+'</td>'+
+        '<td class="value">'+euro(summeAbsetzbar)+'</td>'+
+      '</tr>'+
+    '</table>'+
+
+    (ohneBeleg.length
+      ? '<div class="missing">'+
+          'Ohne bestätigten Beleg: '+ohneBeleg.length+
+          (ohneBeleg.length===1?' Eintrag':' Einträge')+
+          ' (Nr. '+esc(ohneBeleg.join(', '))+')'+
+        '</div>'
+      : '')+
+
+    '<div class="note">'+
+      'Bewirtungsaufwendungen sind nach § 4 Abs. 5 Nr. 2 EStG zu 70 Prozent '+
+      'abziehbar. In der Spalte „Absetzbar" ist dieser Abzug bereits '+
+      'berücksichtigt. Fahrtkosten werden gesondert im Fahrtenbuch erfasst '+
+      'und sind in dieser Aufstellung nicht enthalten. Die Belegnummern '+
+      'entsprechen der Nummerierung auf den abgelegten Originalbelegen.'+
+    '</div>'+
+
+    '<div class="signature">'+
+      '<div class="line"></div>'+
+      '<div class="caption">Ort, Datum, Unterschrift</div>'+
+    '</div>';
+
+  document.title='Betriebsausgaben '+(daten.zeitraum||'');
+}
+
+render();
+</script>
+
+</body>
+</html>
 
