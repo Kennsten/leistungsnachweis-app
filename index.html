@@ -640,6 +640,21 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   color:#5a4030;
 }
 
+.monthly-check-details button{
+  padding:2px 0;
+  border:0;
+  background:none;
+  font:inherit;
+  color:#8a4a1c;
+  text-align:left;
+  text-decoration:underline;
+  cursor:pointer;
+}
+
+.monthly-check-details button:hover{
+  color:#5a2f10;
+}
+
 @media print{
   body *{
     visibility:hidden;
@@ -3799,12 +3814,13 @@ function buildMonthlyChecks(context){
       text:ausgabenOhneBeleg.length===0
         ? `Alle ${monatsAusgaben.length} Ausgaben mit Beleg`
         : `${ausgabenOhneBeleg.length} Ausgaben ohne Beleg`,
-      details:ausgabenOhneBeleg.map(ausgabe=>
-        'Beleg '+String(ausgabe.beleg_nr||'').padStart(3,'0')+
-        ' · '+formatDate(ausgabe.datum)+
-        ' · '+formatEuro(ausgabe.betrag)+
-        ' · '+(ausgabe.kategorie||'')
-      )
+      details:ausgabenOhneBeleg.map(ausgabe=>({
+        text:'Beleg '+String(ausgabe.beleg_nr||'').padStart(3,'0')+
+          ' · '+formatDate(ausgabe.datum)+
+          ' · '+formatEuro(ausgabe.betrag)+
+          ' · '+(ausgabe.kategorie||''),
+        expenseId:ausgabe.id
+      }))
     });
 
     const bewirtungOhneAngaben=monatsAusgaben.filter(ausgabe=>
@@ -3816,10 +3832,11 @@ function buildMonthlyChecks(context){
       checks.push({
         ok:false,
         text:`${bewirtungOhneAngaben.length} Bewirtungen ohne Anlass oder Teilnehmer`,
-        details:bewirtungOhneAngaben.map(ausgabe=>
-          'Beleg '+String(ausgabe.beleg_nr||'').padStart(3,'0')+
-          ' · '+formatDate(ausgabe.datum)
-        )
+        details:bewirtungOhneAngaben.map(ausgabe=>({
+          text:'Beleg '+String(ausgabe.beleg_nr||'').padStart(3,'0')+
+            ' · '+formatDate(ausgabe.datum),
+          expenseId:ausgabe.id
+        }))
       });
     }
   }
@@ -3910,9 +3927,18 @@ function renderMonthlyChecks(checks){
               !check.ok && check.details && check.details.length
                 ? `
                   <div class="monthly-check-details">
-                    ${check.details.map(detail=>
-                      '<div>'+esc(detail)+'</div>'
-                    ).join('')}
+                    ${check.details.map(detail=>{
+                      if(detail&&detail.expenseId){
+                        return '<div><button type="button" '+
+                          'class="linkCheckExpense" '+
+                          'data-id="'+esc(detail.expenseId)+'">'+
+                          esc(detail.text)+'</button></div>';
+                      }
+
+                      return '<div>'+esc(
+                        detail&&detail.text?detail.text:detail
+                      )+'</div>';
+                    }).join('')}
                   </div>
                 `
                 : ''
@@ -4025,6 +4051,8 @@ $('monthlyMonth').onchange=async()=>{
   const approval=(approvalResult.data||[])[0]||null;
   const monthTrips=tripResult.data||[];
   const monthExpenses=(expenseResult&&expenseResult.data)||[];
+
+  monthlyExpenses=monthExpenses;
 
   const monthNames=[
     'Januar',
@@ -4183,6 +4211,10 @@ $('monthlyMonth').onchange=async()=>{
     }
   `;
 
+  document.querySelectorAll('.linkCheckExpense').forEach(button=>{
+    button.onclick=()=>openExpenseFromCheck(button.dataset.id);
+  });
+
   const printDocsButton=$('printMonthlyDocs');
 
   if(printDocsButton){
@@ -4331,7 +4363,8 @@ const AUSGABEN_KATEGORIEN=[
   'Öffentliche Verkehrsmittel',
   'Bewirtung',
   'Bürobedarf',
-  'Fachliteratur / Fortbildung',
+  'Fachliteratur',
+  'Fortbildung',
   'Porto',
   'Telefon / Internet',
   'Sonstiges'
@@ -4340,9 +4373,31 @@ const AUSGABEN_KATEGORIEN=[
 const BEWIRTUNG_ABZUGSFAEHIG=0.7;
 
 let expenses=[];
+let monthlyExpenses=[];
 let expenseSaving=false;
 let expenseDocOptions=[];
 let expenseTripOptions=[];
+
+async function openExpenseFromCheck(expenseId){
+  const vorhanden=monthlyExpenses.find(
+    e=>String(e.id)===String(expenseId)
+  );
+
+  if(!vorhanden){
+    toast('Ausgabe nicht gefunden.');
+    return;
+  }
+
+  const bereitsGeladen=expenses.some(
+    e=>String(e.id)===String(expenseId)
+  );
+
+  if(!bereitsGeladen){
+    expenses=expenses.concat([vorhanden]);
+  }
+
+  await openExpenseForm(expenseId);
+}
 
 function formatEuro(value){
   return new Intl.NumberFormat('de-DE',{
@@ -4770,9 +4825,6 @@ $('printExpenses').onclick=()=>{
           zweck:e.zweck||'',
           klient:klientName(e.client_id),
           betrag:betrag,
-          absetzbar:e.kategorie==='Bewirtung'
-            ? Math.round(betrag*BEWIRTUNG_ABZUGSFAEHIG*100)/100
-            : betrag,
           bewirtungAnlass:e.bewirtung_anlass||'',
           bewirtungTeilnehmer:e.bewirtung_teilnehmer||'',
           belegVorhanden:Boolean(e.beleg_vorhanden)
