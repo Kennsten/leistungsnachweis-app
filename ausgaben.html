@@ -108,13 +108,21 @@ tbody td{
   height:26px;
 }
 
-.col-nr{width:9%}
-.col-date{width:11%}
-.col-cat{width:17%}
-.col-purpose{width:25%}
-.col-client{width:16%}
-.col-sum{width:11%;text-align:right}
-.col-net{width:11%;text-align:right}
+.col-nr{width:10%}
+.col-date{width:12%}
+.col-purpose{width:38%}
+.col-client{width:24%}
+.col-sum{width:16%;text-align:right}
+
+.group-head{
+  margin:16px 0 5px;
+  font-size:12px;
+  font-weight:700;
+}
+
+.group-head:first-of-type{
+  margin-top:0;
+}
 
 .num{
   text-align:right;
@@ -284,75 +292,96 @@ function render(){
   }
 
   var summeBrutto=0;
-  var summeAbsetzbar=0;
   var proKategorie={};
   var ohneBeleg=[];
 
   eintraege.forEach(function(e){
     var betrag=Number(e.betrag||0);
-    var absetzbar=Number(e.absetzbar||betrag);
-
     summeBrutto+=betrag;
-    summeAbsetzbar+=absetzbar;
 
     var kat=e.kategorie||'Sonstiges';
 
     if(!proKategorie[kat]){
-      proKategorie[kat]={brutto:0,absetzbar:0,anzahl:0};
+      proKategorie[kat]={summe:0,zeilen:[]};
     }
 
-    proKategorie[kat].brutto+=betrag;
-    proKategorie[kat].absetzbar+=absetzbar;
-    proKategorie[kat].anzahl+=1;
+    proKategorie[kat].summe+=betrag;
+    proKategorie[kat].zeilen.push(e);
 
     if(!e.belegVorhanden){
       ohneBeleg.push(belegNr(e));
     }
   });
 
-  var zeilen=eintraege.map(function(e){
-    var betrag=Number(e.betrag||0);
-    var absetzbar=Number(e.absetzbar||betrag);
+  var kategorien=Object.keys(proKategorie).sort(function(a,b){
+    return a.localeCompare(b,'de');
+  });
+
+  var gruppenHtml=kategorien.map(function(name){
+    var gruppe=proKategorie[name];
+
+    var zeilen=gruppe.zeilen
+      .slice()
+      .sort(function(a,b){
+        return String(a.datum).localeCompare(String(b.datum));
+      })
+      .map(function(e){
+        return ''+
+          '<tr>'+
+            '<td>'+esc(belegNr(e))+
+              (e.belegVorhanden?'':' ⚠')+
+            '</td>'+
+            '<td>'+esc(datum(e.datum))+'</td>'+
+            '<td>'+esc(e.zweck||'')+
+              (e.bewirtungAnlass
+                ? '<br>Anlass: '+esc(e.bewirtungAnlass)
+                : '')+
+              (e.bewirtungTeilnehmer
+                ? '<br>Teilnehmer: '+esc(e.bewirtungTeilnehmer)
+                : '')+
+            '</td>'+
+            '<td>'+esc(e.klient||'')+'</td>'+
+            '<td class="num">'+euro(e.betrag)+'</td>'+
+          '</tr>';
+      }).join('');
 
     return ''+
-      '<tr>'+
-        '<td>'+esc(belegNr(e))+'</td>'+
-        '<td>'+esc(datum(e.datum))+'</td>'+
-        '<td>'+esc(e.kategorie||'')+'</td>'+
-        '<td>'+esc(e.zweck||'')+
-          (e.bewirtungAnlass
-            ? '<br>Anlass: '+esc(e.bewirtungAnlass)
-            : '')+
-          (e.bewirtungTeilnehmer
-            ? '<br>Teilnehmer: '+esc(e.bewirtungTeilnehmer)
-            : '')+
-        '</td>'+
-        '<td>'+esc(e.klient||'')+'</td>'+
-        '<td class="num">'+euro(betrag)+'</td>'+
-        '<td class="num">'+euro(absetzbar)+'</td>'+
-      '</tr>';
+      '<div class="group-head">'+esc(name)+
+        ' · '+gruppe.zeilen.length+
+        (gruppe.zeilen.length===1?' Beleg':' Belege')+
+      '</div>'+
+      '<table>'+
+        '<thead>'+
+          '<tr>'+
+            '<th class="col-nr">Beleg</th>'+
+            '<th class="col-date">Datum</th>'+
+            '<th class="col-purpose">Bezeichnung</th>'+
+            '<th class="col-client">Klient</th>'+
+            '<th class="col-sum">Bruttobetrag</th>'+
+          '</tr>'+
+        '</thead>'+
+        '<tbody>'+zeilen+'</tbody>'+
+        '<tfoot>'+
+          '<tr>'+
+            '<td colspan="4">Summe '+esc(name)+'</td>'+
+            '<td class="num">'+euro(gruppe.summe)+'</td>'+
+          '</tr>'+
+        '</tfoot>'+
+      '</table>';
   }).join('');
 
-  var kategorieZeilen=Object.keys(proKategorie)
-    .sort(function(a,b){
-      return proKategorie[b].brutto-proKategorie[a].brutto;
-    })
-    .map(function(name){
-      var k=proKategorie[name];
-
-      return ''+
-        '<tr>'+
-          '<td class="label">'+esc(name)+
-            ' ('+k.anzahl+(k.anzahl===1?' Beleg':' Belege')+')</td>'+
-          '<td class="value">'+euro(k.brutto)+'</td>'+
-          '<td class="value">'+euro(k.absetzbar)+'</td>'+
-        '</tr>';
-    }).join('');
+  var uebersichtZeilen=kategorien.map(function(name){
+    return ''+
+      '<tr>'+
+        '<td class="label">'+esc(name)+'</td>'+
+        '<td class="value">'+euro(proKategorie[name].summe)+'</td>'+
+      '</tr>';
+  }).join('');
 
   document.getElementById('sheet').innerHTML=''+
     '<div class="sheet-head">'+
       '<h1>Betriebsausgaben</h1>'+
-      '<div class="sub">Aufstellung für die Einnahmenüberschussrechnung</div>'+
+      '<div class="sub">Belegaufstellung zur Übertragung in die Steuersoftware</div>'+
     '</div>'+
 
     '<div class="info-grid">'+
@@ -369,58 +398,38 @@ function render(){
       '<div>'+esc(datum(daten.erstelltAm))+'</div>'+
     '</div>'+
 
-    '<table>'+
-      '<thead>'+
-        '<tr>'+
-          '<th class="col-nr">Beleg</th>'+
-          '<th class="col-date">Datum</th>'+
-          '<th class="col-cat">Kategorie</th>'+
-          '<th class="col-purpose">Verwendungszweck</th>'+
-          '<th class="col-client">Klient</th>'+
-          '<th class="col-sum">Betrag</th>'+
-          '<th class="col-net">Absetzbar</th>'+
-        '</tr>'+
-      '</thead>'+
-      '<tbody>'+zeilen+'</tbody>'+
-      '<tfoot>'+
-        '<tr>'+
-          '<td colspan="5">Summe</td>'+
-          '<td class="num">'+euro(summeBrutto)+'</td>'+
-          '<td class="num">'+euro(summeAbsetzbar)+'</td>'+
-        '</tr>'+
-      '</tfoot>'+
-    '</table>'+
-
-    '<div class="section-title">Zusammenstellung nach Kategorien</div>'+
-
     '<table class="totals">'+
       '<tr>'+
         '<td class="label"><strong>Kategorie</strong></td>'+
-        '<td class="value"><strong>Betrag</strong></td>'+
-        '<td class="value"><strong>Absetzbar</strong></td>'+
+        '<td class="value"><strong>Bruttobetrag</strong></td>'+
       '</tr>'+
-      kategorieZeilen+
+      uebersichtZeilen+
       '<tr class="sum">'+
         '<td class="label">Gesamt</td>'+
         '<td class="value">'+euro(summeBrutto)+'</td>'+
-        '<td class="value">'+euro(summeAbsetzbar)+'</td>'+
       '</tr>'+
     '</table>'+
 
+    '<div class="section-title">Belege nach Kategorie</div>'+
+
+    gruppenHtml+
+
     (ohneBeleg.length
       ? '<div class="missing">'+
-          'Ohne bestätigten Beleg: '+ohneBeleg.length+
-          (ohneBeleg.length===1?' Eintrag':' Einträge')+
+          'Mit ⚠ markiert: '+ohneBeleg.length+
+          (ohneBeleg.length===1?' Beleg':' Belege')+
+          ' noch nicht als vorhanden bestätigt'+
           ' (Nr. '+esc(ohneBeleg.join(', '))+')'+
         '</div>'
       : '')+
 
     '<div class="note">'+
-      'Bewirtungsaufwendungen sind nach § 4 Abs. 5 Nr. 2 EStG zu 70 Prozent '+
-      'abziehbar. In der Spalte „Absetzbar" ist dieser Abzug bereits '+
-      'berücksichtigt. Fahrtkosten werden gesondert im Fahrtenbuch erfasst '+
-      'und sind in dieser Aufstellung nicht enthalten. Die Belegnummern '+
-      'entsprechen der Nummerierung auf den abgelegten Originalbelegen.'+
+      'Alle Beträge sind Bruttobeträge. Kürzungen wie der '+
+      'Bewirtungsabzug nach § 4 Abs. 5 Nr. 2 EStG sind hier nicht '+
+      'vorgenommen und werden in der Steuersoftware berücksichtigt. '+
+      'Fahrtkosten werden gesondert im Fahrtenbuch erfasst und sind in '+
+      'dieser Aufstellung nicht enthalten. Die Belegnummern entsprechen '+
+      'der Nummerierung auf den abgelegten Originalbelegen.'+
     '</div>'+
 
     '<div class="signature">'+
@@ -436,4 +445,3 @@ render();
 
 </body>
 </html>
-
