@@ -925,6 +925,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>Beginn<select id="docBeginn" required></select></label>
       <label>Ende<select id="docEnde" required></select></label>
       <label>FLS<input id="docFls" type="number" min="0" step="0.25" inputmode="decimal" placeholder="z. B. 1,25"></label>
+      <div id="docFlsHinweis" class="kennziffer-text span2 hidden"></div>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
@@ -1386,6 +1387,32 @@ function formatFls(value){
 
 function durationAndFls(minutes){
   return `${formatDuration(minutes)} · ${formatFls(minutesToFls(minutes))} FLS`;
+}
+
+function docFlsWert(doc){
+  if(!doc)return 0;
+
+  if(doc.fls!=null&&doc.fls!==''){
+    return Number(doc.fls);
+  }
+
+  return snapFls(
+    Number(doc.dauer_minuten||0)/50,
+    doc.datum
+  );
+}
+
+function summeDocFls(liste){
+  return Math.round(
+    (liste||[]).reduce(
+      (summe,doc)=>summe+docFlsWert(doc),
+      0
+    )*100
+  )/100;
+}
+
+function docDauerUndFls(doc){
+  return `${formatDuration(doc.dauer_minuten)} · ${formatFls(docFlsWert(doc))} FLS`;
 }
 
 function viertelRasterGilt(datum){
@@ -2347,7 +2374,7 @@ function renderDocs(){
         <div>
           <h3>${formatDate(d.datum)} · ${esc(d.leistungsart||'Face-to-Face')}</h3>
           <div class="doc-time">${esc(String(d.beginn||'').slice(0,5))}–${esc(String(d.ende||'').slice(0,5))}</div>
-          <div class="fls-value">${durationAndFls(d.dauer_minuten)}</div>
+          <div class="fls-value">${docDauerUndFls(d)}</div>
           <p class="doc-text">${esc(d.dokumentation)}</p>
           ${d.besonderheiten?`<div class="meta">Vereinbarungen / Besonderheiten: ${esc(d.besonderheiten)}</div>`:''}
         </div>
@@ -2369,7 +2396,7 @@ function renderDocs(){
     <div class="summary-box">
       <div class="summary-row"><span>Termine</span><strong>${gefiltert.length}</strong></div>
       <div class="summary-row"><span>Gesamtdauer</span><strong>${formatDuration(totalMinuten)}</strong></div>
-      <div class="summary-row"><span>Gesamt-FLS</span><strong>${formatFls(minutesToFls(totalMinuten))} FLS</strong></div>
+      <div class="summary-row"><span>Gesamt-FLS</span><strong>${formatFls(summeDocFls(gefiltert))} FLS</strong></div>
     </div>`:'';
 
   $('docsList').innerHTML=summary+docsHtml;
@@ -2412,6 +2439,11 @@ $('docEnde').value=docEndeWert;
   $('deleteDoc').classList.toggle('hidden',!id);
   $('docDialogTitle').textContent=id?'Dokumentation bearbeiten':'Dokumentation anlegen';
   updateDocDauer();
+
+  if(id&&d.fls!=null&&d.fls!==''){
+    $('docFls').value=String(Number(d.fls));
+  }
+
   $('docFormDialog').showModal();
 }
 
@@ -2458,6 +2490,7 @@ function buildDocPayload(client,entryList,zeitraum){
       beginn:String(d.beginn||'').slice(0,5),
       ende:String(d.ende||'').slice(0,5),
       dauerMinuten:Number(d.dauer_minuten||0),
+      fls:docFlsWert(d),
       leistungsart:d.leistungsart||'',
       ort:d.ort_der_leistung||'',
       kennziffer:d.kennziffer||'',
@@ -2563,7 +2596,29 @@ async function openNewDocFromTrips(){
   openDocForm();
 }
 
+function updateDocModus(){
+  const flsFuehrend=viertelRasterGilt($('docDatum').value);
+  const hinweis=$('docFlsHinweis');
+
+  $('docEnde').disabled=flsFuehrend;
+  $('docFls').step=flsFuehrend?'0.25':'0.01';
+
+  if(flsFuehrend){
+    hinweis.classList.remove('hidden');
+    hinweis.innerHTML=
+      '<strong>Abrechnung nach FLS</strong>'+
+      'Bis zum 30.06.2026 wurde nach FLS abgerechnet. '+
+      'Trage die abgerechneten FLS unten ein — das Ende wird daraus berechnet. '+
+      'Vom Kontingent wird der FLS-Wert abgezogen, nicht die Uhrzeit.';
+  }else{
+    hinweis.classList.add('hidden');
+    hinweis.innerHTML='';
+  }
+}
+
 function updateDocDauer(){
+  updateDocModus();
+
   const minutes=minutesBetween($('docBeginn').value,$('docEnde').value);
 
   if(!$('docBeginn').value||!$('docEnde').value){
@@ -2573,16 +2628,13 @@ function updateDocDauer(){
   }
 
   $('docDauer').value=minutes>0
-    ?durationAndFls(minutes)
+    ?formatDuration(minutes)+' · '+
+      formatFls(minutesToSnappedFls(minutes,$('docDatum').value))+' FLS'
     :'Ende muss nach Beginn liegen';
 
   $('docFls').value=minutes>0
     ?String(minutesToSnappedFls(minutes,$('docDatum').value))
     :'';
-
-  $('docFls').step=viertelRasterGilt($('docDatum').value)
-    ?'0.25'
-    :'0.01';
 }
 
 function applyDocFls(){
@@ -2841,11 +2893,10 @@ function calculateApprovalBudget(approval, approvalDocs, referenceDate){
 
   const period=approvalPeriod(approval,referenceDate);
 
-  const usedMinutes=approvalDocs
-    .filter(d=>docGehoertZuBewilligung(d,approval,period))
-    .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
+  const usedFls=summeDocFls(
+    approvalDocs.filter(d=>docGehoertZuBewilligung(d,approval,period))
+  );
 
-  const usedFls=minutesToFls(usedMinutes);
   const totalFls=Number(approval.stundenkontingent||0);
 if(!isOtherLeistungstraeger(approval)){
   return {
@@ -2996,7 +3047,7 @@ approvals.sort((a,b)=>{
 });
   const {data:docData,error:docError}=await sb
     .from('dokumentationen')
-    .select('bewilligung_id,datum,dauer_minuten')
+    .select('bewilligung_id,datum,dauer_minuten,fls')
     .eq('client_id',requestedClientId);
   if(docError){toast('FLS-Auswertung fehlgeschlagen: '+docError.message)}
   const approvalDocs=docData||[];
@@ -3004,10 +3055,9 @@ approvals.sort((a,b)=>{
   $('approvalsList').innerHTML=approvals.length?approvals.map(a=>{
     const fenster=approvalWindow(a,approvals);
 
-    const usedMinutes=approvalDocs
-      .filter(d=>docGehoertZuBewilligung(d,a,fenster))
-      .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
-    const usedFls=minutesToFls(usedMinutes);
+    const usedFls=summeDocFls(
+      approvalDocs.filter(d=>docGehoertZuBewilligung(d,a,fenster))
+    );
     const totalFls=Number(a.stundenkontingent||0);
     const budget=calculateApprovalBudget(a,approvalDocs,fenster.start);
     const isOther=isOtherLeistungstraeger(a);
@@ -3017,14 +3067,12 @@ const secondHalfFls=Number(a.fls_halbjahr_2||0);
     const approvalStart=new Date(fenster.start+'T00:00:00');
 const firstHalfEnd=new Date(approvalStart);
 firstHalfEnd.setMonth(firstHalfEnd.getMonth()+6);
-const firstHalfMinutes=approvalDocs
-  .filter(d=>
+const firstHalfFlsUsed=summeDocFls(
+  approvalDocs.filter(d=>
     docGehoertZuBewilligung(d,a,fenster) &&
     new Date(d.datum+'T00:00:00')<firstHalfEnd
   )
-  .reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
-
-const firstHalfFlsUsed=minutesToFls(firstHalfMinutes);
+);
 
 const secondHalfFlsUsed=Math.max(
   0,
@@ -3424,6 +3472,11 @@ $('docForm').onsubmit=async e=>{
     const matchingApprovalId=
       await findMatchingApprovalId(activeDocsClient.id,datum);
 
+    const flsEingabe=snapFls(
+      Number(String($('docFls').value).replace(',','.')),
+      datum
+    );
+
     const row={
       user_id:user.id,
       client_id:activeDocsClient.id,
@@ -3432,6 +3485,9 @@ $('docForm').onsubmit=async e=>{
       beginn,
       ende,
       dauer_minuten:dauerMinuten,
+      fls:Number.isFinite(flsEingabe)&&flsEingabe>0
+        ? flsEingabe
+        : snapFls(dauerMinuten/50,datum),
       leistungsart:$('docLeistungsart').value,
       ort_der_leistung:$('docOrt').value,
       kennziffer:$('docKennziffer').value || null,
@@ -4133,7 +4189,7 @@ $('monthlyMonth').onchange=async()=>{
     0
   );
 
-  const totalFls=minutesToFls(totalMinutes);
+  const totalFls=summeDocFls(entries);
 
   const totalBudget=approval
     ? Number(
