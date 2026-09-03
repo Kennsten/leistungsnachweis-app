@@ -4581,7 +4581,7 @@ function renderExpenses(){
       : betrag);
   },0);
 
-  const ohneBeleg=expenses.filter(e=>!e.beleg_vorhanden).length;
+  const ohneBeleg=expenses.filter(e=>!e.beleg_vorhanden);
 
   const proKategorie={};
 
@@ -4622,9 +4622,23 @@ function renderExpenses(){
       </div>
 
       ${
-        ohneBeleg
+        ohneBeleg.length
           ? `<div class="monthly-warning">
-               ⚠ ${ohneBeleg} Einträge ohne Belegbestätigung
+               ⚠ ${
+                 ohneBeleg.length===1
+                   ? 'Ein Beleg fehlt noch'
+                   : ohneBeleg.length+' Belege fehlen noch'
+               }
+               <div class="monthly-check-details">
+                 ${ohneBeleg.map(e=>
+                   '<div><button type="button" class="jumpToExpense" '+
+                   'data-id="'+esc(e.id)+'">'+
+                   'Beleg '+esc(String(e.beleg_nr||'').padStart(3,'0'))+
+                   ' · '+formatDate(e.datum)+
+                   ' · '+formatEuro(e.betrag)+
+                   '</button></div>'
+                 ).join('')}
+               </div>
              </div>`
           : ''
       }
@@ -4688,6 +4702,10 @@ function renderExpenses(){
   `;
 
   document.querySelectorAll('.editExpense').forEach(
+    b=>b.onclick=()=>openExpenseForm(b.dataset.id)
+  );
+
+  document.querySelectorAll('.jumpToExpense').forEach(
     b=>b.onclick=()=>openExpenseForm(b.dataset.id)
   );
 }
