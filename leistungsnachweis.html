@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leistungsnachweis</title>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     @page{
       size:A4 landscape;
@@ -338,7 +341,8 @@
 
     <div class="toolbar-actions">
       <button type="button" id="closeButton">Schließen</button>
-      <button type="button" id="printButton" class="primary">Drucken / PDF</button>
+      <button type="button" id="printButton">Drucken</button>
+      <button type="button" id="pdfButton" class="primary">PDF erstellen</button>
     </div>
   </div>
 
@@ -717,7 +721,101 @@ const totalWay=entries.reduce(
       `;
     }
 
+    async function erstellePdf(){
+      const knopf=document.getElementById('pdfButton');
+      const blatt=document.querySelector('.sheet');
+
+      if(!blatt){
+        alert('Es sind keine Daten zum Speichern vorhanden.');
+        return;
+      }
+
+      if(typeof html2canvas==='undefined'||!window.jspdf){
+        alert(
+          'Die PDF-Funktion konnte nicht geladen werden. '+
+          'Bitte die Internetverbindung prüfen und die Seite neu laden.'
+        );
+        return;
+      }
+
+      const beschriftung=knopf.textContent;
+      knopf.disabled=true;
+      knopf.textContent='PDF wird erstellt …';
+
+      const rahmen=blatt.style.border;
+      const schatten=blatt.style.boxShadow;
+
+      blatt.style.border='0';
+      blatt.style.boxShadow='none';
+
+      try{
+        const bild=await html2canvas(blatt,{
+          scale:3,
+          backgroundColor:'#ffffff',
+          useCORS:true,
+          logging:false
+        });
+
+        const {jsPDF}=window.jspdf;
+
+        const pdf=new jsPDF({
+          orientation:'landscape',
+          unit:'mm',
+          format:'a4'
+        });
+
+        const seiteBreite=pdf.internal.pageSize.getWidth();
+        const seiteHoehe=pdf.internal.pageSize.getHeight();
+
+        const rand=6;
+        const nutzBreite=seiteBreite-rand*2;
+        const nutzHoehe=seiteHoehe-rand*2;
+
+        const verhaeltnis=bild.height/bild.width;
+
+        let breite=nutzBreite;
+        let hoehe=breite*verhaeltnis;
+
+        if(hoehe>nutzHoehe){
+          hoehe=nutzHoehe;
+          breite=hoehe/verhaeltnis;
+        }
+
+        const x=(seiteBreite-breite)/2;
+
+        pdf.addImage(
+          bild.toDataURL('image/jpeg',0.95),
+          'JPEG',
+          x,
+          rand,
+          breite,
+          hoehe
+        );
+
+        const payload=readPayload()||{};
+        const klient=(payload.client&&payload.client.name)||'Klient';
+        const monat=payload.monthLabel||'';
+
+        const dateiname=(
+          'Leistungsnachweis '+klient+' '+monat
+        )
+          .replace(/[^a-zA-Z0-9äöüÄÖÜß ,.-]/g,'')
+          .trim()+'.pdf';
+
+        pdf.save(dateiname);
+      }catch(fehler){
+        alert('Das PDF konnte nicht erstellt werden: '+fehler.message);
+      }finally{
+        blatt.style.border=rahmen;
+        blatt.style.boxShadow=schatten;
+
+        knopf.disabled=false;
+        knopf.textContent=beschriftung;
+      }
+    }
+
     document.getElementById('printButton').addEventListener('click',()=>window.print());
+    document.getElementById('pdfButton').addEventListener('click',erstellePdf);
     document.getElementById('closeButton').addEventListener('click',()=>window.close());
 
     render();
