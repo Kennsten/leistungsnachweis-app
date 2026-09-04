@@ -5,7 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dokumentationen</title>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
+    @page{
+      size:A4 portrait;
+      margin:14mm;
+    }
+
     *{box-sizing:border-box}
 
     html,body{
@@ -55,6 +63,11 @@
       background:#173b5b;
       border-color:#173b5b;
       color:#fff;
+    }
+
+    button:disabled{
+      opacity:.6;
+      cursor:default;
     }
 
     .page-wrap{
@@ -149,11 +162,6 @@
     }
 
     @media print{
-      @page{
-        size:A4 portrait;
-        margin:14mm;
-      }
-
       html,body{
         width:auto;
         height:auto;
@@ -189,10 +197,10 @@
 <body>
   <div class="toolbar">
     <div class="toolbar-title">Dokumentationen</div>
-
     <div class="toolbar-actions">
       <button type="button" id="closeButton">Schließen</button>
-      <button type="button" id="printButton" class="primary">Drucken / PDF</button>
+      <button type="button" id="printButton">Drucken</button>
+      <button type="button" id="pdfButton" class="primary">PDF erstellen</button>
     </div>
   </div>
 
@@ -212,10 +220,8 @@
 
     function formatDate(value){
       if(!value)return '';
-
       const parts=String(value).split('-');
       if(parts.length!==3)return String(value);
-
       return parts[2]+'.'+parts[1]+'.'+parts[0];
     }
 
@@ -232,8 +238,15 @@
 
       if(hours&&rest)return hours+' Std. '+rest+' Min.';
       if(hours)return hours+' Std.';
-
       return rest+' Min.';
+    }
+
+    function eintragFls(entry){
+      if(entry.fls!=null&&entry.fls!==''){
+        return Number(entry.fls);
+      }
+
+      return Number(entry.dauerMinuten||0)/50;
     }
 
     function readPayload(){
@@ -272,7 +285,12 @@
         0
       );
 
-      const totalFls=Math.round((totalMinutes/50)*10)/10;
+      const totalFls=Math.round(
+        entries.reduce(
+          (sum,entry)=>sum+eintragFls(entry),
+          0
+        )*100
+      )/100;
 
       const blocks=entries.map(entry=>`
         <div class="entry">
@@ -283,7 +301,7 @@
               ·
               ${formatDuration(entry.dauerMinuten)}
               ·
-              ${formatFls(Number(entry.dauerMinuten||0)/50)} FLS
+              ${formatFls(eintragFls(entry))} FLS
             </span>
           </div>
 
@@ -318,12 +336,15 @@
           <div class="sheet">
             <div class="sheet-head">
               <h1>Dokumentation der Assistenzleistungen</h1>
+
               <p>Klient: ${esc(payload.clientName||'')}${
                 payload.clientCode
                   ? ' ('+esc(payload.clientCode)+')'
                   : ''
               }</p>
+
               <p>Zeitraum: ${esc(payload.zeitraum||'')}</p>
+
               <p>
                 Termine: ${entries.length}
                 ·
@@ -331,6 +352,7 @@
                 ·
                 ${formatFls(totalFls)} FLS
               </p>
+
               <p>Erstellt am ${formatDate(payload.createdAt)}</p>
             </div>
 
@@ -346,8 +368,121 @@
       `;
     }
 
+    async function erstellePdf(){
+      const knopf=document.getElementById('pdfButton');
+      const blatt=document.querySelector('.sheet');
+
+      if(!blatt){
+        alert('Es sind keine Daten zum Speichern vorhanden.');
+        return;
+      }
+
+      if(typeof html2canvas==='undefined'||!window.jspdf){
+        alert(
+          'Die PDF-Funktion konnte nicht geladen werden. '+
+          'Bitte die Internetverbindung prüfen und die Seite neu laden.'
+        );
+        return;
+      }
+
+      const beschriftung=knopf.textContent;
+      knopf.disabled=true;
+      knopf.textContent='PDF wird erstellt …';
+
+      const rahmen=blatt.style.border;
+      const schatten=blatt.style.boxShadow;
+
+      blatt.style.border='0';
+      blatt.style.boxShadow='none';
+
+      try{
+        const bild=await html2canvas(blatt,{
+          scale:2,
+          backgroundColor:'#ffffff',
+          useCORS:true,
+          logging:false
+        });
+
+        const {jsPDF}=window.jspdf;
+
+        const pdf=new jsPDF({
+          orientation:'portrait',
+          unit:'mm',
+          format:'a4'
+        });
+
+        const seiteBreite=pdf.internal.pageSize.getWidth();
+        const seiteHoehe=pdf.internal.pageSize.getHeight();
+
+        const rand=8;
+        const nutzBreite=seiteBreite-rand*2;
+        const nutzHoehe=seiteHoehe-rand*2;
+
+        const mmProPixel=nutzBreite/bild.width;
+        const seitenHoehePixel=Math.floor(nutzHoehe/mmProPixel);
+
+        let obenPixel=0;
+        let seite=0;
+
+        while(obenPixel<bild.height){
+          const teilHoehe=Math.min(
+            seitenHoehePixel,
+            bild.height-obenPixel
+          );
+
+          const teil=document.createElement('canvas');
+          teil.width=bild.width;
+          teil.height=teilHoehe;
+
+          const flaeche=teil.getContext('2d');
+          flaeche.fillStyle='#ffffff';
+          flaeche.fillRect(0,0,teil.width,teil.height);
+          flaeche.drawImage(
+            bild,
+            0,obenPixel,bild.width,teilHoehe,
+            0,0,bild.width,teilHoehe
+          );
+
+          if(seite>0)pdf.addPage();
+
+          pdf.addImage(
+            teil.toDataURL('image/jpeg',0.92),
+            'JPEG',
+            rand,
+            rand,
+            nutzBreite,
+            teilHoehe*mmProPixel
+          );
+
+          obenPixel+=teilHoehe;
+          seite++;
+        }
+
+        const payload=readPayload()||{};
+        const klient=payload.clientName||'Klient';
+        const zeitraum=payload.zeitraum||'';
+
+        const dateiname=('Dokumentation '+klient+' '+zeitraum)
+          .replace(/[^a-zA-Z0-9äöüÄÖÜß ,.-]/g,'')
+          .trim()+'.pdf';
+
+        pdf.save(dateiname);
+      }catch(fehler){
+        alert('Das PDF konnte nicht erstellt werden: '+fehler.message);
+      }finally{
+        blatt.style.border=rahmen;
+        blatt.style.boxShadow=schatten;
+
+        knopf.disabled=false;
+        knopf.textContent=beschriftung;
+      }
+    }
+
     document.getElementById('printButton')
       .addEventListener('click',()=>window.print());
+
+    document.getElementById('pdfButton')
+      .addEventListener('click',erstellePdf);
 
     document.getElementById('closeButton')
       .addEventListener('click',()=>window.close());
