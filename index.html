@@ -24,6 +24,52 @@
   --brand-dark:#556b58;
   --danger:#a85347;
   --success:#5c7d63;
+
+  --on-brand:#ffffff;
+  --field:#fffdf8;
+  --danger-bg:#f6e4e1;
+  --track:#e6e4da;
+  --warn:#9b3d00;
+  --warn-soft:#8a4a1c;
+  --ok:#1d6b3a;
+  --detail-ink:#5a4030;
+  --radius-card:22px;
+  --radius-item:18px;
+  --radius-control:14px;
+  --card-border-width:1px;
+  --card-shadow:0 4px 18px rgba(47,58,52,.05);
+  --heading-font:inherit;
+  --heading-spacing:normal;
+  --frame-inset:none;
+}
+
+[data-theme="moebius"]{
+  --ink:#2b3a52;
+  --muted:#8a7a68;
+  --line:#d8c5a8;
+  --bg:#efe0cd;
+  --card:#faf3e6;
+  --accent:#f0e4d2;
+  --brand:#c07040;
+  --brand-dark:#a45a30;
+  --danger:#b03a2e;
+  --success:#4a7a52;
+
+  --on-brand:#fdf8f0;
+  --field:#fdf8f0;
+  --danger-bg:#f6dfd8;
+  --track:#e3d2ba;
+  --warn:#a8551a;
+  --warn-soft:#96501c;
+  --ok:#3f6b48;
+  --detail-ink:#6b5540;
+  --radius-card:6px;
+  --radius-item:5px;
+  --radius-control:5px;
+  --card-border-width:2px;
+  --card-shadow:0 2px 0 rgba(43,58,82,.08);
+  --heading-spacing:.01em;
+  --frame-inset:0 0 0 1px var(--card) inset, 0 0 0 3px var(--line) inset;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
@@ -32,7 +78,7 @@ button,input,textarea,select{font:inherit}
 button{cursor:pointer}
 button:disabled{opacity:.55;cursor:default}
 .wrap{max-width:900px;margin:auto;padding:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 4px 18px rgba(47,58,52,.05);margin-bottom:16px}
+.card{background:var(--card);border:var(--card-border-width) solid var(--line);border-radius:var(--radius-card);padding:20px;box-shadow:var(--card-shadow),var(--frame-inset);margin-bottom:16px}
 .center{max-width:480px;margin:8vh auto}
 h1,h2,h3{margin:.2em 0 .5em}
 p{line-height:1.45}
@@ -44,9 +90,9 @@ input,textarea,select{
   min-width:0;
   box-sizing:border-box;
   border:1px solid var(--line);
-  border-radius:14px;
+  border-radius:var(--radius-control);
   padding:13px;
-  background:#fffdf8;
+  background:var(--field);
 }
 
 input:focus,textarea:focus,select:focus{
@@ -66,11 +112,11 @@ input[type="time"]{
 }
 
 textarea{resize:vertical}
-.primary,.secondary,.danger{border:0;border-radius:14px;padding:13px 17px;font-weight:600}
-.primary{background:var(--brand);color:#fff}
+.primary,.secondary,.danger{border:0;border-radius:var(--radius-control);padding:13px 17px;font-weight:600}
+.primary{background:var(--brand);color:var(--on-brand)}
 .primary:hover{background:var(--brand-dark)}
 .secondary{background:var(--accent);color:var(--ink)}
-.danger{background:#f6e4e1;color:var(--danger)}
+.danger{background:var(--danger-bg);color:var(--danger)}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 .actions button{flex:1}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -131,7 +177,7 @@ textarea{resize:vertical}
 .closing-alert{
   margin:10px 0;
   padding:12px 14px;
-  background:#fbeae6;
+  background:var(--danger-bg);
   border:1px solid var(--danger);
   border-radius:16px;
   font-size:.9rem;
@@ -198,28 +244,28 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .span2{grid-column:1/-1}
 #docForm .grid{grid-template-columns:1fr}
 #docForm .span2{grid-column:auto}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fffdf8;padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:99;max-width:min(90vw,700px);text-align:center}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:99;max-width:min(90vw,700px);text-align:center}
 .toast.show{opacity:1}
-.approval,.doc-item{border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:12px;background:var(--card)}
+.approval,.doc-item{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);padding:16px;margin-top:12px;background:var(--card);box-shadow:var(--frame-inset)}
 .approval-head,.doc-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .approval-hours{font-weight:750;color:var(--success)}
 .doc-text{white-space:pre-wrap;margin:.7rem 0 0}
 .doc-time{font-weight:750}
 .fls-value{font-weight:750;color:var(--success)}
-.summary-box{border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;background:var(--accent)}
+.summary-box{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);padding:16px;margin:12px 0;background:var(--accent);box-shadow:var(--frame-inset)}
 .summary-row{display:flex;justify-content:space-between;gap:12px;margin:5px 0}
 .summary-row strong{text-align:right}
   .approval-progress{
   margin-top:8px;
   height:10px;
-  background:#e6e4da;
+  background:var(--track);
   border-radius:999px;
   overflow:hidden;
 }
 .approval-progress-fill{
   height:100%;
   width:var(--progress,0%);
-  background:var(--progress-color,#2f6f4e);
+  background:var(--progress-color,var(--success));
   transition:width .25s ease;
 }
 
@@ -232,6 +278,101 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   .approval-head .actions,.doc-head .actions{width:100%}
   .client-buttons{grid-template-columns:1fr 1fr}
 }
+/* ---------- Moebius-Design ---------- */
+
+[data-theme="moebius"] body{
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(200,160,110,.055) 0 1px,
+      transparent 1px 7px
+    ),
+    var(--bg);
+}
+
+[data-theme="moebius"] h1,
+[data-theme="moebius"] h2,
+[data-theme="moebius"] h3{
+  color:#22304a;
+  letter-spacing:var(--heading-spacing);
+}
+
+[data-theme="moebius"] .card{
+  position:relative;
+}
+
+[data-theme="moebius"] .card::before{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border:1px solid var(--line);
+  border-radius:3px;
+  pointer-events:none;
+}
+
+[data-theme="moebius"] .card > *{
+  position:relative;
+}
+
+[data-theme="moebius"] .secondary{
+  border:1px solid var(--line);
+  background:var(--accent);
+}
+
+[data-theme="moebius"] .primary{
+  border:1px solid var(--brand-dark);
+}
+
+[data-theme="moebius"] .danger{
+  border:1px solid var(--danger);
+}
+
+[data-theme="moebius"] input,
+[data-theme="moebius"] textarea,
+[data-theme="moebius"] select{
+  border-color:var(--line);
+}
+
+[data-theme="moebius"] .client-avatar{
+  border:1px solid var(--line);
+}
+
+[data-theme="moebius"] .client+.client{
+  border-top:1px solid var(--line);
+}
+
+[data-theme="moebius"] .former-heading{
+  border-top:2px solid var(--brand);
+  color:var(--brand-dark);
+}
+
+[data-theme="moebius"] dialog{
+  border:2px solid var(--line);
+  border-radius:var(--radius-card);
+  box-shadow:0 12px 34px rgba(43,58,82,.28);
+}
+
+[data-theme="moebius"] .version{
+  letter-spacing:.04em;
+}
+
+.theme-switch{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+  font-size:.8rem;
+  color:var(--muted);
+}
+
+.theme-switch select{
+  width:auto;
+  min-width:130px;
+  padding:6px 10px;
+  border-radius:var(--radius-control);
+  font-size:.85rem;
+}
+
   /* Monats-Leistungsnachweis */
 
 .monthly-sheet-wrap{
@@ -446,8 +587,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   .monthly-sheet-table td{
     border-color:#000;
   }
+}
 
-  /* Monatsnachweis – korrigiertes A4-Layout */
+/* Monatsnachweis – Bildschirmdarstellung */
 
 #monthlyDialog{
   width:min(98vw,1220px);
@@ -676,7 +818,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 .monthly-warning{
   margin:8px 0;
-  color:#9b3d00;
+  color:var(--warn);
   font-weight:700;
 }
 
@@ -686,7 +828,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 .monthly-check-ok{
   margin:8px 0;
-  color:#1d6b3a;
+  color:var(--ok);
   font-weight:600;
 }
 
@@ -695,7 +837,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   padding-left:18px;
   font-weight:400;
   font-size:13px;
-  color:#5a4030;
+  color:var(--detail-ink);
 }
 
 .monthly-check-details button{
@@ -703,14 +845,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   border:0;
   background:none;
   font:inherit;
-  color:#8a4a1c;
+  color:var(--warn-soft);
   text-align:left;
   text-decoration:underline;
   cursor:pointer;
 }
 
 .monthly-check-details button:hover{
-  color:#5a2f10;
+  color:var(--warn);
 }
 
 @media print{
@@ -798,6 +940,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Mobile Verwaltung</div>
       <h1>Klienten</h1>
       <div class="version">Version 1.0 · Entwicklungsstand</div>
+
+      <label class="theme-switch">
+        Design
+        <select id="themeSelect">
+          <option value="standard">Standard</option>
+          <option value="moebius">Moebius</option>
+        </select>
+      </label>
     </div>
     <button id="logout" class="secondary">Abmelden</button>
   </div>
@@ -1989,6 +2139,17 @@ const AVATAR_FARBEN=[
   {bg:'#f0eadf',ink:'#71603f'}
 ];
 
+const AVATAR_FARBEN_MOEBIUS=[
+  {bg:'#efdcc2',ink:'#8a5a2e'},
+  {bg:'#e6d3bb',ink:'#7a4a24'},
+  {bg:'#e2d8c4',ink:'#5c5236'},
+  {bg:'#f0dfd0',ink:'#8a4f36'},
+  {bg:'#dfd6c0',ink:'#4f5a44'},
+  {bg:'#ebd8c6',ink:'#7c5236'},
+  {bg:'#e4dac6',ink:'#5a5240'},
+  {bg:'#f2e2ca',ink:'#8a6430'}
+];
+
 function avatarFarbe(text){
   const wert=String(text||'');
   let summe=0;
@@ -1997,7 +2158,12 @@ function avatarFarbe(text){
     summe+=wert.charCodeAt(i);
   }
 
-  return AVATAR_FARBEN[summe%AVATAR_FARBEN.length];
+  const palette=
+    document.documentElement.getAttribute('data-theme')==='moebius'
+      ? AVATAR_FARBEN_MOEBIUS
+      : AVATAR_FARBEN;
+
+  return palette[summe%palette.length];
 }
 
 function clientInitialen(name){
@@ -3480,12 +3646,12 @@ ${
 <div class="approval-progress">
 <div
   class="approval-progress-fill"
-  style="--progress:${usedPercent}%;--progress-color:${usedPercent>=90?'#c62828':usedPercent>=70?'#f9a825':'#2f6f4e'}">
+  style="--progress:${usedPercent}%;--progress-color:${usedPercent>=90?'var(--danger)':usedPercent>=70?'var(--warn)':'var(--success)'}">
   </div>
 </div>
 <div class="meta">
 Verbleibend:
-<strong style="color:${restFls<=0?'#c62828':restFls<=5?'#f9a825':'#2f6f4e'}">
+<strong style="color:${restFls<=0?'var(--danger)':restFls<=5?'var(--warn)':'var(--success)'}">
 ${formatFls(restFls)} FLS
 </strong>
 </div>
@@ -5529,6 +5695,56 @@ $('deleteExpense').onclick=async()=>{
   await loadExpenses();
 };
 
+const DESIGN_SPEICHER='qa_design';
+
+const DESIGN_THEME_FARBEN={
+  standard:'#C85A3E',
+  moebius:'#c07040'
+};
+
+function setzeDesign(name){
+  const gewaehlt=DESIGN_THEME_FARBEN[name]?name:'standard';
+
+  if(gewaehlt==='standard'){
+    document.documentElement.removeAttribute('data-theme');
+  }else{
+    document.documentElement.setAttribute('data-theme',gewaehlt);
+  }
+
+  const meta=document.querySelector('meta[name="theme-color"]');
+
+  if(meta){
+    meta.setAttribute('content',DESIGN_THEME_FARBEN[gewaehlt]);
+  }
+
+  try{
+    localStorage.setItem(DESIGN_SPEICHER,gewaehlt);
+  }catch(fehler){
+    // Speichern nicht möglich, Auswahl gilt nur für diese Sitzung
+  }
+
+  const auswahl=$('themeSelect');
+
+  if(auswahl&&auswahl.value!==gewaehlt){
+    auswahl.value=gewaehlt;
+  }
+}
+
+function ladeDesign(){
+  let gespeichert='standard';
+
+  try{
+    gespeichert=localStorage.getItem(DESIGN_SPEICHER)||'standard';
+  }catch(fehler){
+    gespeichert='standard';
+  }
+
+  setzeDesign(gespeichert);
+}
+
+$('themeSelect').onchange=()=>setzeDesign($('themeSelect').value);
+
+ladeDesign();
 fillTimeOptions();
 init();
 </script>
