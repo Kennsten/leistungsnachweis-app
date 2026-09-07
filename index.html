@@ -114,6 +114,23 @@ textarea{resize:vertical}
   color:var(--ink);
 }
 
+.former-heading{
+  margin-top:22px;
+  padding:10px 0 6px;
+  border-top:2px solid var(--line);
+  font-weight:700;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.client-former{
+  opacity:.55;
+}
+
+.client-former:hover{
+  opacity:.85;
+}
+
 .client-buttons{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
@@ -1680,12 +1697,31 @@ async function loadClients(){
 
   const {data:approvalData}=await sb
     .from('bewilligungen')
-    .select('id,client_id,beginn,ende,verlaufsbericht_faellig_am,verlaufsbericht_am')
+    .select('id,client_id,beginn,ende,verlaufsbericht_faellig_am,verlaufsbericht_am,abschlussbericht_am,abschlussbericht_erinnerung_am')
     .order('beginn',{ascending:false});
 
   clientApprovals=approvalData||[];
 
   renderClients();
+}
+
+function laufendeBewilligungen(clientId){
+  const heute=todayIso();
+
+  return clientApprovals.filter(
+    a=>String(a.client_id)===String(clientId) &&
+      (!a.ende||a.ende>=heute)
+  );
+}
+
+function istEhemalig(clientId){
+  const eigene=clientApprovals.filter(
+    a=>String(a.client_id)===String(clientId)
+  );
+
+  if(!eigene.length)return false;
+
+  return laufendeBewilligungen(clientId).length===0;
 }
 
 function berichtAmpel(clientId){
@@ -1699,11 +1735,39 @@ function berichtAmpel(clientId){
     return {symbol:'⚪',text:'keine Bewilligung'};
   }
 
-  const laufende=eigene.filter(
-    a=>!a.ende||a.ende>=heute
-  );
+  const laufende=laufendeBewilligungen(clientId);
 
-  const aktuelle=(laufende.length?laufende:eigene)[0];
+  if(!laufende.length){
+    const letzte=eigene
+      .slice()
+      .sort((a,b)=>String(b.ende||'').localeCompare(String(a.ende||'')))[0];
+
+    if(letzte.abschlussbericht_am){
+      return {
+        symbol:'⚪',
+        text:'Beendet am '+formatDate(letzte.ende)+
+          ' · Abschlussbericht erledigt'
+      };
+    }
+
+    const erinnerung=letzte.abschlussbericht_erinnerung_am;
+
+    if(erinnerung&&erinnerung>heute){
+      return {
+        symbol:'⚪',
+        text:'Beendet am '+formatDate(letzte.ende)+
+          ' · Erinnerung am '+formatDate(erinnerung)
+      };
+    }
+
+    return {
+      symbol:'🟡',
+      text:'Beendet am '+formatDate(letzte.ende)+
+        ' · Abschlussbericht ausstehend'
+    };
+  }
+
+  const aktuelle=laufende[0];
 
   const faellig=aktuelle.verlaufsbericht_faellig_am;
 
@@ -1773,38 +1837,55 @@ function renderClients(){
     ])
   );
 
-  $('list').innerHTML=gefiltert.length?gefiltert.map(c=>`
-    <div class="client">
-      <div class="client-head">
-        <div
-          class="client-avatar"
-          style="--avatar-bg:${avatarFarbe(c.client_code||c.name).bg};--avatar-ink:${avatarFarbe(c.client_code||c.name).ink}">
-          ${esc(clientInitialen(c.name))}
-        </div>
+  const aktuelle=gefiltert.filter(c=>!istEhemalig(c.id));
+  const ehemalige=gefiltert.filter(c=>istEhemalig(c.id));
 
-        <div class="client-name">
-          <h3>${esc(c.name)}</h3>
-          <div class="meta report-status">
-            ${berichtAmpel(c.id).symbol} ${esc(berichtAmpel(c.id).text)}
+  const clientBlock=c=>{
+    const ampel=berichtAmpel(c.id);
+    const farben=avatarFarbe(c.client_code||c.name);
+
+    return `
+      <div class="client${istEhemalig(c.id)?' client-former':''}">
+        <div class="client-head">
+          <div
+            class="client-avatar"
+            style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
+            ${esc(clientInitialen(c.name))}
           </div>
-          <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
-          <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
+
+          <div class="client-name">
+            <h3>${esc(c.name)}</h3>
+            <div class="meta report-status">
+              ${ampel.symbol} ${esc(ampel.text)}
+            </div>
+            <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
+            <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
+          </div>
+        </div>
+
+        <div class="client-buttons">
+          <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
+          <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
+          <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
+          <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
+          <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
         </div>
       </div>
+    `;
+  };
 
-      <div class="client-buttons">
-        <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
-        <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
-        <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
-        <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
-        <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
-      </div>
-    </div>
-  `).join(''):(
-    clients.length
+  if(!gefiltert.length){
+    $('list').innerHTML=clients.length
       ? '<p class="muted">Kein Klient passt zur Suche.</p>'
-      : '<p class="muted">Noch keine Klienten angelegt.</p>'
-  );
+      : '<p class="muted">Noch keine Klienten angelegt.</p>';
+  }else{
+    $('list').innerHTML=
+      aktuelle.map(clientBlock).join('')+
+      (ehemalige.length
+        ? '<div class="former-heading">Ehemalige Klienten</div>'+
+          ehemalige.map(clientBlock).join('')
+        : '');
+  }
 
   document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
   document.querySelectorAll('.docs').forEach(b=>b.onclick=()=>openDocs(b.dataset.id));
@@ -2920,9 +3001,30 @@ function approvalReportStatus(approval,abgeloestAm){
   }
 
   if(ende&&ende<heute){
+    if(approval.abschlussbericht_am){
+      return {
+        text:'Beendet am '+formatDate(ende)+
+          ' · Abschlussbericht am '+formatDate(approval.abschlussbericht_am),
+        symbol:'⚪'
+      };
+    }
+
+    const erinnerung=approval.abschlussbericht_erinnerung_am;
+
+    if(erinnerung&&erinnerung>heute){
+      return {
+        text:'Beendet am '+formatDate(ende)+
+          ' · Abschlussbericht offen, Erinnerung am '+formatDate(erinnerung),
+        symbol:'⚪',
+        abschlussOffen:true
+      };
+    }
+
     return {
-      text:'Bewilligung beendet am '+formatDate(ende),
-      symbol:'🔴'
+      text:'Beendet am '+formatDate(ende)+
+        ' · Abschlussbericht ausstehend',
+      symbol:'🟡',
+      abschlussOffen:true
     };
   }
 
@@ -2961,7 +3063,14 @@ function approvalReportStatus(approval,abgeloestAm){
     };
   }
 
-  if(tage<=56){
+  if(tage===0){
+    return {
+      text:'Verlaufsbericht heute fällig',
+      symbol:'🔴'
+    };
+  }
+
+  if(tage<=21){
     return {
       text:'Verlaufsbericht fällig am '+formatDate(faellig),
       symbol:'🟡'
@@ -3294,6 +3403,18 @@ const usedPercent=budget.usedPercent;
   ${reportStatus.symbol}
   ${reportStatus.text}
 </div>
+${
+  reportStatus.abschlussOffen
+    ? `<div class="actions" style="margin:8px 0">
+         <button type="button" class="secondary closingDone" data-id="${a.id}">
+           Abschlussbericht erledigt
+         </button>
+         <button type="button" class="secondary closingLater" data-id="${a.id}">
+           In 14 Tagen erinnern
+         </button>
+       </div>`
+    : ''
+}
 <div class="meta">
   ${esc(fenster.label)}:
   ${formatDate(fenster.start)} – ${formatDate(minusEinTag(fenster.ende))}
@@ -3322,6 +3443,67 @@ ${formatFls(restFls)} FLS
   `;
   }).join(''):'<p class="muted">Noch keine Bewilligungen angelegt.</p>';
   document.querySelectorAll('.editApproval').forEach(b=>b.onclick=()=>openApprovalForm(b.dataset.id));
+
+  document.querySelectorAll('.closingDone').forEach(
+    b=>b.onclick=()=>abschlussberichtErledigt(b.dataset.id)
+  );
+
+  document.querySelectorAll('.closingLater').forEach(
+    b=>b.onclick=()=>abschlussberichtSpaeter(b.dataset.id)
+  );
+}
+
+async function abschlussberichtErledigt(approvalId){
+  const heute=todayIso();
+
+  if(!confirm(
+    'Abschlussbericht als erledigt eintragen mit dem heutigen Datum ('+
+    formatDate(heute)+')?'
+  ))return;
+
+  const {error}=await sb
+    .from('bewilligungen')
+    .update({
+      abschlussbericht_am:heute,
+      abschlussbericht_erinnerung_am:null
+    })
+    .eq('id',approvalId);
+
+  if(error){
+    toast('Konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  toast('Abschlussbericht eingetragen');
+
+  await loadApprovals();
+  await loadClients();
+}
+
+async function abschlussberichtSpaeter(approvalId){
+  const ziel=new Date();
+  ziel.setDate(ziel.getDate()+14);
+
+  const zielIso=[
+    ziel.getFullYear(),
+    String(ziel.getMonth()+1).padStart(2,'0'),
+    String(ziel.getDate()).padStart(2,'0')
+  ].join('-');
+
+  const {error}=await sb
+    .from('bewilligungen')
+    .update({abschlussbericht_erinnerung_am:zielIso})
+    .eq('id',approvalId);
+
+  if(error){
+    toast('Konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  toast('Erinnerung gesetzt auf '+formatDate(zielIso));
+
+  await loadApprovals();
+  await loadClients();
 }
 
 function updateLeistungstraegerFields(){
