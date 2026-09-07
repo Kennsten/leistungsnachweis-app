@@ -109,6 +109,42 @@ textarea{resize:vertical}
   overflow-wrap:anywhere;
 }
 
+.client-name-row{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:2px;
+}
+
+.client-name-row h3{
+  margin:0;
+}
+
+.name-edit{
+  flex:0 0 auto;
+  padding:5px 12px;
+  font-size:.8rem;
+  border-radius:10px;
+}
+
+.closing-alert{
+  margin:10px 0;
+  padding:12px 14px;
+  background:#fbeae6;
+  border:1px solid var(--danger);
+  border-radius:16px;
+  font-size:.9rem;
+  line-height:1.4;
+  color:var(--ink);
+}
+
+.closing-alert strong{
+  display:block;
+  margin-bottom:4px;
+  color:var(--danger);
+}
+
 .report-status{
   font-weight:600;
   color:var(--ink);
@@ -1761,17 +1797,14 @@ function berichtAmpel(clientId){
     }
 
     const erinnerung=letzte.abschlussbericht_erinnerung_am;
-
-    if(erinnerung&&erinnerung>heute){
-      return {
-        symbol:'⚪',
-        text:endeText+' · Erinnerung am '+formatDate(erinnerung)
-      };
-    }
+    const erinnerungFaellig=Boolean(erinnerung&&erinnerung<=heute);
 
     return {
-      symbol:'🟡',
-      text:endeText+' · Abschlussbericht ausstehend'
+      symbol:erinnerungFaellig?'🔴':'🟡',
+      text:endeText+' · Abschlussbericht ausstehend'+
+        (erinnerung&&!erinnerungFaellig
+          ? ' · Erinnerung am '+formatDate(erinnerung)
+          : '')
     };
   }
 
@@ -1862,7 +1895,12 @@ function renderClients(){
           </div>
 
           <div class="client-name">
-            <h3>${esc(c.name)}</h3>
+            <div class="client-name-row">
+              <h3>${esc(c.name)}</h3>
+              <button class="secondary edit name-edit" data-id="${c.id}">
+                Bearbeiten
+              </button>
+            </div>
             <div class="meta report-status">
               ${ampel.symbol} ${esc(ampel.text)}
             </div>
@@ -1876,7 +1914,6 @@ function renderClients(){
           <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
           <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
           <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
-          <button class="secondary edit" data-id="${c.id}">Bearbeiten</button>
         </div>
       </div>
     `;
@@ -3018,21 +3055,17 @@ function approvalReportStatus(approval,abgeloestAm){
     }
 
     const erinnerung=approval.abschlussbericht_erinnerung_am;
-
-    if(erinnerung&&erinnerung>heute){
-      return {
-        text:'Beendet am '+formatDate(ende)+
-          ' · Abschlussbericht offen, Erinnerung am '+formatDate(erinnerung),
-        symbol:'⚪',
-        abschlussOffen:true
-      };
-    }
+    const erinnerungFaellig=Boolean(erinnerung&&erinnerung<=heute);
 
     return {
       text:'Beendet am '+formatDate(ende)+
-        ' · Abschlussbericht ausstehend',
+        ' · Abschlussbericht ausstehend'+
+        (erinnerung&&!erinnerungFaellig
+          ? ' · Erinnerung am '+formatDate(erinnerung)
+          : ''),
       symbol:'🟡',
-      abschlussOffen:true
+      abschlussOffen:true,
+      erinnerungFaellig:erinnerungFaellig
     };
   }
 
@@ -3412,7 +3445,23 @@ const usedPercent=budget.usedPercent;
   ${reportStatus.text}
 </div>
 ${
-  reportStatus.abschlussOffen
+  reportStatus.erinnerungFaellig
+    ? `<div class="closing-alert">
+         <strong>Erinnerung: Abschlussbericht</strong>
+         Der Abschlussbericht zu dieser Bewilligung steht noch aus.
+         <div class="actions" style="margin-top:10px">
+           <button type="button" class="primary closingDone" data-id="${a.id}">
+             Jetzt als erledigt eintragen
+           </button>
+           <button type="button" class="secondary closingSnooze" data-id="${a.id}">
+             Später erinnern
+           </button>
+         </div>
+       </div>`
+    : ''
+}
+${
+  reportStatus.abschlussOffen && !reportStatus.erinnerungFaellig
     ? `<div class="actions" style="margin:8px 0">
          <button type="button" class="secondary closingDone" data-id="${a.id}">
            Abschlussbericht erledigt
@@ -3457,6 +3506,10 @@ ${formatFls(restFls)} FLS
   );
 
   document.querySelectorAll('.closingLater').forEach(
+    b=>b.onclick=()=>abschlussberichtSpaeter(b.dataset.id)
+  );
+
+  document.querySelectorAll('.closingSnooze').forEach(
     b=>b.onclick=()=>abschlussberichtSpaeter(b.dataset.id)
   );
 }
