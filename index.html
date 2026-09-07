@@ -109,6 +109,11 @@ textarea{resize:vertical}
   overflow-wrap:anywhere;
 }
 
+.report-status{
+  font-weight:600;
+  color:var(--ink);
+}
+
 .client-buttons{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
@@ -1316,7 +1321,9 @@ const $=id=>document.getElementById(id);
 let user=null;
 let clients=[];
 let approvals=[];
+let clientApprovals=[];
 let docs=[];
+let docsTrips=[];
 let activeClient=null;
   let docSaving=false;
 let activeDocsClient=null;
@@ -1670,7 +1677,87 @@ async function loadClients(){
   const {data,error}=await sb.from('clients').select('*').order('name');
   if(error){toast(error.message);return}
   clients=data||[];
+
+  const {data:approvalData}=await sb
+    .from('bewilligungen')
+    .select('id,client_id,beginn,ende,verlaufsbericht_faellig_am,verlaufsbericht_am')
+    .order('beginn',{ascending:false});
+
+  clientApprovals=approvalData||[];
+
   renderClients();
+}
+
+function berichtAmpel(clientId){
+  const heute=todayIso();
+
+  const eigene=clientApprovals.filter(
+    a=>String(a.client_id)===String(clientId)
+  );
+
+  if(!eigene.length){
+    return {symbol:'⚪',text:'keine Bewilligung'};
+  }
+
+  const laufende=eigene.filter(
+    a=>!a.ende||a.ende>=heute
+  );
+
+  const aktuelle=(laufende.length?laufende:eigene)[0];
+
+  const faellig=aktuelle.verlaufsbericht_faellig_am;
+
+  if(!faellig){
+    return {symbol:'⚪',text:'kein Berichtstermin'};
+  }
+
+  const versendet=aktuelle.verlaufsbericht_am;
+
+  if(versendet){
+    const abstand=Math.round(
+      (new Date(faellig+'T00:00:00')-new Date(versendet+'T00:00:00'))/
+      86400000
+    );
+
+    if(abstand<=365){
+      return {
+        symbol:'🟢',
+        text:'Bericht versendet · nächster '+formatDate(faellig)
+      };
+    }
+  }
+
+  const tage=Math.ceil(
+    (new Date(faellig+'T00:00:00')-new Date(heute+'T00:00:00'))/
+    86400000
+  );
+
+  if(tage<0){
+    return {
+      symbol:'🔴',
+      text:'Bericht überfällig seit '+formatDate(faellig)
+    };
+  }
+
+  if(tage===0){
+    return {
+      symbol:'🔴',
+      text:'Bericht heute fällig'
+    };
+  }
+
+  if(tage<=21){
+    return {
+      symbol:'🟡',
+      text:'Bericht fällig am '+formatDate(faellig)+
+        ' · noch '+tage+(tage===1?' Tag':' Tage')
+    };
+  }
+
+  return {
+    symbol:'🟢',
+    text:'Bericht fällig am '+formatDate(faellig)
+  };
 }
 
 function renderClients(){
@@ -1697,6 +1784,9 @@ function renderClients(){
 
         <div class="client-name">
           <h3>${esc(c.name)}</h3>
+          <div class="meta report-status">
+            ${berichtAmpel(c.id).symbol} ${esc(berichtAmpel(c.id).text)}
+          </div>
           <div class="meta">${esc(c.client_code)} · ${esc(c.aktenzeichen||'kein Aktenzeichen')}</div>
           <div class="meta">${esc([c.strasse,c.hausnummer,c.plz,c.ort].filter(Boolean).join(' '))}</div>
         </div>
@@ -2339,16 +2429,35 @@ async function openDocs(clientId){
 async function loadDocs(){
   if(!activeDocsClient)return;
   $('docsList').innerHTML='<p class="muted">Dokumentationen werden geladen …</p>';
-  const {data,error}=await sb
-    .from('dokumentationen')
-    .select('*')
-    .eq('client_id',activeDocsClient.id)
-    .order('datum',{ascending:false})
-    .order('beginn',{ascending:false});
 
-  if(error){$('docsList').innerHTML='';toast(error.message);return}
-  docs=data||[];
+  const [docResult,tripResult]=await Promise.all([
+    sb.from('dokumentationen')
+      .select('*')
+      .eq('client_id',activeDocsClient.id)
+      .order('datum',{ascending:false})
+      .order('beginn',{ascending:false}),
+
+    sb.from('trip_entries')
+      .select('id,documentation_id,trip_date,kilometers,purpose')
+      .eq('client_id',activeDocsClient.id)
+  ]);
+
+  if(docResult.error){
+    $('docsList').innerHTML='';
+    toast(docResult.error.message);
+    return;
+  }
+
+  docs=docResult.data||[];
+  docsTrips=(tripResult&&tripResult.data)||[];
+
   renderDocs();
+}
+
+function fahrtZuDoku(docId){
+  return docsTrips.find(
+    t=>String(t.documentation_id)===String(docId)
+  )||null;
 }
 
 function renderDocs(){
@@ -2380,6 +2489,21 @@ function renderDocs(){
         </div>
           <div class="actions">
             <button class="secondary editDoc" data-id="${d.id}">Bearbeiten</button>
+            ${(()=>{
+              const fahrt=fahrtZuDoku(d.id);
+
+              if(fahrt){
+                return '<button class="secondary showTripOfDoc" data-id="'+
+                  esc(d.id)+'">Fahrt anschauen</button>';
+              }
+
+              const beschriftung=d.leistungsart==='Telefonkontakt'
+                ? 'Fahrt trotz Telefonkontakt'
+                : 'Fahrt eintragen';
+
+              return '<button class="secondary tripFromDoc" data-id="'+
+                esc(d.id)+'">'+beschriftung+'</button>';
+            })()}
             <button class="secondary expenseParkFromDoc" data-id="${d.id}">Parkticket</button>
             <button class="secondary expenseHostFromDoc" data-id="${d.id}">Bewirtung</button>
           </div>
@@ -2409,6 +2533,14 @@ function renderDocs(){
 
     document.querySelectorAll('.expenseHostFromDoc').forEach(
       b=>b.onclick=()=>openExpenseFromDoc(b.dataset.id,'Bewirtung')
+    );
+
+    document.querySelectorAll('.showTripOfDoc').forEach(
+      b=>b.onclick=()=>openTripOfDoc(b.dataset.id)
+    );
+
+    document.querySelectorAll('.tripFromDoc').forEach(
+      b=>b.onclick=()=>openTripFromDoc(b.dataset.id)
     );
 
 }
@@ -2613,6 +2745,65 @@ function updateDocModus(){
   }else{
     hinweis.classList.add('hidden');
     hinweis.innerHTML='';
+  }
+}
+
+async function openTripOfDoc(docId){
+  const fahrt=fahrtZuDoku(docId);
+
+  if(!fahrt){
+    toast('Zu dieser Dokumentation ist keine Fahrt vorhanden.');
+    return;
+  }
+
+  const klient=activeDocsClient;
+
+  if(!klient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
+  $('docsDialog').close();
+
+  await openTrips(klient.id);
+  await openTripForm(fahrt.id);
+}
+
+async function openTripFromDoc(docId){
+  const doc=docs.find(d=>String(d.id)===String(docId));
+
+  if(!doc){
+    toast('Dokumentation nicht gefunden.');
+    return;
+  }
+
+  const klient=activeDocsClient;
+
+  if(!klient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
+  $('docsDialog').close();
+
+  await openTrips(klient.id);
+  await openTripForm();
+
+  const auswahl=$('tripDocumentation');
+
+  const verfuegbar=Array.from(auswahl.options).some(
+    option=>String(option.value)===String(docId)
+  );
+
+  if(verfuegbar){
+    auswahl.value=docId;
+    applyTripDocumentation(docId);
+  }else{
+    $('tripDate').value=doc.datum||todayIso();
+    toast(
+      'Der Termin steht nicht mehr zur Auswahl. '+
+      'Bitte die Fahrt manuell eintragen.'
+    );
   }
 }
 
