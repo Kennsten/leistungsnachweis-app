@@ -2095,7 +2095,8 @@ function renderClients(){
             class="client-avatar"
             style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
             ${
-              c.portrait
+              c.portrait &&
+              document.documentElement.getAttribute('data-theme')==='moebius'
                 ? '<img src="bilder/'+esc(c.portrait)+'" alt="">'
                 : esc(clientInitialen(c.name))
             }
@@ -5803,6 +5804,10 @@ function setzeDesign(name){
 
   if(auswahl&&auswahl.value!==gewaehlt){
     auswahl.value=gewaehlt;
+  }
+
+  if(clients.length){
+    renderClients();
   }
 }
 
