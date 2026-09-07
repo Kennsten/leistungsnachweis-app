@@ -136,6 +136,7 @@ textarea{resize:vertical}
   width:46px;
   height:46px;
   border-radius:50%;
+  overflow:hidden;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -144,6 +145,29 @@ textarea{resize:vertical}
   font-size:19px;
   font-weight:700;
   letter-spacing:.5px;
+}
+
+.portrait-preview{
+  margin-top:8px;
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  overflow:hidden;
+  border:1px solid var(--line);
+}
+
+.portrait-preview img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.client-avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
 }
 
 .client-name{
@@ -288,6 +312,24 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       transparent 1px 7px
     ),
     var(--bg);
+}
+
+[data-theme="moebius"] body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background-image:url("bilder/hintergrund.jpg");
+  background-size:cover;
+  background-position:center top;
+  background-repeat:no-repeat;
+  opacity:.4;
+  pointer-events:none;
+}
+
+[data-theme="moebius"] .card,
+[data-theme="moebius"] dialog{
+  background:rgba(250,243,230,.94);
 }
 
 [data-theme="moebius"] h1,
@@ -1056,6 +1098,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>Telefon Kontakt 1<input id="telefon1"></label>
       <label>Kontaktperson 2<input id="kontaktperson2"></label>
       <label>Telefon Kontakt 2<input id="telefon2"></label>
+      <label class="span2">Porträt
+        <select id="clientPortrait">
+          <option value="">Initialen verwenden</option>
+          <option value="portrait-1.jpg">Porträt 1</option>
+          <option value="portrait-2.jpg">Porträt 2</option>
+          <option value="portrait-3.jpg">Porträt 3</option>
+          <option value="portrait-4.jpg">Porträt 4</option>
+          <option value="portrait-5.jpg">Porträt 5</option>
+        </select>
+        <div id="portraitVorschau" class="portrait-preview hidden"></div>
+      </label>
       <label class="span2">Bemerkungen<textarea id="bemerkungen" rows="3"></textarea></label>
     </div>
     <div class="actions">
@@ -2041,7 +2094,11 @@ function renderClients(){
           <div
             class="client-avatar"
             style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
-            ${esc(clientInitialen(c.name))}
+            ${
+              c.portrait
+                ? '<img src="bilder/'+esc(c.portrait)+'" alt="">'
+                : esc(clientInitialen(c.name))
+            }
           </div>
 
           <div class="client-name">
@@ -2107,6 +2164,8 @@ function openClient(id=''){
   $('kontaktperson2').value=c.kontaktperson2||'';
   $('telefon2').value=c.telefon2||'';
   $('bemerkungen').value=c.bemerkungen||'';
+  $('clientPortrait').value=c.portrait||'';
+  updatePortraitVorschau();
   $('deleteClient').classList.toggle('hidden',!id);
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
   $('clientDialog').showModal();
@@ -3880,6 +3939,22 @@ $('closeAllApprovals').onclick=()=>{
 $('clientSearch').oninput=renderClients;
 $('docSearch').oninput=renderDocs;
 
+function updatePortraitVorschau(){
+  const feld=$('portraitVorschau');
+  const wert=$('clientPortrait').value;
+
+  if(!wert){
+    feld.classList.add('hidden');
+    feld.innerHTML='';
+    return;
+  }
+
+  feld.classList.remove('hidden');
+  feld.innerHTML='<img src="bilder/'+esc(wert)+'" alt="">';
+}
+
+$('clientPortrait').onchange=updatePortraitVorschau;
+
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
 
@@ -3902,7 +3977,8 @@ $('clientForm').onsubmit=async e=>{
     telefon1:$('telefon1').value.trim()||null,
     kontaktperson2:$('kontaktperson2').value.trim()||null,
     telefon2:$('telefon2').value.trim()||null,
-    bemerkungen:$('bemerkungen').value.trim()||null
+    bemerkungen:$('bemerkungen').value.trim()||null,
+    portrait:$('clientPortrait').value||null
   };
   const q=id?sb.from('clients').update(row).eq('id',id):sb.from('clients').insert(row);
   const {error}=await q;
