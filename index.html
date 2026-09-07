@@ -1708,10 +1708,17 @@ async function loadClients(){
 function laufendeBewilligungen(clientId){
   const heute=todayIso();
 
-  return clientApprovals.filter(
-    a=>String(a.client_id)===String(clientId) &&
-      (!a.ende||a.ende>=heute)
+  const eigene=clientApprovals.filter(
+    a=>String(a.client_id)===String(clientId)
   );
+
+  return eigene.filter(a=>{
+    const abgeloest=nachfolgerBeginn(a,eigene);
+
+    if(abgeloest)return false;
+
+    return !a.ende||a.ende>=heute;
+  });
 }
 
 function istEhemalig(clientId){
@@ -1740,13 +1747,16 @@ function berichtAmpel(clientId){
   if(!laufende.length){
     const letzte=eigene
       .slice()
-      .sort((a,b)=>String(b.ende||'').localeCompare(String(a.ende||'')))[0];
+      .sort((a,b)=>String(b.beginn||'').localeCompare(String(a.beginn||'')))[0];
+
+    const endeText=letzte.ende
+      ? 'Beendet am '+formatDate(letzte.ende)
+      : 'Bewilligung abgelöst';
 
     if(letzte.abschlussbericht_am){
       return {
         symbol:'⚪',
-        text:'Beendet am '+formatDate(letzte.ende)+
-          ' · Abschlussbericht erledigt'
+        text:endeText+' · Abschlussbericht erledigt'
       };
     }
 
@@ -1755,15 +1765,13 @@ function berichtAmpel(clientId){
     if(erinnerung&&erinnerung>heute){
       return {
         symbol:'⚪',
-        text:'Beendet am '+formatDate(letzte.ende)+
-          ' · Erinnerung am '+formatDate(erinnerung)
+        text:endeText+' · Erinnerung am '+formatDate(erinnerung)
       };
     }
 
     return {
       symbol:'🟡',
-      text:'Beendet am '+formatDate(letzte.ende)+
-        ' · Abschlussbericht ausstehend'
+      text:endeText+' · Abschlussbericht ausstehend'
     };
   }
 
