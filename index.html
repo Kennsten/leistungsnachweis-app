@@ -1153,7 +1153,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <select id="docLeistungsart" required>
           <option value="Face-to-Face">Face-to-Face</option>
           <option value="Telefonkontakt">Telefonkontakt</option>
-          <option value="Ausfall">Ausfall</option>
+          <option value="Ausfall mit Fahrt">Ausfall mit Fahrt</option>
+          <option value="Ausfall ohne Fahrt">Ausfall ohne Fahrt</option>
+          <option value="Ausfall">Ausfall (alt)</option>
         </select>
         <label>Leistungsort
   <select id="docOrt">
@@ -2849,9 +2851,13 @@ function renderDocs(){
                   esc(d.id)+'">Fahrt anschauen</button>';
               }
 
-              const beschriftung=d.leistungsart==='Telefonkontakt'
-                ? 'Fahrt trotz Telefonkontakt'
-                : 'Fahrt eintragen';
+              let beschriftung='Fahrt eintragen';
+
+              if(d.leistungsart==='Telefonkontakt'){
+                beschriftung='Fahrt trotz Telefonkontakt';
+              }else if(ausfallOhneFahrt(d.leistungsart)){
+                beschriftung='Fahrt trotz Ausfall';
+              }
 
               return '<button class="secondary tripFromDoc" data-id="'+
                 esc(d.id)+'">'+beschriftung+'</button>';
@@ -4469,7 +4475,18 @@ $('closeMonthly').onclick=()=>{
   activeMonthlyClient=null;
 };
 
-const KENNZIFFER_NICHT_ERFORDERLICH=['Ausfall'];
+function istAusfallArt(leistungsart){
+  return String(leistungsart||'')
+    .trim()
+    .toLowerCase()
+    .startsWith('ausfall');
+}
+
+function ausfallOhneFahrt(leistungsart){
+  return String(leistungsart||'')
+    .trim()
+    .toLowerCase()==='ausfall ohne fahrt';
+}
 const FAHRT_ERWARTET_BEI_ORT=[
   'Wohnung Klient',
   'Begleitung außer Haus',
@@ -4494,6 +4511,7 @@ function buildMonthlyChecks(context){
 
   const documentationsWithoutTrip=entries.filter(entry=>
     FAHRT_ERWARTET_BEI_ORT.includes(entry.ort_der_leistung) &&
+    !ausfallOhneFahrt(entry.leistungsart) &&
     !linkedDocumentationIds.has(String(entry.id))
   );
 
@@ -4548,7 +4566,7 @@ function buildMonthlyChecks(context){
   });
 
   const missingKennziffer=entries.filter(entry=>
-    !KENNZIFFER_NICHT_ERFORDERLICH.includes(entry.leistungsart) &&
+    !istAusfallArt(entry.leistungsart) &&
     !entry.kennziffer
   );
 
