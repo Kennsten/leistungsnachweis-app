@@ -1248,6 +1248,19 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>FLS<input id="docFls" type="number" min="0" step="0.25" inputmode="decimal" placeholder="z. B. 1,25"></label>
       <div id="docFlsHinweis" class="kennziffer-text span2 hidden"></div>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
+      <label class="span2">Textbaustein einfügen
+        <select id="docSnippet">
+          <option value="">Bitte auswählen</option>
+        </select>
+        <span class="muted small">
+          Der Baustein wird an den vorhandenen Text angehängt.
+        </span>
+      </label>
+      <label class="span2" style="flex-direction:row;justify-content:flex-end">
+        <button type="button" id="manageSnippets" class="secondary" style="flex:0 0 auto">
+          Bausteine verwalten
+        </button>
+      </label>
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
     </div>
@@ -1487,6 +1500,40 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 
   <div id="stopManagerList"></div>
+</dialog>
+
+<dialog id="snippetDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumentation</div>
+      <h2>Textbausteine</h2>
+    </div>
+    <button type="button" id="closeSnippets" class="secondary">Schließen</button>
+  </div>
+
+  <form id="snippetForm">
+    <input type="hidden" id="snippetId">
+
+    <label>Bezeichnung
+      <input id="snippetTitle" required placeholder="z. B. Begleitung Arzttermin">
+    </label>
+
+    <label>Text
+      <textarea id="snippetText" rows="5" required
+        placeholder="Der Text, der eingefügt werden soll"></textarea>
+    </label>
+
+    <div class="actions">
+      <button type="button" id="snippetReset" class="secondary hidden">
+        Abbrechen
+      </button>
+      <button type="submit" id="snippetSave" class="primary">
+        Baustein speichern
+      </button>
+    </div>
+  </form>
+
+  <div id="snippetList"></div>
 </dialog>
 
 <dialog id="incomeDialog">
@@ -2090,6 +2137,7 @@ async function init(){
     user=session.user;
     showApp(true);
     await loadClients();
+    await loadTextbausteine();
   }else{
     user=null;
     showApp(false);
@@ -6367,6 +6415,199 @@ async function erstelleSicherung(){
     knopf.textContent=beschriftung;
   }
 }
+
+/* ---------- Textbausteine ---------- */
+
+let textbausteine=[];
+
+async function loadTextbausteine(){
+  const {data,error}=await sb
+    .from('textbausteine')
+    .select('*')
+    .order('sortierung',{ascending:true})
+    .order('titel',{ascending:true});
+
+  if(error){
+    textbausteine=[];
+    renderSnippetPicker();
+    return;
+  }
+
+  textbausteine=data||[];
+  renderSnippetPicker();
+}
+
+function renderSnippetPicker(){
+  const auswahl=$('docSnippet');
+
+  if(!auswahl)return;
+
+  auswahl.innerHTML=
+    '<option value="">Bitte auswählen</option>'+
+    textbausteine.map(
+      b=>`<option value="${esc(b.id)}">${esc(b.titel)}</option>`
+    ).join('');
+}
+
+function fuegeBausteinEin(id){
+  if(!id)return;
+
+  const baustein=textbausteine.find(
+    b=>String(b.id)===String(id)
+  );
+
+  if(!baustein)return;
+
+  const feld=$('docText');
+  const vorhanden=feld.value.trim();
+
+  feld.value=vorhanden
+    ? vorhanden+'\n'+baustein.text
+    : baustein.text;
+
+  feld.focus();
+  feld.setSelectionRange(feld.value.length,feld.value.length);
+  feld.scrollTop=feld.scrollHeight;
+
+  toast('Baustein eingefügt');
+}
+
+function renderSnippetList(){
+  if(!textbausteine.length){
+    $('snippetList').innerHTML=
+      '<p class="muted">Noch keine Bausteine angelegt.</p>';
+    return;
+  }
+
+  $('snippetList').innerHTML=textbausteine.map(b=>`
+    <div class="doc-item">
+      <div class="doc-head">
+        <div>
+          <h3>${esc(b.titel)}</h3>
+          <p class="doc-text">${esc(b.text)}</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="secondary editSnippet" data-id="${esc(b.id)}">
+            Bearbeiten
+          </button>
+          <button type="button" class="danger deleteSnippet" data-id="${esc(b.id)}">
+            Löschen
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.editSnippet').forEach(
+    b=>b.onclick=()=>bearbeiteBaustein(b.dataset.id)
+  );
+
+  document.querySelectorAll('.deleteSnippet').forEach(
+    b=>b.onclick=()=>loescheBaustein(b.dataset.id)
+  );
+}
+
+function bearbeiteBaustein(id){
+  const baustein=textbausteine.find(
+    b=>String(b.id)===String(id)
+  );
+
+  if(!baustein)return;
+
+  $('snippetId').value=baustein.id;
+  $('snippetTitle').value=baustein.titel;
+  $('snippetText').value=baustein.text;
+  $('snippetSave').textContent='Änderung speichern';
+  $('snippetReset').classList.remove('hidden');
+
+  $('snippetTitle').focus();
+}
+
+function resetSnippetForm(){
+  $('snippetId').value='';
+  $('snippetTitle').value='';
+  $('snippetText').value='';
+  $('snippetSave').textContent='Baustein speichern';
+  $('snippetReset').classList.add('hidden');
+}
+
+async function loescheBaustein(id){
+  if(!confirm('Diesen Baustein wirklich löschen?'))return;
+
+  const {error}=await sb
+    .from('textbausteine')
+    .delete()
+    .eq('id',id);
+
+  if(error){
+    toast('Baustein konnte nicht gelöscht werden: '+error.message);
+    return;
+  }
+
+  toast('Baustein gelöscht');
+
+  if($('snippetId').value===id){
+    resetSnippetForm();
+  }
+
+  await loadTextbausteine();
+  renderSnippetList();
+}
+
+$('docSnippet').onchange=()=>{
+  const auswahl=$('docSnippet');
+
+  fuegeBausteinEin(auswahl.value);
+  auswahl.value='';
+};
+
+$('manageSnippets').onclick=async()=>{
+  await loadTextbausteine();
+  resetSnippetForm();
+  renderSnippetList();
+  $('snippetDialog').showModal();
+};
+
+$('closeSnippets').onclick=()=>$('snippetDialog').close();
+$('snippetReset').onclick=resetSnippetForm;
+
+$('snippetForm').onsubmit=async e=>{
+  e.preventDefault();
+
+  const titel=$('snippetTitle').value.trim();
+  const text=$('snippetText').value.trim();
+
+  if(!titel||!text){
+    toast('Bitte Bezeichnung und Text eintragen.');
+    return;
+  }
+
+  const id=$('snippetId').value;
+
+  const zeile={
+    user_id:user.id,
+    titel:titel,
+    text:text
+  };
+
+  const abfrage=id
+    ? sb.from('textbausteine').update(zeile).eq('id',id)
+    : sb.from('textbausteine').insert(zeile);
+
+  const {error}=await abfrage;
+
+  if(error){
+    toast('Baustein konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  toast(id?'Baustein aktualisiert':'Baustein gespeichert');
+
+  resetSnippetForm();
+
+  await loadTextbausteine();
+  renderSnippetList();
+};
 
 $('backupData').onclick=erstelleSicherung;
 
