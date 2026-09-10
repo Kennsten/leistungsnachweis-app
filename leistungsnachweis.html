@@ -375,6 +375,52 @@
       return `${parts[2]}.${parts[1]}.${parts[0]}`;
     }
 
+    const FLS_VIERTEL_BIS='2026-06-30';
+
+    function eintragFls(entry){
+      if(!entry)return 0;
+
+      if(entry.fls!=null&&entry.fls!==''){
+        return Number(entry.fls);
+      }
+
+      const roh=Number(entry.dauer_minuten||0)/50;
+      const tag=String(entry.datum||'').slice(0,10);
+
+      return tag&&tag<=FLS_VIERTEL_BIS
+        ? Math.round(roh*4)/4
+        : Math.round(roh*100)/100;
+    }
+
+    function summeFls(liste){
+      return Math.round(
+        (liste||[]).reduce((summe,e)=>summe+eintragFls(e),0)*100
+      )/100;
+    }
+
+    function istAusfall(entry){
+      return String(entry&&entry.leistungsart||'')
+        .trim()
+        .toLowerCase()
+        .startsWith('ausfall');
+    }
+
+    function hatWegepauschale(entry){
+      const ort=String(entry&&entry.ort_der_leistung||'')
+        .trim()
+        .toLowerCase();
+
+      if(ort==='telefon'||ort==='online')return false;
+
+      const art=String(entry&&entry.leistungsart||'')
+        .trim()
+        .toLowerCase();
+
+      if(art==='ausfall ohne fahrt')return false;
+
+      return true;
+    }
+
     function minutesToFls(minutes){
       return Math.round((Number(minutes||0)/50)*100)/100;
     }
@@ -418,19 +464,13 @@
         0
       );
 
-      const totalFls=minutesToFls(totalMinutes);
+      const totalFls=summeFls(entries);
 const totalWay=entries.reduce(
-  (sum,entry)=>{
-    const ort=String(entry.ort_der_leistung||'')
-      .trim()
-      .toLowerCase();
-
-    return sum+(ort==='telefon'||ort==='online'?0:1);
-  },
+  (sum,entry)=>sum+(hatWegepauschale(entry)?1:0),
   0
 );
       const totalCancel=entries.reduce(
-        (sum,entry)=>sum+Number(entry.ausfallstunde||0),
+        (sum,entry)=>sum+(istAusfall(entry)?1:0),
         0
       );
 
@@ -446,20 +486,10 @@ const totalWay=entries.reduce(
               <td>${esc(String(entry.beginn||'').slice(0,5))} – ${esc(String(entry.ende||'').slice(0,5))}</td>
               <td>${esc(entry.ort_der_leistung||'')}</td>
               <td class="number">${Number(entry.dauer_minuten||0)}</td>
-              <td class="number">${formatFls(minutesToFls(entry.dauer_minuten))}</td>
-<td class="center-text">${
-  entry.ort_der_leistung==='Telefon' ||
-  entry.ort_der_leistung==='Online'
-    ? ''
-    : 1
-}</td>
-<td class="number">${
-  entry.ort_der_leistung==='Telefon' ||
-  entry.ort_der_leistung==='Online'
-    ? '0,00'
-    : '1,00'
-}</td>
-              <td class="center-text">${entry.ausfallstunde?1:''}</td>
+              <td class="number">${formatFls(eintragFls(entry))}</td>
+<td class="center-text">${hatWegepauschale(entry)?1:''}</td>
+<td class="number">${hatWegepauschale(entry)?'1,00':'0,00'}</td>
+              <td class="center-text">${istAusfall(entry)?1:''}</td>
               <td>${esc(entry.kennziffer||'')}</td>
               <td>${esc(payload.auftragnehmer||'Stork, Oliver')}</td>
             </tr>
@@ -523,12 +553,7 @@ const totalWay=entries.reduce(
         payload.monthlyRestBudget ??
         (monthlyBudget!==''
           ? Math.round(
-              (Number(monthlyBudget)-minutesToFls(
-                entries.reduce(
-                  (sum,entry)=>sum+Number(entry.dauer_minuten||0),
-                  0
-                )
-              ))*100
+              (Number(monthlyBudget)-totalFls)*100
             )/100
           : '');
 
