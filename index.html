@@ -209,6 +209,50 @@ textarea{resize:vertical}
   color:var(--ink);
 }
 
+.income-table{
+  margin-top:6px;
+}
+
+.income-row{
+  display:grid;
+  grid-template-columns:minmax(70px,1fr) auto auto minmax(80px,auto);
+  align-items:baseline;
+  gap:10px;
+  padding:6px 0;
+  font-size:.9rem;
+  border-bottom:1px solid var(--line);
+}
+
+.income-row:last-child{
+  border-bottom:0;
+}
+
+.income-row span:not(.income-key){
+  color:var(--muted);
+  text-align:right;
+  white-space:nowrap;
+}
+
+.income-row strong{
+  text-align:right;
+  white-space:nowrap;
+}
+
+.income-key{
+  font-weight:700;
+}
+
+@media(max-width:520px){
+  .income-row{
+    grid-template-columns:1fr auto;
+    row-gap:2px;
+  }
+
+  .income-key{
+    grid-column:1 / -1;
+  }
+}
+
 .closing-alert strong{
   display:block;
   margin-bottom:4px;
@@ -1025,6 +1069,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       class="secondary">
       Betriebsausgaben
     </button>
+
+    <button
+      type="button"
+      id="allIncome"
+      class="secondary">
+      Einnahmen
+    </button>
   </div>
 
   <div class="top">
@@ -1429,6 +1480,73 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 
   <div id="stopManagerList"></div>
+</dialog>
+
+<dialog id="incomeDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Auswertung</div>
+      <h2>Einnahmen</h2>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="openRates" class="secondary">
+        Sätze
+      </button>
+
+      <button type="button" id="closeIncome" class="secondary">
+        Schließen
+      </button>
+    </div>
+  </div>
+
+  <label>
+    Jahr
+    <select id="incomeYear"></select>
+  </label>
+
+  <div id="incomeContent">
+    <p class="muted">Auswertung wird geladen …</p>
+  </div>
+</dialog>
+
+<dialog id="ratesDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Einnahmen</div>
+      <h2>Vergütungssätze</h2>
+    </div>
+    <button type="button" id="closeRates" class="secondary">Schließen</button>
+  </div>
+
+  <form id="rateForm">
+    <div class="grid">
+      <label>Art
+        <select id="rateType" required>
+          <option value="fls">Betrag je FLS</option>
+          <option value="wegepauschale">Betrag je Wegepauschale</option>
+        </select>
+      </label>
+
+      <label>Gültig ab
+        <input id="rateFrom" type="date" required>
+      </label>
+
+      <label>Betrag in Euro
+        <input id="rateAmount" type="number" min="0" step="0.01" inputmode="decimal" required>
+      </label>
+
+      <label>Bemerkung
+        <input id="rateNote" placeholder="z. B. Vereinbarung 2026">
+      </label>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="primary">Satz speichern</button>
+    </div>
+  </form>
+
+  <div id="ratesList"></div>
 </dialog>
 
 <dialog id="docRangeDialog">
@@ -5782,6 +5900,378 @@ async function openExpenseFromDoc(docId,kategorie){
   });
 }
 
+
+/* ---------- Einnahmen und Vergütungssätze ---------- */
+
+let verguetungssaetze=[];
+
+function satzFuer(art,datum){
+  const tag=String(datum||'').slice(0,10);
+
+  const passende=verguetungssaetze
+    .filter(s=>s.art===art&&String(s.gueltig_ab)<=tag)
+    .sort((a,b)=>String(b.gueltig_ab).localeCompare(String(a.gueltig_ab)));
+
+  return passende.length?Number(passende[0].betrag):null;
+}
+
+function hatWegepauschale(doc){
+  const ort=String(doc&&doc.ort_der_leistung||'').trim().toLowerCase();
+
+  if(ort==='telefon'||ort==='online')return false;
+
+  const art=String(doc&&doc.leistungsart||'').trim().toLowerCase();
+
+  if(art==='ausfall ohne fahrt')return false;
+
+  return true;
+}
+
+async function loadVerguetungssaetze(){
+  const {data,error}=await sb
+    .from('verguetungssaetze')
+    .select('*')
+    .order('gueltig_ab',{ascending:false});
+
+  if(error){
+    toast('Sätze konnten nicht geladen werden: '+error.message);
+    verguetungssaetze=[];
+    return;
+  }
+
+  verguetungssaetze=data||[];
+}
+
+function renderRates(){
+  if(!verguetungssaetze.length){
+    $('ratesList').innerHTML=
+      '<p class="muted">Noch keine Sätze hinterlegt. '+
+      'Ohne Sätze kann keine Einnahme berechnet werden.</p>';
+    return;
+  }
+
+  const gruppen={
+    fls:'Betrag je FLS',
+    wegepauschale:'Betrag je Wegepauschale'
+  };
+
+  $('ratesList').innerHTML=Object.keys(gruppen).map(art=>{
+    const eintraege=verguetungssaetze
+      .filter(s=>s.art===art)
+      .sort((a,b)=>String(b.gueltig_ab).localeCompare(String(a.gueltig_ab)));
+
+    if(!eintraege.length){
+      return `
+        <div class="doc-item">
+          <h3>${esc(gruppen[art])}</h3>
+          <p class="muted">Kein Satz hinterlegt.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="doc-item">
+        <h3>${esc(gruppen[art])}</h3>
+        ${eintraege.map(s=>`
+          <div class="doc-head" style="margin-top:10px">
+            <div>
+              <div class="fls-value">${formatEuro(s.betrag)}</div>
+              <div class="meta">gültig ab ${formatDate(s.gueltig_ab)}</div>
+              ${s.bemerkung?`<div class="meta">${esc(s.bemerkung)}</div>`:''}
+            </div>
+            <button
+              type="button"
+              class="secondary deleteRate"
+              data-id="${esc(s.id)}">
+              Löschen
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+
+  document.querySelectorAll('.deleteRate').forEach(
+    b=>b.onclick=()=>deleteRate(b.dataset.id)
+  );
+}
+
+async function deleteRate(id){
+  if(!confirm('Diesen Satz wirklich löschen?'))return;
+
+  const {error}=await sb
+    .from('verguetungssaetze')
+    .delete()
+    .eq('id',id);
+
+  if(error){
+    toast('Satz konnte nicht gelöscht werden: '+error.message);
+    return;
+  }
+
+  toast('Satz gelöscht');
+
+  await loadVerguetungssaetze();
+  renderRates();
+
+  if($('incomeDialog').open){
+    await loadIncome();
+  }
+}
+
+$('openRates').onclick=async()=>{
+  await loadVerguetungssaetze();
+
+  $('rateFrom').value=todayIso().slice(0,8)+'01';
+  $('rateAmount').value='';
+  $('rateNote').value='';
+
+  renderRates();
+  $('ratesDialog').showModal();
+};
+
+$('closeRates').onclick=()=>$('ratesDialog').close();
+
+$('rateForm').onsubmit=async e=>{
+  e.preventDefault();
+
+  const betrag=Number(String($('rateAmount').value).replace(',','.'));
+  const gueltigAb=$('rateFrom').value;
+
+  if(!gueltigAb||!Number.isFinite(betrag)||betrag<=0){
+    toast('Bitte Datum und Betrag eintragen.');
+    return;
+  }
+
+  const {error}=await sb
+    .from('verguetungssaetze')
+    .upsert(
+      {
+        user_id:user.id,
+        art:$('rateType').value,
+        gueltig_ab:gueltigAb,
+        betrag:betrag,
+        bemerkung:$('rateNote').value.trim()||null
+      },
+      {onConflict:'user_id,art,gueltig_ab'}
+    );
+
+  if(error){
+    toast('Satz konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  toast('Satz gespeichert');
+
+  $('rateAmount').value='';
+  $('rateNote').value='';
+
+  await loadVerguetungssaetze();
+  renderRates();
+
+  if($('incomeDialog').open){
+    await loadIncome();
+  }
+};
+
+async function openIncome(){
+  const aktuellesJahr=new Date().getFullYear();
+
+  $('incomeYear').innerHTML='';
+
+  for(let jahr=aktuellesJahr;jahr>=2024;jahr--){
+    $('incomeYear').insertAdjacentHTML(
+      'beforeend',
+      `<option value="${jahr}">${jahr}</option>`
+    );
+  }
+
+  $('incomeYear').value=String(aktuellesJahr);
+
+  $('incomeDialog').showModal();
+
+  await loadVerguetungssaetze();
+  await loadIncome();
+}
+
+async function loadIncome(){
+  $('incomeContent').innerHTML=
+    '<p class="muted">Auswertung wird erstellt …</p>';
+
+  const jahr=$('incomeYear').value;
+
+  const {data,error}=await sb
+    .from('dokumentationen')
+    .select('id,client_id,datum,dauer_minuten,fls,leistungsart,ort_der_leistung')
+    .gte('datum',jahr+'-01-01')
+    .lt('datum',(Number(jahr)+1)+'-01-01')
+    .order('datum',{ascending:true});
+
+  if(error){
+    $('incomeContent').innerHTML='';
+    toast('Einnahmen konnten nicht geladen werden: '+error.message);
+    return;
+  }
+
+  renderIncome(data||[],jahr);
+}
+
+function renderIncome(eintraege,jahr){
+  if(!eintraege.length){
+    $('incomeContent').innerHTML=
+      '<p class="muted">Für '+esc(jahr)+' sind keine Termine erfasst.</p>';
+    return;
+  }
+
+  const fehlendeSaetze=[];
+
+  const kennung=clientId=>{
+    const c=clients.find(x=>String(x.id)===String(clientId));
+    return c?(c.client_code||'ohne Kennung'):'Unbekannt';
+  };
+
+  // Monat -> Kennung -> Werte
+  const monate={};
+
+  for(const eintrag of eintraege){
+    const monat=String(eintrag.datum).slice(0,7);
+    const key=kennung(eintrag.client_id);
+
+    const satzFls=satzFuer('fls',eintrag.datum);
+    const satzWeg=satzFuer('wegepauschale',eintrag.datum);
+
+    if(satzFls==null&&!fehlendeSaetze.includes('FLS')){
+      fehlendeSaetze.push('FLS');
+    }
+
+    if(satzWeg==null&&!fehlendeSaetze.includes('Wegepauschale')){
+      fehlendeSaetze.push('Wegepauschale');
+    }
+
+    const fls=docFlsWert(eintrag);
+    const wege=hatWegepauschale(eintrag)?1:0;
+
+    if(!monate[monat])monate[monat]={};
+
+    if(!monate[monat][key]){
+      monate[monat][key]={
+        fls:0,wege:0,euroFls:0,euroWege:0,termine:0
+      };
+    }
+
+    const z=monate[monat][key];
+
+    z.termine+=1;
+    z.fls+=fls;
+    z.wege+=wege;
+    z.euroFls+=fls*(satzFls||0);
+    z.euroWege+=wege*(satzWeg||0);
+  }
+
+  let jahrFls=0,jahrWege=0,jahrEuroFls=0,jahrEuroWege=0,jahrTermine=0;
+
+  const monatsBloecke=Object.keys(monate).sort().map(monat=>{
+    const zeilen=monate[monat];
+
+    let mFls=0,mWege=0,mEuroFls=0,mEuroWege=0,mTermine=0;
+
+    const kennungen=Object.keys(zeilen).sort();
+
+    const zeilenHtml=kennungen.map(k=>{
+      const z=zeilen[k];
+
+      mFls+=z.fls;
+      mWege+=z.wege;
+      mEuroFls+=z.euroFls;
+      mEuroWege+=z.euroWege;
+      mTermine+=z.termine;
+
+      return `
+        <div class="income-row">
+          <span class="income-key">${esc(k)}</span>
+          <span>${formatFls(z.fls)} FLS</span>
+          <span>${z.wege}&times; Weg</span>
+          <strong>${formatEuro(z.euroFls+z.euroWege)}</strong>
+        </div>
+      `;
+    }).join('');
+
+    jahrFls+=mFls;
+    jahrWege+=mWege;
+    jahrEuroFls+=mEuroFls;
+    jahrEuroWege+=mEuroWege;
+    jahrTermine+=mTermine;
+
+    return `
+      <div class="doc-item">
+        <h3>${esc(monatLabel(monat))}</h3>
+
+        <div class="income-table">
+          ${zeilenHtml}
+        </div>
+
+        <div class="summary-box" style="margin-top:10px">
+          <div class="summary-row">
+            <span>Termine</span>
+            <strong>${mTermine}</strong>
+          </div>
+          <div class="summary-row">
+            <span>FLS gesamt</span>
+            <strong>${formatFls(mFls)} FLS · ${formatEuro(mEuroFls)}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Wegepauschalen</span>
+            <strong>${mWege} · ${formatEuro(mEuroWege)}</strong>
+          </div>
+          <div class="summary-row">
+            <span><strong>Monatssumme</strong></span>
+            <strong>${formatEuro(mEuroFls+mEuroWege)}</strong>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const warnung=fehlendeSaetze.length
+    ? `<div class="monthly-warning">
+         ⚠ Für ${esc(fehlendeSaetze.join(' und '))} fehlt ein gültiger Satz.
+         Die betroffenen Beträge werden mit 0,00 € gerechnet.
+       </div>`
+    : '';
+
+  $('incomeContent').innerHTML=`
+    ${warnung}
+
+    <div class="summary-box">
+      <div class="summary-row">
+        <span><strong>Jahr ${esc(jahr)}</strong></span>
+        <strong></strong>
+      </div>
+      <div class="summary-row">
+        <span>Termine</span>
+        <strong>${jahrTermine}</strong>
+      </div>
+      <div class="summary-row">
+        <span>FLS gesamt</span>
+        <strong>${formatFls(jahrFls)} FLS · ${formatEuro(jahrEuroFls)}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Wegepauschalen</span>
+        <strong>${jahrWege} · ${formatEuro(jahrEuroWege)}</strong>
+      </div>
+      <div class="summary-row">
+        <span><strong>Jahressumme</strong></span>
+        <strong>${formatEuro(jahrEuroFls+jahrEuroWege)}</strong>
+      </div>
+    </div>
+
+    ${monatsBloecke}
+  `;
+}
+
+$('allIncome').onclick=openIncome;
+$('closeIncome').onclick=()=>$('incomeDialog').close();
+$('incomeYear').onchange=loadIncome;
 
 $('allExpenses').onclick=openExpenses;
 $('closeExpenses').onclick=()=>$('expensesDialog').close();
