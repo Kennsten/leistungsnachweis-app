@@ -421,14 +421,46 @@
         const mmProPixel=nutzBreite/bild.width;
         const seitenHoehePixel=Math.floor(nutzHoehe/mmProPixel);
 
+        // Zulaessige Schnittkanten: jeweils der Beginn eines Blocks.
+        // So wird nie mitten durch eine Dokumentation getrennt.
+        const massstab=bild.width/blatt.offsetWidth;
+        const blattOben=blatt.getBoundingClientRect().top+window.scrollY;
+
+        const kanten=[0];
+
+        blatt.querySelectorAll('.entry, .footnote').forEach(block=>{
+          const oben=
+            block.getBoundingClientRect().top+window.scrollY-blattOben;
+
+          const kante=Math.round(oben*massstab);
+
+          if(kante>0&&kante<bild.height){
+            kanten.push(kante);
+          }
+        });
+
+        kanten.push(bild.height);
+
         let obenPixel=0;
         let seite=0;
 
         while(obenPixel<bild.height){
-          const teilHoehe=Math.min(
-            seitenHoehePixel,
-            bild.height-obenPixel
-          );
+          const maximum=obenPixel+seitenHoehePixel;
+
+          // groesste Blockgrenze suchen, die noch auf die Seite passt
+          let unten=bild.height;
+
+          if(maximum<bild.height){
+            const passende=kanten.filter(
+              k=>k>obenPixel&&k<=maximum
+            );
+
+            unten=passende.length
+              ? Math.max.apply(null,passende)
+              : maximum;
+          }
+
+          const teilHoehe=unten-obenPixel;
 
           const teil=document.createElement('canvas');
           teil.width=bild.width;
@@ -454,7 +486,7 @@
             teilHoehe*mmProPixel
           );
 
-          obenPixel+=teilHoehe;
+          obenPixel=unten;
           seite++;
         }
 
