@@ -1431,6 +1431,46 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="stopManagerList"></div>
 </dialog>
 
+<dialog id="docRangeDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumentationen drucken</div>
+      <h2 id="docRangeClientName">Zeitraum wählen</h2>
+    </div>
+    <button type="button" id="closeDocRange" class="secondary">Schließen</button>
+  </div>
+
+  <div class="actions" style="margin:14px 0">
+    <button type="button" id="docRangeAll" class="secondary">
+      Alle Dokumentationen
+    </button>
+  </div>
+
+  <div class="grid">
+    <label>Von Monat
+      <input id="docRangeFrom" type="month">
+    </label>
+
+    <label>Bis Monat
+      <input id="docRangeTo" type="month">
+    </label>
+  </div>
+
+  <div class="actions" style="margin-top:6px">
+    <button type="button" id="docRangeYear" class="secondary">
+      Ganzes Jahr übernehmen
+    </button>
+  </div>
+
+  <div id="docRangeInfo" class="summary-box"></div>
+
+  <div class="actions">
+    <button type="button" id="docRangeStart" class="primary">
+      Übersicht öffnen
+    </button>
+  </div>
+</dialog>
+
 <dialog id="expensesDialog">
   <div class="top">
     <div>
@@ -4078,26 +4118,159 @@ $('closeDocs').onclick=()=>{
 };
 $('newDoc').onclick=()=>openDocForm();
 
+const MONATSNAMEN=[
+  'Januar','Februar','März','April','Mai','Juni',
+  'Juli','August','September','Oktober','November','Dezember'
+];
+
+function monatLabel(wert){
+  if(!wert)return '';
+
+  const [jahr,monat]=String(wert).split('-');
+
+  return MONATSNAMEN[Number(monat)-1]+' '+jahr;
+}
+
+function docsImZeitraum(von,bis){
+  const sortiert=docs
+    .slice()
+    .sort((a,b)=>String(a.datum).localeCompare(String(b.datum)));
+
+  if(!von&&!bis)return sortiert;
+
+  return sortiert.filter(d=>{
+    const monat=String(d.datum||'').slice(0,7);
+
+    if(von&&monat<von)return false;
+    if(bis&&monat>bis)return false;
+
+    return true;
+  });
+}
+
+function updateDocRangeInfo(){
+  const von=$('docRangeFrom').value;
+  const bis=$('docRangeTo').value;
+
+  if(von&&bis&&von>bis){
+    $('docRangeInfo').innerHTML=
+      '<div class="monthly-warning">'+
+      '⚠ Der Startmonat liegt nach dem Endmonat.'+
+      '</div>';
+    return;
+  }
+
+  const treffer=docsImZeitraum(von,bis);
+
+  const zeitraumText=(!von&&!bis)
+    ? 'Alle Dokumentationen'
+    : (von===bis&&von)
+      ? monatLabel(von)
+      : [monatLabel(von)||'Anfang','bis',monatLabel(bis)||'Ende'].join(' ');
+
+  const minuten=treffer.reduce(
+    (summe,d)=>summe+Number(d.dauer_minuten||0),
+    0
+  );
+
+  $('docRangeInfo').innerHTML=`
+    <div class="summary-row">
+      <span>Zeitraum</span>
+      <strong>${esc(zeitraumText)}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Termine</span>
+      <strong>${treffer.length}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Gesamt-FLS</span>
+      <strong>${formatFls(summeDocFls(treffer))} FLS</strong>
+    </div>
+  `;
+}
+
+function starteDocPrint(von,bis){
+  const treffer=docsImZeitraum(von,bis);
+
+  if(!treffer.length){
+    toast('Für diesen Zeitraum gibt es keine Dokumentationen.');
+    return;
+  }
+
+  const zeitraum=(!von&&!bis)
+    ? formatDate(treffer[0].datum)+' bis '+
+      formatDate(treffer[treffer.length-1].datum)
+    : (von===bis&&von)
+      ? monatLabel(von)
+      : [monatLabel(von)||'Anfang','bis',monatLabel(bis)||'Ende'].join(' ');
+
+  $('docRangeDialog').close();
+
+  openDocPrint(
+    buildDocPayload(activeDocsClient,treffer,zeitraum)
+  );
+}
+
 $('printDocs').onclick=()=>{
   if(!activeDocsClient){
     toast('Kein Klient ausgewählt.');
     return;
   }
 
+  if(!docs.length){
+    toast('Für diesen Klienten gibt es noch keine Dokumentationen.');
+    return;
+  }
+
   const sortiert=docs
     .slice()
-    .sort((a,b)=>
-      String(a.datum).localeCompare(String(b.datum))
-    );
+    .sort((a,b)=>String(a.datum).localeCompare(String(b.datum)));
 
-  const zeitraum=sortiert.length
-    ? formatDate(sortiert[0].datum)+' bis '+
-      formatDate(sortiert[sortiert.length-1].datum)
-    : 'Gesamter Zeitraum';
+  $('docRangeClientName').textContent=activeDocsClient.name;
+  $('docRangeFrom').value=String(sortiert[0].datum).slice(0,7);
+  $('docRangeTo').value=
+    String(sortiert[sortiert.length-1].datum).slice(0,7);
 
-  openDocPrint(
-    buildDocPayload(activeDocsClient,sortiert,zeitraum)
-  );
+  updateDocRangeInfo();
+  $('docRangeDialog').showModal();
+};
+
+$('closeDocRange').onclick=()=>$('docRangeDialog').close();
+$('docRangeFrom').onchange=updateDocRangeInfo;
+$('docRangeTo').onchange=updateDocRangeInfo;
+
+$('docRangeYear').onclick=()=>{
+  const basis=$('docRangeFrom').value||$('docRangeTo').value;
+
+  if(!basis){
+    toast('Bitte zuerst einen Monat auswählen.');
+    return;
+  }
+
+  const jahr=basis.slice(0,4);
+
+  $('docRangeFrom').value=jahr+'-01';
+  $('docRangeTo').value=jahr+'-12';
+
+  updateDocRangeInfo();
+};
+
+$('docRangeAll').onclick=()=>{
+  $('docRangeFrom').value='';
+  $('docRangeTo').value='';
+  updateDocRangeInfo();
+};
+
+$('docRangeStart').onclick=()=>{
+  const von=$('docRangeFrom').value;
+  const bis=$('docRangeTo').value;
+
+  if(von&&bis&&von>bis){
+    toast('Der Startmonat liegt nach dem Endmonat.');
+    return;
+  }
+
+  starteDocPrint(von,bis);
 };
 $('closeDocForm').onclick=()=>{
   pendingTripForDoc=null;
