@@ -1076,6 +1076,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       class="secondary">
       Einnahmen
     </button>
+
+    <button
+      type="button"
+      id="backupData"
+      class="secondary">
+      Datensicherung
+    </button>
   </div>
 
   <div class="top">
@@ -6268,6 +6275,100 @@ function renderIncome(eintraege,jahr){
     ${monatsBloecke}
   `;
 }
+
+/* ---------- Datensicherung ---------- */
+
+const SICHERUNG_TABELLEN=[
+  'clients',
+  'bewilligungen',
+  'dokumentationen',
+  'trip_entries',
+  'trip_stop_suggestions',
+  'route_distances',
+  'ausgaben',
+  'verguetungssaetze'
+];
+
+async function erstelleSicherung(){
+  const knopf=$('backupData');
+
+  if(!user){
+    toast('Bitte zuerst anmelden.');
+    return;
+  }
+
+  const beschriftung=knopf.textContent;
+  knopf.disabled=true;
+  knopf.textContent='Sicherung läuft …';
+
+  try{
+    const inhalt={
+      erstelltAm:new Date().toISOString(),
+      appVersion:'1.0',
+      konto:user.email||'',
+      tabellen:{}
+    };
+
+    const fehler=[];
+
+    for(const tabelle of SICHERUNG_TABELLEN){
+      const {data,error}=await sb.from(tabelle).select('*');
+
+      if(error){
+        fehler.push(tabelle);
+        inhalt.tabellen[tabelle]=[];
+        continue;
+      }
+
+      inhalt.tabellen[tabelle]=data||[];
+    }
+
+    const anzahl=Object.keys(inhalt.tabellen).reduce(
+      (summe,t)=>summe+inhalt.tabellen[t].length,
+      0
+    );
+
+    if(!anzahl){
+      toast('Es wurden keine Daten gefunden.');
+      return;
+    }
+
+    const text=JSON.stringify(inhalt,null,2);
+
+    const datei=new Blob([text],{
+      type:'application/json;charset=utf-8'
+    });
+
+    const adresse=URL.createObjectURL(datei);
+    const verweis=document.createElement('a');
+
+    verweis.href=adresse;
+    verweis.download=
+      'Datensicherung '+todayIso()+'.json';
+
+    document.body.appendChild(verweis);
+    verweis.click();
+    document.body.removeChild(verweis);
+
+    setTimeout(()=>URL.revokeObjectURL(adresse),4000);
+
+    if(fehler.length){
+      toast(
+        'Sicherung erstellt, aber diese Bereiche fehlen: '+
+        fehler.join(', ')
+      );
+    }else{
+      toast(anzahl+' Datensätze gesichert');
+    }
+  }catch(problem){
+    toast('Die Sicherung ist fehlgeschlagen: '+problem.message);
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent=beschriftung;
+  }
+}
+
+$('backupData').onclick=erstelleSicherung;
 
 $('allIncome').onclick=openIncome;
 $('closeIncome').onclick=()=>$('incomeDialog').close();
