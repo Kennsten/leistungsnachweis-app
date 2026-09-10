@@ -3814,7 +3814,6 @@ approvals.sort((a,b)=>
   )
 );
 
-});
   const {data:docData,error:docError}=await sb
     .from('dokumentationen')
     .select('bewilligung_id,datum,dauer_minuten,fls')
