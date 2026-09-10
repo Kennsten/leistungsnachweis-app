@@ -6170,7 +6170,8 @@ function renderIncome(eintraege,jahr){
 
   let jahrFls=0,jahrWege=0,jahrEuroFls=0,jahrEuroWege=0,jahrTermine=0;
 
-  const monatsBloecke=Object.keys(monate).sort().map(monat=>{
+  const monatsBloecke=Object.keys(monate).sort().reverse().map(monat=>{
+
     const zeilen=monate[monat];
 
     let mFls=0,mWege=0,mEuroFls=0,mEuroWege=0,mTermine=0;
