@@ -992,10 +992,73 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   }
 }
 
+/* ---------- Fortschrittsanzeige ---------- */
+
+.busy-bar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:200;
+  padding:calc(env(safe-area-inset-top,0px) + 6px) 14px 6px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+  font-size:.82rem;
+  font-weight:600;
+  color:var(--ink);
+  pointer-events:none;
+  transition:opacity .2s;
+}
+
+.busy-bar.hidden{
+  display:block!important;
+  opacity:0;
+}
+
+.busy-track{
+  position:relative;
+  height:4px;
+  margin-bottom:5px;
+  border-radius:999px;
+  background:var(--track);
+  overflow:hidden;
+}
+
+.busy-fill{
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  width:35%;
+  border-radius:999px;
+  background:var(--muted);
+  animation:busy-lauf 1.1s ease-in-out infinite;
+}
+
+.busy-bar.busy-save .busy-fill{
+  background:#C85A3E;
+}
+
+.busy-bar.busy-step .busy-fill{
+  animation:none;
+  width:var(--busy-prozent,0%);
+  transition:width .25s ease;
+}
+
+@keyframes busy-lauf{
+  0%{left:-35%}
+  100%{left:100%}
+}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
+
+<div id="busyBar" class="busy-bar hidden" aria-live="polite">
+  <div class="busy-track"><div class="busy-fill"></div></div>
+  <span id="busyText"></span>
+</div>
 
 <section id="auth" class="wrap center">
   <div class="card">
@@ -1785,7 +1848,112 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 const SUPABASE_URL='https://bhrygputoysiwchzlygn.supabase.co';
 const SUPABASE_KEY='sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+/* ---------- Fortschrittsanzeige: Logik ---------- */
+
+const busy={laden:0,speichern:0,schritt:null,zeitgeber:null,sichtbar:false};
+
+function busyZeichnen(){
+  const leiste=document.getElementById('busyBar');
+  const text=document.getElementById('busyText');
+
+  if(!leiste||!text)return;
+
+  const aktiv=busy.schritt||busy.speichern>0||busy.laden>0;
+
+  if(!aktiv){
+    clearTimeout(busy.zeitgeber);
+    busy.zeitgeber=null;
+    busy.sichtbar=false;
+    leiste.classList.add('hidden');
+    return;
+  }
+
+  leiste.classList.toggle('busy-save',!busy.schritt&&busy.speichern>0);
+  leiste.classList.toggle('busy-step',Boolean(busy.schritt));
+
+  if(busy.schritt){
+    const s=busy.schritt;
+    const prozent=s.gesamt?Math.round(s.fertig/s.gesamt*100):0;
+
+    leiste.style.setProperty('--busy-prozent',prozent+'%');
+    text.textContent=s.text+' · '+s.fertig+' von '+s.gesamt+' ('+prozent+' %)';
+  }else if(busy.speichern>0){
+    text.textContent='Wird gespeichert …';
+  }else{
+    text.textContent='Daten werden geladen …';
+  }
+
+  if(busy.sichtbar){
+    leiste.classList.remove('hidden');
+    return;
+  }
+
+  if(!busy.zeitgeber){
+    busy.zeitgeber=setTimeout(()=>{
+      busy.zeitgeber=null;
+
+      if(busy.schritt||busy.speichern>0||busy.laden>0){
+        busy.sichtbar=true;
+        leiste.classList.remove('hidden');
+      }
+    },250);
+  }
+}
+
+function busyFetch(eingabe,optionen){
+  const methode=String(
+    (optionen&&optionen.method)||(eingabe&&eingabe.method)||'GET'
+  ).toUpperCase();
+
+  const adresse=String(eingabe&&eingabe.url?eingabe.url:eingabe);
+
+  const art=(methode==='GET'||methode==='HEAD'||adresse.includes('/auth/v1/'))
+    ? 'laden'
+    : 'speichern';
+
+  busy[art]++;
+  busyZeichnen();
+
+  return fetch(eingabe,optionen).finally(()=>{
+    busy[art]=Math.max(0,busy[art]-1);
+    busyZeichnen();
+  });
+}
+
+function setzeSchritt(fertig,gesamt,text){
+  busy.schritt={fertig,gesamt,text};
+  busyZeichnen();
+}
+
+function endeSchritt(){
+  busy.schritt=null;
+  busyZeichnen();
+}
+
+async function mitSchritten(text,anfragen){
+  let fertig=0;
+  const gesamt=anfragen.length;
+
+  setzeSchritt(0,gesamt,text);
+
+  try{
+    return await Promise.all(
+      anfragen.map(anfrage=>
+        Promise.resolve(anfrage).then(ergebnis=>{
+          fertig++;
+          setzeSchritt(fertig,gesamt,text);
+          return ergebnis;
+        })
+      )
+    );
+  }finally{
+    endeSchritt();
+  }
+}
+
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+  global:{fetch:busyFetch}
+});
 const $=id=>document.getElementById(id);
 
 let user=null;
@@ -5123,7 +5291,7 @@ $('monthlyMonth').onchange=async()=>{
     approvalResult,
     tripResult,
     expenseResult
-  ]=await Promise.all([
+  ]=await mitSchritten('Monatsnachweis',[
     sb
       .from('dokumentationen')
       .select('*')
@@ -6343,6 +6511,12 @@ async function erstelleSicherung(){
     const fehler=[];
 
     for(const tabelle of SICHERUNG_TABELLEN){
+      setzeSchritt(
+        SICHERUNG_TABELLEN.indexOf(tabelle),
+        SICHERUNG_TABELLEN.length,
+        'Datensicherung'
+      );
+
       const {data,error}=await sb.from(tabelle).select('*');
 
       if(error){
@@ -6353,6 +6527,12 @@ async function erstelleSicherung(){
 
       inhalt.tabellen[tabelle]=data||[];
     }
+
+    setzeSchritt(
+      SICHERUNG_TABELLEN.length,
+      SICHERUNG_TABELLEN.length,
+      'Datensicherung'
+    );
 
     const anzahl=Object.keys(inhalt.tabellen).reduce(
       (summe,t)=>summe+inhalt.tabellen[t].length,
@@ -6394,6 +6574,7 @@ async function erstelleSicherung(){
   }catch(problem){
     toast('Die Sicherung ist fehlgeschlagen: '+problem.message);
   }finally{
+    endeSchritt();
     knopf.disabled=false;
     knopf.textContent=beschriftung;
   }
