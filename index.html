@@ -1565,6 +1565,57 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="stopManagerList"></div>
 </dialog>
 
+<dialog id="cloudDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumente in pCloud</div>
+      <h2 id="cloudClientName"></h2>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="cloudRefresh" class="secondary">
+        Aktualisieren
+      </button>
+      <button type="button" id="closeCloud" class="secondary">
+        Schließen
+      </button>
+    </div>
+  </div>
+
+  <div id="cloudConnect" class="summary-box hidden">
+    <p>
+      Die App ist noch nicht mit pCloud verbunden.
+      Nach dem Verbinden siehst du hier die Dateien im Ordner
+      dieses Klienten.
+    </p>
+    <div class="actions">
+      <button type="button" id="cloudLogin" class="primary">
+        Mit pCloud verbinden
+      </button>
+    </div>
+  </div>
+
+  <div id="cloudFolderPick" class="hidden">
+    <p class="muted">
+      Welcher Ordner gehört zu diesem Klienten?
+    </p>
+    <div id="cloudFolderList"></div>
+  </div>
+
+  <div id="cloudFiles"></div>
+
+  <div id="cloudActions" class="actions hidden" style="margin-top:14px">
+    <button type="button" id="cloudUpload" class="primary">
+      Datei hochladen
+    </button>
+    <button type="button" id="cloudUnlink" class="secondary">
+      Ordner wechseln
+    </button>
+  </div>
+
+  <input id="cloudFileInput" type="file" class="hidden">
+</dialog>
+
 <dialog id="snippetDialog">
   <div class="top">
     <div>
@@ -2505,6 +2556,7 @@ function renderClients(){
           <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
           <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
           <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
+          <button class="secondary cloud" data-id="${c.id}">Dokumente</button>
         </div>
       </div>
     `;
@@ -2528,6 +2580,7 @@ function renderClients(){
   document.querySelectorAll('.approvals').forEach(b=>b.onclick=()=>openApprovals(b.dataset.id));
   document.querySelectorAll('.trips').forEach(b=>b.onclick=()=>openTrips(b.dataset.id));
   document.querySelectorAll('.monthly').forEach(b=>b.onclick=()=>openMonthly(b.dataset.id));
+  document.querySelectorAll('.cloud').forEach(b=>b.onclick=()=>openCloud(b.dataset.id));
 }
 
 function openClient(id=''){
@@ -5604,6 +5657,430 @@ $('deleteApproval').onclick=async()=>{
   $('approvalFormDialog').close();toast('Bewilligung gelöscht');await loadApprovals();
 };
 
+/* ---------- pCloud: Dokumente ---------- */
+
+const PCLOUD_CLIENT_ID='QD8SPQBuFpL';
+const PCLOUD_HOST='eapi.pcloud.com';
+const PCLOUD_SPEICHER='pcloud_token';
+
+let pcloudToken=null;
+let activeCloudClient=null;
+let cloudFolders=[];
+let cloudFiles=[];
+
+function pcloudAdresse(){
+  return window.location.origin+'/index.html';
+}
+
+function pcloudTokenLaden(){
+  try{
+    pcloudToken=localStorage.getItem(PCLOUD_SPEICHER)||null;
+  }catch(fehler){
+    pcloudToken=null;
+  }
+}
+
+function pcloudTokenSpeichern(wert){
+  pcloudToken=wert||null;
+
+  try{
+    if(wert){
+      localStorage.setItem(PCLOUD_SPEICHER,wert);
+    }else{
+      localStorage.removeItem(PCLOUD_SPEICHER);
+    }
+  }catch(fehler){
+    // nicht speicherbar, gilt nur für diese Sitzung
+  }
+}
+
+function pcloudRueckkehrPruefen(){
+  const hash=String(window.location.hash||'');
+
+  if(!hash.includes('access_token='))return;
+
+  const werte=new URLSearchParams(hash.replace(/^#/,''));
+  const token=werte.get('access_token');
+
+  if(token){
+    pcloudTokenSpeichern(token);
+
+    history.replaceState(
+      null,
+      '',
+      window.location.pathname+window.location.search
+    );
+
+    toast('Mit pCloud verbunden');
+  }
+}
+
+function pcloudAnmelden(){
+  const adresse=
+    'https://my.pcloud.com/oauth2/authorize'+
+    '?client_id='+encodeURIComponent(PCLOUD_CLIENT_ID)+
+    '&response_type=token'+
+    '&redirect_uri='+encodeURIComponent(pcloudAdresse());
+
+  window.location.href=adresse;
+}
+
+async function pcloudAnfrage(methode,parameter={}){
+  if(!pcloudToken){
+    throw new Error('Nicht mit pCloud verbunden.');
+  }
+
+  const werte=new URLSearchParams(parameter);
+  werte.set('access_token',pcloudToken);
+
+  const antwort=await busyFetch(
+    'https://'+PCLOUD_HOST+'/'+methode+'?'+werte.toString()
+  );
+
+  const ergebnis=await antwort.json();
+
+  if(ergebnis.result!==0){
+    if(ergebnis.result===1000||ergebnis.result===2000||ergebnis.result===2094){
+      pcloudTokenSpeichern(null);
+      throw new Error('Die Verbindung zu pCloud ist abgelaufen.');
+    }
+
+    throw new Error(ergebnis.error||('pCloud-Fehler '+ergebnis.result));
+  }
+
+  return ergebnis;
+}
+
+function dateiGroesse(bytes){
+  const zahl=Number(bytes||0);
+
+  if(zahl<1024)return zahl+' B';
+  if(zahl<1024*1024)return Math.round(zahl/1024)+' KB';
+
+  return (zahl/(1024*1024)).toFixed(1).replace('.',',')+' MB';
+}
+
+function cloudDatum(wert){
+  if(!wert)return '';
+
+  const d=new Date(wert);
+
+  if(isNaN(d))return '';
+
+  return [
+    String(d.getDate()).padStart(2,'0'),
+    String(d.getMonth()+1).padStart(2,'0'),
+    d.getFullYear()
+  ].join('.');
+}
+
+async function openCloud(clientId){
+  activeCloudClient=clients.find(
+    c=>String(c.id)===String(clientId)
+  )||null;
+
+  if(!activeCloudClient){
+    toast('Klient nicht gefunden.');
+    return;
+  }
+
+  $('cloudClientName').textContent=activeCloudClient.name;
+  $('cloudDialog').showModal();
+
+  await cloudAnzeigen();
+}
+
+async function cloudAnzeigen(){
+  const verbinden=$('cloudConnect');
+  const auswahl=$('cloudFolderPick');
+  const liste=$('cloudFiles');
+  const aktionen=$('cloudActions');
+
+  verbinden.classList.add('hidden');
+  auswahl.classList.add('hidden');
+  aktionen.classList.add('hidden');
+  liste.innerHTML='';
+
+  if(!pcloudToken){
+    verbinden.classList.remove('hidden');
+    return;
+  }
+
+  if(!activeCloudClient.pcloud_folder_id){
+    await cloudOrdnerAnbieten();
+    return;
+  }
+
+  await cloudDateienLaden();
+}
+
+async function cloudOrdnerAnbieten(){
+  const auswahl=$('cloudFolderPick');
+
+  auswahl.classList.remove('hidden');
+  $('cloudFolderList').innerHTML=
+    '<p class="muted">Ordner werden geladen …</p>';
+
+  try{
+    const ergebnis=await pcloudAnfrage('listfolder',{folderid:0});
+
+    cloudFolders=(ergebnis.metadata&&ergebnis.metadata.contents||[])
+      .filter(e=>e.isfolder)
+      .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
+
+    if(!cloudFolders.length){
+      $('cloudFolderList').innerHTML=
+        '<p class="muted">Im App-Ordner liegen noch keine Unterordner. '+
+        'Lege in pCloud je Klient einen Ordner an.</p>';
+      return;
+    }
+
+    $('cloudFolderList').innerHTML=cloudFolders.map(f=>`
+      <div class="doc-item">
+        <div class="doc-head">
+          <div><strong>${esc(f.name)}</strong></div>
+          <button
+            type="button"
+            class="primary pickFolder"
+            data-id="${esc(f.folderid)}"
+            data-name="${esc(f.name)}">
+            Auswählen
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.pickFolder').forEach(
+      b=>b.onclick=()=>cloudOrdnerVerknuepfen(
+        b.dataset.id,
+        b.dataset.name
+      )
+    );
+  }catch(fehler){
+    $('cloudFolderList').innerHTML='';
+    toast(fehler.message);
+
+    if(!pcloudToken)await cloudAnzeigen();
+  }
+}
+
+async function cloudOrdnerVerknuepfen(folderId,name){
+  const {error}=await sb
+    .from('clients')
+    .update({
+      pcloud_folder_id:Number(folderId),
+      pcloud_folder_name:name
+    })
+    .eq('id',activeCloudClient.id);
+
+  if(error){
+    toast('Ordner konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  activeCloudClient.pcloud_folder_id=Number(folderId);
+  activeCloudClient.pcloud_folder_name=name;
+
+  toast('Ordner "'+name+'" verknüpft');
+
+  await loadClients();
+
+  activeCloudClient=clients.find(
+    c=>String(c.id)===String(activeCloudClient.id)
+  )||activeCloudClient;
+
+  await cloudAnzeigen();
+}
+
+async function cloudDateienLaden(){
+  const liste=$('cloudFiles');
+
+  liste.innerHTML='<p class="muted">Dateien werden geladen …</p>';
+
+  try{
+    const ergebnis=await pcloudAnfrage('listfolder',{
+      folderid:activeCloudClient.pcloud_folder_id
+    });
+
+    cloudFiles=(ergebnis.metadata&&ergebnis.metadata.contents||[])
+      .filter(e=>!e.isfolder)
+      .sort((a,b)=>
+        String(b.modified||'').localeCompare(String(a.modified||''))
+      );
+
+    $('cloudActions').classList.remove('hidden');
+
+    const kopf=`
+      <div class="summary-box">
+        <div class="summary-row">
+          <span>Ordner</span>
+          <strong>${esc(activeCloudClient.pcloud_folder_name||'')}</strong>
+        </div>
+        <div class="summary-row">
+          <span>Dateien</span>
+          <strong>${cloudFiles.length}</strong>
+        </div>
+      </div>
+    `;
+
+    if(!cloudFiles.length){
+      liste.innerHTML=kopf+
+        '<p class="muted">In diesem Ordner liegen noch keine Dateien.</p>';
+      return;
+    }
+
+    liste.innerHTML=kopf+cloudFiles.map(f=>`
+      <div class="doc-item">
+        <div class="doc-head">
+          <div>
+            <h3>${esc(f.name)}</h3>
+            <div class="meta">
+              ${esc(cloudDatum(f.modified))} · ${esc(dateiGroesse(f.size))}
+            </div>
+          </div>
+          <div class="actions">
+            <button
+              type="button"
+              class="secondary openCloudFile"
+              data-id="${esc(f.fileid)}">
+              Öffnen
+            </button>
+            <button
+              type="button"
+              class="danger deleteCloudFile"
+              data-id="${esc(f.fileid)}"
+              data-name="${esc(f.name)}">
+              Löschen
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.openCloudFile').forEach(
+      b=>b.onclick=()=>cloudDateiOeffnen(b.dataset.id)
+    );
+
+    document.querySelectorAll('.deleteCloudFile').forEach(
+      b=>b.onclick=()=>cloudDateiLoeschen(b.dataset.id,b.dataset.name)
+    );
+  }catch(fehler){
+    liste.innerHTML='';
+    toast(fehler.message);
+
+    if(!pcloudToken)await cloudAnzeigen();
+  }
+}
+
+async function cloudDateiOeffnen(fileId){
+  const fenster=window.open('','_blank');
+
+  try{
+    const ergebnis=await pcloudAnfrage('getfilelink',{
+      fileid:fileId,
+      forcedownload:0
+    });
+
+    const gastgeber=(ergebnis.hosts&&ergebnis.hosts[0])||'';
+    const adresse='https://'+gastgeber+ergebnis.path;
+
+    if(fenster){
+      fenster.location.href=adresse;
+    }else{
+      window.open(adresse,'_blank');
+    }
+  }catch(fehler){
+    if(fenster)fenster.close();
+    toast(fehler.message);
+  }
+}
+
+async function cloudDateiLoeschen(fileId,name){
+  if(!confirm('Datei "'+name+'" wirklich aus pCloud löschen?'))return;
+
+  try{
+    await pcloudAnfrage('deletefile',{fileid:fileId});
+    toast('Datei gelöscht');
+    await cloudDateienLaden();
+  }catch(fehler){
+    toast(fehler.message);
+  }
+}
+
+async function cloudDateiHochladen(datei){
+  if(!datei)return;
+
+  const knopf=$('cloudUpload');
+  const beschriftung=knopf.textContent;
+
+  knopf.disabled=true;
+  knopf.textContent='Wird hochgeladen …';
+
+  try{
+    const werte=new URLSearchParams({
+      access_token:pcloudToken,
+      folderid:activeCloudClient.pcloud_folder_id,
+      filename:datei.name,
+      nopartial:1
+    });
+
+    const formular=new FormData();
+    formular.append('file',datei,datei.name);
+
+    const antwort=await busyFetch(
+      'https://'+PCLOUD_HOST+'/uploadfile?'+werte.toString(),
+      {method:'POST',body:formular}
+    );
+
+    const ergebnis=await antwort.json();
+
+    if(ergebnis.result!==0){
+      throw new Error(ergebnis.error||('pCloud-Fehler '+ergebnis.result));
+    }
+
+    toast('Datei hochgeladen');
+    await cloudDateienLaden();
+  }catch(fehler){
+    toast('Hochladen fehlgeschlagen: '+fehler.message);
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent=beschriftung;
+    $('cloudFileInput').value='';
+  }
+}
+
+$('closeCloud').onclick=()=>{
+  $('cloudDialog').close();
+  activeCloudClient=null;
+};
+
+$('cloudLogin').onclick=pcloudAnmelden;
+$('cloudRefresh').onclick=()=>cloudAnzeigen();
+$('cloudUpload').onclick=()=>$('cloudFileInput').click();
+
+$('cloudFileInput').onchange=()=>
+  cloudDateiHochladen($('cloudFileInput').files[0]);
+
+$('cloudUnlink').onclick=async()=>{
+  if(!confirm('Verknüpfung zu diesem Ordner lösen? Die Dateien bleiben in pCloud.'))return;
+
+  const {error}=await sb
+    .from('clients')
+    .update({pcloud_folder_id:null,pcloud_folder_name:null})
+    .eq('id',activeCloudClient.id);
+
+  if(error){
+    toast('Konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  activeCloudClient.pcloud_folder_id=null;
+  activeCloudClient.pcloud_folder_name=null;
+
+  await loadClients();
+  await cloudAnzeigen();
+};
+
 function istWiederherstellung(){
   return window.location.hash.includes('type=recovery');
 }
@@ -7013,6 +7490,8 @@ function ladeDesign(){
 $('themeSelect').onchange=()=>setzeDesign($('themeSelect').value);
 
 ladeDesign();
+pcloudTokenLaden();
+pcloudRueckkehrPruefen();
 fillTimeOptions();
 init();
 </script>
