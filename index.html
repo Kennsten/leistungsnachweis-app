@@ -253,6 +253,18 @@ textarea{resize:vertical}
   }
 }
 
+.cloud-open-link{
+  display:inline-block;
+  padding:13px 17px;
+  border-radius:var(--radius-control);
+  background:var(--brand);
+  color:var(--on-brand);
+  font-weight:600;
+  text-align:center;
+  text-decoration:none;
+  flex:1;
+}
+
 .closing-alert strong{
   display:block;
   margin-bottom:4px;
@@ -5958,7 +5970,7 @@ async function cloudDateienLaden(){
     `).join('');
 
     document.querySelectorAll('.openCloudFile').forEach(
-      b=>b.onclick=()=>cloudDateiOeffnen(b.dataset.id)
+      b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.id)
     );
 
     document.querySelectorAll('.deleteCloudFile').forEach(
@@ -5972,8 +5984,11 @@ async function cloudDateienLaden(){
   }
 }
 
-async function cloudDateiOeffnen(fileId){
-  const fenster=window.open('','_blank');
+async function cloudDateiOeffnen(knopf,fileId){
+  const beschriftung=knopf.textContent;
+
+  knopf.disabled=true;
+  knopf.textContent='Öffne …';
 
   try{
     const ergebnis=await pcloudAnfrage('getfilelink',{
@@ -5982,15 +5997,36 @@ async function cloudDateiOeffnen(fileId){
     });
 
     const gastgeber=(ergebnis.hosts&&ergebnis.hosts[0])||'';
+
+    if(!gastgeber||!ergebnis.path){
+      throw new Error('pCloud hat keinen Link geliefert.');
+    }
+
     const adresse='https://'+gastgeber+ergebnis.path;
 
+    // Safari blockiert das Öffnen nach einer Wartezeit.
+    // Deshalb wird aus dem Knopf ein echter Verweis,
+    // den ein zweiter Tipp zuverlässig öffnet.
+    const verweis=document.createElement('a');
+
+    verweis.href=adresse;
+    verweis.target='_blank';
+    verweis.rel='noopener';
+    verweis.className='secondary cloud-open-link';
+    verweis.textContent='Jetzt öffnen';
+
+    knopf.replaceWith(verweis);
+
+    const fenster=window.open(adresse,'_blank');
+
     if(fenster){
-      fenster.location.href=adresse;
+      verweis.textContent='Geöffnet';
     }else{
-      window.open(adresse,'_blank');
+      toast('Bitte auf „Jetzt öffnen" tippen.');
     }
   }catch(fehler){
-    if(fenster)fenster.close();
+    knopf.disabled=false;
+    knopf.textContent=beschriftung;
     toast(fehler.message);
   }
 }
