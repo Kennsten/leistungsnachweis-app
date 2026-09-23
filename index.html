@@ -6011,13 +6011,14 @@ async function cloudDateiOeffnen(knopf,fileId){
 
     verweis.href=adresse;
     verweis.target='_blank';
-    verweis.rel='noopener';
+    verweis.rel='noopener noreferrer';
+    verweis.referrerPolicy='no-referrer';
     verweis.className='secondary cloud-open-link';
     verweis.textContent='Jetzt öffnen';
 
     knopf.replaceWith(verweis);
 
-    const fenster=window.open(adresse,'_blank');
+    const fenster=window.open(adresse,'_blank','noreferrer');
 
     if(fenster){
       verweis.textContent='Geöffnet';
