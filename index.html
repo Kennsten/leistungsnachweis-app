@@ -5991,18 +5991,38 @@ async function cloudDateiOeffnen(knopf,fileId){
   knopf.textContent='Öffne …';
 
   try{
-    const ergebnis=await pcloudAnfrage('getfilelink',{
-      fileid:fileId,
-      forcedownload:0
-    });
+    // pCloud lässt die direkten Download-Links aus einer Webseite
+    // heraus nicht zu. Deshalb wird ein befristeter Freigabelink
+    // erzeugt, der nach zwei Stunden von selbst verfällt.
+    const ablauf=new Date(Date.now()+2*60*60*1000);
 
-    const gastgeber=(ergebnis.hosts&&ergebnis.hosts[0])||'';
+    const pcloudZeit=d=>{
+      const z=n=>String(n).padStart(2,'0');
 
-    if(!gastgeber||!ergebnis.path){
-      throw new Error('pCloud hat keinen Link geliefert.');
+      return d.getUTCFullYear()+'-'+z(d.getUTCMonth()+1)+'-'+
+        z(d.getUTCDate())+'T'+z(d.getUTCHours())+':'+
+        z(d.getUTCMinutes())+':'+z(d.getUTCSeconds())+'+0000';
+    };
+
+    let ergebnis;
+
+    try{
+      ergebnis=await pcloudAnfrage('getfilepublink',{
+        fileid:fileId,
+        expire:pcloudZeit(ablauf)
+      });
+    }catch(problem){
+      // Falls pCloud die Ablaufzeit nicht annimmt,
+      // wird der Link ohne Befristung erzeugt.
+      ergebnis=await pcloudAnfrage('getfilepublink',{fileid:fileId});
+      toast('Hinweis: Der Freigabelink hat keine Ablaufzeit.');
     }
 
-    const adresse='https://'+gastgeber+ergebnis.path;
+    const adresse=ergebnis.link||'';
+
+    if(!adresse){
+      throw new Error('pCloud hat keinen Link geliefert.');
+    }
 
     // Safari blockiert das Öffnen nach einer Wartezeit.
     // Deshalb wird aus dem Knopf ein echter Verweis,
