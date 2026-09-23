@@ -5757,7 +5757,10 @@ async function pcloudAnfrage(methode,parameter={}){
       throw new Error('Die Verbindung zu pCloud ist abgelaufen.');
     }
 
-    throw new Error(ergebnis.error||('pCloud-Fehler '+ergebnis.result));
+    throw new Error(
+      methode+': '+(ergebnis.error||'Fehler')+
+      ' (Code '+ergebnis.result+')'
+    );
   }
 
   return ergebnis;
@@ -6014,8 +6017,15 @@ async function cloudDateiOeffnen(knopf,fileId){
     }catch(problem){
       // Falls pCloud die Ablaufzeit nicht annimmt,
       // wird der Link ohne Befristung erzeugt.
-      ergebnis=await pcloudAnfrage('getfilepublink',{fileid:fileId});
-      toast('Hinweis: Der Freigabelink hat keine Ablaufzeit.');
+      try{
+        ergebnis=await pcloudAnfrage('getfilepublink',{fileid:fileId});
+        toast('Hinweis: Der Freigabelink hat keine Ablaufzeit.');
+      }catch(zweiterVersuch){
+        throw new Error(
+          'mit Ablauf: '+problem.message+
+          ' | ohne Ablauf: '+zweiterVersuch.message
+        );
+      }
     }
 
     const adresse=ergebnis.link||'';
