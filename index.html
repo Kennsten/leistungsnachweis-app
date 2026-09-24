@@ -5745,8 +5745,11 @@ async function pcloudAnfrage(methode,parameter={}){
   const werte=new URLSearchParams(parameter);
   werte.set('access_token',pcloudToken);
 
+  // pCloud prüft bei den Link-Aufrufen die Herkunft der Anfrage
+  // und lehnt Webseiten ab. Deshalb wird sie nicht mitgeschickt.
   const antwort=await busyFetch(
-    'https://'+PCLOUD_HOST+'/'+methode+'?'+werte.toString()
+    'https://'+PCLOUD_HOST+'/'+methode+'?'+werte.toString(),
+    {referrerPolicy:'no-referrer',referrer:''}
   );
 
   const ergebnis=await antwort.json();
@@ -6096,7 +6099,12 @@ async function cloudDateiHochladen(datei){
 
     const antwort=await busyFetch(
       'https://'+PCLOUD_HOST+'/uploadfile?'+werte.toString(),
-      {method:'POST',body:formular}
+      {
+        method:'POST',
+        body:formular,
+        referrerPolicy:'no-referrer',
+        referrer:''
+      }
     );
 
     const ergebnis=await antwort.json();
