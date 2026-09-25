@@ -5769,6 +5769,52 @@ async function pcloudAnfrage(methode,parameter={}){
   return ergebnis;
 }
 
+// Freigabelinks werden nicht vom Browser, sondern über das
+// Hilfsprogramm bei Netlify angefordert (netlify/functions/pcloud-link.mjs).
+// pCloud lehnt diesen Aufruf aus einer Webseite heraus ab (Code 7010).
+async function pcloudLinkAnfrage(parameter={}){
+  if(!pcloudToken){
+    throw new Error('Nicht mit pCloud verbunden.');
+  }
+
+  const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      token:pcloudToken,
+      host:PCLOUD_HOST,
+      fileid:parameter.fileid,
+      expire:parameter.expire||''
+    })
+  });
+
+  let ergebnis;
+
+  try{
+    ergebnis=await antwort.json();
+  }catch(problem){
+    throw new Error('Über Netlify: keine lesbare Antwort (Status '+antwort.status+')');
+  }
+
+  if(ergebnis.fehler){
+    throw new Error('Über Netlify: '+ergebnis.fehler);
+  }
+
+  if(ergebnis.result!==0){
+    if(ergebnis.result===1000||ergebnis.result===2000||ergebnis.result===2094){
+      pcloudTokenSpeichern(null);
+      throw new Error('Die Verbindung zu pCloud ist abgelaufen.');
+    }
+
+    throw new Error(
+      'Über Netlify: '+(ergebnis.error||'Fehler')+
+      ' (Code '+ergebnis.result+')'
+    );
+  }
+
+  return ergebnis;
+}
+
 function dateiGroesse(bytes){
   const zahl=Number(bytes||0);
 
@@ -6013,7 +6059,7 @@ async function cloudDateiOeffnen(knopf,fileId){
     let ergebnis;
 
     try{
-      ergebnis=await pcloudAnfrage('getfilepublink',{
+      ergebnis=await pcloudLinkAnfrage({
         fileid:fileId,
         expire:pcloudZeit(ablauf)
       });
@@ -6021,7 +6067,7 @@ async function cloudDateiOeffnen(knopf,fileId){
       // Falls pCloud die Ablaufzeit nicht annimmt,
       // wird der Link ohne Befristung erzeugt.
       try{
-        ergebnis=await pcloudAnfrage('getfilepublink',{fileid:fileId});
+        ergebnis=await pcloudLinkAnfrage({fileid:fileId});
         toast('Hinweis: Der Freigabelink hat keine Ablaufzeit.');
       }catch(zweiterVersuch){
         throw new Error(
