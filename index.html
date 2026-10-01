@@ -1359,6 +1359,28 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </form>
 </dialog>
 
+<dialog id="docDeleteDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumentation löschen</div>
+      <h2>Verknüpfte Fahrt</h2>
+    </div>
+  </div>
+  <p id="docDeleteText"></p>
+  <p class="muted small" id="docDeleteBelegHinweis"></p>
+  <div class="actions" style="flex-wrap:wrap">
+    <button type="button" id="docDeleteBoth" class="danger">
+      Dokumentation und Fahrt löschen
+    </button>
+    <button type="button" id="docDeleteOnly" class="secondary">
+      Nur Dokumentation löschen
+    </button>
+    <button type="button" id="docDeleteCancel" class="secondary">
+      Abbrechen
+    </button>
+  </div>
+</dialog>
+
 <dialog id="approvalsDialog">
   <div class="top">
     <div>
@@ -4875,12 +4897,111 @@ $('docForm').onsubmit=async e=>{
   }
 };
 
+// Fragt nach, was mit der verknüpften Fahrt geschehen soll.
+// Antwort: 'beide', 'nur' oder null (Abbrechen)
+function frageDokuLoeschen(fahrt,belegAnzahl){
+  return new Promise(resolve=>{
+    const dialog=$('docDeleteDialog');
+
+    $('docDeleteText').textContent=
+      'Zu dieser Dokumentation gehört eine Fahrt vom '+
+      formatDate(fahrt.trip_date)+' ('+formatKm(fahrt.kilometers)+' km'+
+      (fahrt.purpose?', '+fahrt.purpose:'')+'). '+
+      'Soll die Fahrt ebenfalls gelöscht werden?';
+
+    $('docDeleteBelegHinweis').textContent=belegAnzahl
+      ? 'Verknüpfte Belege ('+belegAnzahl+') bleiben in jedem Fall '+
+        'in den Betriebsausgaben erhalten.'
+      : '';
+
+    const fertig=antwort=>{
+      dialog.close();
+      resolve(antwort);
+    };
+
+    $('docDeleteBoth').onclick=()=>fertig('beide');
+    $('docDeleteOnly').onclick=()=>fertig('nur');
+    $('docDeleteCancel').onclick=()=>fertig(null);
+    dialog.oncancel=e=>{e.preventDefault();fertig(null);};
+
+    dialog.showModal();
+  });
+}
+
+// Löst Belege von einer Fahrt bzw. Dokumentation, damit sie beim
+// Löschen sicher erhalten bleiben.
+async function belegeLoesen(spalte,wert){
+  const {error}=await sb
+    .from('ausgaben')
+    .update({[spalte]:null})
+    .eq(spalte,wert);
+  return error;
+}
+
 $('deleteDoc').onclick=async()=>{
   const id=$('docId').value;
-  if(!id||!confirm('Diese Dokumentation wirklich löschen?'))return;
+  if(!id)return;
+
+  const {data:fahrten,error:fahrtFehler}=await sb
+    .from('trip_entries')
+    .select('id,trip_date,kilometers,purpose')
+    .eq('documentation_id',id);
+
+  if(fahrtFehler){
+    toast('Verknüpfte Fahrt konnte nicht geprüft werden: '+fahrtFehler.message);
+    return;
+  }
+
+  const fahrt=(fahrten||[])[0]||null;
+  let auchFahrt=false;
+
+  if(fahrt){
+    const {count}=await sb
+      .from('ausgaben')
+      .select('id',{count:'exact',head:true})
+      .or('documentation_id.eq.'+id+',trip_id.eq.'+fahrt.id);
+
+    const antwort=await frageDokuLoeschen(fahrt,count||0);
+    if(!antwort)return;
+    auchFahrt=antwort==='beide';
+  }else if(!confirm('Diese Dokumentation wirklich löschen?')){
+    return;
+  }
+
+  let fehler=await belegeLoesen('documentation_id',id);
+
+  if(!fehler && auchFahrt){
+    fehler=await belegeLoesen('trip_id',fahrt.id);
+
+    if(!fehler){
+      const {error}=await sb
+        .from('trip_entries')
+        .delete()
+        .eq('id',fahrt.id);
+      fehler=error;
+    }
+  }
+
+  if(fehler){
+    toast('Löschen abgebrochen: '+fehler.message);
+    return;
+  }
+
   const {error}=await sb.from('dokumentationen').delete().eq('id',id);
   if(error){toast(error.message);return}
-  $('docFormDialog').close();toast('Dokumentation gelöscht');await loadDocs();
+
+  $('docFormDialog').close();
+  toast(auchFahrt
+    ? 'Dokumentation und Fahrt gelöscht'
+    : (fahrt
+        ? 'Dokumentation gelöscht, die Fahrt bleibt erhalten'
+        : 'Dokumentation gelöscht'));
+
+  await loadDocs();
+
+  if($('tripsDialog').open){
+    await loadTrips();
+  }
 };
 
 $('closeApprovals').onclick=()=>{
@@ -5112,6 +5233,13 @@ $('deleteTrip').onclick=async()=>{
     !id ||
     !confirm('Diese Fahrt wirklich löschen?')
   ){
+    return;
+  }
+
+  const belegFehler=await belegeLoesen('trip_id',id);
+
+  if(belegFehler){
+    toast('Löschen abgebrochen: '+belegFehler.message);
     return;
   }
 
