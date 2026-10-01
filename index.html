@@ -1062,6 +1062,70 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   0%{left:-35%}
   100%{left:100%}
 }
+
+/* ===== Bereichsfarben: Leistungsträger, Meine Akten, Steuer ===== */
+:root{
+  --lt:#1D9E75;   --lt-bg:#E1F5EE;   --lt-ink:#085041;   --lt-line:#5DCAA5;
+  --akte:#534AB7; --akte-bg:#EEEDFE; --akte-ink:#3C3489; --akte-line:#AFA9EC;
+  --st:#BA7517;   --st-bg:#FAEEDA;   --st-ink:#633806;   --st-line:#EF9F27;
+}
+[data-theme="moebius"]{
+  --lt:#2F7D6B;   --lt-bg:#DCEBE3;   --lt-ink:#1F4F44;   --lt-line:#7FB8A6;
+  --akte:#5A4E9A; --akte-bg:#E6E1F0; --akte-ink:#3A3170; --akte-line:#ABA2D2;
+  --st:#A8641C;   --st-bg:#F3DCBC;   --st-ink:#5C3410;   --st-line:#D9A05E;
+}
+.b-lt{--bf:var(--lt);--bf-bg:var(--lt-bg);--bf-ink:var(--lt-ink);--bf-line:var(--lt-line)}
+.b-akte{--bf:var(--akte);--bf-bg:var(--akte-bg);--bf-ink:var(--akte-ink);--bf-line:var(--akte-line)}
+.b-st{--bf:var(--st);--bf-bg:var(--st-bg);--bf-ink:var(--st-ink);--bf-line:var(--st-line)}
+
+.bereich-block{
+  border-left:5px solid var(--bf);
+  background:var(--bf-bg);
+  padding:12px 14px;
+  margin:0 0 12px;
+  border-radius:0 var(--radius-control) var(--radius-control) 0;
+}
+.bereich-kopf{font-weight:600;color:var(--bf-ink);display:flex;align-items:center;gap:8px}
+.bereich-text{font-size:.85em;color:var(--bf-ink);opacity:1;margin:2px 0 10px}
+.bereich-block .actions{margin:0}
+
+button.secondary.b-lt,
+button.secondary.b-akte,
+button.secondary.b-st{
+  background:#ffffff;
+  color:var(--bf-ink);
+  border:1px solid var(--bf-line);
+}
+button.secondary.b-lt::before,
+button.secondary.b-akte::before,
+button.secondary.b-st::before,
+.bereich-punkt{
+  content:"";
+  display:inline-block;
+  width:9px;height:9px;
+  border-radius:50%;
+  background:var(--bf);
+  margin-right:7px;
+  vertical-align:1px;
+}
+.bereich-kopf .bereich-punkt{margin-right:0;width:11px;height:11px}
+
+dialog.b-lt .top,dialog.b-akte .top,dialog.b-st .top{
+  box-shadow:inset 0 7px 0 var(--bf);
+  padding-top:22px;
+}
+.bereich-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.78em;font-weight:600;
+  color:var(--bf-ink);background:var(--bf-bg);
+  border:1px solid var(--bf-line);
+  border-radius:999px;
+  padding:3px 10px;
+  margin:0 0 6px;
+}
+.bereich-chip::before{
+  content:"";width:8px;height:8px;border-radius:50%;background:var(--bf);
+}
 </style>
 </head>
 <body>
@@ -1118,53 +1182,37 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div>
       <h2>Übersichten</h2>
       <p class="muted">
-        Alle Bewilligungen und Fahrten zentral anzeigen.
+        Nach Zweck geordnet: für den Leistungsträger, für deine Akten
+        und für die Steuererklärung.
       </p>
     </div>
   </div>
 
-  <div class="actions" style="margin-bottom:18px">
-    <button
-      type="button"
-      id="allApprovals"
-      class="secondary">
-      Alle Bewilligungen
-    </button>
+  <div class="bereich-block b-lt">
+    <div class="bereich-kopf"><span class="bereich-punkt"></span>Leistungsträger</div>
+    <div class="bereich-text">Bewilligungen und Leistungsnachweise (Monatsnachweis beim Klienten)</div>
+    <div class="actions">
+      <button type="button" id="allApprovals" class="secondary b-lt">Alle Bewilligungen</button>
+    </div>
+  </div>
 
-    <button
-      type="button"
-      id="allTrips"
-      class="secondary">
-      Gesamt-Fahrtenliste
-    </button>
+  <div class="bereich-block b-akte">
+    <div class="bereich-kopf"><span class="bereich-punkt"></span>Meine Akten</div>
+    <div class="bereich-text">Klienten, Dokumentationen und Dokumente (Klientenliste unten)</div>
+    <div class="actions">
+      <button type="button" id="backupData" class="secondary b-akte">Datensicherung</button>
+    </div>
+  </div>
 
-    <button
-      type="button"
-      id="generalTrips"
-      class="secondary">
-      Allgemeine Fahrten
-    </button>
-
-    <button
-      type="button"
-      id="allExpenses"
-      class="secondary">
-      Betriebsausgaben
-    </button>
-
-    <button
-      type="button"
-      id="allIncome"
-      class="secondary">
-      Einnahmen
-    </button>
-
-    <button
-      type="button"
-      id="backupData"
-      class="secondary">
-      Datensicherung
-    </button>
+  <div class="bereich-block b-st" style="margin-bottom:18px">
+    <div class="bereich-kopf"><span class="bereich-punkt"></span>Steuer</div>
+    <div class="bereich-text">Nur für die Steuererklärung</div>
+    <div class="actions">
+      <button type="button" id="allTrips" class="secondary b-st">Gesamt-Fahrtenliste</button>
+      <button type="button" id="generalTrips" class="secondary b-st">Allgemeine Fahrten</button>
+      <button type="button" id="allExpenses" class="secondary b-st">Betriebsausgaben</button>
+      <button type="button" id="allIncome" class="secondary b-st">Einnahmen</button>
+    </div>
   </div>
 
   <div class="top">
@@ -1216,7 +1264,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
-<dialog id="clientDialog">
+<dialog id="clientDialog" class="b-akte">
   <form id="clientForm">
     <div class="top">
       <h2 id="dialogTitle">Klient anlegen</h2>
@@ -1258,7 +1306,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </form>
 </dialog>
 
-<dialog id="docsDialog">
+<dialog id="docsDialog" class="b-akte">
   <div class="top">
     <div>
       <div class="muted">Dokumentationen</div>
@@ -1277,7 +1325,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="docsList"><p class="muted">Noch keine Dokumentationen vorhanden.</p></div>
 </dialog>
 
-<dialog id="docFormDialog">
+<dialog id="docFormDialog" class="b-akte">
   <form id="docForm">
     <div class="top">
       <div>
@@ -1359,7 +1407,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </form>
 </dialog>
 
-<dialog id="docDeleteDialog">
+<dialog id="docDeleteDialog" class="b-akte">
   <div class="top">
     <div>
       <div class="muted">Dokumentation löschen</div>
@@ -1381,7 +1429,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
-<dialog id="approvalsDialog">
+<dialog id="approvalsDialog" class="b-lt">
   <div class="top">
     <div>
       <div class="muted">Klientenakte</div>
@@ -1395,7 +1443,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="approvalsList"></div>
 </dialog>
 
-<dialog id="approvalFormDialog">
+<dialog id="approvalFormDialog" class="b-lt">
   <form id="approvalForm">
     <div class="top">
       <h2 id="approvalDialogTitle">Bewilligung anlegen</h2>
@@ -1429,7 +1477,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </form>
 </dialog>
   
-<dialog id="allApprovalsDialog">
+<dialog id="allApprovalsDialog" class="b-lt">
   <div class="top">
     <div>
       <div class="muted">Gesamtübersicht</div>
@@ -1450,7 +1498,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </p>
   </div>
 </dialog>
-  <dialog id="allTripsDialog">
+  <dialog id="allTripsDialog" class="b-st">
   <div class="top">
     <div>
       <div class="muted">Steuerliche Gesamtübersicht</div>
@@ -1506,7 +1554,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </p>
 </div>
 </dialog>
-<dialog id="tripsDialog">
+<dialog id="tripsDialog" class="b-st">
   <div class="top">
     <div>
       <div class="muted">Steuerliches Fahrtenbuch</div>
@@ -1521,7 +1569,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="tripsList"><p class="muted">Noch keine Fahrten vorhanden.</p></div>
 </dialog>
 
-<dialog id="tripFormDialog">
+<dialog id="tripFormDialog" class="b-st">
   <form id="tripForm">
     <div class="top">
       <div>
@@ -1605,7 +1653,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </form>
 </dialog>
 
-<dialog id="stopManagerDialog">
+<dialog id="stopManagerDialog" class="b-st">
   <div class="top">
     <div>
       <div class="muted">Fahrtenbuch</div>
@@ -1619,7 +1667,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="stopManagerList"></div>
 </dialog>
 
-<dialog id="cloudDialog">
+<dialog id="cloudDialog" class="b-akte">
   <div class="top">
     <div>
       <div class="muted">Dokumente in pCloud</div>
@@ -1670,7 +1718,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <input id="cloudFileInput" type="file" class="hidden">
 </dialog>
 
-<dialog id="snippetDialog">
+<dialog id="snippetDialog" class="b-akte">
   <div class="top">
     <div>
       <div class="muted">Dokumentation</div>
@@ -1704,7 +1752,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="snippetList"></div>
 </dialog>
 
-<dialog id="incomeDialog">
+<dialog id="incomeDialog" class="b-st">
   <div class="top">
     <div>
       <div class="muted">Auswertung</div>
@@ -1732,7 +1780,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
-<dialog id="ratesDialog">
+<dialog id="ratesDialog" class="b-lt">
   <div class="top">
     <div>
       <div class="muted">Einnahmen</div>
@@ -1771,7 +1819,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="ratesList"></div>
 </dialog>
 
-<dialog id="docRangeDialog">
+<dialog id="docRangeDialog" class="b-akte">
   <div class="top">
     <div>
       <div class="muted">Dokumentationen drucken</div>
@@ -1811,7 +1859,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
-<dialog id="expensesDialog">
+<dialog id="expensesDialog" class="b-st">
   <div class="top">
     <div>
       <div class="muted">Steuer</div>
@@ -1852,7 +1900,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
-<dialog id="expenseFormDialog">
+<dialog id="expenseFormDialog" class="b-st">
   <form id="expenseForm">
     <div class="top">
       <div>
@@ -1928,7 +1976,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </form>
 </dialog>
 
-  <dialog id="monthlyDialog">
+  <dialog id="monthlyDialog" class="b-lt">
   <div class="top">
     <div>
       <div class="muted">Leistungsnachweis</div>
@@ -2082,6 +2130,34 @@ let fahrtNachSpeichern=false;
 
 const START_ADRESSE='Lichtenbergplatz 7, 30449 Hannover';
 const FLS_VIERTEL_BIS='2026-06-30';
+// Setzt in jedes Fenster mit Bereichsfarbe ein Kennzeichen oben
+(function bereichsKennzeichen(){
+  const namen={
+    'b-lt':'Leistungsträger',
+    'b-akte':'Meine Akten',
+    'b-st':'Steuer'
+  };
+  document.querySelectorAll('dialog').forEach(dialog=>{
+    const klasse=Object.keys(namen).find(k=>dialog.classList.contains(k));
+    if(!klasse)return;
+    const kopf=dialog.querySelector('.top');
+    if(!kopf)return;
+    const chip=document.createElement('div');
+    chip.className='bereich-chip';
+    chip.textContent=namen[klasse];
+    // In den Titelbereich des Kopfes, damit es beim Blättern sichtbar bleibt
+    const titel=kopf.firstElementChild;
+    if(titel && titel.tagName==='DIV'){
+      titel.insertBefore(chip,titel.firstChild);
+    }else{
+      const huelle=document.createElement('div');
+      kopf.insertBefore(huelle,titel);
+      huelle.appendChild(chip);
+      if(titel)huelle.appendChild(titel);
+    }
+  });
+})();
+
 const SUPA_UMZUG_AB='2026-08-01';
 const SUPA_ADRESSE_ALT='Königstr. 6, 30175 Hannover';
 const SUPA_ADRESSE_NEU='Königstr. 4, 30175 Hannover';
@@ -2625,11 +2701,11 @@ function renderClients(){
         </div>
 
         <div class="client-buttons">
-          <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
-          <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
-          <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
-          <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
-          <button class="secondary cloud" data-id="${c.id}">Dokumente</button>
+          <button class="secondary docs b-akte" data-id="${c.id}">Dokumentation</button>
+          <button class="secondary cloud b-akte" data-id="${c.id}">Dokumente</button>
+          <button class="secondary approvals b-lt" data-id="${c.id}">Bewilligungen</button>
+          <button class="secondary monthly b-lt" data-id="${c.id}">Monatsnachweis</button>
+          <button class="secondary trips b-st" data-id="${c.id}">Fahrtenbuch</button>
         </div>
       </div>
     `;
