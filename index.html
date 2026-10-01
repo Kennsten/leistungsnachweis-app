@@ -1140,6 +1140,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
     <button
       type="button"
+      id="generalTrips"
+      class="secondary">
+      Allgemeine Fahrten
+    </button>
+
+    <button
+      type="button"
       id="allExpenses"
       class="secondary">
       Betriebsausgaben
@@ -1505,7 +1512,20 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <input type="hidden" id="tripId">
 
 <div class="grid">
-  <label class="span2">Dokumentierten Termin übernehmen
+  <label class="span2 hidden" id="tripQuickField">Häufiges Ziel
+    <select id="tripQuickTarget">
+      <option value="">Bitte auswählen</option>
+      <option value="SuPA Büro">SuPA Büro</option>
+      <option value="Post">Post</option>
+      <option value="Amt">Amt</option>
+    </select>
+    <span class="muted small">
+      Füllt den Zweck aus. Beim SuPA Büro wird auch die Adresse
+      passend zum Datum als Zwischenstopp eingetragen.
+    </span>
+  </label>
+
+  <label class="span2" id="tripDocumentationField">Dokumentierten Termin übernehmen
     <select id="tripDocumentation">
       <option value="">Termin manuell eintragen</option>
     </select>
@@ -2029,6 +2049,8 @@ let activeClient=null;
   let docSaving=false;
 let activeDocsClient=null;
 let activeTripsClient=null;
+// true, solange das Fahrtenbuch für allgemeine Fahrten (ohne Klient) offen ist
+let tripsAllgemein=false;
 let trips=[];
   let tripSaving=false;
 let tripStopSuggestions=[];
@@ -2192,6 +2214,8 @@ function todayLocal(){
 async function openTrips(clientId){
   activeTripsClient=clients.find(c=>String(c.id)===String(clientId))||null;
   if(!activeTripsClient){toast('Klient nicht gefunden.');return}
+  tripsAllgemein=false;
+  $('newDocFromTrips').classList.remove('hidden');
   $('tripsClientName').textContent=activeTripsClient.name;
   $('tripsDialog').showModal();
   await Promise.all([
@@ -2200,6 +2224,21 @@ async function openTrips(clientId){
   loadTripDocumentations()
 ]);
 }
+// Fahrtenbuch für berufliche Fahrten ohne Klient (Post, Amt, SuPA Büro …)
+async function openGeneralTrips(){
+  activeTripsClient=null;
+  tripsAllgemein=true;
+  tripDocumentations=[];
+  renderTripDocumentationOptions();
+  $('newDocFromTrips').classList.add('hidden');
+  $('tripsClientName').textContent='Allgemeine Fahrten';
+  $('tripsDialog').showModal();
+  await Promise.all([
+    loadTrips(),
+    loadTripStopSuggestions()
+  ]);
+}
+
 async function loadTripDocumentations(currentTripId=''){
   if(!activeTripsClient){
     tripDocumentations=[];
@@ -2802,7 +2841,9 @@ async function loadAllTrips(){
       )
       .map(trip=>({
         date:trip.trip_date,
-        client:clientName(trip.client_id),
+        client:trip.allgemein
+          ? 'Allgemein'
+          : clientName(trip.client_id),
         start:trip.start_address||'',
         stops:trip.intermediate_stops||trip.stopovers||'',
         destination:trip.destination_address||trip.destination||'',
@@ -2836,7 +2877,11 @@ async function loadAllTrips(){
             </h3>
 
             <div class="meta">
-              Klient: ${esc(clientName(trip.client_id))}
+              ${
+                trip.allgemein
+                  ? 'Allgemeine Fahrt'
+                  : 'Klient: '+esc(clientName(trip.client_id))
+              }
             </div>
 
             <div class="meta">
@@ -2864,7 +2909,8 @@ async function loadAllTrips(){
           <button
             type="button"
             class="secondary openAllTrip"
-            data-client-id="${esc(trip.client_id)}">
+            data-client-id="${esc(trip.client_id||'')}"
+            data-allgemein="${trip.allgemein?'1':''}">
             Öffnen
           </button>
         </div>
@@ -2878,18 +2924,28 @@ async function loadAllTrips(){
     .forEach(button=>{
       button.onclick=async()=>{
         $('allTripsDialog').close();
-        await openTrips(button.dataset.clientId);
+
+        if(button.dataset.allgemein){
+          await openGeneralTrips();
+        }else{
+          await openTrips(button.dataset.clientId);
+        }
       };
     });
 }
 async function loadTrips(){
-  if(!activeTripsClient)return;
+  if(!activeTripsClient && !tripsAllgemein)return;
   $('tripsList').innerHTML='<p class="muted">Fahrten werden geladen …</p>';
 
-  const {data,error}=await sb
+  let tripQuery=sb
     .from('trip_entries')
-    .select('*')
-    .eq('client_id',activeTripsClient.id)
+    .select('*');
+
+  tripQuery=tripsAllgemein
+    ? tripQuery.eq('allgemein',true)
+    : tripQuery.eq('client_id',activeTripsClient.id);
+
+  const {data,error}=await tripQuery
     .order('trip_date',{ascending:false})
     .order('created_at',{ascending:false});
 
@@ -2927,9 +2983,11 @@ async function loadTrips(){
 
               <button type="button" class="secondary editTrip" data-id="${t.id}">Bearbeiten</button>
               ${
-                t.documentation_id
-                  ? `<button type="button" class="secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
-                  : `<button type="button" class="secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
+                tripsAllgemein
+                  ? ''
+                  : t.documentation_id
+                    ? `<button type="button" class="secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
+                    : `<button type="button" class="secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
               }
                                 <button type="button" class="secondary expenseFromTrip" data-id="${t.id}">Parkticket</button>
 
@@ -3079,7 +3137,12 @@ async function openTripForm(id=''){
   $('tripNotes').value=trip.notes||'';
 await loadTripDocumentations(id);
 $('tripDocumentation').value=trip.documentation_id||'';
-  $('tripDialogTitle').textContent=id?'Fahrt bearbeiten':'Fahrt anlegen';
+  $('tripQuickTarget').value='';
+  $('tripQuickField').classList.toggle('hidden',!tripsAllgemein);
+  $('tripDocumentationField').classList.toggle('hidden',tripsAllgemein);
+  $('tripDialogTitle').textContent=tripsAllgemein
+    ? (id?'Allgemeine Fahrt bearbeiten':'Allgemeine Fahrt anlegen')
+    : (id?'Fahrt bearbeiten':'Fahrt anlegen');
   $('deleteTrip').classList.toggle('hidden',!id);
   $('tripFormDialog').showModal();
 }
@@ -4831,10 +4894,50 @@ $('closeApprovalForm').onclick=()=>$('approvalFormDialog').close();
 $('closeTrips').onclick=()=>{
   $('tripsDialog').close();
   activeTripsClient=null;
+  tripsAllgemein=false;
   trips=[];
 };
 
 $('newTrip').onclick=()=>openTripForm();
+
+$('generalTrips').onclick=()=>openGeneralTrips();
+
+$('tripQuickTarget').onchange=()=>{
+  const ziel=$('tripQuickTarget').value;
+  if(!ziel)return;
+
+  $('tripPurpose').value=ziel;
+
+  if(ziel==='SuPA Büro'){
+    const adresse=supaAdresse($('tripDate').value||todayIso());
+    const stopps=$('tripStopovers').value;
+
+    if(
+      !stopps.includes(SUPA_ADRESSE_ALT) &&
+      !stopps.includes(SUPA_ADRESSE_NEU)
+    ){
+      appendStopover(adresse);
+    }
+  }
+
+  suggestTripKilometers();
+};
+
+// Bei allgemeinen Fahrten: SuPA-Adresse an ein geändertes Datum anpassen
+$('tripDate').onchange=()=>{
+  if(!tripsAllgemein)return;
+
+  const feld=$('tripStopovers');
+  const richtig=supaAdresse($('tripDate').value||todayIso());
+  const falsch=richtig===SUPA_ADRESSE_NEU
+    ? SUPA_ADRESSE_ALT
+    : SUPA_ADRESSE_NEU;
+
+  if(feld.value.includes(falsch)){
+    feld.value=feld.value.replace(falsch,richtig);
+    toast('SuPA-Adresse an das Datum angepasst');
+  }
+};
 
 $('newDocFromTrips').onclick=()=>openNewDocFromTrips();
 
@@ -4887,7 +4990,7 @@ $('tripForm').onsubmit=async e=>{
 
   if(tripSaving)return;
 
-  if(!activeTripsClient){
+  if(!activeTripsClient && !tripsAllgemein){
     toast('Kein Klient ausgewählt.');
     return;
   }
@@ -4898,12 +5001,14 @@ $('tripForm').onsubmit=async e=>{
 
   const select=$('tripDocumentation');
   const selectedOption=select.selectedOptions[0]||null;
-  const documentationId=
-    (selectedOption?selectedOption.value:select.value)||null;
+  const documentationId=tripsAllgemein
+    ? null
+    : (selectedOption?selectedOption.value:select.value)||null;
 
   const row={
     user_id:user.id,
-    client_id:activeTripsClient.id,
+    client_id:tripsAllgemein?null:activeTripsClient.id,
+    allgemein:tripsAllgemein,
     documentation_id:documentationId,
     trip_date:$('tripDate').value,
     start_address:$('tripStartAddress').value.trim(),
