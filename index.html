@@ -1915,9 +1915,25 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <textarea id="expenseNotes" rows="2" placeholder="Optional"></textarea>
       </label>
 
+      <div class="span2 summary-box" id="expenseBelegBox" style="margin:8px 0">
+        <div style="font-weight:650;margin-bottom:6px">Beleg (Foto oder PDF)</div>
+        <div id="expenseBelegStatus" class="muted small"></div>
+        <div class="actions" style="margin-top:10px">
+          <button type="button" id="expenseBelegPick" class="secondary">
+            Beleg hinzufügen
+          </button>
+          <span id="expenseBelegViewSlot" class="hidden" style="display:flex;flex:1"></span>
+          <button type="button" id="expenseBelegRemove" class="danger hidden">
+            Entfernen
+          </button>
+        </div>
+        <input id="expenseBelegInput" type="file"
+          accept="image/*,application/pdf" class="hidden">
+      </div>
+
       <label class="span2" style="flex-direction:row;align-items:center;gap:10px">
         <input id="expenseReceipt" type="checkbox" style="width:auto;margin:0">
-        Beleg liegt vor
+        Beleg liegt vor (auch auf Papier)
       </label>
     </div>
 
@@ -6818,11 +6834,23 @@ function renderExpenses(){
             }
 
             <div class="meta">
-              ${e.beleg_vorhanden?'✓ Beleg vorhanden':'⚠ Beleg fehlt'}
+              ${e.beleg_datei_id
+                ? '📎 Beleg in pCloud'
+                : (e.beleg_vorhanden?'✓ Beleg vorhanden (Papier)':'⚠ Beleg fehlt')}
             </div>
           </div>
 
           <div class="actions">
+            ${
+              e.beleg_datei_id
+                ? `<button
+                     type="button"
+                     class="secondary viewBeleg"
+                     data-file="${esc(e.beleg_datei_id)}">
+                     Beleg ansehen
+                   </button>`
+                : ''
+            }
             <button
               type="button"
               class="secondary editExpense"
@@ -6842,6 +6870,10 @@ function renderExpenses(){
   document.querySelectorAll('.jumpToExpense').forEach(
     b=>b.onclick=()=>openExpenseForm(b.dataset.id)
   );
+
+  document.querySelectorAll('.viewBeleg').forEach(
+    b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.file)
+  );
 }
 
 async function openExpenseForm(id='',vorgabe={}){
@@ -6860,6 +6892,11 @@ async function openExpenseForm(id='',vorgabe={}){
   $('expenseHostGuests').value=e.bewirtung_teilnehmer||'';
   $('expenseNotes').value=e.notizen||'';
   $('expenseReceipt').checked=Boolean(e.beleg_vorhanden);
+
+  belegNeu=null;
+  belegAusgabe=e.id?e:null;
+  $('expenseBelegInput').value='';
+  belegAnzeigen();
 
   await loadExpenseLinkOptions($('expenseClient').value);
 
@@ -6937,6 +6974,196 @@ async function openExpenseFromDoc(docId,kategorie){
   });
 }
 
+
+/* ---------- Belege in pCloud (Ordner Belege/Jahr) ---------- */
+
+// Ausgewählte, aber noch nicht hochgeladene Datei
+let belegNeu=null;
+// Die gerade bearbeitete Ausgabe (mit evtl. vorhandenem Beleg)
+let belegAusgabe=null;
+
+async function pcloudOrdner(elternId,name){
+  const ergebnis=await pcloudAnfrage('createfolderifnotexists',{
+    folderid:elternId,
+    name:name
+  });
+  return ergebnis.metadata.folderid;
+}
+
+async function belegOrdnerFuer(jahr){
+  const belege=await pcloudOrdner(0,'Belege');
+  return pcloudOrdner(belege,String(jahr));
+}
+
+// Fotos werden verkleinert und als JPEG gespeichert (spart Platz,
+// wandelt auch iPhone-Fotos im HEIC-Format um). PDFs bleiben unverändert.
+async function belegVorbereiten(datei){
+  if(!datei.type.startsWith('image/'))return datei;
+
+  try{
+    const adresse=URL.createObjectURL(datei);
+    const bild=await new Promise((ok,fehler)=>{
+      const b=new Image();
+      b.onload=()=>ok(b);
+      b.onerror=fehler;
+      b.src=adresse;
+    });
+
+    const groesste=2200;
+    const faktor=Math.min(1,groesste/Math.max(bild.width,bild.height));
+    const leinwand=document.createElement('canvas');
+    leinwand.width=Math.round(bild.width*faktor);
+    leinwand.height=Math.round(bild.height*faktor);
+    leinwand.getContext('2d').drawImage(bild,0,0,leinwand.width,leinwand.height);
+    URL.revokeObjectURL(adresse);
+
+    const blob=await new Promise(ok=>leinwand.toBlob(ok,'image/jpeg',0.85));
+    if(!blob)return datei;
+
+    return new File([blob],'beleg.jpg',{type:'image/jpeg'});
+  }catch(problem){
+    return datei;
+  }
+}
+
+function belegDateiname(ausgabe,datei){
+  const endung=datei.type==='application/pdf'
+    ? 'pdf'
+    : (datei.type==='image/jpeg'
+        ? 'jpg'
+        : (String(datei.name).split('.').pop()||'dat').toLowerCase());
+
+  const kategorie=String(ausgabe.kategorie||'Beleg')
+    .replace(/[^A-Za-z0-9ÄÖÜäöüß]+/g,'-')
+    .replace(/^-|-$/g,'');
+
+  return belegNummer(ausgabe)+'_'+kategorie+'_'+ausgabe.datum+'.'+endung;
+}
+
+async function belegHochladen(ausgabe,datei){
+  const ordner=await belegOrdnerFuer(ausgabe.beleg_jahr);
+  const fertig=await belegVorbereiten(datei);
+  const name=belegDateiname(ausgabe,fertig);
+
+  const werte=new URLSearchParams({
+    access_token:pcloudToken,
+    folderid:ordner,
+    filename:name,
+    nopartial:1,
+    renameifexists:1
+  });
+
+  const formular=new FormData();
+  formular.append('file',fertig,name);
+
+  const antwort=await busyFetch(
+    'https://'+PCLOUD_HOST+'/uploadfile?'+werte.toString(),
+    {method:'POST',body:formular,referrerPolicy:'no-referrer',referrer:''}
+  );
+
+  const ergebnis=await antwort.json();
+
+  if(ergebnis.result!==0||!ergebnis.metadata||!ergebnis.metadata[0]){
+    throw new Error(ergebnis.error||('pCloud-Fehler '+ergebnis.result));
+  }
+
+  return {
+    id:ergebnis.metadata[0].fileid,
+    name:ergebnis.metadata[0].name
+  };
+}
+
+function belegAnzeigen(){
+  const status=$('expenseBelegStatus');
+  const vorhanden=belegAusgabe&&belegAusgabe.beleg_datei_id;
+
+  // Der Ansehen-Knopf wird jedes Mal neu gebaut, weil er sich beim
+  // Öffnen in einen Verweis „Jetzt öffnen" verwandelt.
+  const slot=$('expenseBelegViewSlot');
+  slot.innerHTML='';
+  slot.classList.toggle('hidden',!vorhanden||Boolean(belegNeu));
+
+  if(vorhanden&&!belegNeu){
+    const knopf=document.createElement('button');
+    knopf.type='button';
+    knopf.className='secondary';
+    knopf.style.flex='1';
+    knopf.textContent='Beleg ansehen';
+    knopf.onclick=()=>cloudDateiOeffnen(knopf,belegAusgabe.beleg_datei_id);
+    slot.appendChild(knopf);
+  }
+  $('expenseBelegRemove').classList.toggle('hidden',!vorhanden&&!belegNeu);
+
+  if(!pcloudToken){
+    status.innerHTML=
+      'Zum Hochladen muss die App mit pCloud verbunden sein. '+
+      'Öffne dazu bei einem Klienten „Dokumente" und tippe auf '+
+      '„Mit pCloud verbinden". Speichere diese Ausgabe vorher.';
+    $('expenseBelegPick').disabled=true;
+    return;
+  }
+
+  $('expenseBelegPick').disabled=false;
+
+  if(belegNeu){
+    status.textContent='Ausgewählt: '+belegNeu.name+
+      ' ('+dateiGroesse(belegNeu.size)+'). Wird beim Speichern hochgeladen.';
+    $('expenseBelegPick').textContent='Andere Datei wählen';
+  }else if(vorhanden){
+    status.textContent='In pCloud gespeichert: Belege/'+
+      belegAusgabe.beleg_jahr+'/'+(belegAusgabe.beleg_datei_name||'');
+    $('expenseBelegPick').textContent='Beleg ersetzen';
+  }else{
+    status.textContent='Noch kein Beleg hinterlegt. '+
+      'Du kannst ein Foto aufnehmen oder eine Datei auswählen.';
+    $('expenseBelegPick').textContent='Beleg hinzufügen';
+  }
+}
+
+$('expenseBelegPick').onclick=()=>$('expenseBelegInput').click();
+
+$('expenseBelegInput').onchange=()=>{
+  const datei=$('expenseBelegInput').files[0];
+  if(!datei)return;
+  belegNeu=datei;
+  $('expenseReceipt').checked=true;
+  belegAnzeigen();
+};
+
+$('expenseBelegRemove').onclick=async()=>{
+  if(belegNeu){
+    belegNeu=null;
+    $('expenseBelegInput').value='';
+    belegAnzeigen();
+    return;
+  }
+
+  if(!belegAusgabe||!belegAusgabe.beleg_datei_id)return;
+  if(!confirm('Beleg-Datei wirklich aus pCloud löschen?'))return;
+
+  try{
+    await pcloudAnfrage('deletefile',{fileid:belegAusgabe.beleg_datei_id});
+  }catch(problem){
+    // Datei schon weg oder keine Verbindung: Verknüpfung trotzdem lösen
+    toast('Hinweis: '+problem.message);
+  }
+
+  const {error}=await sb
+    .from('ausgaben')
+    .update({beleg_datei_id:null,beleg_datei_name:null})
+    .eq('id',belegAusgabe.id);
+
+  if(error){
+    toast('Konnte nicht gespeichert werden: '+error.message);
+    return;
+  }
+
+  belegAusgabe.beleg_datei_id=null;
+  belegAusgabe.beleg_datei_name=null;
+  toast('Beleg entfernt');
+  belegAnzeigen();
+  if($('expensesDialog').open)await loadExpenses();
+};
 
 /* ---------- Einnahmen und Vergütungssätze ---------- */
 
@@ -7756,12 +7983,48 @@ $('expenseForm').onsubmit=async e=>{
       return;
     }
 
+    let belegMeldung='';
+
+    if(belegNeu){
+      saveButton.textContent='Beleg wird hochgeladen …';
+
+      try{
+        const altId=saved.beleg_datei_id;
+        const datei=await belegHochladen(saved,belegNeu);
+
+        const {error:verknuepfFehler}=await sb
+          .from('ausgaben')
+          .update({
+            beleg_datei_id:datei.id,
+            beleg_datei_name:datei.name,
+            beleg_vorhanden:true
+          })
+          .eq('id',saved.id);
+
+        if(verknuepfFehler)throw verknuepfFehler;
+
+        // Ersetzter Beleg: alte Datei aufräumen
+        if(altId&&String(altId)!==String(datei.id)){
+          try{
+            await pcloudAnfrage('deletefile',{fileid:altId});
+          }catch(problem){}
+        }
+
+        belegMeldung=' · Beleg in pCloud gespeichert';
+      }catch(problem){
+        belegMeldung=' · ACHTUNG: Beleg nicht hochgeladen ('+
+          problem.message+'). Bitte erneut versuchen.';
+      }
+
+      belegNeu=null;
+    }
+
     $('expenseFormDialog').close();
 
-    toast(id
+    toast((id
       ? 'Ausgabe aktualisiert'
       : 'Gespeichert als Beleg '+belegNummer(saved)
-    );
+    )+belegMeldung);
 
     if($('expensesDialog').open){
       await loadExpenses();
@@ -7776,7 +8039,20 @@ $('expenseForm').onsubmit=async e=>{
 $('deleteExpense').onclick=async()=>{
   const id=$('expenseId').value;
 
-  if(!id||!confirm('Diese Ausgabe wirklich löschen?'))return;
+  const hatDatei=belegAusgabe&&belegAusgabe.beleg_datei_id;
+
+  if(!id||!confirm(hatDatei
+    ? 'Diese Ausgabe wirklich löschen? Die Beleg-Datei wird auch aus pCloud gelöscht.'
+    : 'Diese Ausgabe wirklich löschen?'))return;
+
+  if(hatDatei){
+    try{
+      await pcloudAnfrage('deletefile',{fileid:belegAusgabe.beleg_datei_id});
+    }catch(problem){
+      if(!confirm('Die Datei konnte nicht aus pCloud gelöscht werden ('+
+        problem.message+'). Ausgabe trotzdem löschen?'))return;
+    }
+  }
 
   const {error}=await sb.from('ausgaben').delete().eq('id',id);
 
