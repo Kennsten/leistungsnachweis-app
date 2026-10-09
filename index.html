@@ -1062,6 +1062,43 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   0%{left:-35%}
   100%{left:100%}
 }
+
+/* ---------- Kalender ---------- */
+#kalDialog{width:min(98vw,1000px)}
+.kal-leiste{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.kal-leiste button{padding:9px 14px}
+.kal-monat{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:6px}
+.kal-kopf{text-align:center;font-size:.78rem;color:var(--muted);font-weight:600;padding:2px 0}
+.kal-tag{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:68px;padding:5px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);text-align:left;font:inherit}
+.kal-fremd{opacity:.45}
+.kal-heute{border:2px solid var(--brand)}
+.kal-nr{font-weight:650;font-size:.9rem}
+.kal-punkte{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.kal-anzahl{font-size:.7rem;color:var(--muted)}
+.kal-mehr{font-size:.7rem;color:var(--muted)}
+.kal-punkt{display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.kal-punkt-plan{background:transparent;border:2px solid}
+.kal-legende{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted);margin:10px 0 4px}
+.kal-legende .kal-punkt{vertical-align:-1px}
+.kal-w-wrap{overflow-x:auto;margin-top:6px}
+.kal-w-raster{display:grid;grid-template-columns:30px repeat(7,minmax(74px,1fr));gap:3px;min-width:560px}
+.kal-w-kopfzeile{margin-bottom:3px}
+.kal-w-tag{border:0;background:none;font:inherit;font-size:.8rem;font-weight:600;color:var(--muted);padding:5px 0;border-radius:8px}
+.kal-w-heute{color:var(--brand-dark)}
+.kal-w-gewaehlt{background:var(--accent)}
+.kal-w-achse{position:relative;font-size:.7rem;color:var(--muted)}
+.kal-w-achse span{position:absolute;right:4px;transform:translateY(-1px)}
+.kal-w-spalte{position:relative;border-radius:8px;background-color:var(--card);background-image:linear-gradient(to bottom,var(--line) 1px,transparent 1px);border:1px solid var(--line)}
+.kal-w-spalte.kal-w-gewaehlt{background-color:var(--accent)}
+.kal-block{position:absolute;border-radius:6px;padding:2px 4px;font:inherit;font-size:.7rem;line-height:1.25;text-align:left;overflow:hidden}
+.kal-block strong{font-weight:700}
+.kal-zeile{display:flex;gap:10px;align-items:center;width:100%;padding:10px 4px;border:0;border-top:1px solid var(--line);background:none;font:inherit;color:var(--ink);text-align:left}
+.kal-zeit{min-width:96px;color:var(--muted);font-size:.9rem}
+@media(max-width:520px){
+  .kal-tag{min-height:54px;padding:3px}
+  .kal-anzahl{display:none}
+  .kal-punkt{width:7px;height:7px}
+}
 </style>
 </head>
 <body>
@@ -1124,6 +1161,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 
   <div class="actions" style="margin-bottom:18px">
+    <button
+      type="button"
+      id="openCalendar"
+      class="secondary">
+      Kalender
+    </button>
+
     <button
       type="button"
       id="allApprovals"
@@ -1940,6 +1984,113 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="actions">
       <button type="button" id="deleteExpense" class="danger hidden">Löschen</button>
       <button type="submit" id="expenseSave" class="primary">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="kalDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Kalender</div>
+      <h2 id="kalTitel">Termine</h2>
+    </div>
+    <button type="button" id="kalClose" class="secondary">Schließen</button>
+  </div>
+
+  <div class="kal-leiste">
+    <button type="button" id="kalZurueck" class="secondary" aria-label="Zurück">‹</button>
+    <button type="button" id="kalHeute" class="secondary">Heute</button>
+    <button type="button" id="kalVor" class="secondary" aria-label="Weiter">›</button>
+    <span style="flex:1"></span>
+    <button type="button" id="kalMonat" class="primary">Monat</button>
+    <button type="button" id="kalWoche" class="secondary">Woche</button>
+  </div>
+
+  <div class="actions" style="margin:10px 0">
+    <button type="button" id="kalNeu" class="primary">+ Termin planen</button>
+  </div>
+
+  <div id="kalInhalt"></div>
+</dialog>
+
+<dialog id="kalFrageDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Termin</div>
+      <h2 id="kalFrageTitel"></h2>
+    </div>
+  </div>
+  <p id="kalFrageText"></p>
+  <div id="kalFrageKnoepfe" class="actions" style="flex-direction:column"></div>
+</dialog>
+
+<dialog id="terminFormDialog">
+  <form id="terminForm">
+    <div class="top">
+      <div>
+        <div class="muted">Kalender</div>
+        <h2 id="terminTitel">Termin planen</h2>
+      </div>
+      <button type="button" id="terminClose" class="secondary">Schließen</button>
+    </div>
+
+    <div class="grid">
+      <label class="span2">Klient
+        <select id="terminKlient" required></select>
+      </label>
+
+      <label>Datum
+        <input id="terminDatum" type="date" required>
+      </label>
+
+      <label>Leistungsart
+        <select id="terminArt">
+          <option value="Face-to-Face">Face-to-Face</option>
+          <option value="Telefonkontakt">Telefonkontakt</option>
+        </select>
+      </label>
+
+      <label>Beginn
+        <input id="terminBeginn" type="time" step="300" required>
+      </label>
+
+      <label>Ende
+        <input id="terminEnde" type="time" step="300" required>
+      </label>
+
+      <label class="span2">Leistungsort
+        <select id="terminOrt">
+          <option value="Wohnung Klient">Wohnung Klient</option>
+          <option value="Begleitung außer Haus">Begleitung außer Haus</option>
+          <option value="SuPA Büro">SuPA Büro</option>
+          <option value="Telefon">Telefon</option>
+          <option value="Online">Online</option>
+        </select>
+      </label>
+
+      <label class="span2" id="terminWiederholungWrap">Wiederholung
+        <select id="terminWiederholung">
+          <option value="0">Einmalig</option>
+          <option value="7">Jede Woche</option>
+          <option value="14">Alle 2 Wochen</option>
+        </select>
+      </label>
+
+      <label class="span2 hidden" id="terminBisWrap">Wiederholen bis
+        <input id="terminBis" type="date">
+        <span class="muted small">Höchstens ein Jahr im Voraus.</span>
+      </label>
+
+      <div id="terminSerieInfo" class="kennziffer-text span2 hidden"></div>
+
+      <label class="span2">Notiz
+        <textarea id="terminNotiz" rows="2" placeholder="Optional"></textarea>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="terminDelete" class="danger hidden">Absagen</button>
+      <button type="submit" id="terminSave" class="primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -4764,6 +4915,7 @@ $('docRangeStart').onclick=()=>{
 };
 $('closeDocForm').onclick=()=>{
   pendingTripForDoc=null;
+  pendingTerminForDoc=null;
   fahrtNachSpeichern=false;
   $('docFormDialog').close();
 };
@@ -4853,6 +5005,24 @@ $('docForm').onsubmit=async e=>{
     if(error){
       toast(error.message);
       return;
+    }
+
+    // Aus einem geplanten Termin angelegt: Termin mit der Dokumentation verknüpfen
+    if(!id && pendingTerminForDoc && saved && saved.id){
+      const {error:terminFehler}=await sb
+        .from('termine')
+        .update({documentation_id:saved.id})
+        .eq('id',pendingTerminForDoc);
+
+      if(terminFehler){
+        toast('Hinweis: Der geplante Termin konnte nicht verknüpft werden: '+terminFehler.message);
+      }
+    }
+
+    pendingTerminForDoc=null;
+
+    if($('kalDialog').open){
+      kalLaden();
     }
 
     if(!id && pendingTripForDoc && saved && saved.id){
@@ -5017,6 +5187,10 @@ $('deleteDoc').onclick=async()=>{
 
   if($('tripsDialog').open){
     await loadTrips();
+  }
+
+  if($('kalDialog').open){
+    await kalLaden();
   }
 };
 
@@ -7832,6 +8006,767 @@ $('snippetForm').onsubmit=async e=>{
 };
 
 $('backupData').onclick=erstelleSicherung;
+
+/* ---------- Kalender: dokumentierte und geplante Termine ---------- */
+
+const KAL_ORT_SYMBOL={
+  'Wohnung Klient':'🏠',
+  'Begleitung außer Haus':'🚶',
+  'SuPA Büro':'🏢',
+  'Telefon':'📞',
+  'Online':'💻'
+};
+const KAL_TAGE=['Mo','Di','Mi','Do','Fr','Sa','So'];
+const KAL_START=7;      // erste Stunde in der Wochenansicht
+const KAL_ENDE=21;      // letzte Stunde
+const KAL_STUNDE=44;    // Höhe einer Stunde in Pixeln
+
+let kalAnsicht='monat';
+let kalDatum=new Date();
+let kalDocs=[];
+let kalTermine=[];
+let kalTerminAktuell=null;
+let terminSaving=false;
+// Geplanter Termin, aus dem gerade eine Dokumentation angelegt wird
+let pendingTerminForDoc=null;
+
+function kalIso(d){
+  return d.getFullYear()+'-'+
+    String(d.getMonth()+1).padStart(2,'0')+'-'+
+    String(d.getDate()).padStart(2,'0');
+}
+
+function kalVonIso(s){
+  const [j,m,t]=String(s).slice(0,10).split('-').map(Number);
+  return new Date(j,m-1,t);
+}
+
+function kalPlusTage(d,n){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  x.setDate(x.getDate()+n);
+  return x;
+}
+
+function kalWochenStart(d){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  return kalPlusTage(x,-((x.getDay()+6)%7));
+}
+
+function kalMinuten(zeit){
+  const [h,m]=String(zeit||'00:00').slice(0,5).split(':').map(Number);
+  return (h||0)*60+(m||0);
+}
+
+function kalZeit(zeit){
+  return String(zeit||'').slice(0,5);
+}
+
+function kalKlient(id){
+  return clients.find(c=>String(c.id)===String(id))||null;
+}
+
+function kalKurzname(c){
+  return c?String(c.name||'').split(',')[0].trim():'Unbekannt';
+}
+
+function kalFarbe(c){
+  return avatarFarbe(c?(c.client_code||c.name):'');
+}
+
+function kalTagText(iso){
+  return kalVonIso(iso).toLocaleDateString('de-DE',{
+    weekday:'long',day:'numeric',month:'long',year:'numeric'
+  });
+}
+
+function neueId(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,z=>{
+    const r=Math.random()*16|0;
+    return (z==='x'?r:(r&0x3|0x8)).toString(16);
+  });
+}
+
+function kalZeitraum(){
+  if(kalAnsicht==='monat'){
+    const start=kalWochenStart(
+      new Date(kalDatum.getFullYear(),kalDatum.getMonth(),1)
+    );
+    return {start,ende:kalPlusTage(start,41)};
+  }
+
+  const start=kalWochenStart(kalDatum);
+  return {start,ende:kalPlusTage(start,6)};
+}
+
+async function openCalendar(){
+  kalAnsicht='monat';
+  kalDatum=new Date();
+  $('kalDialog').showModal();
+  await kalLaden();
+}
+
+async function kalLaden(){
+  const {start,ende}=kalZeitraum();
+  const von=kalIso(start);
+  const bis=kalIso(ende);
+
+  $('kalInhalt').innerHTML='<p class="muted">Termine werden geladen …</p>';
+
+  const [docErgebnis,terminErgebnis]=await Promise.all([
+    sb.from('dokumentationen')
+      .select('id,client_id,datum,beginn,ende,leistungsart,ort_der_leistung,fls')
+      .gte('datum',von)
+      .lte('datum',bis),
+
+    sb.from('termine')
+      .select('*')
+      .gte('datum',von)
+      .lte('datum',bis)
+  ]);
+
+  if(docErgebnis.error){
+    toast('Dokumentationen konnten nicht geladen werden: '+docErgebnis.error.message);
+  }
+
+  if(terminErgebnis.error){
+    toast('Geplante Termine konnten nicht geladen werden: '+terminErgebnis.error.message);
+  }
+
+  kalDocs=docErgebnis.data||[];
+
+  // Ein geplanter Termin gilt als erledigt, sobald er verknüpft ist
+  // oder es für den Klienten am selben Tag eine Dokumentation gibt,
+  // die höchstens zwei Stunden früher oder später beginnt.
+  kalTermine=(terminErgebnis.data||[]).filter(t=>
+    !t.documentation_id&&!kalDocs.some(d=>
+      String(d.client_id)===String(t.client_id)&&
+      d.datum===t.datum&&
+      Math.abs(kalMinuten(d.beginn)-kalMinuten(t.beginn))<=120
+    )
+  );
+
+  kalZeichnen();
+}
+
+function kalEintraegeAm(iso){
+  const liste=[
+    ...kalDocs.filter(d=>d.datum===iso).map(d=>({
+      art:'doc',id:d.id,client_id:d.client_id,datum:d.datum,
+      beginn:d.beginn,ende:d.ende,ort:d.ort_der_leistung
+    })),
+    ...kalTermine.filter(t=>t.datum===iso).map(t=>({
+      art:'plan',id:t.id,client_id:t.client_id,datum:t.datum,
+      beginn:t.beginn,ende:t.ende,ort:t.ort
+    }))
+  ];
+
+  return liste.sort((a,b)=>kalMinuten(a.beginn)-kalMinuten(b.beginn));
+}
+
+function kalZeichnen(){
+  const {start,ende}=kalZeitraum();
+
+  $('kalMonat').className=kalAnsicht==='monat'?'primary':'secondary';
+  $('kalWoche').className=kalAnsicht==='woche'?'primary':'secondary';
+
+  if(kalAnsicht==='monat'){
+    $('kalTitel').textContent=kalDatum.toLocaleDateString('de-DE',{
+      month:'long',year:'numeric'
+    });
+    kalMonatZeichnen(start);
+  }else{
+    $('kalTitel').textContent=
+      start.toLocaleDateString('de-DE',{day:'numeric',month:'short'})+
+      ' – '+
+      ende.toLocaleDateString('de-DE',{day:'numeric',month:'short',year:'numeric'});
+    kalWocheZeichnen(start);
+  }
+}
+
+function kalLegende(){
+  return '<div class="kal-legende">'+
+    '<span><span class="kal-punkt" style="background:var(--muted)"></span> dokumentiert</span>'+
+    '<span><span class="kal-punkt kal-punkt-plan" style="border-color:var(--muted)"></span> geplant</span>'+
+    '<span>⚠ Dokumentation fehlt</span>'+
+    '</div>';
+}
+
+function kalMonatZeichnen(start){
+  const monat=kalDatum.getMonth();
+  const heute=kalIso(new Date());
+
+  let html='<div class="kal-monat">'+
+    KAL_TAGE.map(t=>'<div class="kal-kopf">'+t+'</div>').join('');
+
+  for(let i=0;i<42;i++){
+    const tag=kalPlusTage(start,i);
+    const iso=kalIso(tag);
+    const eintraege=kalEintraegeAm(iso);
+    const fehlt=eintraege.some(e=>e.art==='plan'&&e.datum<heute);
+
+    const klassen=['kal-tag'];
+    if(tag.getMonth()!==monat)klassen.push('kal-fremd');
+    if(iso===heute)klassen.push('kal-heute');
+
+    const punkte=eintraege.slice(0,6).map(e=>{
+      const f=kalFarbe(kalKlient(e.client_id));
+      return e.art==='doc'
+        ? '<span class="kal-punkt" style="background:'+f.ink+'"></span>'
+        : '<span class="kal-punkt kal-punkt-plan" style="border-color:'+f.ink+'"></span>';
+    }).join('');
+
+    const mehr=eintraege.length>6
+      ? '<span class="kal-mehr">+'+(eintraege.length-6)+'</span>'
+      : '';
+
+    html+=
+      '<button type="button" class="'+klassen.join(' ')+'" data-tag="'+iso+'">'+
+        '<span class="kal-nr">'+tag.getDate()+(fehlt?' ⚠':'')+'</span>'+
+        '<span class="kal-punkte">'+punkte+mehr+'</span>'+
+        (eintraege.length
+          ? '<span class="kal-anzahl">'+eintraege.length+
+            (eintraege.length===1?' Termin':' Termine')+'</span>'
+          : '')+
+      '</button>';
+  }
+
+  html+='</div>'+kalLegende()+
+    '<p class="muted small">Tippe auf einen Tag, um die Woche mit Uhrzeiten zu sehen.</p>';
+
+  $('kalInhalt').innerHTML=html;
+
+  document.querySelectorAll('#kalInhalt .kal-tag').forEach(b=>{
+    b.onclick=async()=>{
+      kalDatum=kalVonIso(b.dataset.tag);
+      kalAnsicht='woche';
+      await kalLaden();
+    };
+  });
+}
+
+function kalWocheZeichnen(start){
+  const heute=kalIso(new Date());
+  let ausgewaehlt=kalIso(kalDatum);
+  const hoehe=(KAL_ENDE-KAL_START)*KAL_STUNDE;
+
+  let kopf='<div class="kal-w-raster kal-w-kopfzeile"><div></div>';
+  let achse='<div class="kal-w-achse" style="height:'+hoehe+'px">';
+
+  for(let h=KAL_START;h<KAL_ENDE;h++){
+    achse+='<span style="top:'+((h-KAL_START)*KAL_STUNDE)+'px">'+h+'</span>';
+  }
+
+  achse+='</div>';
+
+  let spalten='';
+
+  for(let i=0;i<7;i++){
+    const tag=kalPlusTage(start,i);
+    const iso=kalIso(tag);
+    const eintraege=kalEintraegeAm(iso);
+
+    kopf+=
+      '<button type="button" class="kal-w-tag'+
+      (iso===heute?' kal-w-heute':'')+
+      (iso===ausgewaehlt?' kal-w-gewaehlt':'')+
+      '" data-tag="'+iso+'">'+KAL_TAGE[i]+' '+tag.getDate()+'.</button>';
+
+    // Überschneidende Termine nebeneinander legen
+    const spuren=[];
+
+    eintraege.forEach(e=>{
+      const s=kalMinuten(e.beginn);
+      let spur=spuren.findIndex(frei=>frei<=s);
+
+      if(spur<0){
+        spur=spuren.length;
+        spuren.push(0);
+      }
+
+      spuren[spur]=Math.max(kalMinuten(e.ende),s+15);
+      e.spur=spur;
+    });
+
+    const anzahl=Math.max(1,spuren.length);
+    const breite=100/anzahl;
+
+    const bloecke=eintraege.map(e=>{
+      const s=kalMinuten(e.beginn);
+      const en=Math.max(kalMinuten(e.ende),s+20);
+      const oben=Math.max(0,(s-KAL_START*60)/60*KAL_STUNDE);
+      const hoch=Math.max(20,(en-s)/60*KAL_STUNDE);
+      const c=kalKlient(e.client_id);
+      const f=kalFarbe(c);
+      const fehlt=e.art==='plan'&&e.datum<heute;
+
+      const stil=
+        'top:'+oben+'px;height:'+hoch+'px;'+
+        'left:calc('+(breite*e.spur)+'% + 1px);'+
+        'width:calc('+breite+'% - 2px);'+
+        'color:'+f.ink+';'+
+        (e.art==='doc'
+          ? 'background:'+f.bg+';border-left:3px solid '+f.ink+';'
+          : 'background:var(--card);border:2px dashed '+f.ink+';');
+
+      return '<button type="button" class="kal-block kal-eintrag" '+
+        'data-art="'+e.art+'" data-id="'+esc(e.id)+'" style="'+stil+'">'+
+        '<strong>'+kalZeit(e.beginn)+'</strong> '+esc(kalKurzname(c))+
+        '<br>'+(KAL_ORT_SYMBOL[e.ort]||'')+(fehlt?' ⚠':'')+
+        '</button>';
+    }).join('');
+
+    spalten+=
+      '<div class="kal-w-spalte'+(iso===ausgewaehlt?' kal-w-gewaehlt':'')+
+      '" data-tag="'+iso+'" style="height:'+hoehe+'px;'+
+      'background-size:100% '+KAL_STUNDE+'px">'+bloecke+'</div>';
+  }
+
+  kopf+='</div>';
+
+  // Liste des ausgewählten Tages
+  if(ausgewaehlt<kalIso(start)||ausgewaehlt>kalIso(kalPlusTage(start,6))){
+    ausgewaehlt=kalIso(start);
+  }
+
+  const tagesListe=kalEintraegeAm(ausgewaehlt);
+
+  const liste=tagesListe.length
+    ? tagesListe.map(e=>{
+        const c=kalKlient(e.client_id);
+        const f=kalFarbe(c);
+        const fehlt=e.art==='plan'&&e.datum<heute;
+
+        return '<button type="button" class="kal-zeile kal-eintrag" '+
+          'data-art="'+e.art+'" data-id="'+esc(e.id)+'">'+
+          '<span class="kal-zeit">'+kalZeit(e.beginn)+'–'+kalZeit(e.ende)+'</span>'+
+          '<span class="kal-punkt'+(e.art==='plan'?' kal-punkt-plan':'')+'" style="'+
+            (e.art==='plan'?'border-color:':'background:')+f.ink+'"></span>'+
+          '<span style="flex:1">'+esc(c?c.name:'Unbekannt')+
+            '<br><span class="muted small">'+(KAL_ORT_SYMBOL[e.ort]||'')+' '+
+            esc(e.ort||'')+
+            (e.art==='plan'?(fehlt?' · ⚠ Dokumentation fehlt':' · geplant'):'')+
+            '</span></span>'+
+        '</button>';
+      }).join('')
+    : '<p class="muted">Keine Termine an diesem Tag.</p>';
+
+  $('kalInhalt').innerHTML=
+    '<div class="kal-w-wrap">'+kopf+
+      '<div class="kal-w-raster">'+achse+spalten+'</div>'+
+    '</div>'+
+    kalLegende()+
+    '<p class="muted small">Tippe auf eine freie Stelle, um dort einen Termin zu planen.</p>'+
+    '<h3 style="margin-top:14px">'+esc(kalTagText(ausgewaehlt))+'</h3>'+
+    liste;
+
+  document.querySelectorAll('#kalInhalt .kal-w-tag').forEach(b=>{
+    b.onclick=()=>{
+      kalDatum=kalVonIso(b.dataset.tag);
+      kalZeichnen();
+    };
+  });
+
+  document.querySelectorAll('#kalInhalt .kal-eintrag').forEach(b=>{
+    b.onclick=ev=>{
+      ev.stopPropagation();
+      kalEintragAntippen(b.dataset.art,b.dataset.id);
+    };
+  });
+
+  document.querySelectorAll('#kalInhalt .kal-w-spalte').forEach(spalte=>{
+    spalte.onclick=ev=>{
+      if(ev.target!==spalte)return;
+
+      const minuten=KAL_START*60+Math.floor(ev.offsetY/KAL_STUNDE*2)*30;
+      const zeit=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+
+        String(m%60).padStart(2,'0');
+
+      kalTerminFormular({
+        datum:spalte.dataset.tag,
+        beginn:zeit(minuten),
+        ende:zeit(Math.min(minuten+60,23*60+55))
+      });
+    };
+  });
+}
+
+function kalFrage(titel,text,knoepfe){
+  return new Promise(resolve=>{
+    const dialog=$('kalFrageDialog');
+    const box=$('kalFrageKnoepfe');
+
+    $('kalFrageTitel').textContent=titel;
+    $('kalFrageText').textContent=text;
+    box.innerHTML='';
+
+    const fertig=wahl=>{
+      dialog.close();
+      resolve(wahl);
+    };
+
+    knoepfe.forEach(k=>{
+      const knopf=document.createElement('button');
+      knopf.type='button';
+      knopf.className=k.cls||'secondary';
+      knopf.textContent=k.t;
+      knopf.onclick=()=>fertig(k.k);
+      box.appendChild(knopf);
+    });
+
+    dialog.oncancel=e=>{
+      e.preventDefault();
+      fertig(null);
+    };
+
+    dialog.showModal();
+  });
+}
+
+async function kalEintragAntippen(art,id){
+  const heute=kalIso(new Date());
+
+  if(art==='doc'){
+    const d=kalDocs.find(x=>String(x.id)===String(id));
+    if(!d)return;
+
+    const c=kalKlient(d.client_id);
+
+    const wahl=await kalFrage(
+      'Dokumentation öffnen?',
+      (c?c.name:'Unbekannt')+' · '+kalTagText(d.datum)+' · '+
+      kalZeit(d.beginn)+'–'+kalZeit(d.ende)+' Uhr · '+(d.ort_der_leistung||''),
+      [
+        {k:'oeffnen',t:'Dokumentation öffnen',cls:'primary'},
+        {k:null,t:'Abbrechen'}
+      ]
+    );
+
+    if(wahl==='oeffnen'){
+      if(!c){toast('Klient nicht gefunden.');return}
+      await openDocs(c.id);
+      openDocForm(d.id);
+    }
+
+    return;
+  }
+
+  const t=kalTermine.find(x=>String(x.id)===String(id));
+  if(!t)return;
+
+  const c=kalKlient(t.client_id);
+  const fehlt=t.datum<heute;
+
+  const wahl=await kalFrage(
+    fehlt?'Dokumentation fehlt':'Geplanter Termin',
+    (c?c.name:'Unbekannt')+' · '+kalTagText(t.datum)+' · '+
+    kalZeit(t.beginn)+'–'+kalZeit(t.ende)+' Uhr · '+(t.ort||'')+
+    (t.serie_id?' · wiederkehrend':'')+
+    (t.notiz?' · '+t.notiz:''),
+    [
+      {k:'doku',t:'Dokumentation anlegen',cls:'primary'},
+      {k:'bearbeiten',t:'Termin bearbeiten'},
+      {k:'absagen',t:'Termin absagen',cls:'danger'},
+      {k:null,t:'Abbrechen'}
+    ]
+  );
+
+  if(wahl==='doku')await kalDokuAusTermin(t);
+  if(wahl==='bearbeiten')kalTerminFormular({},t);
+  if(wahl==='absagen')await kalTerminAbsagen(t);
+}
+
+async function kalDokuAusTermin(t){
+  const c=kalKlient(t.client_id);
+  if(!c){toast('Klient nicht gefunden.');return}
+
+  await openDocs(c.id);
+  openDocForm('');
+
+  const beginn=kalZeit(t.beginn);
+  const ende=kalZeit(t.ende);
+
+  $('docLeistungsart').value=t.leistungsart||'Face-to-Face';
+  $('docLeistungsart').dispatchEvent(new Event('change'));
+
+  $('docDatum').value=t.datum;
+  ensureTimeOption($('docBeginn'),beginn);
+  $('docBeginn').value=beginn;
+  ensureTimeOption($('docEnde'),ende);
+  $('docEnde').value=ende;
+  $('docOrt').value=t.ort||'Wohnung Klient';
+
+  updateDocDauer();
+
+  pendingTerminForDoc=t.id;
+  toast('Daten aus dem geplanten Termin übernommen');
+}
+
+function kalKlientenOptionen(ausgewaehlt){
+  const liste=clients
+    .filter(c=>!istEhemalig(c.id)||String(c.id)===String(ausgewaehlt))
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
+
+  $('terminKlient').innerHTML=
+    '<option value="">Bitte auswählen</option>'+
+    liste.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
+
+  $('terminKlient').value=ausgewaehlt?String(ausgewaehlt):'';
+}
+
+function kalTerminFormular(vorgabe={},termin=null){
+  kalTerminAktuell=termin;
+  const t=termin||{};
+
+  kalKlientenOptionen(t.client_id||vorgabe.clientId||'');
+
+  $('terminDatum').value=t.datum||vorgabe.datum||kalIso(new Date());
+  $('terminBeginn').value=kalZeit(t.beginn||vorgabe.beginn||'09:00');
+  $('terminEnde').value=kalZeit(t.ende||vorgabe.ende||'10:00');
+  $('terminArt').value=t.leistungsart||'Face-to-Face';
+  $('terminOrt').value=t.ort||'Wohnung Klient';
+  $('terminNotiz').value=t.notiz||'';
+  $('terminWiederholung').value='0';
+  $('terminBis').value='';
+  $('terminBisWrap').classList.add('hidden');
+  $('terminWiederholungWrap').classList.toggle('hidden',Boolean(termin));
+
+  const info=$('terminSerieInfo');
+  info.classList.toggle('hidden',!(termin&&termin.serie_id));
+  info.innerHTML=
+    '<strong>Wiederkehrender Termin</strong>'+
+    'Beim Speichern kannst du wählen, ob die Änderung nur für diesen '+
+    'oder auch für alle folgenden Termine gilt. Ein geändertes Datum '+
+    'gilt immer nur für diesen Termin.';
+
+  $('terminDelete').classList.toggle('hidden',!termin);
+  $('terminTitel').textContent=termin
+    ? 'Geplanten Termin bearbeiten'
+    : 'Termin planen';
+
+  $('terminFormDialog').showModal();
+}
+
+async function kalTerminAbsagen(t){
+  let umfang='nur';
+
+  if(t.serie_id){
+    umfang=await kalFrage(
+      'Termin absagen',
+      'Nur diesen Termin absagen oder auch alle folgenden Termine dieser Serie?',
+      [
+        {k:'nur',t:'Nur diesen Termin',cls:'danger'},
+        {k:'alle',t:'Diesen und alle folgenden',cls:'danger'},
+        {k:null,t:'Abbrechen'}
+      ]
+    );
+
+    if(!umfang)return false;
+  }else if(!confirm('Diesen geplanten Termin absagen? Er wird aus dem Kalender entfernt.')){
+    return false;
+  }
+
+  let abfrage=sb.from('termine').delete();
+
+  abfrage=umfang==='alle'
+    ? abfrage.eq('serie_id',t.serie_id).gte('datum',t.datum).is('documentation_id',null)
+    : abfrage.eq('id',t.id);
+
+  const {error}=await abfrage;
+
+  if(error){
+    toast('Absagen fehlgeschlagen: '+error.message);
+    return false;
+  }
+
+  toast(umfang==='alle'?'Serie ab diesem Termin abgesagt':'Termin abgesagt');
+
+  if($('kalDialog').open)await kalLaden();
+
+  return true;
+}
+
+$('openCalendar').onclick=openCalendar;
+$('kalClose').onclick=()=>$('kalDialog').close();
+
+$('kalZurueck').onclick=async()=>{
+  kalDatum=kalAnsicht==='monat'
+    ? new Date(kalDatum.getFullYear(),kalDatum.getMonth()-1,1)
+    : kalPlusTage(kalDatum,-7);
+  await kalLaden();
+};
+
+$('kalVor').onclick=async()=>{
+  kalDatum=kalAnsicht==='monat'
+    ? new Date(kalDatum.getFullYear(),kalDatum.getMonth()+1,1)
+    : kalPlusTage(kalDatum,7);
+  await kalLaden();
+};
+
+$('kalHeute').onclick=async()=>{
+  kalDatum=new Date();
+  await kalLaden();
+};
+
+$('kalMonat').onclick=async()=>{
+  kalAnsicht='monat';
+  await kalLaden();
+};
+
+$('kalWoche').onclick=async()=>{
+  kalAnsicht='woche';
+  await kalLaden();
+};
+
+$('kalNeu').onclick=()=>kalTerminFormular({
+  datum:kalAnsicht==='woche'?kalIso(kalDatum):kalIso(new Date())
+});
+
+$('terminClose').onclick=()=>$('terminFormDialog').close();
+
+$('terminWiederholung').onchange=()=>{
+  const an=$('terminWiederholung').value!=='0';
+
+  $('terminBisWrap').classList.toggle('hidden',!an);
+
+  if(an&&!$('terminBis').value){
+    const ab=kalVonIso($('terminDatum').value||kalIso(new Date()));
+    $('terminBis').value=kalIso(kalPlusTage(ab,7*12));
+  }
+};
+
+$('terminDelete').onclick=async()=>{
+  if(!kalTerminAktuell)return;
+
+  const erledigt=await kalTerminAbsagen(kalTerminAktuell);
+
+  if(erledigt)$('terminFormDialog').close();
+};
+
+$('terminForm').onsubmit=async ev=>{
+  ev.preventDefault();
+
+  if(terminSaving)return;
+
+  const clientId=$('terminKlient').value;
+  const datum=$('terminDatum').value;
+  const beginn=$('terminBeginn').value;
+  const ende=$('terminEnde').value;
+
+  if(!clientId||!datum||!beginn||!ende){
+    toast('Bitte Klient, Datum, Beginn und Ende ausfüllen.');
+    return;
+  }
+
+  if(kalMinuten(ende)<=kalMinuten(beginn)){
+    toast('Das Ende muss nach dem Beginn liegen.');
+    return;
+  }
+
+  const felder={
+    client_id:clientId,
+    beginn,
+    ende,
+    leistungsart:$('terminArt').value,
+    ort:$('terminOrt').value,
+    notiz:$('terminNotiz').value.trim()||null
+  };
+
+  const knopf=$('terminSave');
+  terminSaving=true;
+  knopf.disabled=true;
+  knopf.textContent='Wird gespeichert …';
+
+  try{
+    let fehler=null;
+    let meldung='';
+    const t=kalTerminAktuell;
+
+    if(t){
+      let umfang='nur';
+
+      if(t.serie_id){
+        umfang=await kalFrage(
+          'Wiederkehrender Termin',
+          'Soll die Änderung nur für diesen Termin gelten oder auch für alle folgenden Termine dieser Serie?',
+          [
+            {k:'nur',t:'Nur dieser Termin',cls:'primary'},
+            {k:'alle',t:'Diesen und alle folgenden'},
+            {k:null,t:'Abbrechen'}
+          ]
+        );
+
+        if(!umfang)return;
+      }
+
+      ({error:fehler}=await sb
+        .from('termine')
+        .update({...felder,datum})
+        .eq('id',t.id));
+
+      if(!fehler&&umfang==='alle'){
+        ({error:fehler}=await sb
+          .from('termine')
+          .update(felder)
+          .eq('serie_id',t.serie_id)
+          .gt('datum',t.datum)
+          .is('documentation_id',null));
+      }
+
+      meldung=umfang==='alle'
+        ? 'Serie ab diesem Termin geändert'
+        : 'Termin geändert';
+    }else{
+      const abstand=Number($('terminWiederholung').value);
+      const zeilen=[];
+
+      if(abstand){
+        const bis=$('terminBis').value;
+
+        if(!bis||bis<datum){
+          toast('Bitte ein Enddatum für die Wiederholung wählen.');
+          return;
+        }
+
+        const grenze=kalIso(kalPlusTage(kalVonIso(datum),366));
+        const serieId=neueId();
+
+        for(
+          let tag=kalVonIso(datum);
+          kalIso(tag)<=bis&&kalIso(tag)<=grenze;
+          tag=kalPlusTage(tag,abstand)
+        ){
+          zeilen.push({...felder,user_id:user.id,datum:kalIso(tag),serie_id:serieId});
+        }
+      }else{
+        zeilen.push({...felder,user_id:user.id,datum});
+      }
+
+      ({error:fehler}=await sb.from('termine').insert(zeilen));
+
+      meldung=zeilen.length>1
+        ? zeilen.length+' Termine geplant'
+        : 'Termin geplant';
+    }
+
+    if(fehler){
+      toast('Termin konnte nicht gespeichert werden: '+fehler.message);
+      return;
+    }
+
+    $('terminFormDialog').close();
+    toast(meldung);
+
+    if($('kalDialog').open){
+      kalDatum=kalVonIso(datum);
+      await kalLaden();
+    }
+  }finally{
+    terminSaving=false;
+    knopf.disabled=false;
+    knopf.textContent='Speichern';
+  }
+};
 
 $('allIncome').onclick=openIncome;
 $('closeIncome').onclick=()=>$('incomeDialog').close();
