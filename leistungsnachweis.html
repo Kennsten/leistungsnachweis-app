@@ -821,16 +821,8 @@ const totalWay=entries.reduce(
         );
 
         const payload=readPayload()||{};
-        const klient=(payload.client&&payload.client.name)||'Klient';
-        const monat=payload.monthLabel||'';
 
-        const dateiname=(
-          'Leistungsnachweis '+klient+' '+monat
-        )
-          .replace(/[^a-zA-Z0-9äöüÄÖÜß ,.-]/g,'')
-          .trim()+'.pdf';
-
-        pdf.save(dateiname);
+        pdf.save(lnDateiname(payload,'.pdf'));
       }catch(fehler){
         alert('Das PDF konnte nicht erstellt werden: '+fehler.message);
       }finally{
@@ -1280,11 +1272,21 @@ const totalWay=entries.reduce(
       return lnZipSchreiben(ergebnis);
     }
 
+    // Dateiname für Excel und PDF: „LN Nachname MM-JJJJ"
+    // z. B. „LN Thiele 10-2026.xlsx"
     function lnDateiname(payload,endung){
-      const klient=(payload.client&&payload.client.name)||'Klient';
-      const monat=payload.monthLabel||'';
-      return ('Leistungsnachweis '+klient+' '+monat)
-        .replace(/[^a-zA-Z0-9äöüÄÖÜß ,.-]/g,'')
+      const name=(payload.client&&payload.client.name)||'';
+      const nachname=name.split(',')[0].trim()||'Klient';
+
+      const [monatName,jahr]=String(payload.monthLabel||'').split(' ');
+      const monatNr=LN_MONATE.indexOf(monatName)+1;
+      const zeitraum=monatNr&&jahr
+        ? String(monatNr).padStart(2,'0')+'-'+jahr
+        : String(payload.monthLabel||'').replace(/\s+/g,'-');
+
+      return ('LN '+nachname+' '+zeitraum)
+        .replace(/[^a-zA-Z0-9äöüÄÖÜß .-]/g,'')
+        .replace(/\s+/g,' ')
         .trim()+endung;
     }
 
