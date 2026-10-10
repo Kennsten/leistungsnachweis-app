@@ -1063,6 +1063,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   100%{left:100%}
 }
 
+/* Knöpfe in hinterlegten Kästen sichtbar absetzen */
+.summary-box .secondary{background:var(--card);border:1px solid var(--line)}
+
+/* ---------- Dokumente: Datei-Browser ---------- */
+.cloud-pfad{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:12px;font-size:.9rem}
+.cloud-pfad button{border:0;background:var(--accent);color:var(--ink);font:inherit;font-weight:600;padding:6px 10px;border-radius:10px}
+.cloud-pfad button:disabled{opacity:1;background:none;cursor:default}
+.cloud-pfad span{color:var(--muted)}
+.cloud-ordner{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:14px 16px;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--accent);color:var(--ink);font:inherit;font-weight:650;text-align:left}
+.cloud-ordner .meta{font-weight:400;margin-left:auto}
+
 /* ---------- Kalender ---------- */
 #kalDialog{width:min(98vw,1000px)}
 .kal-leiste{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
@@ -1465,6 +1476,20 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label id="approvalLeistungstraegerNameWrap" class="hidden">Name des sonstigen Leistungsträgers<input id="approvalLeistungstraegerName" placeholder="z. B. Stadt Peine"></label>
       <label>Ansprechpartner<input id="approvalAnsprechpartner"></label>
       <label class="span2">Bemerkungen<textarea id="approvalBemerkungen" rows="3"></textarea></label>
+
+      <div class="span2 summary-box" style="margin:8px 0">
+        <div style="font-weight:650;margin-bottom:6px">Bewilligungsbescheid (aus pCloud)</div>
+        <div id="approvalBescheidStatus" class="muted small"></div>
+        <div class="actions" style="margin-top:10px">
+          <button type="button" id="approvalBescheidWaehlen" class="secondary">
+            Aus pCloud wählen
+          </button>
+          <span id="approvalBescheidViewSlot" class="hidden" style="display:flex;flex:1"></span>
+          <button type="button" id="approvalBescheidLoesen" class="danger hidden">
+            Zuordnung lösen
+          </button>
+        </div>
+      </div>
     </div>
     <div class="actions">
       <button type="button" id="deleteApproval" class="danger hidden">Löschen</button>
@@ -1700,11 +1725,20 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div id="cloudFolderList"></div>
   </div>
 
+  <div id="cloudBrowser" class="hidden">
+    <div id="cloudAuswahlHinweis" class="kennziffer-text hidden"></div>
+    <div id="cloudPfad" class="cloud-pfad"></div>
+    <label style="margin:10px 0 4px">Suchen
+      <input id="cloudSuche" type="search"
+        placeholder="Dateiname, auch in allen Unterordnern">
+    </label>
+  </div>
+
   <div id="cloudFiles"></div>
 
   <div id="cloudActions" class="actions hidden" style="margin-top:14px">
     <button type="button" id="cloudUpload" class="primary">
-      Datei hochladen
+      Datei in diesen Ordner hochladen
     </button>
     <button type="button" id="cloudUnlink" class="secondary">
       Ordner wechseln
@@ -4406,13 +4440,25 @@ ${formatFls(restFls)} FLS
           <div class="meta">${esc(a.kostentraeger||a.leistungstraeger_name||a.leistungstraeger_typ||'kein Leistungsträger')}</div>
           ${a.ansprechpartner?`<div class="meta">Ansprechpartner: ${esc(a.ansprechpartner)}</div>`:''}
           ${a.bemerkungen?`<p class="small">${esc(a.bemerkungen)}</p>`:''}
+          ${a.bescheid_datei_id
+            ? `<div class="meta">📎 Bescheid: ${esc(a.bescheid_datei_name||'')}</div>`
+            : '<div class="meta">Kein Bescheid zugeordnet</div>'}
         </div>
-        <div class="actions"><button class="secondary editApproval" data-id="${a.id}">Bearbeiten</button></div>
+        <div class="actions">
+          ${a.bescheid_datei_id
+            ? `<button type="button" class="secondary viewBescheid" data-file="${esc(a.bescheid_datei_id)}">Bescheid ansehen</button>`
+            : ''}
+          <button class="secondary editApproval" data-id="${a.id}">Bearbeiten</button>
+        </div>
       </div>
     </div>
   `;
   }).join(''):'<p class="muted">Noch keine Bewilligungen angelegt.</p>';
   document.querySelectorAll('.editApproval').forEach(b=>b.onclick=()=>openApprovalForm(b.dataset.id));
+
+  document.querySelectorAll('.viewBescheid').forEach(
+    b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.file)
+  );
 
   document.querySelectorAll('.closingDone').forEach(
     b=>b.onclick=()=>abschlussberichtErledigt(b.dataset.id)
@@ -4502,10 +4548,107 @@ function openApprovalForm(id=''){
   $('approvalAnsprechpartner').value=a.ansprechpartner||'';
   $('approvalBemerkungen').value=a.bemerkungen||'';
   updateLeistungstraegerFields();
+
+  bescheidAktuell=a.bescheid_datei_id
+    ? {fileid:a.bescheid_datei_id,name:a.bescheid_datei_name||''}
+    : null;
+  bescheidAnzeigen();
+
   $('deleteApproval').classList.toggle('hidden',!id);
   $('approvalDialogTitle').textContent=id?'Bewilligung bearbeiten':'Bewilligung anlegen';
   $('approvalFormDialog').showModal();
 }
+
+/* ---------- Bewilligungsbescheid aus pCloud ---------- */
+
+// Im Formular gewählter Bescheid: {fileid, name} oder null
+let bescheidAktuell=null;
+
+function bescheidAnzeigen(){
+  const status=$('approvalBescheidStatus');
+  const slot=$('approvalBescheidViewSlot');
+
+  slot.innerHTML='';
+  slot.classList.toggle('hidden',!bescheidAktuell);
+  $('approvalBescheidLoesen').classList.toggle('hidden',!bescheidAktuell);
+
+  if(bescheidAktuell){
+    status.textContent='📎 '+(bescheidAktuell.name||'Bescheid zugeordnet');
+    $('approvalBescheidWaehlen').textContent='Anderen wählen';
+
+    const knopf=document.createElement('button');
+    knopf.type='button';
+    knopf.className='secondary';
+    knopf.style.flex='1';
+    knopf.textContent='Bescheid ansehen';
+    knopf.onclick=()=>cloudDateiOeffnen(knopf,bescheidAktuell.fileid);
+    slot.appendChild(knopf);
+  }else{
+    status.textContent=
+      'Noch kein Bescheid zugeordnet. Wähle die Datei im pCloud-Ordner '+
+      'des Klienten aus oder lade sie dort hoch.';
+    $('approvalBescheidWaehlen').textContent='Aus pCloud wählen';
+  }
+}
+
+// Speichert die Zuordnung sofort, wenn die Bewilligung schon existiert
+async function bescheidSpeichern(datei){
+  const id=$('approvalId').value;
+
+  if(id){
+    const {error}=await sb
+      .from('bewilligungen')
+      .update({
+        bescheid_datei_id:datei?datei.fileid:null,
+        bescheid_datei_name:datei?datei.name:null
+      })
+      .eq('id',id);
+
+    if(error){
+      toast('Zuordnung konnte nicht gespeichert werden: '+error.message);
+      return false;
+    }
+
+    const eintrag=approvals.find(x=>String(x.id)===String(id));
+    if(eintrag){
+      eintrag.bescheid_datei_id=datei?datei.fileid:null;
+      eintrag.bescheid_datei_name=datei?datei.name:null;
+    }
+  }
+
+  bescheidAktuell=datei;
+  bescheidAnzeigen();
+
+  toast(datei
+    ? (id?'Bescheid zugeordnet':'Bescheid ausgewählt, wird beim Speichern übernommen')
+    : 'Zuordnung gelöst, die Datei bleibt in pCloud');
+
+  if(id&&$('approvalsDialog').open)await loadApprovals();
+
+  return true;
+}
+
+$('approvalBescheidWaehlen').onclick=async()=>{
+  if(!activeClient){
+    toast('Kein Klient ausgewählt.');
+    return;
+  }
+
+  const client=clients.find(c=>String(c.id)===String(activeClient.id))||activeClient;
+
+  await openCloudAuswahl(client,{
+    titel:'Bewilligungsbescheid auswählen',
+    text:'Tippe bei der passenden Datei auf „Zuordnen". Du kannst in '+
+      'Unterordner wechseln, suchen oder eine neue Datei hochladen.',
+    beiWahl:datei=>bescheidSpeichern(datei)
+  });
+};
+
+$('approvalBescheidLoesen').onclick=async()=>{
+  if(!bescheidAktuell)return;
+  if(!confirm('Zuordnung des Bescheids lösen? Die Datei selbst bleibt in pCloud.'))return;
+  await bescheidSpeichern(null);
+};
 
 $('login').onclick=async()=>{
   const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
@@ -6057,7 +6200,9 @@ $('approvalForm').onsubmit=async e=>{
     leistungstraeger_name:type==='Sonstiger Leistungsträger'?(name||null):null,
     kostentraeger:type==='Sonstiger Leistungsträger'?(name||null):(type||null),
     ansprechpartner:$('approvalAnsprechpartner').value.trim()||null,
-    bemerkungen:$('approvalBemerkungen').value.trim()||null
+    bemerkungen:$('approvalBemerkungen').value.trim()||null,
+    bescheid_datei_id:bescheidAktuell?bescheidAktuell.fileid:null,
+    bescheid_datei_name:bescheidAktuell?bescheidAktuell.name:null
   };
   if(!row.beginn){toast('Bitte den Beginn eintragen.');return}
   if(row.ende&&row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
@@ -6102,6 +6247,13 @@ let pcloudToken=null;
 let activeCloudClient=null;
 let cloudFolders=[];
 let cloudFiles=[];
+// Aktueller Pfad im Klientenordner: [{id,name}, …], erster Eintrag = Klientenordner
+let cloudPfad=[];
+// Zwischengespeicherte Liste aller Dateien inkl. Unterordner (für die Suche)
+let cloudAlleDateien=null;
+// Auswahlmodus (z. B. Bescheid zuordnen): {titel, text, beiWahl(datei)}
+let cloudAuswahl=null;
+let cloudSucheZeitgeber=null;
 
 function pcloudAdresse(){
   return window.location.origin+'/index.html';
@@ -6271,10 +6423,40 @@ async function openCloud(clientId){
     return;
   }
 
+  cloudAuswahl=null;
+  cloudPfadZuruecksetzen();
   $('cloudClientName').textContent=activeCloudClient.name;
   $('cloudDialog').showModal();
 
   await cloudAnzeigen();
+}
+
+// Öffnet den Klientenordner, um eine Datei auszuwählen (z. B. Bescheid)
+async function openCloudAuswahl(client,auswahl){
+  activeCloudClient=client;
+  cloudAuswahl=auswahl;
+  cloudPfadZuruecksetzen();
+  $('cloudClientName').textContent=client.name;
+  $('cloudDialog').showModal();
+
+  await cloudAnzeigen();
+}
+
+function cloudPfadZuruecksetzen(){
+  cloudAlleDateien=null;
+  $('cloudSuche').value='';
+  cloudPfad=activeCloudClient&&activeCloudClient.pcloud_folder_id
+    ? [{
+        id:activeCloudClient.pcloud_folder_id,
+        name:activeCloudClient.pcloud_folder_name||'Klientenordner'
+      }]
+    : [];
+}
+
+function cloudAktuellerOrdner(){
+  return cloudPfad.length
+    ? cloudPfad[cloudPfad.length-1].id
+    : activeCloudClient.pcloud_folder_id;
 }
 
 async function cloudAnzeigen(){
@@ -6286,7 +6468,14 @@ async function cloudAnzeigen(){
   verbinden.classList.add('hidden');
   auswahl.classList.add('hidden');
   aktionen.classList.add('hidden');
+  $('cloudBrowser').classList.add('hidden');
   liste.innerHTML='';
+
+  const hinweis=$('cloudAuswahlHinweis');
+  hinweis.classList.toggle('hidden',!cloudAuswahl);
+  hinweis.innerHTML=cloudAuswahl
+    ? '<strong>'+esc(cloudAuswahl.titel)+'</strong>'+esc(cloudAuswahl.text)
+    : '';
 
   if(!pcloudToken){
     verbinden.classList.remove('hidden');
@@ -6298,6 +6487,9 @@ async function cloudAnzeigen(){
     return;
   }
 
+  if(!cloudPfad.length)cloudPfadZuruecksetzen();
+
+  $('cloudBrowser').classList.remove('hidden');
   await cloudDateienLaden();
 }
 
@@ -6376,86 +6568,223 @@ async function cloudOrdnerVerknuepfen(folderId,name){
     c=>String(c.id)===String(activeCloudClient.id)
   )||activeCloudClient;
 
+  cloudPfadZuruecksetzen();
   await cloudAnzeigen();
+}
+
+function cloudPfadZeichnen(){
+  const pfad=$('cloudPfad');
+
+  pfad.innerHTML=cloudPfad.map((teil,index)=>{
+    const letzter=index===cloudPfad.length-1;
+    return (index?'<span>›</span>':'')+
+      '<button type="button" class="cloudPfadTeil" data-index="'+index+'"'+
+      (letzter?' disabled':'')+'>'+
+      (index?'':'📁 ')+esc(teil.name)+'</button>';
+  }).join('');
+
+  pfad.querySelectorAll('.cloudPfadTeil').forEach(b=>{
+    b.onclick=async()=>{
+      cloudPfad=cloudPfad.slice(0,Number(b.dataset.index)+1);
+      $('cloudSuche').value='';
+      await cloudDateienLaden();
+    };
+  });
+}
+
+function cloudDateiZeile(f,pfadText){
+  const aktionen=[];
+
+  if(cloudAuswahl){
+    aktionen.push(
+      '<button type="button" class="primary pickCloudFile" '+
+      'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'">Zuordnen</button>'
+    );
+  }
+
+  aktionen.push(
+    '<button type="button" class="secondary openCloudFile" '+
+    'data-id="'+esc(f.fileid)+'">Öffnen</button>'
+  );
+
+  if(!cloudAuswahl){
+    aktionen.push(
+      '<button type="button" class="danger deleteCloudFile" '+
+      'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'">Löschen</button>'
+    );
+  }
+
+  return `
+    <div class="doc-item">
+      <div class="doc-head">
+        <div style="min-width:0">
+          <h3 style="overflow-wrap:anywhere">${esc(f.name)}</h3>
+          ${pfadText?`<div class="meta">📁 ${esc(pfadText)}</div>`:''}
+          <div class="meta">
+            ${esc(cloudDatum(f.modified))} · ${esc(dateiGroesse(f.size))}
+          </div>
+        </div>
+        <div class="actions">${aktionen.join('')}</div>
+      </div>
+    </div>
+  `;
+}
+
+function cloudZeilenVerknuepfen(){
+  document.querySelectorAll('#cloudFiles .openCloudFile').forEach(
+    b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.id)
+  );
+
+  document.querySelectorAll('#cloudFiles .deleteCloudFile').forEach(
+    b=>b.onclick=()=>cloudDateiLoeschen(b.dataset.id,b.dataset.name)
+  );
+
+  document.querySelectorAll('#cloudFiles .pickCloudFile').forEach(
+    b=>b.onclick=()=>cloudDateiZuordnen({
+      fileid:Number(b.dataset.id),
+      name:b.dataset.name
+    })
+  );
+
+  document.querySelectorAll('#cloudFiles .openCloudFolder').forEach(
+    b=>b.onclick=async()=>{
+      cloudPfad.push({id:Number(b.dataset.id),name:b.dataset.name});
+      await cloudDateienLaden();
+    }
+  );
+}
+
+async function cloudDateiZuordnen(datei){
+  if(!cloudAuswahl)return;
+
+  const auswahl=cloudAuswahl;
+  const erfolgreich=await auswahl.beiWahl(datei);
+
+  if(erfolgreich!==false){
+    cloudAuswahl=null;
+    $('cloudDialog').close();
+    activeCloudClient=null;
+  }
 }
 
 async function cloudDateienLaden(){
   const liste=$('cloudFiles');
 
+  if($('cloudSuche').value.trim()){
+    await cloudSuchen();
+    return;
+  }
+
+  cloudPfadZeichnen();
   liste.innerHTML='<p class="muted">Dateien werden geladen …</p>';
 
   try{
     const ergebnis=await pcloudAnfrage('listfolder',{
-      folderid:activeCloudClient.pcloud_folder_id
+      folderid:cloudAktuellerOrdner()
     });
 
-    cloudFiles=(ergebnis.metadata&&ergebnis.metadata.contents||[])
+    const inhalt=ergebnis.metadata&&ergebnis.metadata.contents||[];
+
+    const ordner=inhalt
+      .filter(e=>e.isfolder)
+      .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
+
+    cloudFiles=inhalt
       .filter(e=>!e.isfolder)
       .sort((a,b)=>
         String(b.modified||'').localeCompare(String(a.modified||''))
       );
 
     $('cloudActions').classList.remove('hidden');
+    $('cloudUnlink').classList.toggle('hidden',cloudPfad.length>1||Boolean(cloudAuswahl));
 
-    const kopf=`
-      <div class="summary-box">
-        <div class="summary-row">
-          <span>Ordner</span>
-          <strong>${esc(activeCloudClient.pcloud_folder_name||'')}</strong>
-        </div>
-        <div class="summary-row">
-          <span>Dateien</span>
-          <strong>${cloudFiles.length}</strong>
-        </div>
-      </div>
-    `;
+    const ordnerHtml=ordner.map(o=>`
+      <button type="button" class="cloud-ordner openCloudFolder"
+        data-id="${esc(o.folderid)}" data-name="${esc(o.name)}">
+        📁 ${esc(o.name)}
+        <span class="meta">öffnen ›</span>
+      </button>
+    `).join('');
 
-    if(!cloudFiles.length){
-      liste.innerHTML=kopf+
-        '<p class="muted">In diesem Ordner liegen noch keine Dateien.</p>';
+    if(!ordner.length&&!cloudFiles.length){
+      liste.innerHTML='<p class="muted">Dieser Ordner ist leer.</p>';
       return;
     }
 
-    liste.innerHTML=kopf+cloudFiles.map(f=>`
-      <div class="doc-item">
-        <div class="doc-head">
-          <div>
-            <h3>${esc(f.name)}</h3>
-            <div class="meta">
-              ${esc(cloudDatum(f.modified))} · ${esc(dateiGroesse(f.size))}
-            </div>
-          </div>
-          <div class="actions">
-            <button
-              type="button"
-              class="secondary openCloudFile"
-              data-id="${esc(f.fileid)}">
-              Öffnen
-            </button>
-            <button
-              type="button"
-              class="danger deleteCloudFile"
-              data-id="${esc(f.fileid)}"
-              data-name="${esc(f.name)}">
-              Löschen
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-
-    document.querySelectorAll('.openCloudFile').forEach(
-      b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.id)
-    );
-
-    document.querySelectorAll('.deleteCloudFile').forEach(
-      b=>b.onclick=()=>cloudDateiLoeschen(b.dataset.id,b.dataset.name)
-    );
+    liste.innerHTML=ordnerHtml+cloudFiles.map(f=>cloudDateiZeile(f,'')).join('');
+    cloudZeilenVerknuepfen();
   }catch(fehler){
     liste.innerHTML='';
     toast(fehler.message);
 
     if(!pcloudToken)await cloudAnzeigen();
+  }
+}
+
+// Alle Dateien des Klientenordners samt Unterordnern einmal laden
+async function cloudAlleDateienLaden(){
+  if(cloudAlleDateien)return cloudAlleDateien;
+
+  const ergebnis=await pcloudAnfrage('listfolder',{
+    folderid:activeCloudClient.pcloud_folder_id,
+    recursive:1
+  });
+
+  const sammlung=[];
+
+  const durchlaufen=(eintrag,pfad)=>{
+    for(const e of eintrag.contents||[]){
+      if(e.isfolder){
+        durchlaufen(e,pfad.concat(e.name));
+      }else{
+        sammlung.push({datei:e,pfad:pfad.join(' › ')});
+      }
+    }
+  };
+
+  durchlaufen(ergebnis.metadata||{},[]);
+  cloudAlleDateien=sammlung;
+
+  return sammlung;
+}
+
+async function cloudSuchen(){
+  const liste=$('cloudFiles');
+  const begriff=$('cloudSuche').value.trim().toLowerCase();
+
+  cloudPfadZeichnen();
+  liste.innerHTML='<p class="muted">Suche läuft …</p>';
+
+  try{
+    const alle=await cloudAlleDateienLaden();
+
+    // Bei mehreren Wörtern müssen alle im Dateinamen vorkommen
+    const woerter=begriff.split(/\s+/).filter(Boolean);
+    const treffer=alle
+      .filter(t=>{
+        const name=String(t.datei.name).toLowerCase();
+        return woerter.every(w=>name.includes(w));
+      })
+      .sort((a,b)=>
+        String(b.datei.modified||'').localeCompare(String(a.datei.modified||''))
+      );
+
+    if($('cloudSuche').value.trim().toLowerCase()!==begriff)return;
+
+    liste.innerHTML=
+      '<p class="muted small">'+treffer.length+
+      (treffer.length===1?' Treffer':' Treffer')+
+      ' im gesamten Klientenordner</p>'+
+      treffer.map(t=>cloudDateiZeile(
+        t.datei,
+        (activeCloudClient.pcloud_folder_name||'Klientenordner')+
+        (t.pfad?' › '+t.pfad:'')
+      )).join('');
+
+    cloudZeilenVerknuepfen();
+  }catch(fehler){
+    liste.innerHTML='';
+    toast(fehler.message);
   }
 }
 
@@ -6540,6 +6869,7 @@ async function cloudDateiLoeschen(fileId,name){
   try{
     await pcloudAnfrage('deletefile',{fileid:fileId});
     toast('Datei gelöscht');
+    cloudAlleDateien=null;
     await cloudDateienLaden();
   }catch(fehler){
     toast(fehler.message);
@@ -6558,9 +6888,10 @@ async function cloudDateiHochladen(datei){
   try{
     const werte=new URLSearchParams({
       access_token:pcloudToken,
-      folderid:activeCloudClient.pcloud_folder_id,
+      folderid:cloudAktuellerOrdner(),
       filename:datei.name,
-      nopartial:1
+      nopartial:1,
+      renameifexists:1
     });
 
     const formular=new FormData();
@@ -6583,6 +6914,17 @@ async function cloudDateiHochladen(datei){
     }
 
     toast('Datei hochgeladen');
+    cloudAlleDateien=null;
+
+    const neu=ergebnis.metadata&&ergebnis.metadata[0];
+
+    if(cloudAuswahl&&neu&&confirm(
+      'Die hochgeladene Datei „'+neu.name+'" direkt zuordnen?'
+    )){
+      await cloudDateiZuordnen({fileid:neu.fileid,name:neu.name});
+      return;
+    }
+
     await cloudDateienLaden();
   }catch(fehler){
     toast('Hochladen fehlgeschlagen: '+fehler.message);
@@ -6596,10 +6938,23 @@ async function cloudDateiHochladen(datei){
 $('closeCloud').onclick=()=>{
   $('cloudDialog').close();
   activeCloudClient=null;
+  cloudAuswahl=null;
+};
+
+$('cloudDialog').addEventListener('close',()=>{
+  cloudAuswahl=null;
+});
+
+$('cloudSuche').oninput=()=>{
+  clearTimeout(cloudSucheZeitgeber);
+  cloudSucheZeitgeber=setTimeout(()=>cloudDateienLaden(),350);
 };
 
 $('cloudLogin').onclick=pcloudAnmelden;
-$('cloudRefresh').onclick=()=>cloudAnzeigen();
+$('cloudRefresh').onclick=()=>{
+  cloudAlleDateien=null;
+  cloudAnzeigen();
+};
 $('cloudUpload').onclick=()=>$('cloudFileInput').click();
 
 $('cloudFileInput').onchange=()=>
@@ -6620,6 +6975,8 @@ $('cloudUnlink').onclick=async()=>{
 
   activeCloudClient.pcloud_folder_id=null;
   activeCloudClient.pcloud_folder_name=null;
+  cloudPfad=[];
+  cloudAlleDateien=null;
 
   await loadClients();
   await cloudAnzeigen();
