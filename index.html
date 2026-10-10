@@ -6359,7 +6359,9 @@ async function pcloudLinkAnfrage(parameter={}){
       token:pcloudToken,
       host:PCLOUD_HOST,
       fileid:parameter.fileid,
-      expire:parameter.expire||''
+      expire:parameter.expire||'',
+      // zusätzlich den direkten Datei-Link anfordern (alle PDF-Seiten)
+      direkt:true
     })
   });
 
@@ -6829,7 +6831,9 @@ async function cloudDateiOeffnen(knopf,fileId){
       }
     }
 
-    const adresse=ergebnis.link||'';
+    // Direkter Datei-Link: Safari zeigt das ganze Dokument.
+    // Die Freigabeseite (link) zeigt bei PDFs nur eine Vorschau der ersten Seite.
+    const adresse=ergebnis.direkt||ergebnis.link||'';
 
     if(!adresse){
       throw new Error('pCloud hat keinen Link geliefert.');
