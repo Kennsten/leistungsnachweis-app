@@ -6359,9 +6359,7 @@ async function pcloudLinkAnfrage(parameter={}){
       token:pcloudToken,
       host:PCLOUD_HOST,
       fileid:parameter.fileid,
-      expire:parameter.expire||'',
-      // zusätzlich den direkten Datei-Link anfordern (alle PDF-Seiten)
-      direkt:true
+      expire:parameter.expire||''
     })
   });
 
@@ -6831,9 +6829,17 @@ async function cloudDateiOeffnen(knopf,fileId){
       }
     }
 
-    // Direkter Datei-Link: Safari zeigt das ganze Dokument.
-    // Die Freigabeseite (link) zeigt bei PDFs nur eine Vorschau der ersten Seite.
-    const adresse=ergebnis.direkt||ergebnis.link||'';
+    // Die Freigabeseite (link) zeigt bei PDFs nur eine Vorschau der
+    // ersten Seite. Deshalb wird die Datei selbst geholt, damit Safari
+    // das ganze Dokument anzeigt.
+    knopf.textContent='Datei wird geladen …';
+
+    let adresse=await cloudDateiDirekt(ergebnis);
+
+    if(!adresse){
+      adresse=ergebnis.link||'';
+      if(adresse)toast('Hinweis: Es wird nur die pCloud-Vorschau geöffnet.');
+    }
 
     if(!adresse){
       throw new Error('pCloud hat keinen Link geliefert.');
@@ -6864,6 +6870,66 @@ async function cloudDateiOeffnen(knopf,fileId){
     knopf.disabled=false;
     knopf.textContent=beschriftung;
     toast(fehler.message);
+  }
+}
+
+// Holt die Datei selbst und liefert eine Adresse, unter der Safari
+// sie vollständig anzeigt. Zwei Wege, der erste ist schneller:
+// 1. Direkter Datei-Link, vom Gerät selbst angefordert. pCloud bindet
+//    ihn an die Internetadresse des Geräts, deshalb muss das Gerät
+//    selbst fragen.
+// 2. Falls pCloud das ablehnt: die Datei über das Hilfsprogramm bei
+//    Netlify laden und als Kopie auf dem Gerät öffnen.
+async function cloudDateiDirekt(freigabe){
+  const code=freigabe&&freigabe.code;
+  if(!code)return '';
+
+  const typ=freigabe.metadata&&freigabe.metadata.contenttype||'';
+
+  try{
+    const werte=new URLSearchParams({code});
+    if(typ)werte.set('contenttype',typ);
+
+    const antwort=await busyFetch(
+      'https://'+PCLOUD_HOST+'/getpublinkdownload?'+werte.toString(),
+      {referrerPolicy:'no-referrer',referrer:''}
+    );
+    const link=await antwort.json();
+
+    if(link.result===0&&Array.isArray(link.hosts)&&link.hosts.length&&link.path){
+      return 'https://'+link.hosts[0]+link.path;
+    }
+  }catch(problem){
+    // weiter mit Weg 2
+  }
+
+  try{
+    const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({art:'datei',code,contenttype:typ,host:PCLOUD_HOST})
+    });
+
+    const art=antwort.headers.get('content-type')||'';
+
+    if(!antwort.ok||art.includes('application/json')){
+      let meldung='Status '+antwort.status;
+      try{meldung=(await antwort.json()).fehler||meldung;}catch(e){}
+      throw new Error(meldung);
+    }
+
+    const blob=await antwort.blob();
+    const adresse=URL.createObjectURL(
+      typ&&blob.type!==typ?new Blob([blob],{type:typ}):blob
+    );
+
+    // Kopie auf dem Gerät nach 10 Minuten wieder freigeben
+    setTimeout(()=>URL.revokeObjectURL(adresse),10*60*1000);
+
+    return adresse;
+  }catch(problem){
+    console.warn('Datei konnte nicht direkt geladen werden:',problem);
+    return '';
   }
 }
 
