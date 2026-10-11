@@ -1077,8 +1077,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 /* Geplante Termine in der Dokumentationsliste */
 .termin-zeile{border-style:dashed}
 .termin-marke{display:inline-block;margin-bottom:6px;padding:3px 10px;border-radius:999px;font-size:.82rem;font-weight:700}
-.termin-vergangen{border:2px solid var(--warn);border-style:solid}
-.termin-vergangen .termin-marke{background:var(--danger-bg);color:var(--warn)}
+.termin-vergangen .termin-marke{background:var(--accent);color:var(--ink)}
 .termin-bald{border:2px solid #2f6f9f}
 .termin-bald .termin-marke{background:#dcebf6;color:#1f4f73}
 .termin-nah .termin-marke{background:#e6eef6;color:#2f5577}
@@ -2133,7 +2132,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="terminDelete" class="danger hidden">Absagen</button>
+      <button type="button" id="terminDelete" class="danger hidden">Löschen</button>
       <button type="submit" id="terminSave" class="primary">Speichern</button>
     </div>
   </form>
@@ -3623,7 +3622,7 @@ function terminZeileHtml(t){
     <div class="doc-item termin-zeile termin-${rel.stufe}">
       <div class="doc-head">
         <div>
-          <div class="termin-marke">${rel.stufe==='vergangen'?'⚠ ':'🗓 '}${esc(rel.text)}</div>
+          <div class="termin-marke">${rel.stufe==='vergangen'?'📝 ':'🗓 '}${esc(rel.text)}</div>
           <h3>${formatDate(t.datum)} · ${esc(t.leistungsart||'Face-to-Face')}</h3>
           <div class="doc-time">${esc(kalZeit(t.beginn))}–${esc(kalZeit(t.ende))}</div>
           <div class="meta">
@@ -3637,7 +3636,7 @@ function terminZeileHtml(t){
           <button class="${rel.stufe==='vergangen'?'primary':'secondary'} docFromTermin" data-id="${esc(t.id)}">
             Dokumentation anlegen
           </button>
-          <button class="danger cancelTermin" data-id="${esc(t.id)}">Absagen</button>
+          <button class="danger cancelTermin" data-id="${esc(t.id)}">Löschen</button>
         </div>
       </div>
     </div>
@@ -9030,7 +9029,7 @@ async function kalEintragAntippen(art,id){
     [
       {k:'doku',t:'Dokumentation anlegen',cls:'primary'},
       {k:'bearbeiten',t:'Termin bearbeiten'},
-      {k:'absagen',t:'Termin absagen',cls:'danger'},
+      {k:'absagen',t:'Termin löschen',cls:'danger'},
       {k:null,t:'Abbrechen'}
     ]
   );
@@ -9116,8 +9115,8 @@ async function kalTerminAbsagen(t){
 
   if(t.serie_id){
     umfang=await kalFrage(
-      'Termin absagen',
-      'Nur diesen Termin absagen oder auch alle folgenden Termine dieser Serie?',
+      'Termin löschen',
+      'Nur diesen Termin löschen oder auch alle folgenden Termine dieser Serie?',
       [
         {k:'nur',t:'Nur diesen Termin',cls:'danger'},
         {k:'alle',t:'Diesen und alle folgenden',cls:'danger'},
@@ -9126,7 +9125,7 @@ async function kalTerminAbsagen(t){
     );
 
     if(!umfang)return false;
-  }else if(!confirm('Diesen geplanten Termin absagen? Er wird aus dem Kalender entfernt.')){
+  }else if(!confirm('Diesen geplanten Termin löschen?')){
     return false;
   }
 
@@ -9139,11 +9138,11 @@ async function kalTerminAbsagen(t){
   const {error}=await abfrage;
 
   if(error){
-    toast('Absagen fehlgeschlagen: '+error.message);
+    toast('Löschen fehlgeschlagen: '+error.message);
     return false;
   }
 
-  toast(umfang==='alle'?'Serie ab diesem Termin abgesagt':'Termin abgesagt');
+  toast(umfang==='alle'?'Serie ab diesem Termin gelöscht':'Termin gelöscht');
 
   if($('kalDialog').open)await kalLaden();
 
