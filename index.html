@@ -1074,6 +1074,16 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .cloud-ordner{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:14px 16px;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--accent);color:var(--ink);font:inherit;font-weight:650;text-align:left}
 .cloud-ordner .meta{font-weight:400;margin-left:auto}
 
+/* Geplante Termine in der Dokumentationsliste */
+.termin-zeile{border-style:dashed}
+.termin-marke{display:inline-block;margin-bottom:6px;padding:3px 10px;border-radius:999px;font-size:.82rem;font-weight:700}
+.termin-vergangen{border:2px solid var(--warn);border-style:solid}
+.termin-vergangen .termin-marke{background:var(--danger-bg);color:var(--warn)}
+.termin-bald{border:2px solid #2f6f9f}
+.termin-bald .termin-marke{background:#dcebf6;color:#1f4f73}
+.termin-nah .termin-marke{background:#e6eef6;color:#2f5577}
+.termin-spaeter .termin-marke{background:var(--accent);color:var(--muted)}
+
 /* ---------- Kalender ---------- */
 #kalDialog{width:min(98vw,1000px)}
 .kal-leiste{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
@@ -3508,7 +3518,7 @@ async function openDocs(clientId){
   if(!activeDocsClient){toast('Klient nicht gefunden.');return}
   $('docsClientName').textContent=activeDocsClient.name;
   $('docSearch').value='';
-  $('docsDialog').showModal();
+  if(!$('docsDialog').open)$('docsDialog').showModal();
   await loadDocs();
 }
 
@@ -3516,7 +3526,7 @@ async function loadDocs(){
   if(!activeDocsClient)return;
   $('docsList').innerHTML='<p class="muted">Dokumentationen werden geladen …</p>';
 
-  const [docResult,tripResult]=await Promise.all([
+  const [docResult,tripResult,terminResult]=await Promise.all([
     sb.from('dokumentationen')
       .select('*')
       .eq('client_id',activeDocsClient.id)
@@ -3525,7 +3535,14 @@ async function loadDocs(){
 
     sb.from('trip_entries')
       .select('id,documentation_id,trip_date,kilometers,purpose')
+      .eq('client_id',activeDocsClient.id),
+
+    sb.from('termine')
+      .select('*')
       .eq('client_id',activeDocsClient.id)
+      .is('documentation_id',null)
+      .order('datum',{ascending:true})
+      .order('beginn',{ascending:true})
   ]);
 
   if(docResult.error){
@@ -3537,7 +3554,94 @@ async function loadDocs(){
   docs=docResult.data||[];
   docsTrips=(tripResult&&tripResult.data)||[];
 
+  // Geplante Termine ohne Dokumentation. Gleiche Regel wie im Kalender:
+  // Gibt es am selben Tag eine Dokumentation, die höchstens zwei Stunden
+  // versetzt beginnt, gilt der Termin als erledigt.
+  docsTermine=((terminResult&&terminResult.data)||[]).filter(t=>
+    !docs.some(d=>
+      d.datum===t.datum&&
+      Math.abs(kalMinuten(d.beginn)-kalMinuten(t.beginn))<=120
+    )
+  );
+
   renderDocs();
+}
+
+// Geplante, noch nicht dokumentierte Termine des Klienten
+let docsTermine=[];
+
+// Uhrzeit sprechend: „9 Uhr" bzw. „9:30 Uhr"
+function terminUhrzeit(zeit){
+  const [h,m]=kalZeit(zeit).split(':').map(Number);
+  return h+(m?':'+String(m).padStart(2,'0'):'')+' Uhr';
+}
+
+// Relative Angabe für einen geplanten Termin, z. B. „in 2 Stunden"
+// oder „kommenden Freitag um 9 Uhr". Vergangene: „bitte dokumentieren".
+function terminRelativ(t){
+  const jetzt=new Date();
+  const [j,mo,ta]=String(t.datum).split('-').map(Number);
+  const [h,mi]=kalZeit(t.beginn).split(':').map(Number);
+  const beginn=new Date(j,mo-1,ta,h||0,mi||0);
+  const minuten=Math.round((beginn-jetzt)/60000);
+
+  if(minuten<0){
+    return {text:'bitte dokumentieren',stufe:'vergangen'};
+  }
+
+  const heute=new Date(jetzt.getFullYear(),jetzt.getMonth(),jetzt.getDate());
+  const tage=Math.round((new Date(j,mo-1,ta)-heute)/86400000);
+  const uhr=terminUhrzeit(t.beginn);
+
+  if(minuten<60){
+    return {text:minuten<=1?'jetzt':'in '+minuten+' Minuten',stufe:'bald'};
+  }
+
+  if(tage===0&&minuten<6*60){
+    const stunden=Math.round(minuten/60);
+    return {text:'in '+stunden+(stunden===1?' Stunde':' Stunden'),stufe:'bald'};
+  }
+
+  if(tage===0)return {text:'heute um '+uhr,stufe:'bald'};
+  if(tage===1)return {text:'morgen um '+uhr,stufe:'nah'};
+
+  const wochentag=beginn.toLocaleDateString('de-DE',{weekday:'long'});
+
+  if(tage<7)return {text:'kommenden '+wochentag+' um '+uhr,stufe:'nah'};
+
+  return {
+    text:wochentag+', '+beginn.toLocaleDateString('de-DE',{day:'numeric',month:'long'})+
+      ' um '+uhr,
+    stufe:'spaeter'
+  };
+}
+
+function terminZeileHtml(t){
+  const rel=terminRelativ(t);
+
+  return `
+    <div class="doc-item termin-zeile termin-${rel.stufe}">
+      <div class="doc-head">
+        <div>
+          <div class="termin-marke">${rel.stufe==='vergangen'?'⚠ ':'🗓 '}${esc(rel.text)}</div>
+          <h3>${formatDate(t.datum)} · ${esc(t.leistungsart||'Face-to-Face')}</h3>
+          <div class="doc-time">${esc(kalZeit(t.beginn))}–${esc(kalZeit(t.ende))}</div>
+          <div class="meta">
+            ${KAL_ORT_SYMBOL[t.ort]||''} ${esc(t.ort||'')}
+            ${t.serie_id?' · wiederkehrend':''}
+            · geplant
+          </div>
+          ${t.notiz?`<div class="meta">${esc(t.notiz)}</div>`:''}
+        </div>
+        <div class="actions">
+          <button class="${rel.stufe==='vergangen'?'primary':'secondary'} docFromTermin" data-id="${esc(t.id)}">
+            Dokumentation anlegen
+          </button>
+          <button class="danger cancelTermin" data-id="${esc(t.id)}">Absagen</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function fahrtZuDoku(docId){
@@ -3563,7 +3667,21 @@ function renderDocs(){
   );
 
   const totalMinuten=gefiltert.reduce((sum,d)=>sum+Number(d.dauer_minuten||0),0);
-  const docsHtml=gefiltert.length?gefiltert.map(d=>`
+
+  // Geplante Termine passend zur Suche
+  const termineGefiltert=docsTermine.filter(t=>
+    passtZurSuche(suche,[
+      t.datum,
+      formatDate(t.datum),
+      kalZeit(t.beginn),
+      t.leistungsart,
+      t.ort,
+      t.notiz,
+      'geplant'
+    ])
+  );
+
+  const docZeileHtml=d=>`
     <div class="doc-item">
       <div class="doc-head">
         <div>
@@ -3600,9 +3718,18 @@ function renderDocs(){
 
       </div>
     </div>
-  `).join(''):(
-    docs.length
-      ? '<p class="muted">Keine Dokumentation passt zur Suche.</p>'
+  `;
+
+  // Dokumentationen und geplante Termine gemeinsam, neueste zuerst.
+  // Kommende Termine stehen damit oben.
+  const eintraege=[
+    ...gefiltert.map(d=>({schluessel:d.datum+' '+kalZeit(d.beginn),html:()=>docZeileHtml(d)})),
+    ...termineGefiltert.map(t=>({schluessel:t.datum+' '+kalZeit(t.beginn),html:()=>terminZeileHtml(t)}))
+  ].sort((a,b)=>b.schluessel.localeCompare(a.schluessel));
+
+  const docsHtml=eintraege.length?eintraege.map(e=>e.html()).join(''):(
+    docs.length||docsTermine.length
+      ? '<p class="muted">Kein Eintrag passt zur Suche.</p>'
       : '<p class="muted">Noch keine Dokumentationen vorhanden.</p>'
   );
 
@@ -3614,6 +3741,16 @@ function renderDocs(){
     </div>`:'';
 
   $('docsList').innerHTML=summary+docsHtml;
+
+    document.querySelectorAll('.docFromTermin').forEach(b=>b.onclick=()=>{
+      const t=docsTermine.find(x=>String(x.id)===String(b.dataset.id));
+      if(t)kalDokuAusTermin(t);
+    });
+
+    document.querySelectorAll('.cancelTermin').forEach(b=>b.onclick=async()=>{
+      const t=docsTermine.find(x=>String(x.id)===String(b.dataset.id));
+      if(t&&await kalTerminAbsagen(t))await loadDocs();
+    });
 
     document.querySelectorAll('.editDoc').forEach(b=>b.onclick=()=>openDocForm(b.dataset.id));
 
