@@ -1074,6 +1074,40 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .cloud-ordner{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:14px 16px;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--accent);color:var(--ink);font:inherit;font-weight:650;text-align:left}
 .cloud-ordner .meta{font-weight:400;margin-left:auto}
 
+/* ---------- Dokumente: Kacheln ---------- */
+.cloud-ordner-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px}
+.cloud-ordner-raster .cloud-ordner{margin-top:0}
+.cloud-monat{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line);font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;gap:8px}
+.cloud-monat span{font-weight:400;color:var(--muted);font-size:.85rem}
+.cloud-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cloud-kachel{display:flex;flex-direction:column;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden}
+.kachel-oeffnen{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1;width:100%;padding:12px;border:0;background:none;color:var(--ink);font:inherit;text-align:left;text-decoration:none}
+.kachel-symbol{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;font-size:1.5rem;background:var(--accent);margin-bottom:4px}
+.kachel-symbol[data-art="pdf"]{background:#f6dfd8}
+.kachel-symbol[data-art="bild"]{background:#dcebf6}
+.kachel-symbol[data-art="word"]{background:#dde6f7}
+.kachel-symbol[data-art="tabelle"]{background:#dcefdf}
+.kachel-symbol[data-art="mail"]{background:#f3ead2}
+.kachel-name{font-weight:650;font-size:.9rem;line-height:1.25;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.kachel-meta,.kachel-pfad{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
+.kachel-status{font-size:.8rem;font-weight:700;color:var(--brand-dark)}
+.kachel-status:empty{display:none}
+.kachel-aktionen{display:flex;gap:6px;padding:0 10px 10px}
+.kachel-aktionen button{flex:1;padding:7px 8px;font-size:.8rem;border-radius:10px}
+.kachel-aktionen .deleteCloudFile{flex:0 0 auto}
+
+/* ---------- pCloud einrichten ---------- */
+.einrichten-schritt{display:flex;gap:12px;margin:14px 0}
+.einrichten-nr{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:flex;align-items:center;justify-content:center;font-weight:700}
+.einrichten-schritt p{margin:.2em 0}
+.einrichten-status{font-weight:650}
+
+/* ---------- Diktieren ---------- */
+.diktat-leiste{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 -4px}
+.diktat-leiste button{padding:9px 14px}
+.diktat-aktiv{background:var(--danger-bg)!important;color:var(--danger)!important}
+.diktat-status{font-size:.85rem;color:var(--muted);flex:1;min-width:160px}
+
 /* Geplante Termine in der Dokumentationsliste */
 .termin-zeile{border-style:dashed}
 .termin-marke{display:inline-block;margin-bottom:6px;padding:3px 10px;border-radius:999px;font-size:.82rem;font-weight:700}
@@ -1228,6 +1262,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       id="backupData"
       class="secondary">
       Datensicherung
+    </button>
+
+    <button
+      type="button"
+      id="openCloudSetup"
+      class="secondary">
+      pCloud einrichten
     </button>
   </div>
 
@@ -1407,6 +1448,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
           Bausteine verwalten
         </button>
       </label>
+      <div class="span2 diktat-leiste">
+        <button type="button" id="docDiktat" class="secondary">🎤 Diktieren</button>
+        <span id="docDiktatStatus" class="diktat-status">Spricht in das Feld, in dem der Cursor zuletzt stand.</span>
+      </div>
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
     </div>
@@ -1724,6 +1769,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="button" id="cloudLogin" class="primary">
         Mit pCloud verbinden
       </button>
+      <button type="button" id="cloudSetupHilfe" class="secondary">
+        Schritt-für-Schritt-Anleitung
+      </button>
     </div>
   </div>
 
@@ -1743,9 +1791,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </label>
   </div>
 
-  <div id="cloudFiles"></div>
-
-  <div id="cloudActions" class="actions hidden" style="margin-top:14px">
+  <div id="cloudActions" class="actions hidden" style="margin-top:12px">
     <button type="button" id="cloudUpload" class="primary">
       Datei in diesen Ordner hochladen
     </button>
@@ -1754,7 +1800,93 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </button>
   </div>
 
+  <div id="cloudFiles"></div>
+
   <input id="cloudFileInput" type="file" class="hidden">
+</dialog>
+
+<dialog id="cloudSetupDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumente und Belege</div>
+      <h2>pCloud einrichten</h2>
+    </div>
+    <button type="button" id="closeCloudSetup" class="secondary">Schließen</button>
+  </div>
+
+  <div class="summary-box">
+    <div id="cloudSetupStatus" class="einrichten-status"></div>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" id="cloudSetupVerbinden" class="primary">Mit pCloud verbinden</button>
+      <button type="button" id="cloudSetupTrennen" class="danger hidden">Verbindung trennen</button>
+    </div>
+  </div>
+
+  <p class="muted">
+    Die App speichert Klientendokumente und Belege nicht selbst, sondern in
+    deinem eigenen pCloud-Speicher. So geht die Einrichtung:
+  </p>
+
+  <div class="einrichten-schritt">
+    <div class="einrichten-nr">1</div>
+    <div>
+      <strong>pCloud-Konto anlegen</strong>
+      <p>Auf <strong>pcloud.com</strong> auf „Registrieren" tippen. Bis 10 GB ist pCloud kostenlos.</p>
+      <p>Wichtig: Beim Anlegen als Speicherort <strong>EU (Luxemburg)</strong> wählen.
+        Das ist für Klientendaten aus Datenschutzgründen sinnvoll und lässt sich später kaum ändern.</p>
+      <p>Wer schon ein pCloud-Konto hat, überspringt diesen Schritt.</p>
+    </div>
+  </div>
+
+  <div class="einrichten-schritt">
+    <div class="einrichten-nr">2</div>
+    <div>
+      <strong>App mit pCloud verbinden</strong>
+      <p>Oben auf <strong>„Mit pCloud verbinden"</strong> tippen, mit den pCloud-Zugangsdaten anmelden
+        und den Zugriff erlauben. Danach kehrst du automatisch in die App zurück und siehst
+        kurz „Mit pCloud verbunden".</p>
+      <p>Die Verbindung gilt für dieses Gerät. Auf iPhone oder Mac verbindest du einmal zusätzlich.</p>
+    </div>
+  </div>
+
+  <div class="einrichten-schritt">
+    <div class="einrichten-nr">3</div>
+    <div>
+      <strong>Was die App sehen darf</strong>
+      <p>pCloud legt beim Verbinden einen eigenen <strong>App-Ordner</strong> an
+        (meist unter „Applications"). Die App sieht nur, was in diesem Ordner liegt.
+        Deine übrigen pCloud-Dateien bleiben für sie unsichtbar.</p>
+    </div>
+  </div>
+
+  <div class="einrichten-schritt">
+    <div class="einrichten-nr">4</div>
+    <div>
+      <strong>Klientenordner anlegen</strong>
+      <p>Beim Klienten auf <strong>„Dokumente"</strong> tippen. Beim ersten Mal fragt die App,
+        welcher Ordner dazugehört. Mit <strong>„Ordner „Name" anlegen"</strong> erstellt sie ihn selbst, benannt nach dem Klienten.</p>
+      <p>Vorhandene Ordner kannst du auch in der pCloud-App in den App-Ordner verschieben
+        und dann hier auswählen.</p>
+    </div>
+  </div>
+
+  <div class="einrichten-schritt">
+    <div class="einrichten-nr">5</div>
+    <div>
+      <strong>Belege</strong>
+      <p>Fotos von Quittungen und Parktickets legt die App automatisch im Ordner
+        <strong>Belege › Jahr</strong> ab. Dafür ist nichts weiter zu tun.</p>
+    </div>
+  </div>
+
+  <div class="einrichten-schritt">
+    <div class="einrichten-nr">6</div>
+    <div>
+      <strong>Tipp</strong>
+      <p>Mit der kostenlosen pCloud-App auf iPad oder iPhone kannst du Dateien auch
+        direkt dort in die Klientenordner legen. In dieser App tippst du danach auf „Aktualisieren".</p>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="snippetDialog">
@@ -6376,8 +6508,16 @@ $('deleteApproval').onclick=async()=>{
 /* ---------- pCloud: Dokumente ---------- */
 
 const PCLOUD_CLIENT_ID='QD8SPQBuFpL';
-const PCLOUD_HOST='eapi.pcloud.com';
 const PCLOUD_SPEICHER='pcloud_token';
+const PCLOUD_HOST_SPEICHER='pcloud_host';
+// EU-Konten nutzen eapi.pcloud.com, US-Konten api.pcloud.com
+let PCLOUD_HOST='eapi.pcloud.com';
+
+try{
+  PCLOUD_HOST=localStorage.getItem(PCLOUD_HOST_SPEICHER)||'eapi.pcloud.com';
+}catch(fehler){
+  // Standard: EU
+}
 
 let pcloudToken=null;
 let activeCloudClient=null;
@@ -6427,6 +6567,22 @@ function pcloudRueckkehrPruefen(){
 
   if(token){
     pcloudTokenSpeichern(token);
+
+    // pCloud teilt mit, in welcher Region das Konto liegt
+    let host=werte.get('hostname')||'';
+    const region=werte.get('locationid');
+
+    if(!/^e?api\.pcloud\.com$/.test(host)){
+      host=region==='1'?'api.pcloud.com':'eapi.pcloud.com';
+    }
+
+    PCLOUD_HOST=host;
+
+    try{
+      localStorage.setItem(PCLOUD_HOST_SPEICHER,host);
+    }catch(fehler){
+      // nur für diese Sitzung
+    }
 
     history.replaceState(
       null,
@@ -6640,17 +6796,31 @@ async function cloudOrdnerAnbieten(){
     const ergebnis=await pcloudAnfrage('listfolder',{folderid:0});
 
     cloudFolders=(ergebnis.metadata&&ergebnis.metadata.contents||[])
-      .filter(e=>e.isfolder)
+      .filter(e=>e.isfolder&&e.name!=='Belege')
       .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
 
+    const neuName=cloudOrdnerName(activeCloudClient.name);
+    const anlegenHtml=`
+      <div class="summary-box">
+        <button type="button" id="cloudOrdnerAnlegen" class="primary" style="width:100%">
+          📁 Ordner „${esc(neuName)}" anlegen
+        </button>
+        <p class="muted small" style="margin:8px 0 0">
+          Erstellt einen neuen Ordner im App-Ordner und verknüpft ihn mit diesem Klienten.
+        </p>
+      </div>
+    `;
+
     if(!cloudFolders.length){
-      $('cloudFolderList').innerHTML=
-        '<p class="muted">Im App-Ordner liegen noch keine Unterordner. '+
-        'Lege in pCloud je Klient einen Ordner an.</p>';
+      $('cloudFolderList').innerHTML=anlegenHtml+
+        '<p class="muted">Im App-Ordner liegen noch keine Klientenordner.</p>';
+      cloudOrdnerAnlegenVerknuepfen(neuName);
       return;
     }
 
-    $('cloudFolderList').innerHTML=cloudFolders.map(f=>`
+    $('cloudFolderList').innerHTML=anlegenHtml+
+      '<p class="muted">Oder einen vorhandenen Ordner wählen:</p>'+
+      cloudFolders.map(f=>`
       <div class="doc-item">
         <div class="doc-head">
           <div><strong>${esc(f.name)}</strong></div>
@@ -6671,12 +6841,39 @@ async function cloudOrdnerAnbieten(){
         b.dataset.name
       )
     );
+
+    cloudOrdnerAnlegenVerknuepfen(neuName);
   }catch(fehler){
     $('cloudFolderList').innerHTML='';
     toast(fehler.message);
 
     if(!pcloudToken)await cloudAnzeigen();
   }
+}
+
+function cloudOrdnerName(name){
+  return String(name||'Klient')
+    .replace(/[\\/:*?"<>|]/g,'-')
+    .trim()||'Klient';
+}
+
+function cloudOrdnerAnlegenVerknuepfen(name){
+  const knopf=$('cloudOrdnerAnlegen');
+  if(!knopf)return;
+
+  knopf.onclick=async()=>{
+    knopf.disabled=true;
+    knopf.textContent='Ordner wird angelegt …';
+
+    try{
+      const id=await pcloudOrdner(0,name);
+      await cloudOrdnerVerknuepfen(id,name);
+    }catch(fehler){
+      knopf.disabled=false;
+      knopf.textContent='📁 Ordner „'+name+'" anlegen';
+      toast('Ordner konnte nicht angelegt werden: '+fehler.message);
+    }
+  };
 }
 
 async function cloudOrdnerVerknuepfen(folderId,name){
@@ -6728,7 +6925,39 @@ function cloudPfadZeichnen(){
   });
 }
 
-function cloudDateiZeile(f,pfadText){
+const CLOUD_MONATE=['Januar','Februar','März','April','Mai','Juni','Juli',
+  'August','September','Oktober','November','Dezember'];
+
+function cloudZeit(f){
+  const t=new Date(f&&(f.modified||f.created)||'').getTime();
+  return isNaN(t)?0:t;
+}
+
+function cloudNachZeit(a,b){
+  return cloudZeit(b)-cloudZeit(a);
+}
+
+function cloudDateiArt(name){
+  const endung=String(name||'').split('.').pop().toLowerCase();
+
+  if(endung==='pdf')return {art:'pdf',symbol:'📄'};
+  if(['jpg','jpeg','png','heic','heif','gif','webp','tif','tiff'].includes(endung))
+    return {art:'bild',symbol:'🖼️'};
+  if(['doc','docx','odt','rtf','pages'].includes(endung))
+    return {art:'word',symbol:'📝'};
+  if(['xls','xlsx','ods','csv','numbers'].includes(endung))
+    return {art:'tabelle',symbol:'📊'};
+  if(['eml','msg'].includes(endung))return {art:'mail',symbol:'✉️'};
+  if(['txt','md'].includes(endung))return {art:'text',symbol:'📃'};
+  if(['mp3','m4a','wav','aac'].includes(endung))return {art:'ton',symbol:'🎵'};
+  if(['mp4','mov','m4v'].includes(endung))return {art:'video',symbol:'🎬'};
+  if(['zip','rar','7z'].includes(endung))return {art:'archiv',symbol:'🗜️'};
+
+  return {art:'sonst',symbol:'📎'};
+}
+
+function cloudDateiKachel(f,pfadText){
+  const typ=cloudDateiArt(f.name);
   const aktionen=[];
 
   if(cloudAuswahl){
@@ -6736,34 +6965,59 @@ function cloudDateiZeile(f,pfadText){
       '<button type="button" class="primary pickCloudFile" '+
       'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'">Zuordnen</button>'
     );
-  }
-
-  aktionen.push(
-    '<button type="button" class="secondary openCloudFile" '+
-    'data-id="'+esc(f.fileid)+'">Öffnen</button>'
-  );
-
-  if(!cloudAuswahl){
+  }else{
     aktionen.push(
       '<button type="button" class="danger deleteCloudFile" '+
-      'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'">Löschen</button>'
+      'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'" '+
+      'aria-label="Löschen">🗑 Löschen</button>'
     );
   }
 
   return `
-    <div class="doc-item">
-      <div class="doc-head">
-        <div style="min-width:0">
-          <h3 style="overflow-wrap:anywhere">${esc(f.name)}</h3>
-          ${pfadText?`<div class="meta">📁 ${esc(pfadText)}</div>`:''}
-          <div class="meta">
-            ${esc(cloudDatum(f.modified))} · ${esc(dateiGroesse(f.size))}
-          </div>
-        </div>
-        <div class="actions">${aktionen.join('')}</div>
-      </div>
+    <div class="cloud-kachel">
+      <button type="button" class="kachel-oeffnen openCloudFile" data-id="${esc(f.fileid)}">
+        <span class="kachel-symbol" data-art="${typ.art}">${typ.symbol}</span>
+        <span class="kachel-name">${esc(f.name)}</span>
+        <span class="kachel-meta">${esc(cloudDatum(f.modified))} · ${esc(dateiGroesse(f.size))}</span>
+        ${pfadText?`<span class="kachel-pfad">📁 ${esc(pfadText)}</span>`:''}
+        <span class="kachel-status"></span>
+      </button>
+      <div class="kachel-aktionen">${aktionen.join('')}</div>
     </div>
   `;
+}
+
+// eintraege: [{datei, pfad}] – bereits nach Zeit sortiert
+function cloudKachelnNachMonat(eintraege){
+  const gruppen=[];
+  let aktuell=null;
+
+  for(const e of eintraege){
+    const t=cloudZeit(e.datei);
+    const d=new Date(t);
+    const schluessel=t?d.getFullYear()+'-'+d.getMonth():'ohne';
+
+    if(!aktuell||aktuell.schluessel!==schluessel){
+      aktuell={
+        schluessel,
+        titel:t?CLOUD_MONATE[d.getMonth()]+' '+d.getFullYear():'Ohne Datum',
+        eintraege:[]
+      };
+      gruppen.push(aktuell);
+    }
+
+    aktuell.eintraege.push(e);
+  }
+
+  return gruppen.map(g=>`
+    <div class="cloud-monat">
+      ${esc(g.titel)}
+      <span>${g.eintraege.length} ${g.eintraege.length===1?'Datei':'Dateien'}</span>
+    </div>
+    <div class="cloud-raster">
+      ${g.eintraege.map(e=>cloudDateiKachel(e.datei,e.pfad)).join('')}
+    </div>
+  `).join('');
 }
 
 function cloudZeilenVerknuepfen(){
@@ -6827,27 +7081,28 @@ async function cloudDateienLaden(){
 
     cloudFiles=inhalt
       .filter(e=>!e.isfolder)
-      .sort((a,b)=>
-        String(b.modified||'').localeCompare(String(a.modified||''))
-      );
+      .sort(cloudNachZeit);
 
     $('cloudActions').classList.remove('hidden');
     $('cloudUnlink').classList.toggle('hidden',cloudPfad.length>1||Boolean(cloudAuswahl));
 
-    const ordnerHtml=ordner.map(o=>`
+    const ordnerHtml=ordner.length
+      ? '<div class="cloud-ordner-raster">'+ordner.map(o=>`
       <button type="button" class="cloud-ordner openCloudFolder"
         data-id="${esc(o.folderid)}" data-name="${esc(o.name)}">
         📁 ${esc(o.name)}
-        <span class="meta">öffnen ›</span>
+        <span class="meta">›</span>
       </button>
-    `).join('');
+    `).join('')+'</div>'
+      : '';
 
     if(!ordner.length&&!cloudFiles.length){
       liste.innerHTML='<p class="muted">Dieser Ordner ist leer.</p>';
       return;
     }
 
-    liste.innerHTML=ordnerHtml+cloudFiles.map(f=>cloudDateiZeile(f,'')).join('');
+    liste.innerHTML=ordnerHtml+
+      cloudKachelnNachMonat(cloudFiles.map(f=>({datei:f,pfad:''})));
     cloudZeilenVerknuepfen();
   }catch(fehler){
     liste.innerHTML='';
@@ -6901,9 +7156,7 @@ async function cloudSuchen(){
         const name=String(t.datei.name).toLowerCase();
         return woerter.every(w=>name.includes(w));
       })
-      .sort((a,b)=>
-        String(b.datei.modified||'').localeCompare(String(a.datei.modified||''))
-      );
+      .sort((a,b)=>cloudNachZeit(a.datei,b.datei));
 
     if($('cloudSuche').value.trim().toLowerCase()!==begriff)return;
 
@@ -6911,11 +7164,11 @@ async function cloudSuchen(){
       '<p class="muted small">'+treffer.length+
       (treffer.length===1?' Treffer':' Treffer')+
       ' im gesamten Klientenordner</p>'+
-      treffer.map(t=>cloudDateiZeile(
-        t.datei,
-        (activeCloudClient.pcloud_folder_name||'Klientenordner')+
-        (t.pfad?' › '+t.pfad:'')
-      )).join('');
+      cloudKachelnNachMonat(treffer.map(t=>({
+        datei:t.datei,
+        pfad:(activeCloudClient.pcloud_folder_name||'Klientenordner')+
+          (t.pfad?' › '+t.pfad:'')
+      })));
 
     cloudZeilenVerknuepfen();
   }catch(fehler){
@@ -6925,10 +7178,16 @@ async function cloudSuchen(){
 }
 
 async function cloudDateiOeffnen(knopf,fileId){
-  const beschriftung=knopf.textContent;
+  const istKachel=knopf.classList.contains('kachel-oeffnen');
+  const beschriftung=istKachel?knopf.innerHTML:knopf.textContent;
+  const zeige=(element,text)=>{
+    const status=istKachel&&element.querySelector('.kachel-status');
+    if(status)status.textContent=text;
+    else element.textContent=text;
+  };
 
   knopf.disabled=true;
-  knopf.textContent='Öffne …';
+  zeige(knopf,'Öffne …');
 
   try{
     // pCloud lässt die direkten Download-Links aus einer Webseite
@@ -6968,7 +7227,7 @@ async function cloudDateiOeffnen(knopf,fileId){
     // Die Freigabeseite (link) zeigt bei PDFs nur eine Vorschau der
     // ersten Seite. Deshalb wird die Datei selbst geholt, damit Safari
     // das ganze Dokument anzeigt.
-    knopf.textContent='Datei wird geladen …';
+    zeige(knopf,'Datei wird geladen …');
 
     let adresse=await cloudDateiDirekt(ergebnis);
 
@@ -6990,21 +7249,28 @@ async function cloudDateiOeffnen(knopf,fileId){
     verweis.target='_blank';
     verweis.rel='noopener noreferrer';
     verweis.referrerPolicy='no-referrer';
-    verweis.className='secondary cloud-open-link';
-    verweis.textContent='Jetzt öffnen';
+    if(istKachel){
+      verweis.className='kachel-oeffnen';
+      verweis.innerHTML=beschriftung;
+    }else{
+      verweis.className='secondary cloud-open-link';
+    }
+
+    zeige(verweis,'Jetzt öffnen ›');
 
     knopf.replaceWith(verweis);
 
     const fenster=window.open(adresse,'_blank','noreferrer');
 
     if(fenster){
-      verweis.textContent='Geöffnet';
+      zeige(verweis,'Geöffnet – erneut antippen zum Öffnen');
     }else{
       toast('Bitte auf „Jetzt öffnen" tippen.');
     }
   }catch(fehler){
     knopf.disabled=false;
-    knopf.textContent=beschriftung;
+    if(istKachel)knopf.innerHTML=beschriftung;
+    else knopf.textContent=beschriftung;
     toast(fehler.message);
   }
 }
@@ -7157,6 +7423,212 @@ $('cloudSuche').oninput=()=>{
 };
 
 $('cloudLogin').onclick=pcloudAnmelden;
+
+function cloudSetupZeichnen(){
+  const verbunden=Boolean(pcloudToken);
+
+  $('cloudSetupStatus').textContent=verbunden
+    ? '✅ Verbunden mit pCloud (Speicherort: '+
+      (PCLOUD_HOST==='api.pcloud.com'?'USA':'EU')+')'
+    : 'Noch nicht mit pCloud verbunden.';
+
+  $('cloudSetupVerbinden').textContent=verbunden
+    ? 'Neu verbinden'
+    : 'Mit pCloud verbinden';
+
+  $('cloudSetupTrennen').classList.toggle('hidden',!verbunden);
+}
+
+function cloudSetupOeffnen(){
+  cloudSetupZeichnen();
+  $('cloudSetupDialog').showModal();
+}
+
+$('openCloudSetup').onclick=cloudSetupOeffnen;
+$('cloudSetupHilfe').onclick=cloudSetupOeffnen;
+$('closeCloudSetup').onclick=()=>$('cloudSetupDialog').close();
+$('cloudSetupVerbinden').onclick=pcloudAnmelden;
+
+$('cloudSetupTrennen').onclick=()=>{
+  if(!confirm(
+    'Verbindung zu pCloud auf diesem Gerät trennen? '+
+    'Deine Dateien bleiben in pCloud erhalten.'
+  ))return;
+
+  pcloudTokenSpeichern(null);
+
+  try{
+    localStorage.removeItem(PCLOUD_HOST_SPEICHER);
+  }catch(fehler){
+    // ohne Bedeutung
+  }
+
+  PCLOUD_HOST='eapi.pcloud.com';
+  cloudSetupZeichnen();
+  toast('Verbindung zu pCloud getrennt');
+};
+
+/* ---------- Diktieren (Spracherkennung von Apple über Safari) ---------- */
+
+const DIKTAT_ERKENNUNG=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+let diktat=null;
+let diktatAn=false;
+let diktatFeld=null;
+
+['docText','docBesonderheiten'].forEach(id=>{
+  $(id).addEventListener('focus',()=>{diktatFeld=$(id);});
+});
+
+function diktatSatzzeichen(text){
+  return String(text)
+    .replace(/\s*\b(neuer absatz)\b\s*/gi,'\n\n')
+    .replace(/\s*\b(neue zeile)\b\s*/gi,'\n')
+    .replace(/\s*\bpunkt\b/gi,'.')
+    .replace(/\s*\bkomma\b/gi,',')
+    .replace(/\s*\bfragezeichen\b/gi,'?')
+    .replace(/\s*\bausrufezeichen\b/gi,'!')
+    .replace(/\s*\bdoppelpunkt\b/gi,':');
+}
+
+function diktatEinfuegen(text){
+  const feld=diktatFeld||$('docText');
+  let neu=diktatSatzzeichen(text).trim();
+  if(!neu)return;
+
+  const vorher=feld.value;
+  const start=typeof feld.selectionStart==='number'&&document.activeElement===feld
+    ? feld.selectionStart
+    : vorher.length;
+  const davor=vorher.slice(0,start);
+  const danach=vorher.slice(start);
+
+  // Satzanfänge innerhalb des Diktats groß schreiben
+  neu=neu.replace(/([.!?]\s+|\n\s*)([a-zäöü])/g,(t,vor,b)=>vor+b.toUpperCase());
+
+  // Satzanfang groß schreiben
+  if(!davor.trim()||/[.!?]\s*$/.test(davor)||/\n\s*$/.test(davor)){
+    neu=neu.charAt(0).toUpperCase()+neu.slice(1);
+  }
+
+  const abstand=davor&&!/[\s]$/.test(davor)&&!/^[.,!?:]/.test(neu)?' ':'';
+  feld.value=davor+abstand+neu+danach;
+
+  const position=(davor+abstand+neu).length;
+  try{feld.setSelectionRange(position,position);}catch(fehler){}
+
+  feld.dispatchEvent(new Event('input',{bubbles:true}));
+}
+
+function diktatAnzeigen(text,aktiv){
+  $('docDiktatStatus').textContent=text;
+  $('docDiktat').textContent=aktiv?'⏹ Diktat beenden':'🎤 Diktieren';
+  $('docDiktat').classList.toggle('diktat-aktiv',Boolean(aktiv));
+}
+
+function diktatAusweichen(grund){
+  diktatAn=false;
+  diktat=null;
+
+  const feld=diktatFeld||$('docText');
+  feld.focus();
+
+  diktatAnzeigen(
+    (grund?grund+' ':'')+
+    'Tippe stattdessen auf der Bildschirmtastatur auf das Mikrofon 🎤.',
+    false
+  );
+}
+
+function diktatStarten(){
+  if(!DIKTAT_ERKENNUNG){
+    diktatAusweichen('Der Diktier-Knopf wird auf diesem Gerät nicht unterstützt.');
+    return;
+  }
+
+  try{
+    diktat=new DIKTAT_ERKENNUNG();
+    diktat.lang='de-DE';
+    diktat.continuous=true;
+    diktat.interimResults=true;
+
+    diktat.onresult=ereignis=>{
+      let vorlaeufig='';
+
+      for(let i=ereignis.resultIndex;i<ereignis.results.length;i++){
+        const ergebnis=ereignis.results[i];
+
+        if(ergebnis.isFinal){
+          diktatEinfuegen(ergebnis[0].transcript);
+        }else{
+          vorlaeufig+=ergebnis[0].transcript;
+        }
+      }
+
+      diktatAnzeigen(
+        vorlaeufig?'🎙 „'+vorlaeufig+'"':'🎙 Ich höre zu … („Punkt", „Komma", „neue Zeile" gehen auch)',
+        true
+      );
+    };
+
+    diktat.onerror=ereignis=>{
+      const fehler=ereignis&&ereignis.error;
+
+      if(fehler==='not-allowed'||fehler==='service-not-allowed'){
+        diktatAusweichen('Das Mikrofon ist für die App nicht freigegeben.');
+      }else if(fehler==='no-speech'){
+        // Pause – wird bei onend neu gestartet
+      }else if(fehler==='network'){
+        diktatAusweichen('Für den Diktier-Knopf ist eine Internetverbindung nötig.');
+      }else if(fehler!=='aborted'){
+        diktatAusweichen('Die Spracherkennung ist gestoppt ('+fehler+').');
+      }
+    };
+
+    // Safari beendet die Erkennung nach Sprechpausen von selbst
+    diktat.onend=()=>{
+      if(diktatAn&&diktat){
+        try{
+          diktat.start();
+          return;
+        }catch(fehler){
+          // fällt durch
+        }
+      }
+
+      if(!diktatAn)return;
+      diktatAn=false;
+      diktatAnzeigen('Diktat beendet.',false);
+    };
+
+    diktatAn=true;
+    diktat.start();
+    diktatAnzeigen('🎙 Ich höre zu … („Punkt", „Komma", „neue Zeile" gehen auch)',true);
+  }catch(fehler){
+    diktatAusweichen('Die Spracherkennung ließ sich nicht starten.');
+  }
+}
+
+function diktatStoppen(meldung){
+  const laufend=diktat;
+  diktatAn=false;
+  diktat=null;
+
+  if(laufend){
+    try{laufend.stop();}catch(fehler){}
+  }
+
+  diktatAnzeigen(meldung||'Spricht in das Feld, in dem der Cursor zuletzt stand.',false);
+}
+
+$('docDiktat').onclick=()=>{
+  if(diktatAn){
+    diktatStoppen('Diktat beendet.');
+  }else{
+    diktatStarten();
+  }
+};
+
+$('docFormDialog').addEventListener('close',()=>diktatStoppen());
 $('cloudRefresh').onclick=()=>{
   cloudAlleDateien=null;
   cloudAnzeigen();
