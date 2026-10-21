@@ -1335,6 +1335,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="grid">
       <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
       <label>Name, Vorname<input id="clientName" required></label>
+      <label>Anrede
+        <select id="clientAnrede">
+          <option value="">keine</option>
+          <option value="Herr">Herr</option>
+          <option value="Frau">Frau</option>
+          <option value="Divers">Divers</option>
+        </select>
+      </label>
       <label>Aktenzeichen<input id="aktenzeichen"></label>
       <label>Geburtstag<input id="geburtstag" type="date"></label>
       <label>Telefon<input id="telefon" type="tel"></label>
@@ -3033,6 +3041,7 @@ function openClient(id=''){
   $('clientId').value=c.id||'';
   $('clientCode').value=c.client_code||'';
   $('clientName').value=c.name||'';
+  $('clientAnrede').value=c.anrede||'';
   $('aktenzeichen').value=c.aktenzeichen||'';
   $('geburtstag').value=c.geburtstag||'';
   $('telefon').value=c.telefon||'';
@@ -5107,10 +5116,17 @@ $('clientForm').onsubmit=async e=>{
     kontaktperson2:$('kontaktperson2').value.trim()||null,
     telefon2:$('telefon2').value.trim()||null,
     bemerkungen:$('bemerkungen').value.trim()||null,
-    portrait:$('clientPortrait').value||null
+    portrait:$('clientPortrait').value||null,
+    anrede:$('clientAnrede').value||null
   };
-  const q=id?sb.from('clients').update(row).eq('id',id):sb.from('clients').insert(row);
-  const {error}=await q;
+  const speichern=z=>id?sb.from('clients').update(z).eq('id',id):sb.from('clients').insert(z);
+  let {error}=await speichern(row);
+  // Falls die Spalte „anrede" noch fehlt: ohne Anrede speichern
+  if(error&&/anrede/.test(error.message)){
+    const {anrede,...ohneAnrede}=row;
+    ({error}=await speichern(ohneAnrede));
+    if(!error)toast('Hinweis: Anrede noch nicht gespeichert – SQL-Befehl fehlt.');
+  }
   if(error){toast(error.message);return}
   $('clientDialog').close();toast('Gespeichert');await loadClients();
 };
@@ -8734,8 +8750,22 @@ async function loadTextbausteine(){
   }
 
   textbausteine=data||[];
+
+  // Startliste einmalig automatisch anlegen, wenn noch keine Bausteine da sind
+  const merker='tbStartliste_'+(user&&user.id);
+  let schonAngelegt=false;
+  try{schonAngelegt=localStorage.getItem(merker)==='1';}catch(e){}
+  if(textbausteine.length){
+    try{localStorage.setItem(merker,'1');}catch(e){}
+  }else if(!schonAngelegt&&!tbStartlisteLaeuft){
+    tbStartlisteLaeuft=true;
+    const ok=await startlisteEinfuegen(true);
+    tbStartlisteLaeuft=false;
+    if(ok)return;   // startlisteEinfuegen lädt die Bausteine neu
+  }
   renderSnippetPicker();
 }
+let tbStartlisteLaeuft=false;
 
 /* Arten von Bausteinen: in dieser Reihenfolge werden sie zusammengesetzt */
 const TB_ARTEN=[
@@ -8744,6 +8774,7 @@ const TB_ARTEN=[
   {wert:'inhalt',  name:'Inhalt'}
 ];
 const TB_PERSON='Klient*in';
+const TB_PRONOMEN='{{er/sie}}';   // Platzhalter für „er"/„sie" im Folgesatz
 
 /* Vorbereitete Startliste */
 const TB_STARTLISTE=[
@@ -8807,7 +8838,7 @@ function tbBefindenTeile(teile){
   if(teile.length>=2&&/ und /.test(teile[teile.length-2].text)){
     const letzter=teile[teile.length-1];
     return tbBefindenTeile(teile.slice(0,-1))+' Zudem '+
-      letzter.verb+' '+TB_PERSON+(letzter.rest?' '+letzter.rest:'')+'.';
+      letzter.verb+' '+TB_PRONOMEN+(letzter.rest?' '+letzter.rest:'')+'.';
   }
   return TB_PERSON+' '+tbVerbinden(teile.map(t=>t.text))+'.';
 }
@@ -8869,6 +8900,30 @@ function tbInhaltSatz(texte){
   return 'Inhalte: '+tbVerbinden(liste,schluss)+'.';
 }
 
+/* „Klient*in" durch „T. Müller" ersetzen (Anrede bestimmt nur „er"/„sie").
+   Name ist als „Nachname, Vorname" gespeichert. */
+function tbPersonName(klient){
+  if(!klient||!klient.name)return TB_PERSON;
+  const teile=String(klient.name).split(',').map(x=>x.trim()).filter(Boolean);
+  const nachname=teile[0]||'';
+  const vorname=teile.slice(1).join(' ');
+  // „T. Müller": erster Buchstabe des Vornamens und Nachname
+  const kuerzel=vorname?vorname.charAt(0).toUpperCase()+'.':'';
+  return [kuerzel,nachname].filter(Boolean).join(' ')||TB_PERSON;
+}
+
+function tbNamenEinsetzen(text){
+  const klient=typeof activeDocsClient!=='undefined'?activeDocsClient:null;
+  const name=tbPersonName(klient);
+  const pronomen=
+    klient&&klient.anrede==='Herr'?'er':
+    klient&&klient.anrede==='Frau'?'sie':
+    name;
+  return text
+    .split(TB_PRONOMEN).join(pronomen)
+    .replace(/Klient\*in(?!nen)/g,name);
+}
+
 function tbZusammensetzen(ids){
   const gewaehlt=ids
     .map(id=>textbausteine.find(b=>String(b.id)===String(id)))
@@ -8876,11 +8931,13 @@ function tbZusammensetzen(ids){
 
   const nach=art=>gewaehlt.filter(b=>tbArt(b)===art).map(b=>b.text);
 
-  return [
+  const text=[
     nach('kontakt').map(tbMitPunkt).join(' '),
     tbBefindenSatz(nach('befinden')),
     tbInhaltSatz(nach('inhalt'))
   ].filter(Boolean).join(' ');
+
+  return tbNamenEinsetzen(text);
 }
 
 function renderSnippetPicker(){
@@ -8957,7 +9014,7 @@ function fuegeZusammengesetztEin(){
   toast('Text eingefügt');
 }
 
-async function startlisteEinfuegen(){
+async function startlisteEinfuegen(automatisch=false){
   const vorhanden=new Set(
     textbausteine.map(b=>String(b.titel||'').trim().toLowerCase())
   );
@@ -8976,26 +9033,29 @@ async function startlisteEinfuegen(){
     .filter(z=>!vorhanden.has(z.titel.toLowerCase()));
 
   if(!neu.length){
-    toast('Alle Bausteine der Startliste sind schon vorhanden.');
-    return;
+    if(!automatisch)toast('Alle Bausteine der Startliste sind schon vorhanden.');
+    return false;
   }
 
-  if(!confirm(neu.length+' Bausteine aus der Startliste anlegen?'))return;
+  if(!automatisch&&!confirm(neu.length+' Bausteine aus der Startliste anlegen?'))return false;
 
   const {error}=await sb.from('textbausteine').insert(neu);
 
   if(error){
+    if(automatisch)return false;
     if(/art/.test(error.message)){
       toast('Bitte zuerst den SQL-Befehl für die Spalte „art" ausführen.');
     }else{
       toast('Startliste konnte nicht angelegt werden: '+error.message);
     }
-    return;
+    return false;
   }
 
+  try{localStorage.setItem('tbStartliste_'+user.id,'1');}catch(e){}
   toast(neu.length+' Bausteine angelegt');
   await loadTextbausteine();
-  renderSnippetList();
+  if($('snippetDialog').open)renderSnippetList();
+  return true;
 }
 
 function renderSnippetList(){
