@@ -1102,11 +1102,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .einrichten-schritt p{margin:.2em 0}
 .einrichten-status{font-weight:650}
 
-/* ---------- Diktieren ---------- */
-.diktat-leiste{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 -4px}
-.diktat-leiste button{padding:9px 14px}
-.diktat-aktiv{background:var(--danger-bg)!important;color:var(--danger)!important}
-.diktat-status{font-size:.85rem;color:var(--muted);flex:1;min-width:160px}
+/* ---------- Textbausteine zusammensetzen ---------- */
+.tb-gruppe{margin-top:14px}
+.tb-gruppe h3{margin:0 0 6px;font-size:.95rem}
+.tb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.tb-chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;text-align:left}
+.tb-chip.tb-an{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.tb-nr{display:inline-block;min-width:1.2em;margin-right:4px;font-weight:700}
+.tb-vorschau{margin-top:16px;padding:12px 14px;border:1px dashed var(--line);border-radius:14px;background:var(--accent);min-height:3em;white-space:pre-wrap}
+.tb-art{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--accent);color:var(--muted);font-size:.75rem;font-weight:600;vertical-align:middle}
 
 /* Geplante Termine in der Dokumentationsliste */
 .termin-zeile{border-style:dashed}
@@ -1435,22 +1439,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>FLS<input id="docFls" type="number" min="0" step="0.25" inputmode="decimal" placeholder="z. B. 1,25"></label>
       <div id="docFlsHinweis" class="kennziffer-text span2 hidden"></div>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
-      <label class="span2">Textbaustein einfügen
-        <select id="docSnippet">
-          <option value="">Bitte auswählen</option>
-        </select>
-        <span class="muted small">
-          Der Baustein wird an den vorhandenen Text angehängt.
-        </span>
-      </label>
-      <label class="span2" style="flex-direction:row;justify-content:flex-end">
+      <div class="span2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" id="openSnippetPicker" class="secondary" style="flex:1 1 auto">
+          📝 Textbausteine einfügen
+        </button>
         <button type="button" id="manageSnippets" class="secondary" style="flex:0 0 auto">
           Bausteine verwalten
         </button>
-      </label>
-      <div class="span2 diktat-leiste">
-        <button type="button" id="docDiktat" class="secondary">🎤 Diktieren</button>
-        <span id="docDiktatStatus" class="diktat-status">Spricht in das Feld, in dem der Cursor zuletzt stand.</span>
       </div>
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
@@ -1910,6 +1905,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         placeholder="Der Text, der eingefügt werden soll"></textarea>
     </label>
 
+    <label>Art
+      <select id="snippetArt">
+        <option value="kontakt">Kontakt (z. B. Hausbesuch)</option>
+        <option value="befinden">Befinden (beginnt mit „Klient*in …")</option>
+        <option value="inhalt" selected>Inhalt (z. B. Entlastendes Gespräch)</option>
+      </select>
+    </label>
+
     <div class="actions">
       <button type="button" id="snippetReset" class="secondary hidden">
         Abbrechen
@@ -1920,7 +1923,34 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
   </form>
 
+  <div style="margin-top:14px">
+    <button type="button" id="snippetStartliste" class="secondary" style="width:100%">
+      Startliste einfügen
+    </button>
+    <p class="muted small">Legt die vorbereiteten Bausteine an. Vorhandene mit gleichem Namen werden übersprungen.</p>
+  </div>
+
   <div id="snippetList"></div>
+</dialog>
+
+<dialog id="snippetPickerDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumentation</div>
+      <h2>Textbausteine einfügen</h2>
+    </div>
+    <button type="button" id="closeSnippetPicker" class="secondary">Schließen</button>
+  </div>
+  <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
+  <div id="snippetPickerList"></div>
+  <div class="tb-gruppe">
+    <h3>Vorschau</h3>
+    <div id="snippetPreview" class="tb-vorschau muted">Noch nichts ausgewählt.</div>
+  </div>
+  <div class="actions" style="margin-top:14px">
+    <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
+    <button type="button" id="snippetPickerInsert" class="primary">Text einfügen</button>
+  </div>
 </dialog>
 
 <dialog id="incomeDialog">
@@ -7468,167 +7498,6 @@ $('cloudSetupTrennen').onclick=()=>{
   toast('Verbindung zu pCloud getrennt');
 };
 
-/* ---------- Diktieren (Spracherkennung von Apple über Safari) ---------- */
-
-const DIKTAT_ERKENNUNG=window.SpeechRecognition||window.webkitSpeechRecognition||null;
-let diktat=null;
-let diktatAn=false;
-let diktatFeld=null;
-
-['docText','docBesonderheiten'].forEach(id=>{
-  $(id).addEventListener('focus',()=>{diktatFeld=$(id);});
-});
-
-function diktatSatzzeichen(text){
-  return String(text)
-    .replace(/\s*\b(neuer absatz)\b\s*/gi,'\n\n')
-    .replace(/\s*\b(neue zeile)\b\s*/gi,'\n')
-    .replace(/\s*\bpunkt\b/gi,'.')
-    .replace(/\s*\bkomma\b/gi,',')
-    .replace(/\s*\bfragezeichen\b/gi,'?')
-    .replace(/\s*\bausrufezeichen\b/gi,'!')
-    .replace(/\s*\bdoppelpunkt\b/gi,':');
-}
-
-function diktatEinfuegen(text){
-  const feld=diktatFeld||$('docText');
-  let neu=diktatSatzzeichen(text).trim();
-  if(!neu)return;
-
-  const vorher=feld.value;
-  const start=typeof feld.selectionStart==='number'&&document.activeElement===feld
-    ? feld.selectionStart
-    : vorher.length;
-  const davor=vorher.slice(0,start);
-  const danach=vorher.slice(start);
-
-  // Satzanfänge innerhalb des Diktats groß schreiben
-  neu=neu.replace(/([.!?]\s+|\n\s*)([a-zäöü])/g,(t,vor,b)=>vor+b.toUpperCase());
-
-  // Satzanfang groß schreiben
-  if(!davor.trim()||/[.!?]\s*$/.test(davor)||/\n\s*$/.test(davor)){
-    neu=neu.charAt(0).toUpperCase()+neu.slice(1);
-  }
-
-  const abstand=davor&&!/[\s]$/.test(davor)&&!/^[.,!?:]/.test(neu)?' ':'';
-  feld.value=davor+abstand+neu+danach;
-
-  const position=(davor+abstand+neu).length;
-  try{feld.setSelectionRange(position,position);}catch(fehler){}
-
-  feld.dispatchEvent(new Event('input',{bubbles:true}));
-}
-
-function diktatAnzeigen(text,aktiv){
-  $('docDiktatStatus').textContent=text;
-  $('docDiktat').textContent=aktiv?'⏹ Diktat beenden':'🎤 Diktieren';
-  $('docDiktat').classList.toggle('diktat-aktiv',Boolean(aktiv));
-}
-
-function diktatAusweichen(grund){
-  diktatAn=false;
-  diktat=null;
-
-  const feld=diktatFeld||$('docText');
-  feld.focus();
-
-  diktatAnzeigen(
-    (grund?grund+' ':'')+
-    'Tippe stattdessen auf der Bildschirmtastatur auf das Mikrofon 🎤.',
-    false
-  );
-}
-
-function diktatStarten(){
-  if(!DIKTAT_ERKENNUNG){
-    diktatAusweichen('Der Diktier-Knopf wird auf diesem Gerät nicht unterstützt.');
-    return;
-  }
-
-  try{
-    diktat=new DIKTAT_ERKENNUNG();
-    diktat.lang='de-DE';
-    diktat.continuous=true;
-    diktat.interimResults=true;
-
-    diktat.onresult=ereignis=>{
-      let vorlaeufig='';
-
-      for(let i=ereignis.resultIndex;i<ereignis.results.length;i++){
-        const ergebnis=ereignis.results[i];
-
-        if(ergebnis.isFinal){
-          diktatEinfuegen(ergebnis[0].transcript);
-        }else{
-          vorlaeufig+=ergebnis[0].transcript;
-        }
-      }
-
-      diktatAnzeigen(
-        vorlaeufig?'🎙 „'+vorlaeufig+'"':'🎙 Ich höre zu … („Punkt", „Komma", „neue Zeile" gehen auch)',
-        true
-      );
-    };
-
-    diktat.onerror=ereignis=>{
-      const fehler=ereignis&&ereignis.error;
-
-      if(fehler==='not-allowed'||fehler==='service-not-allowed'){
-        diktatAusweichen('Das Mikrofon ist für die App nicht freigegeben.');
-      }else if(fehler==='no-speech'){
-        // Pause – wird bei onend neu gestartet
-      }else if(fehler==='network'){
-        diktatAusweichen('Für den Diktier-Knopf ist eine Internetverbindung nötig.');
-      }else if(fehler!=='aborted'){
-        diktatAusweichen('Die Spracherkennung ist gestoppt ('+fehler+').');
-      }
-    };
-
-    // Safari beendet die Erkennung nach Sprechpausen von selbst
-    diktat.onend=()=>{
-      if(diktatAn&&diktat){
-        try{
-          diktat.start();
-          return;
-        }catch(fehler){
-          // fällt durch
-        }
-      }
-
-      if(!diktatAn)return;
-      diktatAn=false;
-      diktatAnzeigen('Diktat beendet.',false);
-    };
-
-    diktatAn=true;
-    diktat.start();
-    diktatAnzeigen('🎙 Ich höre zu … („Punkt", „Komma", „neue Zeile" gehen auch)',true);
-  }catch(fehler){
-    diktatAusweichen('Die Spracherkennung ließ sich nicht starten.');
-  }
-}
-
-function diktatStoppen(meldung){
-  const laufend=diktat;
-  diktatAn=false;
-  diktat=null;
-
-  if(laufend){
-    try{laufend.stop();}catch(fehler){}
-  }
-
-  diktatAnzeigen(meldung||'Spricht in das Feld, in dem der Cursor zuletzt stand.',false);
-}
-
-$('docDiktat').onclick=()=>{
-  if(diktatAn){
-    diktatStoppen('Diktat beendet.');
-  }else{
-    diktatStarten();
-  }
-};
-
-$('docFormDialog').addEventListener('close',()=>diktatStoppen());
 $('cloudRefresh').onclick=()=>{
   cloudAlleDateien=null;
   cloudAnzeigen();
@@ -8868,39 +8737,265 @@ async function loadTextbausteine(){
   renderSnippetPicker();
 }
 
-function renderSnippetPicker(){
-  const auswahl=$('docSnippet');
+/* Arten von Bausteinen: in dieser Reihenfolge werden sie zusammengesetzt */
+const TB_ARTEN=[
+  {wert:'kontakt', name:'Kontakt'},
+  {wert:'befinden',name:'Befinden'},
+  {wert:'inhalt',  name:'Inhalt'}
+];
+const TB_PERSON='Klient*in';
 
-  if(!auswahl)return;
+/* Vorbereitete Startliste */
+const TB_STARTLISTE=[
+  ['kontakt','Hausbesuch.'],
+  ['kontakt','Begleitung außer Haus.'],
+  ['kontakt','Telefonkontakt.'],
+  ['befinden','Klient*in war psychisch stabil.'],
+  ['befinden','Klient*in schien einigermaßen stabil.'],
+  ['befinden','Klient*in zeigte sich psychisch instabil.'],
+  ['befinden','Klient*in wirkte angespannt und unruhig.'],
+  ['befinden','Klient*in wirkte niedergeschlagen und antriebsarm.'],
+  ['befinden','Klient*in war gut gelaunt und zugewandt.'],
+  ['befinden','Klient*in war gut erreichbar und offen für das Gespräch.'],
+  ['befinden','Klient*in war schwer erreichbar.'],
+  ['befinden','Klient*in klagte über körperliche Beschwerden.'],
+  ['inhalt','Motivieren zu mehr Selbstfürsorge.'],
+  ['inhalt','Motivieren zu mehr Bewegung und Aktivität.'],
+  ['inhalt','Motivieren zu sozialen Kontakten.'],
+  ['inhalt','Entlastendes Gespräch.'],
+  ['inhalt','Gespräch über die aktuelle Lebenssituation.'],
+  ['inhalt','Unterstützung bei der Entwicklung von Tagesstruktur.'],
+  ['inhalt','Unterstützung bei der Haushaltsführung.'],
+  ['inhalt','Gemeinsames Sichten und Bearbeiten der Post.'],
+  ['inhalt','Unterstützung bei Behördenangelegenheiten.'],
+  ['inhalt','Begleitung zum Arzttermin.'],
+  ['inhalt','Begleitung beim Einkauf, um die Eigenständigkeit zu fördern.']
+];
 
-  auswahl.innerHTML=
-    '<option value="">Bitte auswählen</option>'+
-    textbausteine.map(
-      b=>`<option value="${esc(b.id)}">${esc(b.titel)}</option>`
-    ).join('');
+let tbAuswahl=[];   // ausgewählte Baustein-IDs in Tipp-Reihenfolge
+
+function tbArt(b){
+  return TB_ARTEN.some(a=>a.wert===b.art)?b.art:'inhalt';
+}
+function tbArtName(wert){
+  return (TB_ARTEN.find(a=>a.wert===wert)||TB_ARTEN[2]).name;
+}
+function tbOhnePunkt(t){
+  return String(t||'').trim().replace(/[.!;\s]+$/,'');
+}
+function tbMitPunkt(t){
+  const x=String(t||'').trim();
+  if(!x)return '';
+  return /[.!?]$/.test(x)?x:x+'.';
 }
 
-function fuegeBausteinEin(id){
-  if(!id)return;
+/* Teile mit Komma und „und" verbinden.
+   Enthält der letzte Teil schon ein „und", nur Kommas verwenden. */
+function tbVerbinden(teile,schluss=' und '){
+  if(teile.length<=1)return teile.join('');
+  const letzter=teile[teile.length-1];
+  const vorne=teile.slice(0,-1).join(', ');
+  return / und /.test(letzter)?vorne+', '+letzter:vorne+schluss+letzter;
+}
 
-  const baustein=textbausteine.find(
-    b=>String(b.id)===String(id)
-  );
+/* Befinden zu einem Satz verbinden.
+   „Klient*in war A." + „Klient*in war B." → „Klient*in war A und B."
+   Würde ein doppeltes „und" entstehen, beginnt ein neuer Satz mit „Zudem". */
+function tbBefindenTeile(teile){
+  // teile: [{verb, rest, text}] – text ist der Teil ohne „Klient*in"
+  if(!teile.length)return '';
+  if(teile.length>=2&&/ und /.test(teile[teile.length-2].text)){
+    const letzter=teile[teile.length-1];
+    return tbBefindenTeile(teile.slice(0,-1))+' Zudem '+
+      letzter.verb+' '+TB_PERSON+(letzter.rest?' '+letzter.rest:'')+'.';
+  }
+  return TB_PERSON+' '+tbVerbinden(teile.map(t=>t.text))+'.';
+}
 
-  if(!baustein)return;
+function tbBefindenSatz(texte){
+  const saetze=[];
+  let teile=[];
+  let letztesVerb=null;
+
+  const abschliessen=()=>{
+    if(teile.length)saetze.push(tbBefindenTeile(teile));
+    teile=[];
+    letztesVerb=null;
+  };
+
+  texte.forEach(t=>{
+    const satz=tbOhnePunkt(t);
+    if(!satz.startsWith(TB_PERSON+' ')){
+      abschliessen();
+      saetze.push(tbMitPunkt(satz));
+      return;
+    }
+    const ganz=satz.slice(TB_PERSON.length+1).trim();
+    const verb=ganz.split(/\s+/)[0];
+    const rest=ganz.slice(verb.length).trim();
+    const gleich=letztesVerb&&verb===letztesVerb&&rest;
+    teile.push({verb,rest,text:gleich?rest:ganz});
+    letztesVerb=verb;
+  });
+  abschliessen();
+  return saetze.join(' ');
+}
+
+/* Erstes Wort klein schreiben, wenn es ein Eigenschaftswort vor einem
+   Hauptwort ist (z. B. „Entlastendes Gespräch" → „entlastendes Gespräch"). */
+function tbImSatz(t){
+  const w=t.split(/\s+/);
+  if(w.length>=2&&/(es|er|en|em|e)$/.test(w[0])&&/^[A-ZÄÖÜ]/.test(w[1])){
+    w[0]=w[0].charAt(0).toLowerCase()+w[0].slice(1);
+  }
+  return w.join(' ');
+}
+
+/* Inhalte: „Inhalte: A, B und C."
+   Teile mit Komma kommen ans Ende, damit der Satz lesbar bleibt. */
+function tbInhaltSatz(texte){
+  const teile=texte.map(tbOhnePunkt).filter(Boolean);
+  if(!teile.length)return '';
+  if(teile.length===1)return tbMitPunkt(teile[0]);
+
+  const ohneKomma=teile.filter(t=>!t.includes(','));
+  const mitKomma=teile.filter(t=>t.includes(','));
+  const liste=[...ohneKomma,...mitKomma].map(tbImSatz);
+
+  if(mitKomma.length>1){
+    return 'Inhalte: '+liste.join('; ')+'.';
+  }
+  const schluss=liste.some(t=>/ und /.test(t))?' sowie ':' und ';
+  return 'Inhalte: '+tbVerbinden(liste,schluss)+'.';
+}
+
+function tbZusammensetzen(ids){
+  const gewaehlt=ids
+    .map(id=>textbausteine.find(b=>String(b.id)===String(id)))
+    .filter(Boolean);
+
+  const nach=art=>gewaehlt.filter(b=>tbArt(b)===art).map(b=>b.text);
+
+  return [
+    nach('kontakt').map(tbMitPunkt).join(' '),
+    tbBefindenSatz(nach('befinden')),
+    tbInhaltSatz(nach('inhalt'))
+  ].filter(Boolean).join(' ');
+}
+
+function renderSnippetPicker(){
+  const ziel=$('snippetPickerList');
+  if(!ziel)return;
+
+  if(!textbausteine.length){
+    ziel.innerHTML='<p class="muted">Noch keine Bausteine angelegt. '+
+      'Unter „Bausteine verwalten" kannst du die Startliste einfügen.</p>';
+    renderSnippetPreview();
+    return;
+  }
+
+  ziel.innerHTML=TB_ARTEN.map(art=>{
+    const liste=textbausteine.filter(b=>tbArt(b)===art.wert);
+    if(!liste.length)return '';
+    const gruppe=liste.filter(b=>tbAuswahl.includes(String(b.id)));
+    return `
+      <div class="tb-gruppe">
+        <h3>${esc(art.name)}</h3>
+        <div class="tb-chips">
+          ${liste.map(b=>{
+            const id=String(b.id);
+            const an=tbAuswahl.includes(id);
+            const nr=an
+              ? tbAuswahl.filter(x=>gruppe.some(g=>String(g.id)===x)).indexOf(id)+1
+              : 0;
+            return `<button type="button" class="tb-chip${an?' tb-an':''}" data-id="${esc(id)}">`+
+              (an?`<span class="tb-nr">${nr}</span>`:'')+
+              `${esc(b.titel)}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  ziel.querySelectorAll('.tb-chip').forEach(k=>k.onclick=()=>{
+    const id=k.dataset.id;
+    tbAuswahl=tbAuswahl.includes(id)
+      ? tbAuswahl.filter(x=>x!==id)
+      : [...tbAuswahl,id];
+    renderSnippetPicker();
+  });
+
+  renderSnippetPreview();
+}
+
+function renderSnippetPreview(){
+  const feld=$('snippetPreview');
+  if(!feld)return;
+  const text=tbZusammensetzen(tbAuswahl);
+  feld.textContent=text||'Noch nichts ausgewählt.';
+  feld.classList.toggle('muted',!text);
+}
+
+function fuegeZusammengesetztEin(){
+  const text=tbZusammensetzen(tbAuswahl);
+  if(!text){
+    toast('Bitte zuerst Bausteine antippen.');
+    return;
+  }
 
   const feld=$('docText');
-  const vorhanden=feld.value.trim();
+  const vorhanden=feld.value.replace(/\s+$/,'');
 
-  feld.value=vorhanden
-    ? vorhanden+'\n'+baustein.text
-    : baustein.text;
+  feld.value=vorhanden?vorhanden+' '+text:text;
+
+  tbAuswahl=[];
+  $('snippetPickerDialog').close();
 
   feld.focus();
   feld.setSelectionRange(feld.value.length,feld.value.length);
   feld.scrollTop=feld.scrollHeight;
 
-  toast('Baustein eingefügt');
+  toast('Text eingefügt');
+}
+
+async function startlisteEinfuegen(){
+  const vorhanden=new Set(
+    textbausteine.map(b=>String(b.titel||'').trim().toLowerCase())
+  );
+  const sortStart=textbausteine.reduce(
+    (m,b)=>Math.max(m,Number(b.sortierung)||0),0
+  );
+
+  const neu=TB_STARTLISTE
+    .map(([art,text],i)=>({
+      user_id:user.id,
+      titel:tbOhnePunkt(text),
+      text:text,
+      art:art,
+      sortierung:sortStart+i+1
+    }))
+    .filter(z=>!vorhanden.has(z.titel.toLowerCase()));
+
+  if(!neu.length){
+    toast('Alle Bausteine der Startliste sind schon vorhanden.');
+    return;
+  }
+
+  if(!confirm(neu.length+' Bausteine aus der Startliste anlegen?'))return;
+
+  const {error}=await sb.from('textbausteine').insert(neu);
+
+  if(error){
+    if(/art/.test(error.message)){
+      toast('Bitte zuerst den SQL-Befehl für die Spalte „art" ausführen.');
+    }else{
+      toast('Startliste konnte nicht angelegt werden: '+error.message);
+    }
+    return;
+  }
+
+  toast(neu.length+' Bausteine angelegt');
+  await loadTextbausteine();
+  renderSnippetList();
 }
 
 function renderSnippetList(){
@@ -8910,11 +9005,13 @@ function renderSnippetList(){
     return;
   }
 
-  $('snippetList').innerHTML=textbausteine.map(b=>`
+  const sortiert=TB_ARTEN.flatMap(a=>textbausteine.filter(b=>tbArt(b)===a.wert));
+
+  $('snippetList').innerHTML=sortiert.map(b=>`
     <div class="doc-item">
       <div class="doc-head">
         <div>
-          <h3>${esc(b.titel)}</h3>
+          <h3>${esc(b.titel)}<span class="tb-art">${esc(tbArtName(tbArt(b)))}</span></h3>
           <p class="doc-text">${esc(b.text)}</p>
         </div>
         <div class="actions">
@@ -8948,6 +9045,7 @@ function bearbeiteBaustein(id){
   $('snippetId').value=baustein.id;
   $('snippetTitle').value=baustein.titel;
   $('snippetText').value=baustein.text;
+  $('snippetArt').value=tbArt(baustein);
   $('snippetSave').textContent='Änderung speichern';
   $('snippetReset').classList.remove('hidden');
 
@@ -8958,6 +9056,7 @@ function resetSnippetForm(){
   $('snippetId').value='';
   $('snippetTitle').value='';
   $('snippetText').value='';
+  $('snippetArt').value='inhalt';
   $('snippetSave').textContent='Baustein speichern';
   $('snippetReset').classList.add('hidden');
 }
@@ -8985,12 +9084,16 @@ async function loescheBaustein(id){
   renderSnippetList();
 }
 
-$('docSnippet').onchange=()=>{
-  const auswahl=$('docSnippet');
-
-  fuegeBausteinEin(auswahl.value);
-  auswahl.value='';
+$('openSnippetPicker').onclick=async()=>{
+  await loadTextbausteine();
+  tbAuswahl=[];
+  renderSnippetPicker();
+  $('snippetPickerDialog').showModal();
 };
+$('closeSnippetPicker').onclick=()=>$('snippetPickerDialog').close();
+$('snippetPickerReset').onclick=()=>{tbAuswahl=[];renderSnippetPicker();};
+$('snippetPickerInsert').onclick=fuegeZusammengesetztEin;
+$('snippetStartliste').onclick=startlisteEinfuegen;
 
 $('manageSnippets').onclick=async()=>{
   await loadTextbausteine();
@@ -9018,14 +9121,21 @@ $('snippetForm').onsubmit=async e=>{
   const zeile={
     user_id:user.id,
     titel:titel,
-    text:text
+    text:text,
+    art:$('snippetArt').value
   };
 
-  const abfrage=id
-    ? sb.from('textbausteine').update(zeile).eq('id',id)
-    : sb.from('textbausteine').insert(zeile);
+  const speichern=z=>id
+    ? sb.from('textbausteine').update(z).eq('id',id)
+    : sb.from('textbausteine').insert(z);
 
-  const {error}=await abfrage;
+  let {error}=await speichern(zeile);
+
+  // Falls die Spalte „art" noch fehlt: ohne Art speichern
+  if(error&&/art/.test(error.message)){
+    const {art,...ohneArt}=zeile;
+    ({error}=await speichern(ohneArt));
+  }
 
   if(error){
     toast('Baustein konnte nicht gespeichert werden: '+error.message);
