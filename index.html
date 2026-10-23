@@ -1063,6 +1063,22 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   100%{left:100%}
 }
 
+/* ---------- Datensicherung fällig: Knopf leuchtet ---------- */
+#backupData.sicherung-faellig{
+  background:#fff1d6;
+  color:#7a4a00;
+  border:2px solid #e3a21a;
+  animation:sicherung-leuchten 1.8s ease-in-out infinite;
+}
+#backupData .sicherung-hinweis{display:block;font-size:.75rem;font-weight:500;margin-top:2px}
+@keyframes sicherung-leuchten{
+  0%,100%{box-shadow:0 0 0 0 rgba(227,162,26,.0)}
+  50%{box-shadow:0 0 14px 4px rgba(227,162,26,.75)}
+}
+@media (prefers-reduced-motion:reduce){
+  #backupData.sicherung-faellig{animation:none;box-shadow:0 0 10px 3px rgba(227,162,26,.6)}
+}
+
 /* Knöpfe in hinterlegten Kästen sichtbar absetzen */
 .summary-box .secondary{background:var(--card);border:1px solid var(--line)}
 
@@ -2810,6 +2826,7 @@ async function init(){
     showApp(true);
     await loadClients();
     await loadTextbausteine();
+    await aktualisiereSicherungsKnopf();
   }else{
     user=null;
     showApp(false);
@@ -8637,8 +8654,89 @@ const SICHERUNG_TABELLEN=[
   'trip_stop_suggestions',
   'route_distances',
   'ausgaben',
-  'verguetungssaetze'
+  'verguetungssaetze',
+  'textbausteine',
+  'termine'
 ];
+
+/* Datum der letzten Sicherung – geräteübergreifend in Supabase (Tabelle „einstellungen") */
+const SICHERUNG_FRIST_TAGE=7;
+let letzteSicherungDatum=null;
+
+function sicherungMerker(){
+  return 'letzteSicherung_'+(user&&user.id||'');
+}
+
+/* Datum aus Supabase lesen; falls nicht erreichbar, den Wert auf dem Gerät nehmen */
+async function ladeLetzteSicherung(){
+  if(!user)return null;
+  let lokal=null;
+  try{
+    const wert=localStorage.getItem(sicherungMerker());
+    lokal=wert?new Date(wert):null;
+  }catch(e){}
+
+  const {data,error}=await sb
+    .from('einstellungen')
+    .select('letzte_sicherung')
+    .eq('user_id',user.id)
+    .maybeSingle();
+
+  if(error)return lokal;
+  return data&&data.letzte_sicherung?new Date(data.letzte_sicherung):null;
+}
+
+async function speichereLetzteSicherung(){
+  const jetzt=new Date().toISOString();
+  letzteSicherungDatum=new Date(jetzt);
+  try{localStorage.setItem(sicherungMerker(),jetzt);}catch(e){}
+
+  const {error}=await sb
+    .from('einstellungen')
+    .upsert({user_id:user.id,letzte_sicherung:jetzt},{onConflict:'user_id'});
+
+  if(error){
+    toast('Hinweis: Sicherungsdatum nur auf diesem Gerät gespeichert ('+error.message+').');
+  }
+}
+
+function zeigeSicherungsKnopf(){
+  const knopf=$('backupData');
+  if(!knopf||knopf.disabled)return;
+
+  const zuletzt=letzteSicherungDatum;
+  const tage=zuletzt
+    ? Math.floor((Date.now()-zuletzt.getTime())/86400000)
+    : null;
+  const faellig=!user?false:(tage===null||tage>=SICHERUNG_FRIST_TAGE);
+
+  knopf.classList.toggle('sicherung-faellig',faellig);
+
+  if(faellig){
+    const hinweis=tage===null
+      ? 'noch keine Sicherung'
+      : 'zuletzt vor '+tage+' Tagen';
+    knopf.innerHTML='Datensicherung<span class="sicherung-hinweis">'+hinweis+'</span>';
+  }else{
+    knopf.textContent='Datensicherung';
+  }
+
+  knopf.title=zuletzt
+    ? 'Letzte Sicherung: '+zuletzt.toLocaleDateString('de-DE')
+    : 'Noch keine Sicherung';
+}
+
+async function aktualisiereSicherungsKnopf(){
+  if(!user){zeigeSicherungsKnopf();return;}
+  letzteSicherungDatum=await ladeLetzteSicherung();
+  zeigeSicherungsKnopf();
+}
+
+// Prüfen beim Öffnen der App (auch beim Zurückwechseln) und einmal täglich
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)aktualisiereSicherungsKnopf();
+});
+setInterval(aktualisiereSicherungsKnopf,24*60*60*1000);
 
 async function erstelleSicherung(){
   const knopf=$('backupData');
@@ -8648,8 +8746,8 @@ async function erstelleSicherung(){
     return;
   }
 
-  const beschriftung=knopf.textContent;
   knopf.disabled=true;
+  knopf.classList.remove('sicherung-faellig');
   knopf.textContent='Sicherung läuft …';
 
   try{
@@ -8723,12 +8821,14 @@ async function erstelleSicherung(){
     }else{
       toast(anzahl+' Datensätze gesichert');
     }
+
+    await speichereLetzteSicherung();
   }catch(problem){
     toast('Die Sicherung ist fehlgeschlagen: '+problem.message);
   }finally{
     endeSchritt();
     knopf.disabled=false;
-    knopf.textContent=beschriftung;
+    zeigeSicherungsKnopf();
   }
 }
 
