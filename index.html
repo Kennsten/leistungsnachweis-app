@@ -2342,7 +2342,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.2';
+const APP_VERSION='1.3';
 const APP_STAND='23.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -8718,14 +8718,15 @@ function zeigeSicherungsKnopf(){
 
   knopf.classList.toggle('sicherung-faellig',faellig);
 
-  if(faellig){
-    const hinweis=tage===null
-      ? 'noch keine Sicherung'
-      : 'zuletzt vor '+tage+' Tagen';
-    knopf.innerHTML='Datensicherung<span class="sicherung-hinweis">'+hinweis+'</span>';
+  // Datum der letzten Sicherung immer unter dem Knopftext anzeigen
+  let hinweis;
+  if(!zuletzt){
+    hinweis='noch keine Sicherung';
   }else{
-    knopf.textContent='Datensicherung';
+    const datum=zuletzt.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+    hinweis='zuletzt '+datum+(faellig?' (vor '+tage+' Tagen)':'');
   }
+  knopf.innerHTML='Datensicherung<span class="sicherung-hinweis">'+hinweis+'</span>';
 
   knopf.title=zuletzt
     ? 'Letzte Sicherung: '+zuletzt.toLocaleDateString('de-DE')
