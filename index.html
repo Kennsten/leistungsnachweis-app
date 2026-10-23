@@ -1068,16 +1068,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   background:#fff1d6;
   color:#7a4a00;
   border:2px solid #e3a21a;
-  animation:sicherung-leuchten 1.8s ease-in-out infinite;
+  box-shadow:0 0 12px 3px rgba(227,162,26,.6);
 }
 #backupData .sicherung-hinweis{display:block;font-size:.75rem;font-weight:500;margin-top:2px}
-@keyframes sicherung-leuchten{
-  0%,100%{box-shadow:0 0 0 0 rgba(227,162,26,.0)}
-  50%{box-shadow:0 0 14px 4px rgba(227,162,26,.75)}
-}
-@media (prefers-reduced-motion:reduce){
-  #backupData.sicherung-faellig{animation:none;box-shadow:0 0 10px 3px rgba(227,162,26,.6)}
-}
 
 /* Knöpfe in hinterlegten Kästen sichtbar absetzen */
 .summary-box .secondary{background:var(--card);border:1px solid var(--line)}
@@ -2349,7 +2342,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.1';
+const APP_VERSION='1.2';
 const APP_STAND='23.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -8690,8 +8683,13 @@ async function ladeLetzteSicherung(){
     .eq('user_id',user.id)
     .maybeSingle();
 
-  if(error)return lokal;
-  return data&&data.letzte_sicherung?new Date(data.letzte_sicherung):null;
+  const entfernt=!error&&data&&data.letzte_sicherung
+    ? new Date(data.letzte_sicherung)
+    : null;
+
+  // Das neuere der beiden Daten zählt
+  if(lokal&&entfernt)return lokal>entfernt?lokal:entfernt;
+  return lokal||entfernt;
 }
 
 async function speichereLetzteSicherung(){
@@ -8704,13 +8702,13 @@ async function speichereLetzteSicherung(){
     .upsert({user_id:user.id,letzte_sicherung:jetzt},{onConflict:'user_id'});
 
   if(error){
-    toast('Hinweis: Sicherungsdatum nur auf diesem Gerät gespeichert ('+error.message+').');
+    toast('Sicherungsdatum konnte nicht in Supabase gespeichert werden: '+error.message);
   }
 }
 
 function zeigeSicherungsKnopf(){
   const knopf=$('backupData');
-  if(!knopf||knopf.disabled)return;
+  if(!knopf)return;
 
   const zuletzt=letzteSicherungDatum;
   const tage=zuletzt
@@ -8808,6 +8806,11 @@ async function erstelleSicherung(){
       type:'application/json;charset=utf-8'
     });
 
+    // Datum schon vor dem Herunterladen speichern – iPad/iPhone öffnen
+    // dabei eine Vorschau und können die App unterbrechen
+    await speichereLetzteSicherung();
+    zeigeSicherungsKnopf();
+
     const adresse=URL.createObjectURL(datei);
     const verweis=document.createElement('a');
 
@@ -8829,8 +8832,6 @@ async function erstelleSicherung(){
     }else{
       toast(anzahl+' Datensätze gesichert');
     }
-
-    await speichereLetzteSicherung();
   }catch(problem){
     toast('Die Sicherung ist fehlgeschlagen: '+problem.message);
   }finally{
