@@ -6,10 +6,12 @@
 <meta name="theme-color" content="#C85A3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="QA All Inclusiv">
+<meta name="apple-mobile-web-app-title" content="QA">
+<meta name="application-name" content="QA">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<title>Leistungsnachweis Dev 1.0</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<title>QA – Qualifizierte Assistenz</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -1383,13 +1385,20 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       class="secondary">
       pCloud einrichten
     </button>
+
+    <button
+      type="button"
+      id="openSettings"
+      class="secondary">
+      Einstellungen
+    </button>
   </div>
 
   <div class="top">
     <div>
       <h2>Klientenliste</h2>
       <p class="muted">
-        Die Daten werden in deinem Supabase-Projekt gespeichert.
+        Deine Daten werden in einem Rechenzentrum in Frankfurt gespeichert.
       </p>
     </div>
 
@@ -1917,6 +1926,37 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <input id="cloudFileInput" type="file" class="hidden">
 </dialog>
 
+<dialog id="settingsDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Meine Angaben</div>
+      <h2>Einstellungen</h2>
+    </div>
+    <button type="button" id="closeSettings" class="secondary">Schließen</button>
+  </div>
+
+  <p id="settingsHinweis" class="muted hidden">
+    Willkommen! Bitte trage zuerst deinen Namen und deine Adresse ein.
+    Beides wird für den Leistungsnachweis und das Fahrtenbuch gebraucht.
+  </p>
+
+  <form id="settingsForm">
+    <label>Name (Nachname, Vorname)
+      <input id="settingsName" required placeholder="z. B. Muster, Maria" autocomplete="name">
+    </label>
+    <p class="muted small">Erscheint im Leistungsnachweis als Auftragnehmer*in.</p>
+
+    <label>Meine Adresse (Start und Ziel der Fahrten)
+      <input id="settingsAdresse" required placeholder="z. B. Musterstraße 1, 30159 Hannover" autocomplete="street-address">
+    </label>
+    <p class="muted small">Wird bei neuen Fahrten automatisch als Start und Ziel eingetragen.</p>
+
+    <div class="actions">
+      <button type="submit" id="settingsSave" class="primary">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="cloudSetupDialog">
   <div class="top">
     <div>
@@ -2442,14 +2482,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.4';
+const APP_VERSION='0.1 Verkaufsversion';
 const APP_STAND='23.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
 
-const SUPABASE_URL='https://bhrygputoysiwchzlygn.supabase.co';
-const SUPABASE_KEY='sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
+/* Verkaufsversion: Datenbank in Frankfurt (Projekt leistungsnachweis-eu) */
+const SUPABASE_URL='https://luizzjsxufsezgpjypwx.supabase.co';
+const SUPABASE_KEY='sb_publishable_i5miPJA-UhIWaeTGywSmoA_aLLba56l';
 /* ---------- Fortschrittsanzeige: Logik ---------- */
 
 const busy={laden:0,speichern:0,schritt:null,zeitgeber:null,sichtbar:false};
@@ -2577,7 +2618,17 @@ let allTripsPayload=null;
 let pendingTripForDoc=null;
 let fahrtNachSpeichern=false;
 
-const START_ADRESSE='Lichtenbergplatz 7, 30449 Hannover';
+/* Name und Adresse des Auftragnehmers kommen aus den Einstellungen
+   (Tabelle „einstellungen"), nicht mehr fest aus dem Code. */
+let meineEinstellungen={};
+
+function startAdresse(){
+  return String(meineEinstellungen.auftragnehmer_adresse||'').trim();
+}
+
+function auftragnehmerName(){
+  return String(meineEinstellungen.auftragnehmer_name||'').trim();
+}
 const FLS_VIERTEL_BIS='2026-06-30';
 const SUPA_UMZUG_AB='2026-08-01';
 const SUPA_ADRESSE_ALT='Königstr. 6, 30175 Hannover';
@@ -2871,7 +2922,7 @@ function applyTripDocumentation(documentationId){
     $('tripStopovers').value=terminAdresse;
   }
 
-  $('tripDestination').value=$('tripStartAddress').value||START_ADRESSE;
+  $('tripDestination').value=$('tripStartAddress').value||startAdresse();
 
   const leistungsort=doc.ort_der_leistung||'';
   let zweck='';
@@ -2925,9 +2976,15 @@ async function init(){
   if(session){
     user=session.user;
     showApp(true);
+    await loadEinstellungen();
     await loadClients();
     await loadTextbausteine();
     await aktualisiereSicherungsKnopf();
+
+    // Erste Anmeldung: Einstellungen ausfüllen lassen
+    if(!auftragnehmerName()||!startAdresse()){
+      einstellungenOeffnen(true);
+    }
   }else{
     user=null;
     showApp(false);
@@ -3671,7 +3728,7 @@ async function openTripForm(id=''){
 
   $('tripId').value=trip.id||'';
   $('tripDate').value=trip.trip_date||todayIso();
-  $('tripStartAddress').value=trip.start_address||START_ADRESSE;
+  $('tripStartAddress').value=trip.start_address||startAdresse();
   $('tripStopovers').value=trip.intermediate_stops||trip.stopovers||'';
   $('tripDestination').value=
     trip.destination_address||
@@ -6502,7 +6559,7 @@ $('monthlyMonth').onchange=async()=>{
     leistungsanbieter:
       'SuPA GmbH, '+supaAdresse(startDate),
     auftragnehmer:
-      'Stork, Oliver'
+      auftragnehmerName()
   };
 
   sessionStorage.setItem(
@@ -6619,6 +6676,12 @@ $('monthlyMonth').onchange=async()=>{
 
   if(openButton){
     openButton.onclick=()=>{
+      if(!auftragnehmerName()){
+        toast('Bitte zuerst in den Einstellungen deinen Namen eintragen.');
+        einstellungenOeffnen();
+        return;
+      }
+
       sessionStorage.setItem(
         'leistungsnachweis_payload',
         JSON.stringify(payload)
@@ -7626,6 +7689,75 @@ function cloudSetupZeichnen(){
 
   $('cloudSetupTrennen').classList.toggle('hidden',!verbunden);
 }
+
+/* ---------- Einstellungen: Name und Adresse ---------- */
+
+async function loadEinstellungen(){
+  meineEinstellungen={};
+
+  const {data,error}=await sb
+    .from('einstellungen')
+    .select('auftragnehmer_name,auftragnehmer_adresse')
+    .eq('user_id',user.id)
+    .maybeSingle();
+
+  if(error){
+    toast('Einstellungen konnten nicht geladen werden: '+error.message);
+    return;
+  }
+
+  meineEinstellungen=data||{};
+}
+
+function einstellungenOeffnen(ersterStart=false){
+  $('settingsName').value=auftragnehmerName();
+  $('settingsAdresse').value=startAdresse();
+  $('settingsHinweis').classList.toggle('hidden',!ersterStart);
+  $('settingsDialog').showModal();
+}
+
+$('openSettings').onclick=()=>einstellungenOeffnen();
+$('closeSettings').onclick=()=>$('settingsDialog').close();
+
+$('settingsForm').onsubmit=async e=>{
+  e.preventDefault();
+
+  const name=$('settingsName').value.trim();
+  const adresse=$('settingsAdresse').value.trim();
+
+  if(!name||!adresse){
+    toast('Bitte Name und Adresse eintragen.');
+    return;
+  }
+
+  const knopf=$('settingsSave');
+  knopf.disabled=true;
+  knopf.textContent='Wird gespeichert …';
+
+  try{
+    const {error}=await sb
+      .from('einstellungen')
+      .upsert({
+        user_id:user.id,
+        auftragnehmer_name:name,
+        auftragnehmer_adresse:adresse,
+        updated_at:new Date().toISOString()
+      },{onConflict:'user_id'});
+
+    if(error){
+      toast('Speichern fehlgeschlagen: '+error.message);
+      return;
+    }
+
+    meineEinstellungen.auftragnehmer_name=name;
+    meineEinstellungen.auftragnehmer_adresse=adresse;
+    $('settingsDialog').close();
+    toast('Einstellungen gespeichert');
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent='Speichern';
+  }
+};
 
 function cloudSetupOeffnen(){
   cloudSetupZeichnen();
@@ -10232,7 +10364,7 @@ $('printExpenses').onclick=()=>{
     zeitraum:kategorie
       ? kategorie+' · Jahr '+jahr
       : 'Jahr '+jahr,
-    person:'Stork, Oliver',
+    person:auftragnehmerName(),
     erstelltAm:todayIso(),
     eintraege:expenses
       .slice()
