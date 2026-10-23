@@ -1,7 +1,7 @@
 {
-  "name": "Qualifizierte Assistenz All Inclusiv",
-  "short_name": "QA All Inclusiv",
-  "description": "Leistungsnachweise, Dokumentation und Fahrtenbuch fuer die Qualifizierte Assistenz",
+  "name": "QA – Qualifizierte Assistenz",
+  "short_name": "QA",
+  "description": "Dokumentation, Leistungsnachweise, Fahrtenbuch und Betriebsausgaben für die Qualifizierte Assistenz",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -24,10 +24,17 @@
       "purpose": "any"
     },
     {
+      "src": "icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "icons/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "./index.html"
 }
