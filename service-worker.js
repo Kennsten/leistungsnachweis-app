@@ -1,9 +1,9 @@
-// Service Worker fuer "Qualifizierte Assistenz All Inclusiv"
+// Service Worker fuer "QA – Qualifizierte Assistenz" (Verkaufsversion)
 // Strategie: NETWORK FIRST - das Netz gewinnt immer.
 // Der Cache ist nur ein Notfall-Fallback, wenn kein Internet da ist.
 // Dadurch bekommst du nach jedem Netlify-Deploy sofort die neue Version.
 
-const CACHE_NAME = 'qa-all-inclusiv-v1';
+const CACHE_NAME = 'qa-produkt-v1';
 
 // Diese Dateien werden beim ersten Start als Offline-Reserve gespeichert.
 // Wenn du weitere Seiten hast, hier ergaenzen.
