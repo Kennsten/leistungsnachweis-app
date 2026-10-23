@@ -494,7 +494,7 @@ const totalWay=entries.reduce(
 <td class="number">${hatWegepauschale(entry)?'1,00':'0,00'}</td>
               <td class="center-text">${istAusfall(entry)?1:''}</td>
               <td>${esc(entry.kennziffer||'')}</td>
-              <td>${esc(payload.auftragnehmer||'Stork, Oliver')}</td>
+              <td>${esc(payload.auftragnehmer||'')}</td>
             </tr>
           `);
         }else{
@@ -600,13 +600,13 @@ const totalWay=entries.reduce(
                 <tr>
                   <td colspan="3" class="head-label">Leistungsanbieter (Name, Adresse)</td>
                   <td colspan="7" class="head-value">
-                    ${esc(payload.leistungsanbieter||'SuPA GmbH, Königstraße 6, 30175 Hannover')}
+                    ${esc(payload.leistungsanbieter||'SuPA GmbH, Königstraße 4, 30175 Hannover')}
                   </td>
                 </tr>
 
                 <tr>
                   <td colspan="3" class="head-label">Verantwortliche*r Auftragnehmer*in (Name, Vorname)</td>
-                  <td colspan="7" class="head-value">${esc(payload.auftragnehmer||'Stork, Oliver')}</td>
+                  <td colspan="7" class="head-value">${esc(payload.auftragnehmer||'')}</td>
                 </tr>
 
                 <tr>
@@ -1080,7 +1080,7 @@ const totalWay=entries.reduce(
       const client=payload.client||{};
       const approval=payload.approval||{};
       const entries=payload.entries||[];
-      const auftragnehmer=payload.auftragnehmer||'Stork, Oliver';
+      const auftragnehmer=payload.auftragnehmer||'';
 
       const plaetze=LN_LETZTE_ZEILE-LN_ERSTE_ZEILE+1;
       const extra=Math.max(0,entries.length-plaetze);
@@ -1114,7 +1114,7 @@ const totalWay=entries.reduce(
       xml=lnZelleSetzen(xml,'D3',(r,s)=>lnZelle.text(r,s,client.name||''));
       xml=lnZelleSetzen(xml,'J3',(r,s)=>lnZelle.text(r,s,client.aktenzeichen||''));
       xml=lnZelleSetzen(xml,'D4',(r,s)=>lnZelle.text(r,s,
-        payload.leistungsanbieter||'SuPA GmbH, Königstraße 6, 30175 Hannover'));
+        payload.leistungsanbieter||'SuPA GmbH, Königstraße 4, 30175 Hannover'));
       xml=lnZelleSetzen(xml,'D5',(r,s)=>lnZelle.text(r,s,auftragnehmer));
       xml=lnZelleSetzen(xml,'D6',(r,s)=>lnZelle.text(r,s,provider));
       xml=lnZelleSetzen(xml,'E7',(r,s)=>lnZelle.zahl(r,s,weeklyFls));
