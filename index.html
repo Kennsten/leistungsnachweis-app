@@ -1063,6 +1063,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   100%{left:100%}
 }
 
+/* ---------- Datensicherung fällig: Knopf leuchtet ---------- */
+#backupData.sicherung-faellig{
+  background:#fff1d6;
+  color:#7a4a00;
+  border:2px solid #e3a21a;
+  box-shadow:0 0 12px 3px rgba(227,162,26,.6);
+}
+#backupData .sicherung-hinweis{display:block;font-size:.75rem;font-weight:500;margin-top:2px}
+
 /* Knöpfe in hinterlegten Kästen sichtbar absetzen */
 .summary-box .secondary{background:var(--card);border:1px solid var(--line)}
 
@@ -1102,11 +1111,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .einrichten-schritt p{margin:.2em 0}
 .einrichten-status{font-weight:650}
 
-/* ---------- Diktieren ---------- */
-.diktat-leiste{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 -4px}
-.diktat-leiste button{padding:9px 14px}
-.diktat-aktiv{background:var(--danger-bg)!important;color:var(--danger)!important}
-.diktat-status{font-size:.85rem;color:var(--muted);flex:1;min-width:160px}
+/* ---------- Textbausteine zusammensetzen ---------- */
+.tb-gruppe{margin-top:14px}
+.tb-gruppe h3{margin:0 0 6px;font-size:.95rem}
+.tb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.tb-chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;text-align:left}
+.tb-chip.tb-an{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.tb-nr{display:inline-block;min-width:1.2em;margin-right:4px;font-weight:700}
+.tb-vorschau{margin-top:16px;padding:12px 14px;border:1px dashed var(--line);border-radius:14px;background:var(--accent);min-height:3em;white-space:pre-wrap}
+.tb-art{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--accent);color:var(--muted);font-size:.75rem;font-weight:600;vertical-align:middle}
 
 /* Geplante Termine in der Dokumentationsliste */
 .termin-zeile{border-style:dashed}
@@ -1191,7 +1204,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div>
       <div class="muted">Mobile Verwaltung</div>
       <h1>Klienten</h1>
-      <div class="version">Version 1.0 · Entwicklungsstand</div>
+      <div class="version" id="appVersionAnzeige">Version 1.1 · 23.10.2026</div>
 
       <label class="theme-switch">
         Design
@@ -1331,6 +1344,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="grid">
       <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
       <label>Name, Vorname<input id="clientName" required></label>
+      <label>Anrede
+        <select id="clientAnrede">
+          <option value="">keine</option>
+          <option value="Herr">Herr</option>
+          <option value="Frau">Frau</option>
+          <option value="Divers">Divers</option>
+        </select>
+      </label>
       <label>Aktenzeichen<input id="aktenzeichen"></label>
       <label>Geburtstag<input id="geburtstag" type="date"></label>
       <label>Telefon<input id="telefon" type="tel"></label>
@@ -1435,22 +1456,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>FLS<input id="docFls" type="number" min="0" step="0.25" inputmode="decimal" placeholder="z. B. 1,25"></label>
       <div id="docFlsHinweis" class="kennziffer-text span2 hidden"></div>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
-      <label class="span2">Textbaustein einfügen
-        <select id="docSnippet">
-          <option value="">Bitte auswählen</option>
-        </select>
-        <span class="muted small">
-          Der Baustein wird an den vorhandenen Text angehängt.
-        </span>
-      </label>
-      <label class="span2" style="flex-direction:row;justify-content:flex-end">
+      <div class="span2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" id="openSnippetPicker" class="secondary" style="flex:1 1 auto">
+          📝 Textbausteine einfügen
+        </button>
         <button type="button" id="manageSnippets" class="secondary" style="flex:0 0 auto">
           Bausteine verwalten
         </button>
-      </label>
-      <div class="span2 diktat-leiste">
-        <button type="button" id="docDiktat" class="secondary">🎤 Diktieren</button>
-        <span id="docDiktatStatus" class="diktat-status">Spricht in das Feld, in dem der Cursor zuletzt stand.</span>
       </div>
       <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
       <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
@@ -1910,6 +1922,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         placeholder="Der Text, der eingefügt werden soll"></textarea>
     </label>
 
+    <label>Art
+      <select id="snippetArt">
+        <option value="kontakt">Kontakt (z. B. Hausbesuch)</option>
+        <option value="befinden">Befinden (beginnt mit „Klient*in …")</option>
+        <option value="inhalt" selected>Inhalt (z. B. Entlastendes Gespräch)</option>
+      </select>
+    </label>
+
     <div class="actions">
       <button type="button" id="snippetReset" class="secondary hidden">
         Abbrechen
@@ -1920,7 +1940,34 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
   </form>
 
+  <div style="margin-top:14px">
+    <button type="button" id="snippetStartliste" class="secondary" style="width:100%">
+      Startliste einfügen
+    </button>
+    <p class="muted small">Legt die vorbereiteten Bausteine an. Vorhandene mit gleichem Namen werden übersprungen.</p>
+  </div>
+
   <div id="snippetList"></div>
+</dialog>
+
+<dialog id="snippetPickerDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumentation</div>
+      <h2>Textbausteine einfügen</h2>
+    </div>
+    <button type="button" id="closeSnippetPicker" class="secondary">Schließen</button>
+  </div>
+  <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
+  <div id="snippetPickerList"></div>
+  <div class="tb-gruppe">
+    <h3>Vorschau</h3>
+    <div id="snippetPreview" class="tb-vorschau muted">Noch nichts ausgewählt.</div>
+  </div>
+  <div class="actions" style="margin-top:14px">
+    <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
+    <button type="button" id="snippetPickerInsert" class="primary">Text einfügen</button>
+  </div>
 </dialog>
 
 <dialog id="incomeDialog">
@@ -2293,6 +2340,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 </dialog>
   
 <script>
+/* ---------- Versionsnummer: nur hier ändern ----------
+   Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
+const APP_VERSION='1.3';
+const APP_STAND='23.10.2026';
+document.querySelectorAll('.version').forEach(
+  el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
+);
+
 const SUPABASE_URL='https://bhrygputoysiwchzlygn.supabase.co';
 const SUPABASE_KEY='sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
 /* ---------- Fortschrittsanzeige: Logik ---------- */
@@ -2772,6 +2827,7 @@ async function init(){
     showApp(true);
     await loadClients();
     await loadTextbausteine();
+    await aktualisiereSicherungsKnopf();
   }else{
     user=null;
     showApp(false);
@@ -3003,6 +3059,7 @@ function openClient(id=''){
   $('clientId').value=c.id||'';
   $('clientCode').value=c.client_code||'';
   $('clientName').value=c.name||'';
+  $('clientAnrede').value=c.anrede||'';
   $('aktenzeichen').value=c.aktenzeichen||'';
   $('geburtstag').value=c.geburtstag||'';
   $('telefon').value=c.telefon||'';
@@ -5077,10 +5134,17 @@ $('clientForm').onsubmit=async e=>{
     kontaktperson2:$('kontaktperson2').value.trim()||null,
     telefon2:$('telefon2').value.trim()||null,
     bemerkungen:$('bemerkungen').value.trim()||null,
-    portrait:$('clientPortrait').value||null
+    portrait:$('clientPortrait').value||null,
+    anrede:$('clientAnrede').value||null
   };
-  const q=id?sb.from('clients').update(row).eq('id',id):sb.from('clients').insert(row);
-  const {error}=await q;
+  const speichern=z=>id?sb.from('clients').update(z).eq('id',id):sb.from('clients').insert(z);
+  let {error}=await speichern(row);
+  // Falls die Spalte „anrede" noch fehlt: ohne Anrede speichern
+  if(error&&/anrede/.test(error.message)){
+    const {anrede,...ohneAnrede}=row;
+    ({error}=await speichern(ohneAnrede));
+    if(!error)toast('Hinweis: Anrede noch nicht gespeichert – SQL-Befehl fehlt.');
+  }
   if(error){toast(error.message);return}
   $('clientDialog').close();toast('Gespeichert');await loadClients();
 };
@@ -7468,167 +7532,6 @@ $('cloudSetupTrennen').onclick=()=>{
   toast('Verbindung zu pCloud getrennt');
 };
 
-/* ---------- Diktieren (Spracherkennung von Apple über Safari) ---------- */
-
-const DIKTAT_ERKENNUNG=window.SpeechRecognition||window.webkitSpeechRecognition||null;
-let diktat=null;
-let diktatAn=false;
-let diktatFeld=null;
-
-['docText','docBesonderheiten'].forEach(id=>{
-  $(id).addEventListener('focus',()=>{diktatFeld=$(id);});
-});
-
-function diktatSatzzeichen(text){
-  return String(text)
-    .replace(/\s*\b(neuer absatz)\b\s*/gi,'\n\n')
-    .replace(/\s*\b(neue zeile)\b\s*/gi,'\n')
-    .replace(/\s*\bpunkt\b/gi,'.')
-    .replace(/\s*\bkomma\b/gi,',')
-    .replace(/\s*\bfragezeichen\b/gi,'?')
-    .replace(/\s*\bausrufezeichen\b/gi,'!')
-    .replace(/\s*\bdoppelpunkt\b/gi,':');
-}
-
-function diktatEinfuegen(text){
-  const feld=diktatFeld||$('docText');
-  let neu=diktatSatzzeichen(text).trim();
-  if(!neu)return;
-
-  const vorher=feld.value;
-  const start=typeof feld.selectionStart==='number'&&document.activeElement===feld
-    ? feld.selectionStart
-    : vorher.length;
-  const davor=vorher.slice(0,start);
-  const danach=vorher.slice(start);
-
-  // Satzanfänge innerhalb des Diktats groß schreiben
-  neu=neu.replace(/([.!?]\s+|\n\s*)([a-zäöü])/g,(t,vor,b)=>vor+b.toUpperCase());
-
-  // Satzanfang groß schreiben
-  if(!davor.trim()||/[.!?]\s*$/.test(davor)||/\n\s*$/.test(davor)){
-    neu=neu.charAt(0).toUpperCase()+neu.slice(1);
-  }
-
-  const abstand=davor&&!/[\s]$/.test(davor)&&!/^[.,!?:]/.test(neu)?' ':'';
-  feld.value=davor+abstand+neu+danach;
-
-  const position=(davor+abstand+neu).length;
-  try{feld.setSelectionRange(position,position);}catch(fehler){}
-
-  feld.dispatchEvent(new Event('input',{bubbles:true}));
-}
-
-function diktatAnzeigen(text,aktiv){
-  $('docDiktatStatus').textContent=text;
-  $('docDiktat').textContent=aktiv?'⏹ Diktat beenden':'🎤 Diktieren';
-  $('docDiktat').classList.toggle('diktat-aktiv',Boolean(aktiv));
-}
-
-function diktatAusweichen(grund){
-  diktatAn=false;
-  diktat=null;
-
-  const feld=diktatFeld||$('docText');
-  feld.focus();
-
-  diktatAnzeigen(
-    (grund?grund+' ':'')+
-    'Tippe stattdessen auf der Bildschirmtastatur auf das Mikrofon 🎤.',
-    false
-  );
-}
-
-function diktatStarten(){
-  if(!DIKTAT_ERKENNUNG){
-    diktatAusweichen('Der Diktier-Knopf wird auf diesem Gerät nicht unterstützt.');
-    return;
-  }
-
-  try{
-    diktat=new DIKTAT_ERKENNUNG();
-    diktat.lang='de-DE';
-    diktat.continuous=true;
-    diktat.interimResults=true;
-
-    diktat.onresult=ereignis=>{
-      let vorlaeufig='';
-
-      for(let i=ereignis.resultIndex;i<ereignis.results.length;i++){
-        const ergebnis=ereignis.results[i];
-
-        if(ergebnis.isFinal){
-          diktatEinfuegen(ergebnis[0].transcript);
-        }else{
-          vorlaeufig+=ergebnis[0].transcript;
-        }
-      }
-
-      diktatAnzeigen(
-        vorlaeufig?'🎙 „'+vorlaeufig+'"':'🎙 Ich höre zu … („Punkt", „Komma", „neue Zeile" gehen auch)',
-        true
-      );
-    };
-
-    diktat.onerror=ereignis=>{
-      const fehler=ereignis&&ereignis.error;
-
-      if(fehler==='not-allowed'||fehler==='service-not-allowed'){
-        diktatAusweichen('Das Mikrofon ist für die App nicht freigegeben.');
-      }else if(fehler==='no-speech'){
-        // Pause – wird bei onend neu gestartet
-      }else if(fehler==='network'){
-        diktatAusweichen('Für den Diktier-Knopf ist eine Internetverbindung nötig.');
-      }else if(fehler!=='aborted'){
-        diktatAusweichen('Die Spracherkennung ist gestoppt ('+fehler+').');
-      }
-    };
-
-    // Safari beendet die Erkennung nach Sprechpausen von selbst
-    diktat.onend=()=>{
-      if(diktatAn&&diktat){
-        try{
-          diktat.start();
-          return;
-        }catch(fehler){
-          // fällt durch
-        }
-      }
-
-      if(!diktatAn)return;
-      diktatAn=false;
-      diktatAnzeigen('Diktat beendet.',false);
-    };
-
-    diktatAn=true;
-    diktat.start();
-    diktatAnzeigen('🎙 Ich höre zu … („Punkt", „Komma", „neue Zeile" gehen auch)',true);
-  }catch(fehler){
-    diktatAusweichen('Die Spracherkennung ließ sich nicht starten.');
-  }
-}
-
-function diktatStoppen(meldung){
-  const laufend=diktat;
-  diktatAn=false;
-  diktat=null;
-
-  if(laufend){
-    try{laufend.stop();}catch(fehler){}
-  }
-
-  diktatAnzeigen(meldung||'Spricht in das Feld, in dem der Cursor zuletzt stand.',false);
-}
-
-$('docDiktat').onclick=()=>{
-  if(diktatAn){
-    diktatStoppen('Diktat beendet.');
-  }else{
-    diktatStarten();
-  }
-};
-
-$('docFormDialog').addEventListener('close',()=>diktatStoppen());
 $('cloudRefresh').onclick=()=>{
   cloudAlleDateien=null;
   cloudAnzeigen();
@@ -8752,8 +8655,95 @@ const SICHERUNG_TABELLEN=[
   'trip_stop_suggestions',
   'route_distances',
   'ausgaben',
-  'verguetungssaetze'
+  'verguetungssaetze',
+  'textbausteine',
+  'termine'
 ];
+
+/* Datum der letzten Sicherung – geräteübergreifend in Supabase (Tabelle „einstellungen") */
+const SICHERUNG_FRIST_TAGE=7;
+let letzteSicherungDatum=null;
+
+function sicherungMerker(){
+  return 'letzteSicherung_'+(user&&user.id||'');
+}
+
+/* Datum aus Supabase lesen; falls nicht erreichbar, den Wert auf dem Gerät nehmen */
+async function ladeLetzteSicherung(){
+  if(!user)return null;
+  let lokal=null;
+  try{
+    const wert=localStorage.getItem(sicherungMerker());
+    lokal=wert?new Date(wert):null;
+  }catch(e){}
+
+  const {data,error}=await sb
+    .from('einstellungen')
+    .select('letzte_sicherung')
+    .eq('user_id',user.id)
+    .maybeSingle();
+
+  const entfernt=!error&&data&&data.letzte_sicherung
+    ? new Date(data.letzte_sicherung)
+    : null;
+
+  // Das neuere der beiden Daten zählt
+  if(lokal&&entfernt)return lokal>entfernt?lokal:entfernt;
+  return lokal||entfernt;
+}
+
+async function speichereLetzteSicherung(){
+  const jetzt=new Date().toISOString();
+  letzteSicherungDatum=new Date(jetzt);
+  try{localStorage.setItem(sicherungMerker(),jetzt);}catch(e){}
+
+  const {error}=await sb
+    .from('einstellungen')
+    .upsert({user_id:user.id,letzte_sicherung:jetzt},{onConflict:'user_id'});
+
+  if(error){
+    toast('Sicherungsdatum konnte nicht in Supabase gespeichert werden: '+error.message);
+  }
+}
+
+function zeigeSicherungsKnopf(){
+  const knopf=$('backupData');
+  if(!knopf)return;
+
+  const zuletzt=letzteSicherungDatum;
+  const tage=zuletzt
+    ? Math.floor((Date.now()-zuletzt.getTime())/86400000)
+    : null;
+  const faellig=!user?false:(tage===null||tage>=SICHERUNG_FRIST_TAGE);
+
+  knopf.classList.toggle('sicherung-faellig',faellig);
+
+  // Datum der letzten Sicherung immer unter dem Knopftext anzeigen
+  let hinweis;
+  if(!zuletzt){
+    hinweis='noch keine Sicherung';
+  }else{
+    const datum=zuletzt.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+    hinweis='zuletzt '+datum+(faellig?' (vor '+tage+' Tagen)':'');
+  }
+  knopf.innerHTML='Datensicherung<span class="sicherung-hinweis">'+hinweis+'</span>';
+
+  knopf.title=zuletzt
+    ? 'Letzte Sicherung: '+zuletzt.toLocaleDateString('de-DE')
+    : 'Noch keine Sicherung';
+}
+
+async function aktualisiereSicherungsKnopf(){
+  if(!user){zeigeSicherungsKnopf();return;}
+  letzteSicherungDatum=await ladeLetzteSicherung();
+  zeigeSicherungsKnopf();
+}
+
+// Prüfen beim Öffnen der App (auch beim Zurückwechseln) und einmal täglich
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)aktualisiereSicherungsKnopf();
+});
+setInterval(aktualisiereSicherungsKnopf,24*60*60*1000);
 
 async function erstelleSicherung(){
   const knopf=$('backupData');
@@ -8763,14 +8753,14 @@ async function erstelleSicherung(){
     return;
   }
 
-  const beschriftung=knopf.textContent;
   knopf.disabled=true;
+  knopf.classList.remove('sicherung-faellig');
   knopf.textContent='Sicherung läuft …';
 
   try{
     const inhalt={
       erstelltAm:new Date().toISOString(),
-      appVersion:'1.0',
+      appVersion:APP_VERSION,
       konto:user.email||'',
       tabellen:{}
     };
@@ -8817,6 +8807,11 @@ async function erstelleSicherung(){
       type:'application/json;charset=utf-8'
     });
 
+    // Datum schon vor dem Herunterladen speichern – iPad/iPhone öffnen
+    // dabei eine Vorschau und können die App unterbrechen
+    await speichereLetzteSicherung();
+    zeigeSicherungsKnopf();
+
     const adresse=URL.createObjectURL(datei);
     const verweis=document.createElement('a');
 
@@ -8843,7 +8838,7 @@ async function erstelleSicherung(){
   }finally{
     endeSchritt();
     knopf.disabled=false;
-    knopf.textContent=beschriftung;
+    zeigeSicherungsKnopf();
   }
 }
 
@@ -8865,42 +8860,312 @@ async function loadTextbausteine(){
   }
 
   textbausteine=data||[];
+
+  // Startliste einmalig automatisch anlegen, wenn noch keine Bausteine da sind
+  const merker='tbStartliste_'+(user&&user.id);
+  let schonAngelegt=false;
+  try{schonAngelegt=localStorage.getItem(merker)==='1';}catch(e){}
+  if(textbausteine.length){
+    try{localStorage.setItem(merker,'1');}catch(e){}
+  }else if(!schonAngelegt&&!tbStartlisteLaeuft){
+    tbStartlisteLaeuft=true;
+    const ok=await startlisteEinfuegen(true);
+    tbStartlisteLaeuft=false;
+    if(ok)return;   // startlisteEinfuegen lädt die Bausteine neu
+  }
   renderSnippetPicker();
+}
+let tbStartlisteLaeuft=false;
+
+/* Arten von Bausteinen: in dieser Reihenfolge werden sie zusammengesetzt */
+const TB_ARTEN=[
+  {wert:'kontakt', name:'Kontakt'},
+  {wert:'befinden',name:'Befinden'},
+  {wert:'inhalt',  name:'Inhalt'}
+];
+const TB_PERSON='Klient*in';
+const TB_PRONOMEN='{{er/sie}}';   // Platzhalter für „er"/„sie" im Folgesatz
+
+/* Vorbereitete Startliste */
+const TB_STARTLISTE=[
+  ['kontakt','Hausbesuch.'],
+  ['kontakt','Begleitung außer Haus.'],
+  ['kontakt','Telefonkontakt.'],
+  ['befinden','Klient*in war psychisch stabil.'],
+  ['befinden','Klient*in schien einigermaßen stabil.'],
+  ['befinden','Klient*in zeigte sich psychisch instabil.'],
+  ['befinden','Klient*in wirkte angespannt und unruhig.'],
+  ['befinden','Klient*in wirkte niedergeschlagen und antriebsarm.'],
+  ['befinden','Klient*in war gut gelaunt und zugewandt.'],
+  ['befinden','Klient*in war gut erreichbar und offen für das Gespräch.'],
+  ['befinden','Klient*in war schwer erreichbar.'],
+  ['befinden','Klient*in klagte über körperliche Beschwerden.'],
+  ['inhalt','Motivieren zu mehr Selbstfürsorge.'],
+  ['inhalt','Motivieren zu mehr Bewegung und Aktivität.'],
+  ['inhalt','Motivieren zu sozialen Kontakten.'],
+  ['inhalt','Entlastendes Gespräch.'],
+  ['inhalt','Gespräch über die aktuelle Lebenssituation.'],
+  ['inhalt','Unterstützung bei der Entwicklung von Tagesstruktur.'],
+  ['inhalt','Unterstützung bei der Haushaltsführung.'],
+  ['inhalt','Gemeinsames Sichten und Bearbeiten der Post.'],
+  ['inhalt','Unterstützung bei Behördenangelegenheiten.'],
+  ['inhalt','Begleitung zum Arzttermin.'],
+  ['inhalt','Begleitung beim Einkauf, um die Eigenständigkeit zu fördern.']
+];
+
+let tbAuswahl=[];   // ausgewählte Baustein-IDs in Tipp-Reihenfolge
+
+function tbArt(b){
+  return TB_ARTEN.some(a=>a.wert===b.art)?b.art:'inhalt';
+}
+function tbArtName(wert){
+  return (TB_ARTEN.find(a=>a.wert===wert)||TB_ARTEN[2]).name;
+}
+function tbOhnePunkt(t){
+  return String(t||'').trim().replace(/[.!;\s]+$/,'');
+}
+function tbMitPunkt(t){
+  const x=String(t||'').trim();
+  if(!x)return '';
+  return /[.!?]$/.test(x)?x:x+'.';
+}
+
+/* Teile mit Komma und „und" verbinden.
+   Enthält der letzte Teil schon ein „und", nur Kommas verwenden. */
+function tbVerbinden(teile,schluss=' und '){
+  if(teile.length<=1)return teile.join('');
+  const letzter=teile[teile.length-1];
+  const vorne=teile.slice(0,-1).join(', ');
+  return / und /.test(letzter)?vorne+', '+letzter:vorne+schluss+letzter;
+}
+
+/* Befinden zu einem Satz verbinden.
+   „Klient*in war A." + „Klient*in war B." → „Klient*in war A und B."
+   Würde ein doppeltes „und" entstehen, beginnt ein neuer Satz mit „Zudem". */
+function tbBefindenTeile(teile){
+  // teile: [{verb, rest, text}] – text ist der Teil ohne „Klient*in"
+  if(!teile.length)return '';
+  if(teile.length>=2&&/ und /.test(teile[teile.length-2].text)){
+    const letzter=teile[teile.length-1];
+    return tbBefindenTeile(teile.slice(0,-1))+' Zudem '+
+      letzter.verb+' '+TB_PRONOMEN+(letzter.rest?' '+letzter.rest:'')+'.';
+  }
+  return TB_PERSON+' '+tbVerbinden(teile.map(t=>t.text))+'.';
+}
+
+function tbBefindenSatz(texte){
+  const saetze=[];
+  let teile=[];
+  let letztesVerb=null;
+
+  const abschliessen=()=>{
+    if(teile.length)saetze.push(tbBefindenTeile(teile));
+    teile=[];
+    letztesVerb=null;
+  };
+
+  texte.forEach(t=>{
+    const satz=tbOhnePunkt(t);
+    if(!satz.startsWith(TB_PERSON+' ')){
+      abschliessen();
+      saetze.push(tbMitPunkt(satz));
+      return;
+    }
+    const ganz=satz.slice(TB_PERSON.length+1).trim();
+    const verb=ganz.split(/\s+/)[0];
+    const rest=ganz.slice(verb.length).trim();
+    const gleich=letztesVerb&&verb===letztesVerb&&rest;
+    teile.push({verb,rest,text:gleich?rest:ganz});
+    letztesVerb=verb;
+  });
+  abschliessen();
+  return saetze.join(' ');
+}
+
+/* Erstes Wort klein schreiben, wenn es ein Eigenschaftswort vor einem
+   Hauptwort ist (z. B. „Entlastendes Gespräch" → „entlastendes Gespräch"). */
+function tbImSatz(t){
+  const w=t.split(/\s+/);
+  if(w.length>=2&&/(es|er|en|em|e)$/.test(w[0])&&/^[A-ZÄÖÜ]/.test(w[1])){
+    w[0]=w[0].charAt(0).toLowerCase()+w[0].slice(1);
+  }
+  return w.join(' ');
+}
+
+/* Inhalte: „Inhalte: A, B und C."
+   Teile mit Komma kommen ans Ende, damit der Satz lesbar bleibt. */
+function tbInhaltSatz(texte){
+  const teile=texte.map(tbOhnePunkt).filter(Boolean);
+  if(!teile.length)return '';
+  if(teile.length===1)return tbMitPunkt(teile[0]);
+
+  const ohneKomma=teile.filter(t=>!t.includes(','));
+  const mitKomma=teile.filter(t=>t.includes(','));
+  const liste=[...ohneKomma,...mitKomma].map(tbImSatz);
+
+  if(mitKomma.length>1){
+    return 'Inhalte: '+liste.join('; ')+'.';
+  }
+  const schluss=liste.some(t=>/ und /.test(t))?' sowie ':' und ';
+  return 'Inhalte: '+tbVerbinden(liste,schluss)+'.';
+}
+
+/* „Klient*in" durch „T. Müller" ersetzen (Anrede bestimmt nur „er"/„sie").
+   Name ist als „Nachname, Vorname" gespeichert. */
+function tbPersonName(klient){
+  if(!klient||!klient.name)return TB_PERSON;
+  const teile=String(klient.name).split(',').map(x=>x.trim()).filter(Boolean);
+  const nachname=teile[0]||'';
+  const vorname=teile.slice(1).join(' ');
+  // „T. Müller": erster Buchstabe des Vornamens und Nachname
+  const kuerzel=vorname?vorname.charAt(0).toUpperCase()+'.':'';
+  return [kuerzel,nachname].filter(Boolean).join(' ')||TB_PERSON;
+}
+
+function tbNamenEinsetzen(text){
+  const klient=typeof activeDocsClient!=='undefined'?activeDocsClient:null;
+  const name=tbPersonName(klient);
+  const pronomen=
+    klient&&klient.anrede==='Herr'?'er':
+    klient&&klient.anrede==='Frau'?'sie':
+    name;
+  return text
+    .split(TB_PRONOMEN).join(pronomen)
+    .replace(/Klient\*in(?!nen)/g,name);
+}
+
+function tbZusammensetzen(ids){
+  const gewaehlt=ids
+    .map(id=>textbausteine.find(b=>String(b.id)===String(id)))
+    .filter(Boolean);
+
+  const nach=art=>gewaehlt.filter(b=>tbArt(b)===art).map(b=>b.text);
+
+  const text=[
+    nach('kontakt').map(tbMitPunkt).join(' '),
+    tbBefindenSatz(nach('befinden')),
+    tbInhaltSatz(nach('inhalt'))
+  ].filter(Boolean).join(' ');
+
+  return tbNamenEinsetzen(text);
 }
 
 function renderSnippetPicker(){
-  const auswahl=$('docSnippet');
+  const ziel=$('snippetPickerList');
+  if(!ziel)return;
 
-  if(!auswahl)return;
+  if(!textbausteine.length){
+    ziel.innerHTML='<p class="muted">Noch keine Bausteine angelegt. '+
+      'Unter „Bausteine verwalten" kannst du die Startliste einfügen.</p>';
+    renderSnippetPreview();
+    return;
+  }
 
-  auswahl.innerHTML=
-    '<option value="">Bitte auswählen</option>'+
-    textbausteine.map(
-      b=>`<option value="${esc(b.id)}">${esc(b.titel)}</option>`
-    ).join('');
+  ziel.innerHTML=TB_ARTEN.map(art=>{
+    const liste=textbausteine.filter(b=>tbArt(b)===art.wert);
+    if(!liste.length)return '';
+    const gruppe=liste.filter(b=>tbAuswahl.includes(String(b.id)));
+    return `
+      <div class="tb-gruppe">
+        <h3>${esc(art.name)}</h3>
+        <div class="tb-chips">
+          ${liste.map(b=>{
+            const id=String(b.id);
+            const an=tbAuswahl.includes(id);
+            const nr=an
+              ? tbAuswahl.filter(x=>gruppe.some(g=>String(g.id)===x)).indexOf(id)+1
+              : 0;
+            return `<button type="button" class="tb-chip${an?' tb-an':''}" data-id="${esc(id)}">`+
+              (an?`<span class="tb-nr">${nr}</span>`:'')+
+              `${esc(b.titel)}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  ziel.querySelectorAll('.tb-chip').forEach(k=>k.onclick=()=>{
+    const id=k.dataset.id;
+    tbAuswahl=tbAuswahl.includes(id)
+      ? tbAuswahl.filter(x=>x!==id)
+      : [...tbAuswahl,id];
+    renderSnippetPicker();
+  });
+
+  renderSnippetPreview();
 }
 
-function fuegeBausteinEin(id){
-  if(!id)return;
+function renderSnippetPreview(){
+  const feld=$('snippetPreview');
+  if(!feld)return;
+  const text=tbZusammensetzen(tbAuswahl);
+  feld.textContent=text||'Noch nichts ausgewählt.';
+  feld.classList.toggle('muted',!text);
+}
 
-  const baustein=textbausteine.find(
-    b=>String(b.id)===String(id)
-  );
-
-  if(!baustein)return;
+function fuegeZusammengesetztEin(){
+  const text=tbZusammensetzen(tbAuswahl);
+  if(!text){
+    toast('Bitte zuerst Bausteine antippen.');
+    return;
+  }
 
   const feld=$('docText');
-  const vorhanden=feld.value.trim();
+  const vorhanden=feld.value.replace(/\s+$/,'');
 
-  feld.value=vorhanden
-    ? vorhanden+'\n'+baustein.text
-    : baustein.text;
+  feld.value=vorhanden?vorhanden+' '+text:text;
+
+  tbAuswahl=[];
+  $('snippetPickerDialog').close();
 
   feld.focus();
   feld.setSelectionRange(feld.value.length,feld.value.length);
   feld.scrollTop=feld.scrollHeight;
 
-  toast('Baustein eingefügt');
+  toast('Text eingefügt');
+}
+
+async function startlisteEinfuegen(automatisch=false){
+  const vorhanden=new Set(
+    textbausteine.map(b=>String(b.titel||'').trim().toLowerCase())
+  );
+  const sortStart=textbausteine.reduce(
+    (m,b)=>Math.max(m,Number(b.sortierung)||0),0
+  );
+
+  const neu=TB_STARTLISTE
+    .map(([art,text],i)=>({
+      user_id:user.id,
+      titel:tbOhnePunkt(text),
+      text:text,
+      art:art,
+      sortierung:sortStart+i+1
+    }))
+    .filter(z=>!vorhanden.has(z.titel.toLowerCase()));
+
+  if(!neu.length){
+    if(!automatisch)toast('Alle Bausteine der Startliste sind schon vorhanden.');
+    return false;
+  }
+
+  if(!automatisch&&!confirm(neu.length+' Bausteine aus der Startliste anlegen?'))return false;
+
+  const {error}=await sb.from('textbausteine').insert(neu);
+
+  if(error){
+    if(automatisch)return false;
+    if(/art/.test(error.message)){
+      toast('Bitte zuerst den SQL-Befehl für die Spalte „art" ausführen.');
+    }else{
+      toast('Startliste konnte nicht angelegt werden: '+error.message);
+    }
+    return false;
+  }
+
+  try{localStorage.setItem('tbStartliste_'+user.id,'1');}catch(e){}
+  toast(neu.length+' Bausteine angelegt');
+  await loadTextbausteine();
+  if($('snippetDialog').open)renderSnippetList();
+  return true;
 }
 
 function renderSnippetList(){
@@ -8910,11 +9175,13 @@ function renderSnippetList(){
     return;
   }
 
-  $('snippetList').innerHTML=textbausteine.map(b=>`
+  const sortiert=TB_ARTEN.flatMap(a=>textbausteine.filter(b=>tbArt(b)===a.wert));
+
+  $('snippetList').innerHTML=sortiert.map(b=>`
     <div class="doc-item">
       <div class="doc-head">
         <div>
-          <h3>${esc(b.titel)}</h3>
+          <h3>${esc(b.titel)}<span class="tb-art">${esc(tbArtName(tbArt(b)))}</span></h3>
           <p class="doc-text">${esc(b.text)}</p>
         </div>
         <div class="actions">
@@ -8948,6 +9215,7 @@ function bearbeiteBaustein(id){
   $('snippetId').value=baustein.id;
   $('snippetTitle').value=baustein.titel;
   $('snippetText').value=baustein.text;
+  $('snippetArt').value=tbArt(baustein);
   $('snippetSave').textContent='Änderung speichern';
   $('snippetReset').classList.remove('hidden');
 
@@ -8958,6 +9226,7 @@ function resetSnippetForm(){
   $('snippetId').value='';
   $('snippetTitle').value='';
   $('snippetText').value='';
+  $('snippetArt').value='inhalt';
   $('snippetSave').textContent='Baustein speichern';
   $('snippetReset').classList.add('hidden');
 }
@@ -8985,12 +9254,16 @@ async function loescheBaustein(id){
   renderSnippetList();
 }
 
-$('docSnippet').onchange=()=>{
-  const auswahl=$('docSnippet');
-
-  fuegeBausteinEin(auswahl.value);
-  auswahl.value='';
+$('openSnippetPicker').onclick=async()=>{
+  await loadTextbausteine();
+  tbAuswahl=[];
+  renderSnippetPicker();
+  $('snippetPickerDialog').showModal();
 };
+$('closeSnippetPicker').onclick=()=>$('snippetPickerDialog').close();
+$('snippetPickerReset').onclick=()=>{tbAuswahl=[];renderSnippetPicker();};
+$('snippetPickerInsert').onclick=fuegeZusammengesetztEin;
+$('snippetStartliste').onclick=startlisteEinfuegen;
 
 $('manageSnippets').onclick=async()=>{
   await loadTextbausteine();
@@ -9018,14 +9291,21 @@ $('snippetForm').onsubmit=async e=>{
   const zeile={
     user_id:user.id,
     titel:titel,
-    text:text
+    text:text,
+    art:$('snippetArt').value
   };
 
-  const abfrage=id
-    ? sb.from('textbausteine').update(zeile).eq('id',id)
-    : sb.from('textbausteine').insert(zeile);
+  const speichern=z=>id
+    ? sb.from('textbausteine').update(z).eq('id',id)
+    : sb.from('textbausteine').insert(z);
 
-  const {error}=await abfrage;
+  let {error}=await speichern(zeile);
+
+  // Falls die Spalte „art" noch fehlt: ohne Art speichern
+  if(error&&/art/.test(error.message)){
+    const {art,...ohneArt}=zeile;
+    ({error}=await speichern(ohneArt));
+  }
 
   if(error){
     toast('Baustein konnte nicht gespeichert werden: '+error.message);
