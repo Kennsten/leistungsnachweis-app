@@ -1211,7 +1211,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div>
       <div class="muted">Mobile Verwaltung</div>
       <h1>Klienten</h1>
-      <div class="version">Version 1.0 · Entwicklungsstand</div>
+      <div class="version" id="appVersionAnzeige">Version 1.1 · 23.10.2026</div>
 
       <label class="theme-switch">
         Design
@@ -2347,6 +2347,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 </dialog>
   
 <script>
+/* ---------- Versionsnummer: nur hier ändern ----------
+   Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
+const APP_VERSION='1.1';
+const APP_STAND='23.10.2026';
+document.querySelectorAll('.version').forEach(
+  el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
+);
+
 const SUPABASE_URL='https://bhrygputoysiwchzlygn.supabase.co';
 const SUPABASE_KEY='sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
 /* ---------- Fortschrittsanzeige: Logik ---------- */
@@ -8753,7 +8761,7 @@ async function erstelleSicherung(){
   try{
     const inhalt={
       erstelltAm:new Date().toISOString(),
-      appVersion:'1.0',
+      appVersion:APP_VERSION,
       konto:user.email||'',
       tabellen:{}
     };
