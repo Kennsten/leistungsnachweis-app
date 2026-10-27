@@ -2539,7 +2539,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.12';
+const APP_VERSION='1.13';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3878,6 +3878,10 @@ async function kilometerBerechnen(){
       return;
     }
 
+    // Auf ganze Kilometer aufrunden (13,4 km → 14 km)
+    const genau=ergebnis.km;
+    ergebnis.km=Math.ceil(genau-1e-9);
+
     if(
       vorher &&
       Number(vorher.replace(',','.'))!==ergebnis.km &&
@@ -3887,14 +3891,14 @@ async function kilometerBerechnen(){
         'Berechneten Wert übernehmen?'
       )
     ){
-      hinweis.textContent='Berechnet: '+formatKm(ergebnis.km)+' km (nicht übernommen)';
+      hinweis.textContent='Berechnet: '+formatKm(genau)+' km, aufgerundet '+ergebnis.km+' km (nicht übernommen)';
       return;
     }
 
     $('tripKilometers').value=String(ergebnis.km);
     hinweis.textContent=
-      'Berechnet über '+(ergebnis.punkte||[]).join(' → ')+
-      '. Bitte kurz prüfen.';
+      'Berechnet: '+formatKm(genau)+' km, aufgerundet auf '+ergebnis.km+' km. '+
+      'Strecke über '+(ergebnis.punkte||[]).join(' → ')+'. Bitte kurz prüfen.';
   }catch(fehler){
     toast('Kilometer konnten nicht berechnet werden: '+fehler.message);
   }finally{
