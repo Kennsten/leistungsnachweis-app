@@ -1203,6 +1203,44 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .kachel-aktionen button{flex:1;padding:7px 8px;font-size:.8rem;border-radius:10px}
 .kachel-aktionen .deleteCloudFile{flex:0 0 auto}
 
+/* ---------- Umschalter für die Ansicht (Kacheln/Liste, Datum/Kategorie) ---------- */
+.ansicht-leiste{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+.umschalter{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-control);overflow:hidden;background:var(--card)}
+.umschalter button{border:0;background:none;padding:8px 14px;font:inherit;font-size:.9rem;font-weight:600;color:var(--muted)}
+.umschalter button+button{border-left:1px solid var(--line)}
+.umschalter button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+
+/* ---------- Dokumente: Listenansicht ---------- */
+#cloudFiles.cloud-liste .cloud-raster{display:flex;flex-direction:column;gap:0;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden}
+#cloudFiles.cloud-liste .cloud-kachel{flex-direction:row;align-items:center;border:0;border-radius:0;box-shadow:none;background:none}
+#cloudFiles.cloud-liste .cloud-kachel+.cloud-kachel{border-top:1px solid var(--line)}
+#cloudFiles.cloud-liste .kachel-oeffnen{display:grid;grid-template-columns:36px 1fr;column-gap:10px;row-gap:1px;align-items:center;padding:9px 12px;min-width:0}
+#cloudFiles.cloud-liste .kachel-symbol{grid-row:1 / span 4;width:36px;height:36px;font-size:1.15rem;border-radius:10px;margin:0}
+#cloudFiles.cloud-liste .kachel-name,
+#cloudFiles.cloud-liste .kachel-meta,
+#cloudFiles.cloud-liste .kachel-pfad,
+#cloudFiles.cloud-liste .kachel-status{grid-column:2}
+#cloudFiles.cloud-liste .kachel-name{-webkit-line-clamp:2}
+#cloudFiles.cloud-liste .kachel-aktionen{flex:0 0 auto;padding:0 10px 0 0}
+#cloudFiles.cloud-liste .kachel-aktionen button{flex:0 0 auto}
+#cloudFiles.cloud-liste .knopf-text{display:none}
+
+/* ---------- Betriebsausgaben: Liste und Gruppen ---------- */
+.gruppen-kopf{margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line);font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;gap:8px}
+.gruppen-kopf span{font-weight:400;color:var(--muted);font-size:.85rem;text-align:right}
+.ausgaben-liste{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden;margin-top:8px}
+.ausgabe-zeile{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:0;background:none;color:var(--ink);font:inherit;text-align:left}
+.ausgabe-zeile+.ausgabe-zeile{border-top:1px solid var(--line)}
+.az-text{flex:1;min-width:0}
+.az-zweck,.az-meta,.az-betrag,.az-status{display:block}
+.az-zweck{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.az-meta{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.az-rechts{flex:0 0 auto;text-align:right}
+.az-betrag{font-weight:700;white-space:nowrap}
+.az-status{font-size:.78rem;color:var(--muted);white-space:nowrap}
+.az-status.fehlt{color:var(--danger);font-weight:650}
+.az-pfeil{flex:0 0 auto;color:var(--muted)}
+
 /* ---------- pCloud einrichten ---------- */
 .einrichten-schritt{display:flex;gap:12px;margin:14px 0}
 .einrichten-nr{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:flex;align-items:center;justify-content:center;font-weight:700}
@@ -1901,6 +1939,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <input id="cloudSuche" type="search"
         placeholder="Dateiname, auch in allen Unterordnern">
     </label>
+    <div class="ansicht-leiste">
+      <div class="umschalter" id="cloudAnsicht" role="group" aria-label="Ansicht der Dokumente">
+        <button type="button" data-wert="kacheln">▦ Kacheln</button>
+        <button type="button" data-wert="liste">☰ Liste</button>
+      </div>
+    </div>
   </div>
 
   <div id="cloudActions" class="actions hidden" style="margin-top:12px">
@@ -2213,6 +2257,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </label>
   </div>
 
+  <div class="ansicht-leiste">
+    <div class="umschalter" id="expensesSortierung" role="group" aria-label="Sortierung der Ausgaben">
+      <button type="button" data-wert="datum">Nach Datum</button>
+      <button type="button" data-wert="kategorie">Nach Kategorie</button>
+    </div>
+    <div class="umschalter" id="expensesAnsicht" role="group" aria-label="Darstellung der Ausgaben">
+      <button type="button" data-wert="liste">☰ Liste</button>
+      <button type="button" data-wert="karten">▦ Karten</button>
+    </div>
+  </div>
+
   <div id="expensesList">
     <p class="muted">Ausgaben werden geladen …</p>
   </div>
@@ -2442,8 +2497,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.4';
-const APP_STAND='23.10.2026';
+const APP_VERSION='1.5';
+const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -7113,6 +7168,45 @@ function cloudPfadZeichnen(){
   });
 }
 
+/* ---------- Ansichts-Umschalter (wird auf dem Gerät gemerkt) ---------- */
+function ansichtLesen(schluessel,standard,erlaubt){
+  let wert=null;
+  try{wert=localStorage.getItem(schluessel);}catch(e){}
+  return erlaubt.includes(wert)?wert:standard;
+}
+
+function ansichtMerken(schluessel,wert){
+  try{localStorage.setItem(schluessel,wert);}catch(e){}
+}
+
+function umschalterZeigen(id,wert){
+  $(id).querySelectorAll('button').forEach(
+    b=>b.setAttribute('aria-pressed',String(b.dataset.wert===wert))
+  );
+}
+
+// Verbindet einen Umschalter: merkt die Wahl und ruft beiWechsel auf
+function umschalterEinrichten(id,schluessel,standard,beiWechsel){
+  const knoepfe=[...$(id).querySelectorAll('button')];
+  const erlaubt=knoepfe.map(b=>b.dataset.wert);
+
+  umschalterZeigen(id,ansichtLesen(schluessel,standard,erlaubt));
+
+  knoepfe.forEach(b=>b.onclick=()=>{
+    ansichtMerken(schluessel,b.dataset.wert);
+    umschalterZeigen(id,b.dataset.wert);
+    beiWechsel(b.dataset.wert);
+  });
+
+  return ()=>ansichtLesen(schluessel,standard,erlaubt);
+}
+
+const cloudAnsicht=umschalterEinrichten(
+  'cloudAnsicht','ansichtDokumente','kacheln',
+  wert=>$('cloudFiles').classList.toggle('cloud-liste',wert==='liste')
+);
+$('cloudFiles').classList.toggle('cloud-liste',cloudAnsicht()==='liste');
+
 const CLOUD_MONATE=['Januar','Februar','März','April','Mai','Juni','Juli',
   'August','September','Oktober','November','Dezember'];
 
@@ -7157,7 +7251,7 @@ function cloudDateiKachel(f,pfadText){
     aktionen.push(
       '<button type="button" class="danger deleteCloudFile" '+
       'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'" '+
-      'aria-label="Löschen">🗑 Löschen</button>'
+      'aria-label="Löschen">🗑<span class="knopf-text"> Löschen</span></button>'
     );
   }
 
@@ -7990,55 +8084,10 @@ function renderExpenses(){
     return c?c.name:'';
   };
 
-  $('expensesList').innerHTML=`
-    <div class="summary-box">
-      <div class="summary-row">
-        <span>Belege</span>
-        <strong>${expenses.length}</strong>
-      </div>
+  const sortierung=ausgabenSortierung();
+  const ansicht=ausgabenAnsicht();
 
-      <div class="summary-row">
-        <span>Summe gesamt</span>
-        <strong>${formatEuro(summeBrutto)}</strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Davon absetzbar</span>
-        <strong>${formatEuro(summeAbzugsfaehig)}</strong>
-      </div>
-
-      ${
-        ohneBeleg.length
-          ? `<div class="monthly-warning">
-               ⚠ ${
-                 ohneBeleg.length===1
-                   ? 'Ein Beleg fehlt noch'
-                   : ohneBeleg.length+' Belege fehlen noch'
-               }
-               <div class="monthly-check-details">
-                 ${ohneBeleg.map(e=>
-                   '<div><button type="button" class="jumpToExpense" '+
-                   'data-id="'+esc(e.id)+'">'+
-                   'Beleg '+esc(String(e.beleg_nr||'').padStart(3,'0'))+
-                   ' · '+formatDate(e.datum)+
-                   ' · '+formatEuro(e.betrag)+
-                   '</button></div>'
-                 ).join('')}
-               </div>
-             </div>`
-          : ''
-      }
-    </div>
-
-    <div class="summary-box">
-      <div class="summary-row">
-        <span><strong>Nach Kategorie</strong></span>
-        <strong></strong>
-      </div>
-      ${kategorieZeilen}
-    </div>
-
-    ${expenses.map(e=>`
+  const karteHtml=e=>`
       <div class="doc-item">
         <div class="doc-head">
           <div>
@@ -8096,21 +8145,140 @@ function renderExpenses(){
           </div>
         </div>
       </div>
-    `).join('')}
+`;
+
+  const zeileHtml=e=>{
+    const status=e.beleg_datei_id
+      ? '<span class="az-status">📎 Beleg</span>'
+      : (e.beleg_vorhanden
+          ? '<span class="az-status">✓ Papier</span>'
+          : '<span class="az-status fehlt">⚠ Beleg fehlt</span>');
+
+    const meta=[
+      'Beleg '+String(e.beleg_nr||'').padStart(3,'0'),
+      formatDate(e.datum),
+      sortierung==='kategorie'?'':(e.kategorie||''),
+      e.client_id?clientName(e.client_id):''
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <button type="button" class="ausgabe-zeile editExpense" data-id="${esc(e.id)}">
+        <span class="az-text">
+          <span class="az-zweck">${esc(e.zweck||e.kategorie||'Ohne Zweck')}</span>
+          <span class="az-meta">${esc(meta)}</span>
+        </span>
+        <span class="az-rechts">
+          <span class="az-betrag">${formatEuro(e.betrag)}</span>
+          ${status}
+        </span>
+        <span class="az-pfeil" aria-hidden="true">›</span>
+      </button>
+    `;
+  };
+
+  const eintraegeHtml=liste=>ansicht==='karten'
+    ? liste.map(karteHtml).join('')
+    : '<div class="ausgaben-liste">'+liste.map(zeileHtml).join('')+'</div>';
+
+  let hauptteil='';
+
+  if(sortierung==='kategorie'){
+    // Reihenfolge wie im Auswahlfeld, unbekannte Kategorien ans Ende
+    const reihenfolge=AUSGABEN_KATEGORIEN.concat(
+      Object.keys(proKategorie).filter(k=>!AUSGABEN_KATEGORIEN.includes(k))
+    );
+
+    hauptteil=reihenfolge
+      .filter(name=>proKategorie[name]!==undefined)
+      .map(name=>{
+        const liste=expenses.filter(e=>(e.kategorie||'Sonstiges')===name);
+        return `
+          <div class="gruppen-kopf">
+            ${esc(name)}
+            <span>${liste.length} ${liste.length===1?'Beleg':'Belege'} · ${formatEuro(proKategorie[name])}</span>
+          </div>
+          ${eintraegeHtml(liste)}
+        `;
+      }).join('');
+  }else{
+    hauptteil=eintraegeHtml(expenses);
+  }
+
+  $('expensesList').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Belege</span>
+        <strong>${expenses.length}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Summe gesamt</span>
+        <strong>${formatEuro(summeBrutto)}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Davon absetzbar</span>
+        <strong>${formatEuro(summeAbzugsfaehig)}</strong>
+      </div>
+
+      ${
+        ohneBeleg.length
+          ? `<div class="monthly-warning">
+               ⚠ ${
+                 ohneBeleg.length===1
+                   ? 'Ein Beleg fehlt noch'
+                   : ohneBeleg.length+' Belege fehlen noch'
+               }
+               <div class="monthly-check-details">
+                 ${ohneBeleg.map(e=>
+                   '<div><button type="button" class="jumpToExpense" '+
+                   'data-id="'+esc(e.id)+'">'+
+                   'Beleg '+esc(String(e.beleg_nr||'').padStart(3,'0'))+
+                   ' · '+formatDate(e.datum)+
+                   ' · '+formatEuro(e.betrag)+
+                   '</button></div>'
+                 ).join('')}
+               </div>
+             </div>`
+          : ''
+      }
+    </div>
+
+${sortierung==='kategorie'?'':`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span><strong>Nach Kategorie</strong></span>
+        <strong></strong>
+      </div>
+      ${kategorieZeilen}
+    </div>
+
+`}
+    ${hauptteil}
   `;
 
-  document.querySelectorAll('.editExpense').forEach(
+  document.querySelectorAll('#expensesList .editExpense').forEach(
     b=>b.onclick=()=>openExpenseForm(b.dataset.id)
   );
 
-  document.querySelectorAll('.jumpToExpense').forEach(
+  document.querySelectorAll('#expensesList .jumpToExpense').forEach(
     b=>b.onclick=()=>openExpenseForm(b.dataset.id)
   );
 
-  document.querySelectorAll('.viewBeleg').forEach(
+  document.querySelectorAll('#expensesList .viewBeleg').forEach(
     b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.file)
   );
 }
+
+const ausgabenSortierung=umschalterEinrichten(
+  'expensesSortierung','ansichtAusgabenSortierung','datum',
+  ()=>{if(expenses.length)renderExpenses();}
+);
+
+const ausgabenAnsicht=umschalterEinrichten(
+  'expensesAnsicht','ansichtAusgabenDarstellung','liste',
+  ()=>{if(expenses.length)renderExpenses();}
+);
 
 async function openExpenseForm(id='',vorgabe={}){
   const e=expenses.find(x=>String(x.id)===String(id))||{};
