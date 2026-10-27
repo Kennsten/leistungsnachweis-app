@@ -2540,7 +2540,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.15';
+const APP_VERSION='1.16';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3823,8 +3823,33 @@ async function deleteStopover(name){
 }
 
 /* ---------- Kilometer berechnen (OpenRouteService über Netlify-Funktion) ---------- */
-// Gesendet werden nur die Adressen (mit Hausnummer für genaue Strecken),
-// keine Namen und kein Fahrtzweck.
+// Gesendet werden nur die Adressen, keine Namen und kein Fahrtzweck.
+// Hausnummern muss man nicht eintippen. Steht bei einem Stopp nur die
+// Straße des Klienten, wird für die Berechnung seine vollständige Adresse
+// (mit Hausnummer) genommen, damit die Strecke genauer wird.
+function strassenSchluessel(text){
+  return String(text||'')
+    .split(',')[0]
+    .toLowerCase()
+    .replace(/straße/g,'str.')
+    .replace(/strasse/g,'str.')
+    .replace(/\s*\d+\s*[a-z]?(\s*[-\/]\s*\d+\s*[a-z]?)?\s*$/,'')
+    .replace(/[\s.-]+/g,'');
+}
+
+function adresseFuerBerechnung(stopp){
+  const klient=!tripsAllgemein&&activeTripsClient;
+  if(!klient||!klient.strasse||!klient.hausnummer)return stopp;
+
+  const strassenteil=String(stopp).split(',')[0].trim();
+  const hatNummer=/\d+\s*[a-zA-Z]?\s*$/.test(strassenteil);
+
+  if(!hatNummer && strassenSchluessel(stopp)===strassenSchluessel(klient.strasse)){
+    return clientDestination(klient);
+  }
+
+  return stopp;
+}
 async function kilometerBerechnen(){
   const knopf=$('tripKmBerechnen');
   const hinweis=$('tripKmHinweis');
@@ -3859,7 +3884,7 @@ async function kilometerBerechnen(){
         Authorization:'Bearer '+session.access_token
       },
       body:JSON.stringify({
-        adressen:[start,...stopps,ziel]
+        adressen:[start,...stopps.map(adresseFuerBerechnung),ziel]
       })
     });
 
