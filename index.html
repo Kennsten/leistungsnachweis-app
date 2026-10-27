@@ -1231,6 +1231,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .ausgaben-liste{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden;margin-top:8px}
 .ausgabe-zeile{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:0;background:none;color:var(--ink);font:inherit;text-align:left}
 .ausgabe-zeile+.ausgabe-zeile{border-top:1px solid var(--line)}
+.fahrt-eintrag+.fahrt-eintrag{border-top:1px solid var(--line)}
+.fahrt-details{padding:0 10px 10px}
+.fahrt-details .doc-item{margin-top:0}
+.ausgabe-zeile.offen .az-pfeil{transform:rotate(90deg)}
+.az-pfeil{transition:transform .15s}
 .az-text{flex:1;min-width:0}
 .az-zweck,.az-meta,.az-betrag,.az-status{display:block}
 .az-zweck{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2511,7 +2516,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.6';
+const APP_VERSION='1.7';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3512,21 +3517,7 @@ async function loadAllTrips(){
   };
 
 
-  $('allTripsList').innerHTML=`
-    <div class="summary-box">
-      <div class="summary-row">
-        <span>Fahrten</span>
-        <strong>${allTrips.length}</strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Kilometer gesamt</span>
-        <strong>${formatKm(totalKm)} km</strong>
-      </div>
-    </div>
-
-    ${fahrtenAnsicht()==='karten'
-      ? allTrips.map(trip=>`
+  const karteHtml=trip=>`
       <div class="doc-item">
         <div class="doc-head">
           <div>
@@ -3571,19 +3562,52 @@ async function loadAllTrips(){
             class="secondary openAllTrip"
             data-client-id="${esc(trip.client_id||'')}"
             data-allgemein="${trip.allgemein?'1':''}">
-            Öffnen
+            ${trip.allgemein?'Zu den allgemeinen Fahrten':'Zu den Fahrten des Klienten'}
           </button>
         </div>
       </div>
-`).join('')
-      : '<div class="ausgaben-liste">'+allTrips.map(trip=>fahrtZeile(
-          trip,
-          trip.allgemein?'Allgemein':clientName(trip.client_id),
-          'openAllTrip'
-        )).join('')+'</div>'
+`;
+
+  $('allTripsList').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Fahrten</span>
+        <strong>${allTrips.length}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Kilometer gesamt</span>
+        <strong>${formatKm(totalKm)} km</strong>
+      </div>
+    </div>
+
+    ${fahrtenAnsicht()==='karten'
+      ? allTrips.map(karteHtml).join('')
+      : '<div class="ausgaben-liste">'+allTrips.map(trip=>`
+          <div class="fahrt-eintrag">
+            ${fahrtZeile(
+              trip,
+              trip.allgemein?'Allgemein':clientName(trip.client_id),
+              'zeigeFahrtKarte'
+            )}
+            <div class="fahrt-details hidden">${karteHtml(trip)}</div>
+          </div>
+        `).join('')+'</div>'
     }
 
   `;
+
+  // Listenansicht: Zeile klappt die Kachel dieser Fahrt auf und zu
+  document
+    .querySelectorAll('#allTripsList .zeigeFahrtKarte')
+    .forEach(zeile=>{
+      zeile.onclick=()=>{
+        const details=zeile.nextElementSibling;
+        const offen=details.classList.toggle('hidden')===false;
+        zeile.classList.toggle('offen',offen);
+        zeile.setAttribute('aria-expanded',String(offen));
+      };
+    });
 
   document
     .querySelectorAll('.openAllTrip')
