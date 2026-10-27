@@ -1,4 +1,4 @@
-// route-km.mjs  (Version 4)
+// route-km.mjs  (Version 5)
 // Dieses Programm läuft auf den Servern von Netlify, nicht im Browser.
 // Es berechnet die Länge einer Autofahrt über OpenRouteService
 // (HeiGIT, Heidelberg). Der Zugangsschlüssel liegt nur hier auf dem
@@ -36,7 +36,7 @@ export default async (request) => {
   if (request.method === 'GET') {
     return json(200, {
       status: 'Hilfsprogramm läuft.',
-      version: 4,
+      version: 5,
       schluessel: Boolean(process.env.ORS_API_KEY)
     });
   }
@@ -101,7 +101,8 @@ export default async (request) => {
         api_key: schluessel,
         text: adresse,
         'boundary.country': 'DE',
-        size: '1'
+        size: '1',
+        lang: 'de'
       });
       if (bezug) {
         werte.set('focus.point.lon', String(bezug[0]));
@@ -130,7 +131,7 @@ export default async (request) => {
       const p = treffer.properties || {};
       gefunden.set(adresse, {
         punkt,
-        name: p.label || adresse,
+        name: kurzerName(p, adresse),
         unsicher: istUnsicher(adresse, p)
       });
       if (!bezug) bezug = punkt;
@@ -158,6 +159,12 @@ export default async (request) => {
     }
 
     const routeDaten = await route.json();
+    // Verlauf der Strecke (kodierte Linie) für die Karte in der App
+    const linie =
+      routeDaten && routeDaten.routes && routeDaten.routes[0] &&
+      typeof routeDaten.routes[0].geometry === 'string'
+        ? routeDaten.routes[0].geometry
+        : null;
     const meter =
       routeDaten && routeDaten.routes && routeDaten.routes[0] &&
       routeDaten.routes[0].summary && routeDaten.routes[0].summary.distance;
@@ -176,12 +183,34 @@ export default async (request) => {
     return json(200, {
       km: Math.round(meter / 100) / 10,
       punkte: punkte.map(p => p.name),
+      koordinaten: punkte.map(p => [p.punkt[1], p.punkt[0]]),
+      linie,
       unsicher
     });
   } catch (problem) {
     return json(502, { fehler: 'OpenRouteService nicht erreichbar: ' + problem.message });
   }
 };
+
+// Kurze Bezeichnung: „Straße Nr., Ort" bzw. „Name, Ort" statt
+// „Engelbosteler Damm 83, Hanover, NI, Germany"
+function kurzerName(p, eingabe) {
+  const ort = p.locality || p.localadmin || p.county || '';
+  let vorne = '';
+
+  if (p.street) {
+    vorne = p.street + (p.housenumber ? ' ' + p.housenumber : '');
+    if (p.layer === 'venue' && p.name) vorne = p.name + ', ' + vorne;
+  } else {
+    vorne = p.name || '';
+  }
+
+  const text = [vorne, ort].filter(Boolean)
+    .filter((t, i, alle) => alle.indexOf(t) === i)
+    .join(', ');
+
+  return text || p.label || eingabe;
+}
 
 // Ein Treffer gilt als unsicher, wenn die Suche nur grob passt:
 // - nur Ort, Stadtteil oder Postleitzahl statt Adresse/Straße/Geschäft

@@ -122,7 +122,13 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .km-knopf{padding:9px 12px;font-size:.88rem}
 .km-warnung{color:var(--danger);font-weight:650}
 .km-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
-.km-knoepfe .km-knopf{flex:1 1 140px}
+.km-knoepfe .km-knopf{flex:1 1 100px}
+.km-strecke{margin:4px 0 0;padding-left:1.3em}
+.km-strecke li{margin:1px 0}
+#kartenDialog{width:min(900px,96vw);max-width:96vw}
+#karte{height:min(65vh,560px);border-radius:var(--radius-item);margin-top:12px;border:1px solid var(--line)}
+.karte-nr{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#C85A3E;color:#fff;font-weight:700;font-size:13px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.karte-nr.start{background:#2f3a2f}
 .route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
 .route-vorschau:empty{display:none}
 .route-vorschau li{position:relative;display:flex;align-items:center;gap:8px;padding:3px 0 3px 0}
@@ -1834,6 +1840,21 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="tripsList"><p class="muted">Noch keine Fahrten vorhanden.</p></div>
 </dialog>
 
+<dialog id="kartenDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Berechnete Strecke</div>
+      <h2 id="kartenTitel">Karte</h2>
+    </div>
+    <button type="button" id="closeKarte" class="secondary">Schließen</button>
+  </div>
+  <div id="karte"></div>
+  <p class="muted small" style="margin:8px 0 0">
+    Kartendaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende ·
+    Strecke: openrouteservice (HeiGIT)
+  </p>
+</dialog>
+
 <dialog id="tripFormDialog">
   <form id="tripForm">
     <div class="top">
@@ -1878,7 +1899,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <input id="tripKilometers" type="number" min="0" step="0.1" inputmode="decimal" required>
         <div class="km-knoepfe">
           <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
-          <button type="button" id="tripGoogleMaps" class="secondary km-knopf">🗺 In Google Maps</button>
+          <button type="button" id="tripKarte" class="secondary km-knopf">🗺 Karte</button>
+          <button type="button" id="tripGoogleMaps" class="secondary km-knopf">Google Maps</button>
         </div>
         <span id="tripKmHinweis" class="feld-hinweis"></span>
       </label>
@@ -2545,7 +2567,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.17';
+const APP_VERSION='1.18';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3855,15 +3877,53 @@ function adresseFuerBerechnung(stopp){
 
   return stopp;
 }
-async function kilometerBerechnen(){
-  const knopf=$('tripKmBerechnen');
-  const hinweis=$('tripKmHinweis');
+// Adressen der Fahrt in der Reihenfolge Start, Stopps, Ziel
+function fahrtAdressen(){
   const start=$('tripStartAddress').value.trim();
   const ziel=$('tripDestination').value.trim();
   const stopps=String($('tripStopovers').value||'')
     .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
 
-  if(!start||!ziel){
+  if(!start||!ziel)return null;
+  return [start,...stopps.map(adresseFuerBerechnung),ziel];
+}
+
+// Letzte Berechnung merken, damit die Karte nicht erneut abfragen muss
+let letzteRoute=null;
+
+async function routeAbfragen(adressen){
+  const schluessel=adressen.join('|');
+  if(letzteRoute&&letzteRoute.schluessel===schluessel)return letzteRoute.ergebnis;
+
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw new Error('Bitte neu anmelden.');
+
+  const antwort=await busyFetch('/.netlify/functions/route-km',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      Authorization:'Bearer '+session.access_token
+    },
+    body:JSON.stringify({adressen})
+  });
+
+  let ergebnis={};
+  try{ergebnis=await antwort.json();}catch(e){}
+
+  if(!antwort.ok||!Number.isFinite(ergebnis.km)){
+    throw new Error(ergebnis.fehler||'Kilometer konnten nicht berechnet werden.');
+  }
+
+  letzteRoute={schluessel,ergebnis};
+  return ergebnis;
+}
+
+async function kilometerBerechnen(){
+  const knopf=$('tripKmBerechnen');
+  const hinweis=$('tripKmHinweis');
+  const adressen=fahrtAdressen();
+
+  if(!adressen){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
@@ -3875,31 +3935,7 @@ async function kilometerBerechnen(){
   hinweis.textContent='';
 
   try{
-    const {data:{session}}=await sb.auth.getSession();
-
-    if(!session){
-      toast('Bitte neu anmelden.');
-      return;
-    }
-
-    const antwort=await busyFetch('/.netlify/functions/route-km',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        Authorization:'Bearer '+session.access_token
-      },
-      body:JSON.stringify({
-        adressen:[start,...stopps.map(adresseFuerBerechnung),ziel]
-      })
-    });
-
-    let ergebnis={};
-    try{ergebnis=await antwort.json();}catch(e){}
-
-    if(!antwort.ok||!Number.isFinite(ergebnis.km)){
-      toast(ergebnis.fehler||'Kilometer konnten nicht berechnet werden.');
-      return;
-    }
+    const ergebnis={...(await routeAbfragen(adressen))};
 
     // Kaufmännisch auf ganze Kilometer runden (13,4 → 13, 13,5 → 14)
     const genau=ergebnis.km;
@@ -3924,15 +3960,17 @@ async function kilometerBerechnen(){
             '⚠ „'+esc(w.eingabe)+'“ nur ungefähr gefunden: '+esc(w.gefunden)
           ).join('<br>')+'<br>Bitte Schreibweise prüfen.</span><br>'
         : '')+
-      'Berechnet (schnellste Strecke): '+esc(formatKm(genau))+' km, gerundet '+
-      ergebnis.km+' km'+(uebernehmen?'':' – nicht übernommen')+'. '+
-      'Strecke über '+esc((ergebnis.punkte||[]).join(' → '))+'.';
+      '<strong>'+esc(formatKm(genau))+' km</strong> berechnet, gerundet '+
+      ergebnis.km+' km'+(uebernehmen?'':' (nicht übernommen)')+
+      '<ol class="km-strecke">'+
+        (ergebnis.punkte||[]).map(p=>'<li>'+esc(p)+'</li>').join('')+
+      '</ol>';
 
     if(warnungen.length){
       toast('Achtung: Nicht alle Adressen wurden genau gefunden.');
     }
   }catch(fehler){
-    toast('Kilometer konnten nicht berechnet werden: '+fehler.message);
+    toast(fehler.message);
   }finally{
     knopf.disabled=false;
     knopf.textContent='📍 Kilometer berechnen';
@@ -6285,6 +6323,123 @@ $('tripStopovers').onblur=()=>{
 $('tripStopovers').oninput=stoppFeldAnpassen;
 
 $('tripKmBerechnen').onclick=kilometerBerechnen;
+
+/* ---------- Karte der berechneten Strecke (Leaflet + OpenStreetMap) ---------- */
+let leafletGeladen=null;
+let kartenObjekt=null;
+
+function leafletLaden(){
+  if(window.L)return Promise.resolve();
+  if(leafletGeladen)return leafletGeladen;
+
+  leafletGeladen=new Promise((fertig,fehler)=>{
+    const css=document.createElement('link');
+    css.rel='stylesheet';
+    css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+
+    const js=document.createElement('script');
+    js.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    js.onload=()=>fertig();
+    js.onerror=()=>{leafletGeladen=null;fehler(new Error('Karte konnte nicht geladen werden.'));};
+    document.head.appendChild(js);
+  });
+
+  return leafletGeladen;
+}
+
+// Entschlüsselt die Streckenlinie von openrouteservice (Polyline, 5 Stellen)
+function linieEntschluesseln(text){
+  const punkte=[];
+  let i=0,lat=0,lon=0;
+
+  while(i<text.length){
+    for(const achse of [0,1]){
+      let wert=0,verschiebung=0,b;
+      do{
+        b=text.charCodeAt(i++)-63;
+        wert|=(b&0x1f)<<verschiebung;
+        verschiebung+=5;
+      }while(b>=0x20);
+      const delta=(wert&1)?~(wert>>1):(wert>>1);
+      if(achse===0)lat+=delta;else lon+=delta;
+    }
+    punkte.push([lat/1e5,lon/1e5]);
+  }
+
+  return punkte;
+}
+
+async function karteZeigen(){
+  const knopf=$('tripKarte');
+  const adressen=fahrtAdressen();
+
+  if(!adressen){
+    toast('Bitte zuerst Start- und Zieladresse eintragen.');
+    return;
+  }
+
+  knopf.disabled=true;
+  knopf.textContent='Lädt …';
+
+  try{
+    const [ergebnis]=await Promise.all([routeAbfragen(adressen),leafletLaden()]);
+
+    $('kartenTitel').textContent=formatKm(ergebnis.km)+' km';
+    $('kartenDialog').showModal();
+
+    if(kartenObjekt){kartenObjekt.remove();kartenObjekt=null;}
+
+    kartenObjekt=L.map('karte');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'© OpenStreetMap'
+    }).addTo(kartenObjekt);
+
+    const linie=ergebnis.linie?linieEntschluesseln(ergebnis.linie):[];
+    const koordinaten=ergebnis.koordinaten||[];
+    const punkte=ergebnis.punkte||[];
+    const letzter=koordinaten.length-1;
+    const rundfahrt=letzter>0&&
+      koordinaten[0][0]===koordinaten[letzter][0]&&
+      koordinaten[0][1]===koordinaten[letzter][1];
+
+    if(linie.length){
+      L.polyline(linie,{color:'#C85A3E',weight:5,opacity:.85}).addTo(kartenObjekt);
+    }
+
+    koordinaten.forEach((k,i)=>{
+      if(rundfahrt&&i===letzter)return;
+      const istStart=i===0;
+      const istZiel=i===letzter;
+      const beschriftung=istStart?'▶':(istZiel?'■':String(i));
+      L.marker(k,{
+        icon:L.divIcon({
+          className:'',
+          html:'<div class="karte-nr'+(istStart||istZiel?' start':'')+'">'+beschriftung+'</div>',
+          iconSize:[26,26],
+          iconAnchor:[13,13]
+        })
+      }).bindPopup(esc(punkte[i]||'')+(istStart&&rundfahrt?' (Start und Ziel)':''))
+        .addTo(kartenObjekt);
+    });
+
+    const grenzen=L.latLngBounds(linie.length?linie:koordinaten);
+    setTimeout(()=>{
+      kartenObjekt.invalidateSize();
+      kartenObjekt.fitBounds(grenzen,{padding:[24,24]});
+    },60);
+  }catch(fehler){
+    toast(fehler.message);
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent='🗺 Karte';
+  }
+}
+
+$('tripKarte').onclick=karteZeigen;
+$('closeKarte').onclick=()=>$('kartenDialog').close();
+
 
 // Öffnet die Fahrt mit allen Stopps in Google Maps (App oder Webseite).
 // Die Adressen gehen nur an Google, wenn du diesen Knopf antippst.
