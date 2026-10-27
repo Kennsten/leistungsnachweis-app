@@ -2518,7 +2518,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.8';
+const APP_VERSION='1.9';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -2648,6 +2648,8 @@ let activeTripsClient=null;
 let tripsAllgemein=false;
 let trips=[];
   let tripSaving=false;
+  // Stand der Fahrt beim Öffnen des Formulars (Schutz vor ungewollten Änderungen)
+  let tripGeoeffnet=null;
 let tripStopSuggestions=[];
 let allTripsPayload=null;
 let pendingTripForDoc=null;
@@ -3823,6 +3825,15 @@ async function openTripForm(id=''){
   const trip=trips.find(t=>String(t.id)===String(id))||{};
 
   $('tripId').value=trip.id||'';
+  tripGeoeffnet=trip.id
+    ? {
+        id:String(trip.id),
+        kilometers:Number(trip.kilometers),
+        trip_date:trip.trip_date||'',
+        intermediate_stops:trip.intermediate_stops||'',
+        updated_at:trip.updated_at||null
+      }
+    : null;
   $('tripDate').value=trip.trip_date||todayIso();
   $('tripStartAddress').value=trip.start_address||START_ADRESSE;
   $('tripStopovers').value=trip.intermediate_stops||trip.stopovers||'';
@@ -3933,6 +3944,56 @@ async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilo
   }catch(fehler){
     return;
   }
+}
+
+// Vor dem Speichern einer bestehenden Fahrt:
+// 1. Wurde sie inzwischen woanders (z. B. auf einem anderen Gerät) geändert?
+// 2. Wurden die Kilometer geändert?
+// Gibt false zurück, wenn nicht gespeichert werden soll.
+async function fahrtAenderungPruefen(id,row){
+  const alt=tripGeoeffnet&&tripGeoeffnet.id===String(id)?tripGeoeffnet:null;
+  if(!alt)return true;
+
+  const {data:aktuell,error}=await sb
+    .from('trip_entries')
+    .select('*')
+    .eq('id',id)
+    .maybeSingle();
+
+  if(!error && aktuell){
+    const inzwischenGeaendert=
+      (alt.updated_at && aktuell.updated_at && aktuell.updated_at!==alt.updated_at) ||
+      Number(aktuell.kilometers)!==alt.kilometers ||
+      (aktuell.trip_date||'')!==alt.trip_date ||
+      (aktuell.intermediate_stops||'')!==alt.intermediate_stops;
+
+    if(inzwischenGeaendert && !confirm(
+      'Diese Fahrt wurde geändert, nachdem du sie geöffnet hast – '+
+      'vielleicht auf einem anderen Gerät.\n\n'+
+      'Gespeichert ist jetzt: '+formatDate(aktuell.trip_date)+' · '+
+      formatKm(aktuell.kilometers)+' km\n'+
+      'Du würdest speichern: '+formatDate(row.trip_date)+' · '+
+      formatKm(row.kilometers)+' km\n\n'+
+      'Trotzdem mit deinen Angaben überschreiben?'
+    )){
+      return false;
+    }
+
+    // Bereits bestätigt – keine zweite Rückfrage zu den Kilometern
+    if(inzwischenGeaendert)return true;
+  }
+
+  const vorher=aktuell?Number(aktuell.kilometers):alt.kilometers;
+
+  if(Number.isFinite(vorher) && vorher!==row.kilometers && !confirm(
+    'Kilometer der Fahrt vom '+formatDate(row.trip_date)+
+    ' von '+formatKm(vorher)+' km auf '+formatKm(row.kilometers)+
+    ' km ändern?'
+  )){
+    return false;
+  }
+
+  return true;
 }
 
 async function suggestTripKilometers(){
@@ -6112,6 +6173,8 @@ $('tripForm').onsubmit=async e=>{
   saveButton.textContent='Wird gespeichert …';
 
   try{
+    if(id && !(await fahrtAenderungPruefen(id,row)))return;
+
     const query=id
       ? sb
           .from('trip_entries')
