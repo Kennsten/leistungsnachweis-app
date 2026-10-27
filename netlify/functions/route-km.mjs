@@ -1,4 +1,4 @@
-// route-km.mjs  (Version 3)
+// route-km.mjs  (Version 4)
 // Dieses Programm läuft auf den Servern von Netlify, nicht im Browser.
 // Es berechnet die Länge einer Autofahrt über OpenRouteService
 // (HeiGIT, Heidelberg). Der Zugangsschlüssel liegt nur hier auf dem
@@ -36,7 +36,7 @@ export default async (request) => {
   if (request.method === 'GET') {
     return json(200, {
       status: 'Hilfsprogramm läuft.',
-      version: 3,
+      version: 4,
       schluessel: Boolean(process.env.ORS_API_KEY)
     });
   }
@@ -146,7 +146,11 @@ export default async (request) => {
         'Content-Type': 'application/json',
         Accept: 'application/json'
       },
-      body: JSON.stringify({ coordinates: punkte.map(p => p.punkt) })
+      // Schnellste Strecke, wie Google Maps sie meist vorschlägt
+      body: JSON.stringify({
+        coordinates: punkte.map(p => p.punkt),
+        preference: 'fastest'
+      })
     });
 
     if (route.status === 429) {

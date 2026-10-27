@@ -121,6 +121,8 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .feld-hinweis:empty{display:none}
 .km-knopf{padding:9px 12px;font-size:.88rem}
 .km-warnung{color:var(--danger);font-weight:650}
+.km-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
+.km-knoepfe .km-knopf{flex:1 1 140px}
 .route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
 .route-vorschau:empty{display:none}
 .route-vorschau li{position:relative;display:flex;align-items:center;gap:8px;padding:3px 0 3px 0}
@@ -1874,7 +1876,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
       <label>Kilometer gesamt
         <input id="tripKilometers" type="number" min="0" step="0.1" inputmode="decimal" required>
-        <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
+        <div class="km-knoepfe">
+          <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
+          <button type="button" id="tripGoogleMaps" class="secondary km-knopf">🗺 In Google Maps</button>
+        </div>
         <span id="tripKmHinweis" class="feld-hinweis"></span>
       </label>
 
@@ -2540,7 +2545,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.16';
+const APP_VERSION='1.17';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3900,30 +3905,28 @@ async function kilometerBerechnen(){
     const genau=ergebnis.km;
     ergebnis.km=Math.round(genau+1e-9);
 
-    if(
-      vorher &&
-      Number(vorher.replace(',','.'))!==ergebnis.km &&
-      !confirm(
+    const warnungen=ergebnis.unsicher||[];
+    const uebernehmen=
+      !vorher ||
+      Number(vorher.replace(',','.'))===ergebnis.km ||
+      confirm(
         'Berechnet: '+formatKm(ergebnis.km)+' km.\n'+
         'Eingetragen sind '+formatKm(Number(vorher.replace(',','.')))+' km.\n\n'+
         'Berechneten Wert übernehmen?'
-      )
-    ){
-      hinweis.textContent='Berechnet: '+formatKm(genau)+' km, gerundet '+ergebnis.km+' km (nicht übernommen)';
-      return;
-    }
+      );
 
-    $('tripKilometers').value=String(ergebnis.km);
-    const warnungen=ergebnis.unsicher||[];
+    if(uebernehmen)$('tripKilometers').value=String(ergebnis.km);
 
+    // Gefundene Orte und Warnungen immer anzeigen, auch wenn nicht übernommen
     hinweis.innerHTML=
       (warnungen.length
         ? '<span class="km-warnung">'+warnungen.map(w=>
             '⚠ „'+esc(w.eingabe)+'“ nur ungefähr gefunden: '+esc(w.gefunden)
           ).join('<br>')+'<br>Bitte Schreibweise prüfen.</span><br>'
         : '')+
-      'Berechnet: '+esc(formatKm(genau))+' km, gerundet auf '+ergebnis.km+' km. '+
-      'Strecke über '+esc((ergebnis.punkte||[]).join(' → '))+'. Bitte kurz prüfen.';
+      'Berechnet (schnellste Strecke): '+esc(formatKm(genau))+' km, gerundet '+
+      ergebnis.km+' km'+(uebernehmen?'':' – nicht übernommen')+'. '+
+      'Strecke über '+esc((ergebnis.punkte||[]).join(' → '))+'.';
 
     if(warnungen.length){
       toast('Achtung: Nicht alle Adressen wurden genau gefunden.');
@@ -6282,6 +6285,31 @@ $('tripStopovers').onblur=()=>{
 $('tripStopovers').oninput=stoppFeldAnpassen;
 
 $('tripKmBerechnen').onclick=kilometerBerechnen;
+
+// Öffnet die Fahrt mit allen Stopps in Google Maps (App oder Webseite).
+// Die Adressen gehen nur an Google, wenn du diesen Knopf antippst.
+$('tripGoogleMaps').onclick=()=>{
+  const start=$('tripStartAddress').value.trim();
+  const ziel=$('tripDestination').value.trim();
+  const stopps=String($('tripStopovers').value||'')
+    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean)
+    .map(adresseFuerBerechnung);
+
+  if(!start||!ziel){
+    toast('Bitte zuerst Start- und Zieladresse eintragen.');
+    return;
+  }
+
+  const werte=new URLSearchParams({
+    api:'1',
+    origin:start,
+    destination:ziel,
+    travelmode:'driving'
+  });
+  if(stopps.length)werte.set('waypoints',stopps.join('|'));
+
+  window.open('https://www.google.com/maps/dir/?'+werte.toString(),'_blank','noopener');
+};
 
 $('tripRoute').onclick=e=>{
   const knopf=e.target.closest('.route-loeschen');
