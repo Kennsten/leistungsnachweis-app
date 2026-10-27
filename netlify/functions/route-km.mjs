@@ -1,4 +1,4 @@
-// route-km.mjs  (Version 1)
+// route-km.mjs  (Version 2)
 // Dieses Programm läuft auf den Servern von Netlify, nicht im Browser.
 // Es berechnet die Länge einer Autofahrt über OpenRouteService
 // (HeiGIT, Heidelberg). Der Zugangsschlüssel liegt nur hier auf dem
@@ -14,7 +14,11 @@
 // Datensparsam: Die App schickt nur Adressen ohne Hausnummer, keine Namen.
 // Hier wird nichts gespeichert.
 
-const ORS = 'https://api.openrouteservice.org';
+// Seit 2026 laufen die Dienste unter api.heigit.org
+// (api.openrouteservice.org wird Anfang November 2026 abgeschaltet).
+// Wichtig: kein Schrägstrich am Ende der Adressen.
+const ROUTEN_URL = 'https://api.heigit.org/openrouteservice/v2/directions/driving-car';
+const SUCHE_URL = 'https://api.heigit.org/pelias/v1/search';
 
 // Supabase-Projekt der App. Für die Verkaufsversion (Frankfurt) können
 // die Werte über Netlify-Umgebungsvariablen ersetzt werden.
@@ -29,7 +33,7 @@ export default async (request) => {
   if (request.method === 'GET') {
     return json(200, {
       status: 'Hilfsprogramm läuft.',
-      version: 1,
+      version: 2,
       schluessel: Boolean(process.env.ORS_API_KEY)
     });
   }
@@ -101,9 +105,16 @@ export default async (request) => {
         werte.set('focus.point.lat', String(bezug[1]));
       }
 
-      const antwort = await fetch(ORS + '/geocode/search?' + werte.toString());
+      const antwort = await fetch(SUCHE_URL + '?' + werte.toString(), {
+        headers: { Authorization: schluessel, Accept: 'application/json' }
+      });
       if (antwort.status === 429) {
         return json(429, { fehler: 'Tageskontingent erreicht. Bitte später erneut versuchen.' });
+      }
+      if (!antwort.ok) {
+        return json(502, {
+          fehler: 'Adresssuche fehlgeschlagen (Status ' + antwort.status + ') bei: ' + adresse
+        });
       }
       const ergebnis = await antwort.json();
       const treffer = ergebnis && ergebnis.features && ergebnis.features[0];
@@ -123,7 +134,7 @@ export default async (request) => {
     const punkte = adressen.map(a => gefunden.get(a));
 
     // 3. Strecke berechnen
-    const route = await fetch(ORS + '/v2/directions/driving-car', {
+    const route = await fetch(ROUTEN_URL, {
       method: 'POST',
       headers: {
         Authorization: schluessel,
