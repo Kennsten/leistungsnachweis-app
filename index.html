@@ -1773,6 +1773,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </label>
 </div>
 
+<div class="ansicht-leiste">
+  <div class="umschalter" id="allTripsAnsicht" role="group" aria-label="Darstellung der Fahrten">
+    <button type="button" data-wert="liste">☰ Liste</button>
+    <button type="button" data-wert="karten">▦ Karten</button>
+  </div>
+</div>
+
 <div id="allTripsList">
   <p class="muted">
     Fahrten werden geladen …
@@ -1791,6 +1798,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="newTrip" class="primary">+ Neue Fahrt</button>
     <button type="button" id="newDocFromTrips" class="secondary">+ Neue Dokumentation</button>
   </div>
+<div class="ansicht-leiste">
+  <div class="umschalter" id="tripsAnsicht" role="group" aria-label="Darstellung der Fahrten">
+    <button type="button" data-wert="liste">☰ Liste</button>
+    <button type="button" data-wert="karten">▦ Karten</button>
+  </div>
+</div>
+
   <div id="tripsList"><p class="muted">Noch keine Fahrten vorhanden.</p></div>
 </dialog>
 
@@ -2497,7 +2511,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.5';
+const APP_VERSION='1.6';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3345,6 +3359,51 @@ function formatKm(value){
   return number.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
 }
   
+/* ---------- Fahrten als kompakte Liste ---------- */
+// Eine Zeile: Zweck, darunter Datum · Klient · Ziel, rechts die Kilometer.
+// klasse bestimmt, was beim Antippen passiert (Bearbeiten oder Fahrtenbuch öffnen).
+function fahrtZeile(trip,klientText,klasse){
+  // Rundfahrten enden an der Startadresse; dann ist der Zwischenstopp aussagekräftiger
+  const zielAdresse=trip.destination_address||trip.destination||'';
+  const stopps=trip.intermediate_stops||trip.stopovers||'';
+  const ziel=stopps||(zielAdresse!==trip.start_address?zielAdresse:'');
+  const meta=[formatDate(trip.trip_date),klientText,ziel]
+    .filter(Boolean).join(' · ');
+
+  return `
+    <button type="button" class="ausgabe-zeile ${klasse}"
+      data-id="${esc(trip.id)}"
+      data-client-id="${esc(trip.client_id||'')}"
+      data-allgemein="${trip.allgemein?'1':''}">
+      <span class="az-text">
+        <span class="az-zweck">${esc(trip.purpose||ziel||zielAdresse||'Fahrt')}</span>
+        <span class="az-meta">${esc(meta)}</span>
+      </span>
+      <span class="az-rechts">
+        <span class="az-betrag">${formatKm(trip.kilometers)} km</span>
+      </span>
+      <span class="az-pfeil" aria-hidden="true">›</span>
+    </button>
+  `;
+}
+
+// Beide Fahrten-Dialoge teilen sich eine Einstellung
+const fahrtenAnsicht=umschalterEinrichten(
+  'allTripsAnsicht','ansichtFahrten','liste',
+  wert=>{
+    umschalterZeigen('tripsAnsicht',wert);
+    if($('allTripsDialog').open)loadAllTrips();
+  }
+);
+
+umschalterEinrichten(
+  'tripsAnsicht','ansichtFahrten','liste',
+  wert=>{
+    umschalterZeigen('allTripsAnsicht',wert);
+    if($('tripsDialog').open)loadTrips();
+  }
+);
+
 async function loadAllTrips(){
   $('allTripsList').innerHTML=
     '<p class="muted">Fahrten werden geladen …</p>';
@@ -3466,7 +3525,8 @@ async function loadAllTrips(){
       </div>
     </div>
 
-    ${allTrips.map(trip=>`
+    ${fahrtenAnsicht()==='karten'
+      ? allTrips.map(trip=>`
       <div class="doc-item">
         <div class="doc-head">
           <div>
@@ -3515,7 +3575,13 @@ async function loadAllTrips(){
           </button>
         </div>
       </div>
-    `).join('')}
+`).join('')
+      : '<div class="ausgaben-liste">'+allTrips.map(trip=>fahrtZeile(
+          trip,
+          trip.allgemein?'Allgemein':clientName(trip.client_id),
+          'openAllTrip'
+        )).join('')+'</div>'
+    }
 
   `;
 
@@ -3570,7 +3636,8 @@ async function loadTrips(){
           <strong>${formatKm(totalKm)} km</strong>
         </div>
       </div>
-      ${trips.map(t=>`
+      ${fahrtenAnsicht()==='karten'
+        ? trips.map(t=>`
         <div class="doc-item">
           <div class="doc-head">
             <div>
@@ -3594,7 +3661,9 @@ async function loadTrips(){
             </div>
           </div>
         </div>
-      `).join('')}
+`).join('')
+        : '<div class="ausgaben-liste">'+trips.map(t=>fahrtZeile(t,'','editTrip')).join('')+'</div>'
+      }
     `
     : '<p class="muted">Noch keine Fahrten vorhanden.</p>';
 
