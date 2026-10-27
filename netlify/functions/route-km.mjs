@@ -1,4 +1,4 @@
-// route-km.mjs  (Version 2)
+// route-km.mjs  (Version 3)
 // Dieses Programm läuft auf den Servern von Netlify, nicht im Browser.
 // Es berechnet die Länge einer Autofahrt über OpenRouteService
 // (HeiGIT, Heidelberg). Der Zugangsschlüssel liegt nur hier auf dem
@@ -11,8 +11,11 @@
 // 2. Jede Adresse in Koordinaten umwandeln (Geocoding, nur Deutschland).
 // 3. Strecke mit dem Auto über alle Punkte berechnen.
 //
-// Datensparsam: Die App schickt nur Adressen ohne Hausnummer, keine Namen.
-// Hier wird nichts gespeichert.
+// Die App schickt nur Adressen (mit Hausnummer), keine Namen und keinen
+// Fahrtzweck. Hier wird nichts gespeichert.
+//
+// Unsichere Treffer (nur Ort oder Straße statt genauer Adresse, z. B. bei
+// Tippfehlern) werden an die App zurückgemeldet, damit sie warnen kann.
 
 // Seit 2026 laufen die Dienste unter api.heigit.org
 // (api.openrouteservice.org wird Anfang November 2026 abgeschaltet).
@@ -33,7 +36,7 @@ export default async (request) => {
   if (request.method === 'GET') {
     return json(200, {
       status: 'Hilfsprogramm läuft.',
-      version: 2,
+      version: 3,
       schluessel: Boolean(process.env.ORS_API_KEY)
     });
   }
@@ -124,9 +127,11 @@ export default async (request) => {
       }
 
       const punkt = treffer.geometry.coordinates;
+      const p = treffer.properties || {};
       gefunden.set(adresse, {
         punkt,
-        name: (treffer.properties && treffer.properties.label) || adresse
+        name: p.label || adresse,
+        unsicher: istUnsicher(adresse, p)
       });
       if (!bezug) bezug = punkt;
     }
@@ -160,14 +165,36 @@ export default async (request) => {
       return json(502, { fehler: 'Strecke nicht berechenbar: ' + meldung });
     }
 
+    const unsicher = [...gefunden.entries()]
+      .filter(([, g]) => g.unsicher)
+      .map(([eingabe, g]) => ({ eingabe, gefunden: g.name }));
+
     return json(200, {
       km: Math.round(meter / 100) / 10,
-      punkte: punkte.map(p => p.name)
+      punkte: punkte.map(p => p.name),
+      unsicher
     });
   } catch (problem) {
     return json(502, { fehler: 'OpenRouteService nicht erreichbar: ' + problem.message });
   }
 };
+
+// Ein Treffer gilt als unsicher, wenn die Suche nur grob passt:
+// - nur Ort, Stadtteil oder Postleitzahl statt Adresse/Straße/Geschäft
+// - Hausnummer eingegeben, aber nur die Straße gefunden
+// - geringe Trefferwahrscheinlichkeit oder Ausweichsuche (fallback)
+function istUnsicher(eingabe, p) {
+  const ebene = String(p.layer || '');
+  const genaueEbenen = ['address', 'venue', 'street'];
+  if (!genaueEbenen.includes(ebene)) return true;
+  if (p.match_type === 'fallback') return true;
+  if (Number.isFinite(p.confidence) && p.confidence < 0.8) return true;
+
+  const hatHausnummer = /\d+\s*[a-zA-Z]?\s*$/.test(String(eingabe).split(',')[0].trim());
+  if (hatHausnummer && ebene === 'street') return true;
+
+  return false;
+}
 
 function json(status, inhalt) {
   return new Response(JSON.stringify(inhalt), {

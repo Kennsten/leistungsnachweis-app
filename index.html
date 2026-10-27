@@ -120,6 +120,7 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .feld-hinweis{font-weight:400;font-size:.82rem;color:var(--muted)}
 .feld-hinweis:empty{display:none}
 .km-knopf{padding:9px 12px;font-size:.88rem}
+.km-warnung{color:var(--danger);font-weight:650}
 .route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
 .route-vorschau:empty{display:none}
 .route-vorschau li{position:relative;display:flex;align-items:center;gap:8px;padding:3px 0 3px 0}
@@ -2539,7 +2540,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.14';
+const APP_VERSION='1.15';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3822,16 +3823,8 @@ async function deleteStopover(name){
 }
 
 /* ---------- Kilometer berechnen (OpenRouteService über Netlify-Funktion) ---------- */
-// Datensparsam: Hausnummern werden vor dem Senden entfernt,
-// z. B. „Drostestr. 12, Hannover" → „Drostestr., Hannover".
-function ohneHausnummer(adresse){
-  const teile=String(adresse||'').split(',');
-  teile[0]=teile[0].replace(
-    /\s+\d+\s*[a-zA-Z]?(\s*[-\/]\s*\d+\s*[a-zA-Z]?)?\s*$/,''
-  );
-  return teile.map(t=>t.trim()).filter(Boolean).join(', ');
-}
-
+// Gesendet werden nur die Adressen (mit Hausnummer für genaue Strecken),
+// keine Namen und kein Fahrtzweck.
 async function kilometerBerechnen(){
   const knopf=$('tripKmBerechnen');
   const hinweis=$('tripKmHinweis');
@@ -3866,7 +3859,7 @@ async function kilometerBerechnen(){
         Authorization:'Bearer '+session.access_token
       },
       body:JSON.stringify({
-        adressen:[start,...stopps,ziel].map(ohneHausnummer)
+        adressen:[start,...stopps,ziel]
       })
     });
 
@@ -3896,9 +3889,20 @@ async function kilometerBerechnen(){
     }
 
     $('tripKilometers').value=String(ergebnis.km);
-    hinweis.textContent=
-      'Berechnet: '+formatKm(genau)+' km, gerundet auf '+ergebnis.km+' km. '+
-      'Strecke über '+(ergebnis.punkte||[]).join(' → ')+'. Bitte kurz prüfen.';
+    const warnungen=ergebnis.unsicher||[];
+
+    hinweis.innerHTML=
+      (warnungen.length
+        ? '<span class="km-warnung">'+warnungen.map(w=>
+            '⚠ „'+esc(w.eingabe)+'“ nur ungefähr gefunden: '+esc(w.gefunden)
+          ).join('<br>')+'<br>Bitte Schreibweise prüfen.</span><br>'
+        : '')+
+      'Berechnet: '+esc(formatKm(genau))+' km, gerundet auf '+ergebnis.km+' km. '+
+      'Strecke über '+esc((ergebnis.punkte||[]).join(' → '))+'. Bitte kurz prüfen.';
+
+    if(warnungen.length){
+      toast('Achtung: Nicht alle Adressen wurden genau gefunden.');
+    }
   }catch(fehler){
     toast('Kilometer konnten nicht berechnet werden: '+fehler.message);
   }finally{
