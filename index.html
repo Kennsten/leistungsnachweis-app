@@ -118,6 +118,8 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
   background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,var(--line) 27px,var(--line) 28px);
   background-position:0 10px;background-attachment:local}
 .feld-hinweis{font-weight:400;font-size:.82rem;color:var(--muted)}
+.feld-hinweis:empty{display:none}
+.km-knopf{padding:9px 12px;font-size:.88rem}
 .route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
 .route-vorschau:empty{display:none}
 .route-vorschau li{position:relative;display:flex;align-items:center;gap:8px;padding:3px 0 3px 0}
@@ -1871,6 +1873,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
       <label>Kilometer gesamt
         <input id="tripKilometers" type="number" min="0" step="0.1" inputmode="decimal" required>
+        <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
+        <span id="tripKmHinweis" class="feld-hinweis"></span>
       </label>
 
       <label class="span2">Startadresse
@@ -2535,7 +2539,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.11';
+const APP_VERSION='1.12';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3817,6 +3821,88 @@ async function deleteStopover(name){
   toast('Stopp gelöscht');
 }
 
+/* ---------- Kilometer berechnen (OpenRouteService über Netlify-Funktion) ---------- */
+// Datensparsam: Hausnummern werden vor dem Senden entfernt,
+// z. B. „Drostestr. 12, Hannover" → „Drostestr., Hannover".
+function ohneHausnummer(adresse){
+  const teile=String(adresse||'').split(',');
+  teile[0]=teile[0].replace(
+    /\s+\d+\s*[a-zA-Z]?(\s*[-\/]\s*\d+\s*[a-zA-Z]?)?\s*$/,''
+  );
+  return teile.map(t=>t.trim()).filter(Boolean).join(', ');
+}
+
+async function kilometerBerechnen(){
+  const knopf=$('tripKmBerechnen');
+  const hinweis=$('tripKmHinweis');
+  const start=$('tripStartAddress').value.trim();
+  const ziel=$('tripDestination').value.trim();
+  const stopps=String($('tripStopovers').value||'')
+    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
+
+  if(!start||!ziel){
+    toast('Bitte zuerst Start- und Zieladresse eintragen.');
+    return;
+  }
+
+  const vorher=$('tripKilometers').value.trim();
+
+  knopf.disabled=true;
+  knopf.textContent='Wird berechnet …';
+  hinweis.textContent='';
+
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+
+    if(!session){
+      toast('Bitte neu anmelden.');
+      return;
+    }
+
+    const antwort=await busyFetch('/.netlify/functions/route-km',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:'Bearer '+session.access_token
+      },
+      body:JSON.stringify({
+        adressen:[start,...stopps,ziel].map(ohneHausnummer)
+      })
+    });
+
+    let ergebnis={};
+    try{ergebnis=await antwort.json();}catch(e){}
+
+    if(!antwort.ok||!Number.isFinite(ergebnis.km)){
+      toast(ergebnis.fehler||'Kilometer konnten nicht berechnet werden.');
+      return;
+    }
+
+    if(
+      vorher &&
+      Number(vorher.replace(',','.'))!==ergebnis.km &&
+      !confirm(
+        'Berechnet: '+formatKm(ergebnis.km)+' km.\n'+
+        'Eingetragen sind '+formatKm(Number(vorher.replace(',','.')))+' km.\n\n'+
+        'Berechneten Wert übernehmen?'
+      )
+    ){
+      hinweis.textContent='Berechnet: '+formatKm(ergebnis.km)+' km (nicht übernommen)';
+      return;
+    }
+
+    $('tripKilometers').value=String(ergebnis.km);
+    hinweis.textContent=
+      'Berechnet über '+(ergebnis.punkte||[]).join(' → ')+
+      '. Bitte kurz prüfen.';
+  }catch(fehler){
+    toast('Kilometer konnten nicht berechnet werden: '+fehler.message);
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent='📍 Kilometer berechnen';
+  }
+}
+
 // Gespeichert werden Stopps mit „ - " getrennt, angezeigt eine Zeile pro Stopp
 function stoppsAlsZeilen(wert){
   return normalizeStopovers(wert).split(/\s+-\s+/).filter(Boolean).join('\n');
@@ -3903,6 +3989,7 @@ async function openTripForm(id=''){
     trip.destination||
     $('tripStartAddress').value;
   $('tripKilometers').value=trip.kilometers??'';
+  $('tripKmHinweis').textContent='';
   $('tripPurpose').value=trip.purpose||'';
   $('tripNotes').value=trip.notes||'';
 await loadTripDocumentations(id);
@@ -6160,6 +6247,8 @@ $('tripStopovers').onblur=()=>{
 };
 
 $('tripStopovers').oninput=stoppFeldAnpassen;
+
+$('tripKmBerechnen').onclick=kilometerBerechnen;
 
 $('tripRoute').onclick=e=>{
   const knopf=e.target.closest('.route-loeschen');
