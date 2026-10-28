@@ -2567,7 +2567,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.18';
+const APP_VERSION='1.19';
 const APP_STAND='27.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9826,7 +9826,8 @@ function tbImSatz(t){
   return w.join(' ');
 }
 
-/* Inhalte: „Inhalte: A, B und C."
+/* Inhalte ohne Vorspann: „A, B und C."
+   Das erste Wort bleibt groß, die folgenden werden im Satz angepasst.
    Teile mit Komma kommen ans Ende, damit der Satz lesbar bleibt. */
 function tbInhaltSatz(texte){
   const teile=texte.map(tbOhnePunkt).filter(Boolean);
@@ -9835,13 +9836,13 @@ function tbInhaltSatz(texte){
 
   const ohneKomma=teile.filter(t=>!t.includes(','));
   const mitKomma=teile.filter(t=>t.includes(','));
-  const liste=[...ohneKomma,...mitKomma].map(tbImSatz);
+  const liste=[...ohneKomma,...mitKomma].map((t,i)=>i?tbImSatz(t):t);
 
   if(mitKomma.length>1){
-    return 'Inhalte: '+liste.join('; ')+'.';
+    return liste.join('; ')+'.';
   }
   const schluss=liste.some(t=>/ und /.test(t))?' sowie ':' und ';
-  return 'Inhalte: '+tbVerbinden(liste,schluss)+'.';
+  return tbVerbinden(liste,schluss)+'.';
 }
 
 /* „Klient*in" durch „T. Müller" ersetzen (Anrede bestimmt nur „er"/„sie").
@@ -9879,7 +9880,7 @@ function tbZusammensetzen(ids){
     nach('kontakt').map(tbMitPunkt).join(' '),
     tbBefindenSatz(nach('befinden')),
     tbInhaltSatz(nach('inhalt'))
-  ].filter(Boolean).join(' ');
+  ].filter(Boolean).join('\n');   // Kontakt, Befinden, Inhalt je eine eigene Zeile
 
   return tbNamenEinsetzen(text);
 }
@@ -9946,7 +9947,7 @@ function fuegeZusammengesetztEin(){
   const feld=$('docText');
   const vorhanden=feld.value.replace(/\s+$/,'');
 
-  feld.value=vorhanden?vorhanden+' '+text:text;
+  feld.value=vorhanden?vorhanden+'\n'+text:text;
 
   tbAuswahl=[];
   $('snippetPickerDialog').close();
