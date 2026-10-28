@@ -1272,6 +1272,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .az-status{font-size:.78rem;color:var(--muted);white-space:nowrap}
 .az-status.fehlt{color:var(--danger);font-weight:650}
 .az-pfeil{flex:0 0 auto;color:var(--muted)}
+/* Tachostände: Lücken zwischen zwei Fahrten */
+.tacho-luecke{display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px dashed var(--line);background:var(--bg,transparent);font-size:.85rem;color:var(--muted)}
+.tacho-luecke .az-text{font-style:italic}
+.tacho-luecke.unklar,.tacho-luecke.fehler{color:var(--warn)}
+.tacho-luecke.fehler{font-weight:650}
+.fahrt-eintrag+.tacho-luecke,.tacho-luecke+.fahrt-eintrag{border-top:1px dashed var(--line)}
+.az-status.ohne-tacho{color:var(--warn);font-weight:650}
 
 /* ---------- pCloud einrichten ---------- */
 .einrichten-schritt{display:flex;gap:12px;margin:14px 0}
@@ -1806,6 +1813,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 </div>
 
 <div class="ansicht-leiste">
+  <div class="umschalter" id="allTripsListe" role="group" aria-label="Welche Liste">
+    <button type="button" data-wert="berechnet">Berechnete km</button>
+    <button type="button" data-wert="tacho">Tachostände</button>
+  </div>
   <div class="umschalter" id="allTripsAnsicht" role="group" aria-label="Darstellung der Fahrten">
     <button type="button" data-wert="liste">☰ Liste</button>
     <button type="button" data-wert="karten">▦ Karten</button>
@@ -1904,6 +1915,16 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         </div>
         <span id="tripKmHinweis" class="feld-hinweis"></span>
       </label>
+
+      <label>Tachostand Abfahrt
+        <input id="tripTachoStart" type="number" min="0" step="1" inputmode="numeric" placeholder="optional">
+      </label>
+
+      <label>Tachostand Ankunft
+        <input id="tripTachoEnde" type="number" min="0" step="1" inputmode="numeric" placeholder="optional">
+      </label>
+
+      <div class="span2 feld-hinweis" id="tripTachoHinweis"></div>
 
       <label class="span2">Startadresse
         <input id="tripStartAddress" required>
@@ -2567,8 +2588,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.19';
-const APP_STAND='27.10.2026';
+const APP_VERSION='1.20';
+const APP_STAND='28.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -3418,6 +3439,159 @@ function formatKm(value){
   return number.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
 }
   
+/* ---------- Tachostände ---------- */
+// Tachostand als ganze Zahl mit Tausenderpunkt, z. B. 45.230
+function formatTacho(value){
+  if(value==null||value==='')return '';
+  return Number(value).toLocaleString('de-DE',{maximumFractionDigits:0});
+}
+
+// Liest ein Tachostand-Feld: leer → null, sonst ganze Zahl (NaN bei Unsinn)
+function tachoFeldLesen(id){
+  const text=String($(id).value||'').trim().replace(/[.\s]/g,'').replace(',','.');
+  if(!text)return null;
+  const zahl=Number(text);
+  return Number.isFinite(zahl)&&zahl>=0?Math.round(zahl):NaN;
+}
+
+// Gefahrene km laut Tacho – nur wenn beide Stände da sind
+function tachoKm(trip){
+  if(trip.tacho_start==null||trip.tacho_ende==null)return null;
+  return Number(trip.tacho_ende)-Number(trip.tacho_start);
+}
+
+// Zeile „Tacho: 45.230 → 45.258 (28 km)“ für Kacheln
+function tachoMetaHtml(trip){
+  if(trip.tacho_start==null&&trip.tacho_ende==null)return '';
+  const km=tachoKm(trip);
+  return '<div class="meta">Tacho: '+
+    (formatTacho(trip.tacho_start)||'?')+' → '+(formatTacho(trip.tacho_ende)||'?')+
+    (km!=null?' ('+formatTacho(km)+' km)':'')+'</div>';
+}
+
+// Hinweis unter den Tachofeldern im Formular aktualisieren
+function tachoHinweisZeigen(){
+  const start=tachoFeldLesen('tripTachoStart');
+  const ende=tachoFeldLesen('tripTachoEnde');
+  const feld=$('tripTachoHinweis');
+  feld.classList.remove('km-warnung');
+
+  if(Number.isNaN(start)||Number.isNaN(ende)){
+    feld.textContent='Bitte nur ganze Zahlen eintragen (z. B. 45230).';
+    feld.classList.add('km-warnung');
+    return;
+  }
+  if(start==null||ende==null){
+    feld.textContent=feld.dataset.vorschlag||
+      'Freiwillig: Tachostände für den Nachweis beim Finanzamt.';
+    return;
+  }
+  if(ende<start){
+    feld.textContent='Der Ankunftsstand ist kleiner als der Abfahrtsstand.';
+    feld.classList.add('km-warnung');
+    return;
+  }
+  const berechnet=Number(String($('tripKilometers').value||'').replace(',','.'));
+  feld.textContent='= '+formatTacho(ende-start)+' km laut Tacho'+
+    (Number.isFinite(berechnet)&&berechnet>0
+      ? ' (berechnet: '+formatKm(berechnet)+' km)'
+      : '');
+}
+
+// Neue Fahrt: Abfahrtsstand aus der letzten Fahrt mit Ankunftsstand vorschlagen
+async function tachoVorschlagLaden(datum){
+  const feld=$('tripTachoHinweis');
+  feld.dataset.vorschlag='';
+  try{
+    const {data,error}=await sb
+      .from('trip_entries')
+      .select('trip_date,tacho_ende')
+      .not('tacho_ende','is',null)
+      .lte('trip_date',datum||todayIso())
+      .order('trip_date',{ascending:false})
+      .order('tacho_ende',{ascending:false})
+      .limit(1);
+
+    // Fehler (z. B. Spalte noch nicht angelegt) still übergehen
+    if(error||!data||!data.length)return;
+    if($('tripTachoStart').value.trim())return;
+
+    $('tripTachoStart').value=String(data[0].tacho_ende);
+    feld.dataset.vorschlag='Abfahrtsstand übernommen aus der Fahrt vom '+
+      formatDate(data[0].trip_date)+'. Bitte mit dem Tacho vergleichen.';
+  }finally{
+    tachoHinweisZeigen();
+  }
+}
+
+// Baut die Tacho-Liste: Fahrten in zeitlicher Reihenfolge, dazwischen die Lücken.
+// Lücke = Abfahrtsstand minus Ankunftsstand der vorherigen Fahrt.
+// Liegt dazwischen eine Fahrt ohne Tachostände, ist die Lücke „nicht zuzuordnen“.
+function tachoZeilenBauen(fahrten){
+  const sortiert=fahrten.slice().sort((a,b)=>
+    String(a.trip_date).localeCompare(String(b.trip_date)) ||
+    (Number(a.tacho_start??Infinity)-Number(b.tacho_start??Infinity)) ||
+    String(a.created_at||'').localeCompare(String(b.created_at||''))
+  );
+
+  const zeilen=[];
+  const summe={beruflich:0,privat:0,unklar:0,ohneTacho:0,mitTacho:0};
+  let vorher=null;          // {stand, datum}
+  let dazwischenOhne=false; // Fahrt ohne vollständige Stände seit vorher
+
+  sortiert.forEach(trip=>{
+    const start=trip.tacho_start!=null?Number(trip.tacho_start):null;
+    const ende=trip.tacho_ende!=null?Number(trip.tacho_ende):null;
+
+    if(start!=null&&vorher){
+      const diff=start-vorher.stand;
+      if(diff>0){
+        const typ=dazwischenOhne?'unklar':'privat';
+        summe[typ]+=diff;
+        zeilen.push({typ,km:diff,von:vorher.stand,bis:start,
+          vonDatum:vorher.datum,bisDatum:trip.trip_date});
+      }else if(diff<0){
+        zeilen.push({typ:'fehler',km:diff,von:vorher.stand,bis:start,
+          vonDatum:vorher.datum,bisDatum:trip.trip_date});
+      }
+    }
+
+    const km=tachoKm(trip);
+    zeilen.push({typ:'fahrt',trip,km});
+
+    if(km!=null){
+      summe.beruflich+=km;
+      summe.mitTacho++;
+      vorher={stand:ende,datum:trip.trip_date};
+      dazwischenOhne=false;
+    }else{
+      summe.ohneTacho++;
+      if(ende!=null)vorher={stand:ende,datum:trip.trip_date};
+      else if(start!=null)vorher={stand:start,datum:trip.trip_date};
+      if(vorher)dazwischenOhne=true;
+    }
+  });
+
+  return {zeilen,summe};
+}
+
+// Text einer Lückenzeile
+function tachoLueckeText(z){
+  const zeitraum=z.vonDatum===z.bisDatum
+    ? 'am '+formatDate(z.bisDatum)
+    : formatDate(z.vonDatum)+' – '+formatDate(z.bisDatum);
+  const staende=formatTacho(z.von)+' → '+formatTacho(z.bis);
+  if(z.typ==='privat')return {titel:'Privatfahrten '+zeitraum,meta:'Tacho '+staende};
+  if(z.typ==='unklar')return {
+    titel:'Nicht zuzuordnen '+zeitraum,
+    meta:'Tacho '+staende+' · enthält eine Fahrt ohne vollständige Tachostände'
+  };
+  return {
+    titel:'Tachostände passen nicht '+zeitraum,
+    meta:'Abfahrt '+formatTacho(z.bis)+' ist kleiner als die vorherige Ankunft '+formatTacho(z.von)
+  };
+}
+
 /* ---------- Fahrten als kompakte Liste ---------- */
 // Eine Zeile: Zweck, darunter Datum · Klient · Ziel, rechts die Kilometer.
 // klasse bestimmt, was beim Antippen passiert (Bearbeiten oder Fahrtenbuch öffnen).
@@ -3449,6 +3623,12 @@ function fahrtZeile(trip,klientText,klasse){
 // Jedes Fenster merkt sich seine eigene Darstellung
 const gesamtFahrtenAnsicht=umschalterEinrichten(
   'allTripsAnsicht','ansichtGesamtFahrten','liste',
+  ()=>{if($('allTripsDialog').open)loadAllTrips();}
+);
+
+// Gesamtfahrten: Liste mit berechneten km oder mit Tachoständen
+const gesamtFahrtenListe=umschalterEinrichten(
+  'allTripsListe','listeGesamtFahrten','berechnet',
   ()=>{if($('allTripsDialog').open)loadAllTrips();}
 );
 
@@ -3560,9 +3740,14 @@ async function loadAllTrips(){
         stops:trip.intermediate_stops||trip.stopovers||'',
         destination:trip.destination_address||trip.destination||'',
         purpose:trip.purpose||'',
-        km:Number(trip.kilometers||0)
+        km:Number(trip.kilometers||0),
+        tachoStart:trip.tacho_start??null,
+        tachoEnde:trip.tacho_ende??null
       }))
   };
+
+  const tachoListe=gesamtFahrtenListe()==='tacho';
+  $('allTripsAnsicht').classList.toggle('hidden',tachoListe);
 
 
   const karteHtml=trip=>`
@@ -3603,6 +3788,7 @@ async function loadAllTrips(){
             <div class="meta">
               ${esc(trip.purpose||'')}
             </div>
+            ${tachoMetaHtml(trip)}
           </div>
 
           <button
@@ -3616,6 +3802,99 @@ async function loadAllTrips(){
       </div>
 `;
 
+  if(tachoListe){
+    const {zeilen,summe}=tachoZeilenBauen(allTrips);
+
+    allTripsPayload.liste='tacho';
+    allTripsPayload.tacho={
+      summe,
+      zeilen:zeilen.map(z=>z.typ==='fahrt'
+        ? {
+            typ:'fahrt',
+            date:z.trip.trip_date,
+            client:z.trip.allgemein?'Allgemein':clientName(z.trip.client_id),
+            purpose:z.trip.purpose||'',
+            ziel:z.trip.intermediate_stops||z.trip.stopovers||
+              z.trip.destination_address||z.trip.destination||'',
+            tachoStart:z.trip.tacho_start??null,
+            tachoEnde:z.trip.tacho_ende??null,
+            km:z.km,
+            kmBerechnet:Number(z.trip.kilometers||0)
+          }
+        : {...z,text:tachoLueckeText(z)}
+      )
+    };
+
+    $('allTripsList').innerHTML=`
+      <div class="summary-box">
+        <div class="summary-row">
+          <span>Berufliche km laut Tacho</span>
+          <strong>${formatTacho(summe.beruflich)} km</strong>
+        </div>
+        <div class="summary-row">
+          <span>Privat (Lücken)</span>
+          <strong>${formatTacho(summe.privat)} km</strong>
+        </div>
+        ${summe.unklar?`
+        <div class="summary-row">
+          <span>Nicht zuzuordnen</span>
+          <strong>${formatTacho(summe.unklar)} km</strong>
+        </div>`:''}
+        <div class="summary-row">
+          <span>Fahrten mit / ohne Tachostand</span>
+          <strong>${summe.mitTacho} / ${summe.ohneTacho}</strong>
+        </div>
+      </div>
+      ${summe.ohneTacho
+        ? '<p class="muted small">Fahrten ohne vollständige Tachostände sind markiert. '+
+          'Tippe sie an und ergänze die Stände über „Zu den Fahrten“.</p>'
+        : ''}
+      <div class="ausgaben-liste">
+        ${zeilen.map(z=>{
+          if(z.typ!=='fahrt'){
+            const t=tachoLueckeText(z);
+            return `
+              <div class="tacho-luecke ${z.typ}">
+                <span class="az-text">
+                  <span class="az-zweck">${esc(t.titel)}</span>
+                  <span class="az-meta">${esc(t.meta)}</span>
+                </span>
+                <span class="az-rechts">
+                  <span class="az-betrag">${z.typ==='fehler'?'⚠':formatTacho(z.km)+' km'}</span>
+                </span>
+              </div>`;
+          }
+          const trip=z.trip;
+          const meta=[
+            formatDate(trip.trip_date),
+            trip.allgemein?'Allgemein':clientName(trip.client_id),
+            (trip.tacho_start!=null||trip.tacho_ende!=null)
+              ? 'Tacho '+(formatTacho(trip.tacho_start)||'?')+' → '+(formatTacho(trip.tacho_ende)||'?')
+              : ''
+          ].filter(Boolean).join(' · ');
+          return `
+            <div class="fahrt-eintrag">
+              <button type="button" class="ausgabe-zeile zeigeFahrtKarte" aria-expanded="false">
+                <span class="az-text">
+                  <span class="az-zweck">${esc(trip.purpose||'Fahrt')}</span>
+                  <span class="az-meta">${esc(meta)}</span>
+                </span>
+                <span class="az-rechts">
+                  ${z.km!=null
+                    ? `<span class="az-betrag">${formatTacho(z.km)} km</span>
+                       <span class="az-status">berechnet ${formatKm(trip.kilometers)}</span>`
+                    : `<span class="az-status ohne-tacho">ohne Tacho</span>
+                       <span class="az-status">berechnet ${formatKm(trip.kilometers)}</span>`}
+                </span>
+                <span class="az-pfeil" aria-hidden="true">›</span>
+              </button>
+              <div class="fahrt-details hidden">${karteHtml(trip)}</div>
+            </div>`;
+        }).join('')}
+      </div>
+    `;
+  }else{
+  allTripsPayload.liste='berechnet';
   $('allTripsList').innerHTML=`
     <div class="summary-box">
       <div class="summary-row">
@@ -3644,6 +3923,7 @@ async function loadAllTrips(){
     }
 
   `;
+  }
 
   // Listenansicht: Zeile klappt die Kachel dieser Fahrt auf und zu
   document
@@ -3717,6 +3997,7 @@ async function loadTrips(){
               <div class="meta">${esc(t.start_address||'')} → ${esc(t.destination_address||t.destination||'')}</div>
               ${t.intermediate_stops||t.stopovers?`<div class="meta">Zwischenstopps: ${esc(t.intermediate_stops||t.stopovers)}</div>`:''}
               <div class="meta">${esc(t.purpose||'')}</div>
+              ${tachoMetaHtml(t)}
             </div>
                 <div class="actions">
 
@@ -4052,7 +4333,8 @@ async function openTripForm(id=''){
         kilometers:Number(trip.kilometers),
         trip_date:trip.trip_date||'',
         intermediate_stops:trip.intermediate_stops||'',
-        updated_at:trip.updated_at||null
+        updated_at:trip.updated_at||null,
+        hatteTacho:trip.tacho_start!=null||trip.tacho_ende!=null
       }
     : null;
   $('tripDate').value=trip.trip_date||todayIso();
@@ -4064,6 +4346,11 @@ async function openTripForm(id=''){
     $('tripStartAddress').value;
   $('tripKilometers').value=trip.kilometers??'';
   $('tripKmHinweis').textContent='';
+  $('tripTachoStart').value=trip.tacho_start??'';
+  $('tripTachoEnde').value=trip.tacho_ende??'';
+  $('tripTachoHinweis').dataset.vorschlag='';
+  tachoHinweisZeigen();
+  if(!trip.id)tachoVorschlagLaden($('tripDate').value);
   $('tripPurpose').value=trip.purpose||'';
   $('tripNotes').value=trip.notes||'';
 await loadTripDocumentations(id);
@@ -6323,6 +6610,12 @@ $('tripStopovers').onblur=()=>{
 $('tripStopovers').oninput=stoppFeldAnpassen;
 
 $('tripKmBerechnen').onclick=kilometerBerechnen;
+$('tripTachoStart').oninput=()=>{
+  $('tripTachoHinweis').dataset.vorschlag='';
+  tachoHinweisZeigen();
+};
+$('tripTachoEnde').oninput=tachoHinweisZeigen;
+$('tripKilometers').addEventListener('input',tachoHinweisZeigen);
 
 /* ---------- Karte der berechneten Strecke (Leaflet + OpenStreetMap) ---------- */
 let leafletGeladen=null;
@@ -6525,6 +6818,32 @@ $('tripForm').onsubmit=async e=>{
     purpose:$('tripPurpose').value.trim(),
     notes:$('tripNotes').value.trim()||null
   };
+
+  // Tachostände (freiwillig). Nur mitsenden, wenn eingetragen oder vorher vorhanden –
+  // so funktioniert das Speichern auch, falls die Datenbankspalten noch fehlen.
+  const tachoStart=tachoFeldLesen('tripTachoStart');
+  const tachoEnde=tachoFeldLesen('tripTachoEnde');
+
+  if(Number.isNaN(tachoStart)||Number.isNaN(tachoEnde)){
+    toast('Bitte bei den Tachoständen nur ganze Zahlen eintragen.');
+    return;
+  }
+  if(tachoStart!=null&&tachoEnde!=null){
+    if(tachoEnde<tachoStart){
+      toast('Der Tachostand bei Ankunft ist kleiner als bei Abfahrt.');
+      return;
+    }
+    if(tachoEnde-tachoStart>1000 && !confirm(
+      'Laut Tacho wären das '+formatTacho(tachoEnde-tachoStart)+
+      ' km. Stimmen die Tachostände?'
+    )){
+      return;
+    }
+  }
+  if(tachoStart!=null||tachoEnde!=null||(tripGeoeffnet&&tripGeoeffnet.hatteTacho)){
+    row.tacho_start=tachoStart;
+    row.tacho_ende=tachoEnde;
+  }
 
   if(
     !row.trip_date ||
