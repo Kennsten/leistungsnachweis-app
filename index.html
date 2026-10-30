@@ -1449,6 +1449,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .client-name h3.kb-oeffnen{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color .15s}
 .client-name h3.kb-oeffnen:hover{text-decoration-color:currentColor}
 #clientSheetDialog .kbogen{margin-top:12px}
+
+/* Klienten-Maske: Knöpfe oben in der Kopfzeile */
+.kb-kopf{flex-wrap:wrap}
+.kb-kopfknoepfe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;margin-left:auto}
+.kb-kopfknoepfe .kn{padding:11px 16px}
+.kb-kopfknoepfe .kn.kb-klein{padding:6px 10px;font-size:.82rem}
 </style>
 </head>
 <body>
@@ -1636,9 +1642,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 <dialog id="clientDialog">
   <form id="clientForm">
-    <div class="top">
+    <div class="top kb-kopf">
       <h2 id="dialogTitle">Klient anlegen</h2>
-      <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
+      <div class="kb-kopfknoepfe">
+        <button type="button" id="clientToSheetTop" class="kn kn-nav secondary hidden">Klientenbogen</button>
+        <button type="button" id="deleteClientTop" class="kn kn-loeschen danger kb-klein hidden">Löschen</button>
+        <button type="submit" class="kn kn-speichern primary">Speichern</button>
+        <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
+      </div>
     </div>
     <input type="hidden" id="clientId">
 
@@ -2752,7 +2763,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.27';
+const APP_VERSION='1.28';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3503,6 +3514,8 @@ function openClient(id=''){
   updatePortraitVorschau();
   $('deleteClient').classList.toggle('hidden',!id);
   $('clientToSheet').classList.toggle('hidden',!id);
+  $('clientToSheetTop').classList.toggle('hidden',!id);
+  $('deleteClientTop').classList.toggle('hidden',!id);
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
   clientFormStand=clientFormWerte();
   $('clientDialog').showModal();
@@ -10895,6 +10908,9 @@ $('clientToSheet').onclick=()=>{
   $('clientDialog').close();
   klientenbogenOeffnen(id);
 };
+
+$('clientToSheetTop').onclick=()=>$('clientToSheet').click();
+$('deleteClientTop').onclick=()=>$('deleteClient').click();
 
 $('closeClientSheet').onclick=()=>$('clientSheetDialog').close();
 
