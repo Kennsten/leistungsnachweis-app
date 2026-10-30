@@ -1419,6 +1419,36 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .kn.kn-nav:hover{border-color:var(--brand)}
 .client-buttons .kn.kn-nav{min-width:0;gap:4px;padding-right:8px}
 #openCloudSetup.cloud-verbunden{color:var(--ok)}
+
+/* ---------- Klienten-Maske: Abschnitte ---------- */
+.kb-abschnitt{font-size:.95rem;margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--line);color:var(--brand-dark)}
+#clientForm .top+input+.kb-abschnitt{border-top:0;padding-top:0;margin-top:6px}
+.kb-kontakt{border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px 4px;margin:8px 0}
+.kb-kontakt-titel{margin:0 0 2px;font-size:.82rem;font-weight:600;color:var(--muted)}
+
+/* ---------- Klientenbogen ---------- */
+.kbogen{background:#fff;color:#1f2a24;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45;padding:26px 28px;border-radius:6px;border:1px solid #e2e0d6;max-width:720px;margin:0 auto}
+.kbogen .kbo-kopfzeile{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;color:#7d8a80;margin-bottom:16px}
+.kbogen .kbo-kopf{display:flex;gap:16px;align-items:center;margin-bottom:6px}
+.kbogen .kbo-avatar{width:62px;height:62px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;overflow:hidden}
+.kbogen .kbo-avatar img{width:100%;height:100%;object-fit:cover}
+.kbogen .kbo-name{font-size:22px;font-weight:700;margin:0 0 2px;font-family:inherit;color:#1f2a24;letter-spacing:0;text-shadow:none}
+.kbogen .kbo-leise{color:#6b7770}
+.kbogen .kbo-abschnitt{border-top:1px solid #e2e0d6;margin-top:14px;padding-top:9px}
+.kbogen .kbo-titel{font-size:11px;font-weight:700;letter-spacing:.06em;color:#5c7360;margin:0 0 5px}
+.kbogen .kbo-zeile{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;padding:2px 0}
+.kbogen .kbo-zeile>span:first-child{color:#6b7770}
+.kbogen .kbo-kontakt{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;padding:4px 0 8px}
+.kbogen .kbo-kontakt>span:first-child{color:#6b7770}
+.kbogen .kbo-kontakt b{font-weight:700}
+.kbogen a{color:#3f5a46;text-decoration:none;border-bottom:1px dotted #6f8571}
+.kbogen .kbo-text{white-space:pre-wrap}
+.kbogen .kbo-fuss{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #e2e0d6;margin-top:22px;padding-top:8px;font-size:11px;color:#7d8a80;font-style:italic}
+@media (max-width:520px){.kbogen{padding:18px 16px}.kbogen .kbo-zeile,.kbogen .kbo-kontakt{grid-template-columns:1fr;gap:0}.kbogen .kbo-zeile{padding:3px 0}}
+.kb-oeffnen{cursor:pointer}
+.client-name h3.kb-oeffnen{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color .15s}
+.client-name h3.kb-oeffnen:hover{text-decoration-color:currentColor}
+#clientSheetDialog .kbogen{margin-top:12px}
 </style>
 </head>
 <body>
@@ -1589,6 +1619,21 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
+<dialog id="clientSheetDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Klientenbogen</div>
+      <h2 id="clientSheetTitel"></h2>
+    </div>
+    <button type="button" id="closeClientSheet" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div class="actions">
+    <button type="button" id="clientSheetEdit" class="kn kn-nav secondary">Zur Bearbeitung</button>
+    <button type="button" id="clientSheetPrint" class="kn kn-druck secondary">Drucken / PDF</button>
+  </div>
+  <div id="clientSheet"></div>
+</dialog>
+
 <dialog id="clientDialog">
   <form id="clientForm">
     <div class="top">
@@ -1596,9 +1641,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="clientId">
+
+    <h3 class="kb-abschnitt">👤 Person</h3>
     <div class="grid">
-      <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
-      <label>Name, Vorname<input id="clientName" required></label>
+      <label class="span2">Name, Vorname<input id="clientName" required></label>
       <label>Anrede
         <select id="clientAnrede">
           <option value="">keine</option>
@@ -1607,18 +1653,45 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
           <option value="Divers">Divers</option>
         </select>
       </label>
-      <label>Aktenzeichen<input id="aktenzeichen"></label>
       <label>Geburtstag<input id="geburtstag" type="date"></label>
-      <label>Telefon<input id="telefon" type="tel"></label>
-      <label>Mobil<input id="mobil" type="tel"></label>
+      <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
+      <label>Aktenzeichen<input id="aktenzeichen"></label>
+    </div>
+
+    <h3 class="kb-abschnitt">🏠 Adresse und Telefon</h3>
+    <div class="grid">
       <label>Straße<input id="strasse"></label>
       <label>Hausnummer<input id="hausnummer"></label>
-      <label>PLZ<input id="plz"></label>
+      <label>PLZ<input id="plz" inputmode="numeric" maxlength="5"></label>
       <label>Ort<input id="ort"></label>
-      <label>Kontaktperson 1<input id="kontaktperson1"></label>
-      <label>Telefon Kontakt 1<input id="telefon1"></label>
-      <label>Kontaktperson 2<input id="kontaktperson2"></label>
-      <label>Telefon Kontakt 2<input id="telefon2"></label>
+      <label>Telefon<input id="telefon" type="tel" inputmode="tel"></label>
+      <label>Mobil<input id="mobil" type="tel" inputmode="tel"></label>
+    </div>
+
+    <h3 class="kb-abschnitt">👥 Kontaktpersonen</h3>
+      <div class="kb-kontakt">
+        <p class="kb-kontakt-titel">Kontaktperson 1</p>
+        <div class="grid">
+          <label>Name<input id="kontaktperson1" autocomplete="off"></label>
+          <label>Rolle<input id="kontakt1Rolle" placeholder="z. B. gesetzliche Betreuerin" autocomplete="off"></label>
+          <label class="span2">Adresse<input id="kontakt1Adresse" placeholder="Straße Nr., PLZ Ort" autocomplete="off"></label>
+          <label>Telefon<input id="telefon1" type="tel" inputmode="tel"></label>
+          <label>E-Mail<input id="kontakt1Email" type="email" inputmode="email" autocapitalize="off" autocomplete="off"></label>
+        </div>
+      </div>
+      <div class="kb-kontakt">
+        <p class="kb-kontakt-titel">Kontaktperson 2</p>
+        <div class="grid">
+          <label>Name<input id="kontaktperson2" autocomplete="off"></label>
+          <label>Rolle<input id="kontakt2Rolle" placeholder="z. B. gesetzliche Betreuerin" autocomplete="off"></label>
+          <label class="span2">Adresse<input id="kontakt2Adresse" placeholder="Straße Nr., PLZ Ort" autocomplete="off"></label>
+          <label>Telefon<input id="telefon2" type="tel" inputmode="tel"></label>
+          <label>E-Mail<input id="kontakt2Email" type="email" inputmode="email" autocapitalize="off" autocomplete="off"></label>
+        </div>
+      </div>
+
+    <h3 class="kb-abschnitt">🖼 Porträt</h3>
+    <div class="grid">
       <label class="span2">Porträt
         <select id="clientPortrait">
           <option value="">Initialen verwenden</option>
@@ -1630,8 +1703,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         </select>
         <div id="portraitVorschau" class="portrait-preview hidden"></div>
       </label>
+    </div>
+
+    <h3 class="kb-abschnitt">📝 Bemerkungen</h3>
+    <div class="grid">
       <label class="span2">Bemerkungen<textarea id="bemerkungen" rows="3"></textarea></label>
     </div>
+
     <div class="actions">
       <button type="button" id="deleteClient" class="kn kn-loeschen danger hidden">Löschen</button>
 <button type="submit" class="kn kn-speichern primary">Speichern</button>
@@ -2673,7 +2751,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.25';
+const APP_VERSION='1.26';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3331,7 +3409,11 @@ function renderClients(){
       <div class="client${istEhemalig(c.id)?' client-former':''}">
         <div class="client-head">
           <div
-            class="client-avatar"
+            class="client-avatar kb-oeffnen"
+            data-id="${c.id}"
+            role="button"
+            tabindex="0"
+            aria-label="Klientenbogen öffnen"
             style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
             ${
               c.portrait &&
@@ -3343,7 +3425,7 @@ function renderClients(){
 
           <div class="client-name">
             <div class="client-name-row">
-              <h3>${esc(c.name)}</h3>
+              <h3 class="kb-oeffnen" data-id="${c.id}" role="button" tabindex="0">${esc(c.name)}</h3>
               <button class="kn kn-bearbeiten secondary edit name-edit" data-id="${c.id}">
                 Bearbeiten
               </button>
@@ -3381,6 +3463,10 @@ function renderClients(){
   }
 
   document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
+  document.querySelectorAll('.kb-oeffnen').forEach(b=>{
+    b.onclick=()=>klientenbogenOeffnen(b.dataset.id);
+    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();klientenbogenOeffnen(b.dataset.id);}};
+  });
   document.querySelectorAll('.docs').forEach(b=>b.onclick=()=>openDocs(b.dataset.id));
   document.querySelectorAll('.approvals').forEach(b=>b.onclick=()=>openApprovals(b.dataset.id));
   document.querySelectorAll('.trips').forEach(b=>b.onclick=()=>openTrips(b.dataset.id));
@@ -3406,6 +3492,11 @@ function openClient(id=''){
   $('telefon1').value=c.telefon1||'';
   $('kontaktperson2').value=c.kontaktperson2||'';
   $('telefon2').value=c.telefon2||'';
+  [1,2].forEach(n=>{
+    $('kontakt'+n+'Rolle').value=c['kontakt'+n+'_rolle']||'';
+    $('kontakt'+n+'Adresse').value=c['kontakt'+n+'_adresse']||'';
+    $('kontakt'+n+'Email').value=c['kontakt'+n+'_email']||'';
+  });
   $('bemerkungen').value=c.bemerkungen||'';
   $('clientPortrait').value=c.portrait||'';
   updatePortraitVorschau();
@@ -6070,8 +6161,20 @@ $('clientForm').onsubmit=async e=>{
     portrait:$('clientPortrait').value||null,
     anrede:$('clientAnrede').value||null
   };
+  [1,2].forEach(n=>{
+    row['kontakt'+n+'_rolle']=$('kontakt'+n+'Rolle').value.trim()||null;
+    row['kontakt'+n+'_adresse']=$('kontakt'+n+'Adresse').value.trim()||null;
+    row['kontakt'+n+'_email']=$('kontakt'+n+'Email').value.trim()||null;
+  });
   const speichern=z=>id?sb.from('clients').update(z).eq('id',id):sb.from('clients').insert(z);
   let {error}=await speichern(row);
+  // Falls die neuen Kontaktspalten noch fehlen: ohne sie speichern
+  if(error&&/kontakt[12]_/.test(error.message)){
+    const ohne={...row};
+    Object.keys(ohne).filter(k=>/^kontakt[12]_/.test(k)).forEach(k=>delete ohne[k]);
+    ({error}=await speichern(ohne));
+    if(!error)toast('Hinweis: Rolle, Adresse und E-Mail der Kontaktpersonen noch nicht gespeichert – SQL-Befehl fehlt.');
+  }
   // Falls die Spalte „anrede" noch fehlt: ohne Anrede speichern
   if(error&&/anrede/.test(error.message)){
     const {anrede,...ohneAnrede}=row;
@@ -10610,6 +10713,184 @@ $('snippetForm').onsubmit=async e=>{
     if(neueId&&!tbAuswahl.includes(neueId))tbAuswahl=[...tbAuswahl,neueId];
     $('snippetDialog').close();
   }
+};
+
+
+/* ---------- Klientenbogen ---------- */
+// Übersichtliche, druckbare Seite mit allen wichtigen Angaben eines Klienten
+
+let klientenbogenAktuell=null;
+
+function kbAlter(geburtstag){
+  if(!geburtstag)return null;
+  const g=new Date(geburtstag+'T00:00:00');
+  const h=new Date();
+  let jahre=h.getFullYear()-g.getFullYear();
+  const vorGeburtstag=h.getMonth()<g.getMonth()||
+    (h.getMonth()===g.getMonth()&&h.getDate()<g.getDate());
+  if(vorGeburtstag)jahre--;
+  return jahre>=0?jahre:null;
+}
+
+function kbTelefon(nummer){
+  const text=String(nummer||'').trim();
+  if(!text)return '';
+  const wahl=text.replace(/[^\d+]/g,'');
+  return wahl?'<a href="tel:'+esc(wahl)+'">'+esc(text)+'</a>':esc(text);
+}
+
+function kbEmail(adresse){
+  const text=String(adresse||'').trim();
+  if(!text)return '';
+  return '<a href="mailto:'+esc(text)+'">'+esc(text)+'</a>';
+}
+
+function kbZahl(wert){
+  return Number(wert).toLocaleString('de-DE',{maximumFractionDigits:2});
+}
+
+function kbZeile(titel,inhaltHtml){
+  if(!inhaltHtml)return '';
+  return '<div class="kbo-zeile"><span>'+esc(titel)+'</span><span>'+inhaltHtml+'</span></div>';
+}
+
+function kbAbschnitt(titel,inhaltHtml){
+  if(!inhaltHtml)return '';
+  return '<div class="kbo-abschnitt"><p class="kbo-titel">'+esc(titel)+'</p>'+inhaltHtml+'</div>';
+}
+
+function klientenbogenHtml(c,bewilligung){
+  const farben=AVATAR_FARBEN[
+    String(c.client_code||c.name||'').split('').reduce((s,z)=>s+z.charCodeAt(0),0)%AVATAR_FARBEN.length
+  ];
+  const mitBild=c.portrait&&document.documentElement.getAttribute('data-theme')==='moebius';
+  const avatar=mitBild
+    ? '<img src="bilder/'+esc(c.portrait)+'" alt="">'
+    : esc(clientInitialen(c.name));
+
+  const alter=kbAlter(c.geburtstag);
+  const unterzeile=[
+    c.anrede,
+    c.client_code?'Klienten-ID '+c.client_code:'',
+    c.aktenzeichen?'Aktenzeichen '+c.aktenzeichen:''
+  ].filter(Boolean).map(esc).join(' · ');
+
+  const adresse=[
+    [c.strasse,c.hausnummer].filter(Boolean).join(' '),
+    [c.plz,c.ort].filter(Boolean).join(' ')
+  ].filter(Boolean).join(', ');
+
+  const erreichbar=
+    kbZeile('Adresse',esc(adresse))+
+    kbZeile('Telefon',kbTelefon(c.telefon))+
+    kbZeile('Mobil',kbTelefon(c.mobil));
+
+  const kontakte=[1,2].map(n=>{
+    const name=String(c['kontaktperson'+n]||'').trim();
+    const rolle=String(c['kontakt'+n+'_rolle']||'').trim();
+    const adr=String(c['kontakt'+n+'_adresse']||'').trim();
+    const tel=c['telefon'+n];
+    const mail=c['kontakt'+n+'_email'];
+    if(!name&&!adr&&!tel&&!mail)return '';
+    const erreichbarkeit=[kbTelefon(tel),kbEmail(mail)].filter(Boolean).join(' · ');
+    return '<div class="kbo-kontakt"><span>'+esc(rolle||('Kontakt '+n))+'</span><span>'+
+      (name?'<b>'+esc(name)+'</b><br>':'')+
+      (adr?esc(adr)+'<br>':'')+
+      erreichbarkeit+
+      '</span></div>';
+  }).join('');
+
+  let bewilligt='';
+  if(bewilligung){
+    const zeitraum=formatDate(bewilligung.beginn)+' – '+
+      (bewilligung.ende?formatDate(bewilligung.ende):'offen');
+    const kontingent=[
+      bewilligung.wochen_fls!=null&&bewilligung.wochen_fls!==''
+        ? kbZahl(bewilligung.wochen_fls)+' FLS pro Woche':'',
+      bewilligung.stundenkontingent
+        ? kbZahl(bewilligung.stundenkontingent)+' FLS pro 12 Monate':''
+    ].filter(Boolean).join(' · ');
+    const traeger=[
+      bewilligung.kostentraeger||bewilligung.leistungstraeger_typ,
+      bewilligung.ansprechpartner?'Ansprechpartner: '+bewilligung.ansprechpartner:''
+    ].filter(Boolean).join(' · ');
+    bewilligt=
+      kbZeile(bewilligung._laufend?'Zeitraum':'Letzte Bewilligung',esc(zeitraum))+
+      kbZeile('Kontingent',esc(kontingent))+
+      kbZeile('Leistungsträger',esc(traeger));
+  }else{
+    bewilligt=kbZeile('Zeitraum','keine Bewilligung eingetragen');
+  }
+
+  const ampel=berichtAmpel(c.id);
+  const berichte=kbZeile('Stand',esc(ampel.symbol+' '+ampel.text));
+
+  const bemerkung=String(c.bemerkungen||'').trim();
+
+  return '<div class="kbogen">'+
+    '<div class="kbo-kopfzeile"><span>KLIENTENBOGEN</span><span>Stand '+esc(formatDate(todayIso()))+'</span></div>'+
+    '<div class="kbo-kopf">'+
+      '<div class="kbo-avatar" style="background:'+farben.bg+';color:'+farben.ink+'">'+avatar+'</div>'+
+      '<div><p class="kbo-name">'+esc(c.name||'')+'</p>'+
+        (unterzeile?'<div class="kbo-leise">'+unterzeile+'</div>':'')+
+        (c.geburtstag?'<div class="kbo-leise">geboren '+esc(formatDate(c.geburtstag))+
+          (alter!=null?' ('+alter+' Jahre)':'')+'</div>':'')+
+      '</div>'+
+    '</div>'+
+    kbAbschnitt('ERREICHBARKEIT',erreichbar)+
+    kbAbschnitt('KONTAKTPERSONEN',kontakte)+
+    kbAbschnitt('BEWILLIGUNG',bewilligt)+
+    kbAbschnitt('BERICHTE',berichte)+
+    kbAbschnitt('BEMERKUNGEN',bemerkung?'<div class="kbo-text">'+esc(bemerkung)+'</div>':'')+
+    '<div class="kbo-fuss"><span>Vertraulich – enthält personenbezogene Daten. Sicher aufbewahren, nicht weitergeben.</span></div>'+
+  '</div>';
+}
+
+async function klientenbogenOeffnen(id){
+  const c=clients.find(x=>String(x.id)===String(id));
+  if(!c)return;
+
+  // Laufende Bewilligung, sonst die zuletzt begonnene
+  const laufend=laufendeBewilligungen(c.id)[0];
+  const eigene=clientApprovals
+    .filter(a=>String(a.client_id)===String(c.id))
+    .sort((a,b)=>String(b.beginn||'').localeCompare(String(a.beginn||'')));
+  const auswahl=laufend||eigene[0]||null;
+
+  let bewilligung=null;
+  if(auswahl){
+    const {data}=await sb.from('bewilligungen').select('*').eq('id',auswahl.id).maybeSingle();
+    bewilligung=data?{...data,_laufend:Boolean(laufend)}:null;
+  }
+
+  const html=klientenbogenHtml(c,bewilligung);
+  klientenbogenAktuell={id:c.id,name:c.name||'Klient',html};
+
+  $('clientSheetTitel').textContent=c.name||'';
+  $('clientSheet').innerHTML=html;
+  $('clientSheetDialog').showModal();
+}
+
+$('closeClientSheet').onclick=()=>$('clientSheetDialog').close();
+
+$('clientSheetEdit').onclick=()=>{
+  const id=klientenbogenAktuell&&klientenbogenAktuell.id;
+  $('clientSheetDialog').close();
+  if(id)openClient(id);
+};
+
+$('clientSheetPrint').onclick=()=>{
+  if(!klientenbogenAktuell)return;
+  try{
+    sessionStorage.setItem('klientenbogen_payload',JSON.stringify({
+      name:klientenbogenAktuell.name,
+      html:klientenbogenAktuell.html
+    }));
+  }catch(fehler){
+    toast('Der Klientenbogen konnte nicht übergeben werden.');
+    return;
+  }
+  window.open('klientenbogen.html','_blank');
 };
 
 $('backupData').onclick=erstelleSicherung;
