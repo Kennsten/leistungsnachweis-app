@@ -2255,9 +2255,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
   <div style="margin-top:14px">
     <button type="button" id="snippetStartliste" class="secondary" style="width:100%">
-      Startliste einfügen
+      Vorgefertigte Bausteine wiederherstellen
     </button>
-    <p class="muted small">Legt die vorbereiteten Bausteine an. Vorhandene mit gleichem Namen werden übersprungen.</p>
+    <p class="muted small">Holt gelöschte Bausteine aus der mitgelieferten Sammlung zurück. Vorhandene bleiben unverändert.</p>
   </div>
 
   <div id="snippetList"></div>
@@ -2673,7 +2673,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.24';
+const APP_VERSION='1.25';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -10313,7 +10313,7 @@ function renderSnippetPicker(){
 
   if(!textbausteine.length){
     ziel.innerHTML='<p class="muted">Noch keine Bausteine angelegt. '+
-      'Tippe auf „Textbaustein erstellen" oder lege unter „Bausteine verwalten" die Startliste an.</p>';
+      'Tippe auf „Textbaustein erstellen" oder hole unter „Bausteine verwalten" die vorgefertigten Bausteine zurück.</p>';
     renderSnippetPreview();
     return;
   }
@@ -10400,11 +10400,11 @@ async function startlisteEinfuegen(automatisch=false){
     .filter(z=>!vorhanden.has(z.titel.toLowerCase()));
 
   if(!neu.length){
-    if(!automatisch)toast('Alle Bausteine der Startliste sind schon vorhanden.');
+    if(!automatisch)toast('Alle vorgefertigten Bausteine sind schon vorhanden.');
     return false;
   }
 
-  if(!automatisch&&!confirm(neu.length+' Bausteine aus der Startliste anlegen?'))return false;
+  if(!automatisch&&!confirm(neu.length+' vorgefertigte Bausteine wiederherstellen?'))return false;
 
   const {error}=await sb.from('textbausteine').insert(neu);
 
@@ -10413,7 +10413,7 @@ async function startlisteEinfuegen(automatisch=false){
     if(/art/.test(error.message)){
       toast('Bitte zuerst den SQL-Befehl für die Spalte „art" ausführen.');
     }else{
-      toast('Startliste konnte nicht angelegt werden: '+error.message);
+      toast('Bausteine konnten nicht wiederhergestellt werden: '+error.message);
     }
     return false;
   }
