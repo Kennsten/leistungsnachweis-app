@@ -1,0 +1,14 @@
+{
+  "name": "qa-qualifizierte-assistenz",
+  "private": true,
+  "description": "Bausteine (Bibliotheken), die beim Veröffentlichen auf Netlify in den Ordner lib/ kopiert werden, damit die App ohne fremde Server und ohne Internet funktioniert.",
+  "scripts": {
+    "bibliotheken": "node scripts/bibliotheken-kopieren.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "html2canvas": "1.4.1",
+    "jspdf": "2.5.1",
+    "leaflet": "1.9.4"
+  }
+}

@@ -1,4 +1,17 @@
+# Veröffentlichung: Bei jedem Speichern auf GitHub lädt Netlify die Bibliotheken
+# (siehe package.json) und legt sie in den Ordner lib/. So lädt die App nichts
+# mehr von fremden Servern und funktioniert ohne Internet.
+[build]
+  publish = "."
+  command = "npm install --no-audit --no-fund && node scripts/bibliotheken-kopieren.mjs && rm -rf node_modules"
+
 [[headers]]
   for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+# Der Service Worker muss immer frisch geprüft werden, sonst kommen Updates nicht an.
+[[headers]]
+  for = "/service-worker.js"
   [headers.values]
     Cache-Control = "no-cache, must-revalidate"

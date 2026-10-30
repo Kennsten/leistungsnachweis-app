@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <title>QA – Qualifizierte Assistenz</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="lib/supabase.js"></script>
 <style>
 :root{
   --ink:#2f3a34;
@@ -2809,7 +2809,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.2 Verkaufsversion';
+const APP_VERSION='0.3 Verkaufsversion';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6901,11 +6901,11 @@ function leafletLaden(){
   leafletGeladen=new Promise((fertig,fehler)=>{
     const css=document.createElement('link');
     css.rel='stylesheet';
-    css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    css.href='lib/leaflet/leaflet.css';
     document.head.appendChild(css);
 
     const js=document.createElement('script');
-    js.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    js.src='lib/leaflet/leaflet.js';
     js.onload=()=>fertig();
     js.onerror=()=>{leafletGeladen=null;fehler(new Error('Karte konnte nicht geladen werden.'));};
     document.head.appendChild(js);
