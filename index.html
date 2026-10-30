@@ -1418,6 +1418,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
 .kn.kn-nav:hover{border-color:var(--brand)}
 .client-buttons .kn.kn-nav{min-width:0;gap:4px;padding-right:8px}
+#openCloudSetup.cloud-verbunden{color:var(--ok)}
 </style>
 </head>
 <body>
@@ -2672,7 +2673,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.23';
+const APP_VERSION='1.24';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -7723,12 +7724,27 @@ function pcloudAdresse(){
   return window.location.origin+'/index.html';
 }
 
+// Name des verbundenen Anbieters – später für weitere Clouds erweiterbar
+const CLOUD_ANBIETER_NAME='pCloud';
+
+// Beschriftung des Knopfs auf der Startseite: „eingerichtet" oder „einrichten"
+function cloudStartKnopfZeichnen(){
+  const knopf=$('openCloudSetup');
+  if(!knopf)return;
+  const verbunden=Boolean(pcloudToken);
+  knopf.textContent=verbunden
+    ? '✓ '+CLOUD_ANBIETER_NAME+' eingerichtet'
+    : CLOUD_ANBIETER_NAME+' einrichten';
+  knopf.classList.toggle('cloud-verbunden',verbunden);
+}
+
 function pcloudTokenLaden(){
   try{
     pcloudToken=localStorage.getItem(PCLOUD_SPEICHER)||null;
   }catch(fehler){
     pcloudToken=null;
   }
+  cloudStartKnopfZeichnen();
 }
 
 function pcloudTokenSpeichern(wert){
@@ -7743,6 +7759,8 @@ function pcloudTokenSpeichern(wert){
   }catch(fehler){
     // nicht speicherbar, gilt nur für diese Sitzung
   }
+
+  cloudStartKnopfZeichnen();
 }
 
 function pcloudRueckkehrPruefen(){
@@ -8664,6 +8682,7 @@ function cloudSetupZeichnen(){
     : 'Mit pCloud verbinden';
 
   $('cloudSetupTrennen').classList.toggle('hidden',!verbunden);
+  cloudStartKnopfZeichnen();
 }
 
 function cloudSetupOeffnen(){
