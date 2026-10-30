@@ -1452,7 +1452,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 /* Klienten-Maske: Knöpfe oben in der Kopfzeile */
 .kb-kopf{flex-wrap:wrap}
-.kb-kopfknoepfe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;margin-left:auto}
+.kb-kopfknoepfe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;flex:1 1 100%}
+.kb-kopfknoepfe #deleteClientTop{margin-right:auto}
+#clientForm>.actions{align-items:center}
+#clientForm>.actions #deleteClient{flex:0 0 auto;margin-right:auto}
+#clientForm>.actions #clientToSheet,#clientForm>.actions button[type=submit]{flex:0 1 220px}
+#clientForm .kn.kb-klein{padding:6px 10px;font-size:.82rem}
 .kb-kopfknoepfe .kn{padding:11px 16px}
 .kb-kopfknoepfe .kn.kb-klein{padding:6px 10px;font-size:.82rem}
 </style>
@@ -1645,8 +1650,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="top kb-kopf">
       <h2 id="dialogTitle">Klient anlegen</h2>
       <div class="kb-kopfknoepfe">
-        <button type="button" id="clientToSheetTop" class="kn kn-nav secondary hidden">Klientenbogen</button>
         <button type="button" id="deleteClientTop" class="kn kn-loeschen danger kb-klein hidden">Löschen</button>
+        <button type="button" id="clientToSheetTop" class="kn kn-nav secondary hidden">Klientenbogen</button>
         <button type="submit" class="kn kn-speichern primary">Speichern</button>
         <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
       </div>
@@ -1722,8 +1727,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
+      <button type="button" id="deleteClient" class="kn kn-loeschen danger kb-klein hidden">Löschen</button>
       <button type="button" id="clientToSheet" class="kn kn-nav secondary hidden">Klientenbogen</button>
-      <button type="button" id="deleteClient" class="kn kn-loeschen danger hidden">Löschen</button>
 <button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
@@ -2764,7 +2769,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.29';
+const APP_VERSION='1.30';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
