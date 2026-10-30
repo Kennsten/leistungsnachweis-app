@@ -147,6 +147,22 @@
       background:#f4f4f4;
       font-weight:700;
     }
+    th.num{
+      white-space:normal;
+      hyphens:manual;
+    }
+    tr.luecke td{
+      background:#f7f7f7;
+      font-style:italic;
+      color:#333;
+    }
+    tr.luecke.fehler td{
+      color:#9b3d00;
+      font-weight:700;
+    }
+    tr.ohne-tacho td.num.tacho{
+      color:#9b3d00;
+    }
 
     .footnote{
       margin-top:10px;
@@ -194,6 +210,16 @@
       tfoot{display:table-footer-group}
       tr{page-break-inside:avoid}
     }
+  
+    /* Knopf-Arten wie in der App: Symbol vorne, Schließen grau, Drucken umrandet */
+    .kn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .kn::before{content:"";width:1.05em;height:1.05em;flex:0 0 auto;background:currentColor;
+      -webkit-mask:var(--kn-ico) center/contain no-repeat;mask:var(--kn-ico) center/contain no-repeat}
+    .kn-schliessen{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E")}
+    .kn-druck{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4M7 13h10v8H7z'/%3E%3C/svg%3E")}
+    .kn-datei{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2zM9 13h6M9 17h6'/%3E%3C/svg%3E")}
+    button.kn-schliessen{background:#e8ecf0;border-color:#e8ecf0;color:#33465a}
+    button.kn-druck:not(.primary),button.kn-datei:not(.primary){background:#fff;border:1.5px solid #173b5b;color:#173b5b}
   </style>
 </head>
 
@@ -201,9 +227,9 @@
   <div class="toolbar">
     <div class="toolbar-title">Fahrtenbuch</div>
     <div class="toolbar-actions">
-      <button type="button" id="closeButton">Schließen</button>
-      <button type="button" id="printButton">Drucken</button>
-      <button type="button" id="pdfButton" class="primary">PDF erstellen</button>
+      <button type="button" id="closeButton" class="kn kn-schliessen">Schließen</button>
+      <button type="button" id="printButton" class="kn kn-druck">Drucken</button>
+      <button type="button" id="pdfButton" class="kn kn-datei primary">PDF erstellen</button>
     </div>
   </div>
 
@@ -255,11 +281,116 @@
       `;
     }
 
+    function formatTacho(value){
+      if(value==null||value==='')return '';
+      return Number(value).toLocaleString('de-DE',{maximumFractionDigits:0});
+    }
+
+    // Liste mit Tachoständen und Lücken (Privatfahrten) dazwischen
+    function renderTacho(payload){
+      const {zeilen,summe}=payload.tacho;
+
+      const rows=zeilen.map(z=>{
+        if(z.typ==='fahrt'){
+          const ohne=z.km==null;
+          return `
+            <tr${ohne?' class="ohne-tacho"':''}>
+              <td class="nowrap">${formatDate(z.date)}</td>
+              <td>${esc(z.client)}</td>
+              <td${String(z.purpose).length>28?' class="long"':''}>${esc(z.purpose)}</td>
+              <td class="stops">${esc(z.ziel)}</td>
+              <td class="num tacho">${formatTacho(z.tachoStart)||'–'}</td>
+              <td class="num tacho">${formatTacho(z.tachoEnde)||'–'}</td>
+              <td class="num">${ohne?'–':formatTacho(z.km)}</td>
+              <td class="num">${formatKm(z.kmBerechnet)}</td>
+            </tr>`;
+        }
+        return `
+          <tr class="luecke ${z.typ}">
+            <td colspan="4">${esc(z.text.titel)}${z.typ==='unklar'?' · enthält eine Fahrt ohne vollständige Tachostände':''}</td>
+            <td class="num">${formatTacho(z.von)}</td>
+            <td class="num">${formatTacho(z.bis)}</td>
+            <td class="num">${z.typ==='fehler'?'⚠':formatTacho(z.km)}</td>
+            <td></td>
+          </tr>`;
+      }).join('');
+
+      app.innerHTML=`
+        <div class="page-wrap">
+          <div class="sheet">
+            <div class="sheet-head">
+              <h1>Fahrtenbuch mit Tachoständen</h1>
+              <p>Zeitraum: ${esc(payload.zeitraum||'')}</p>
+              <p>
+                Berufliche km laut Tacho: ${formatTacho(summe.beruflich)} km
+                ·
+                Privat (Lücken): ${formatTacho(summe.privat)} km
+                ${summe.unklar?' · Nicht zuzuordnen: '+formatTacho(summe.unklar)+' km':''}
+              </p>
+              <p>
+                Fahrten mit Tachostand: ${summe.mitTacho}
+                ${summe.ohneTacho?' · ohne vollständigen Tachostand: '+summe.ohneTacho:''}
+              </p>
+              <p>Erstellt am ${formatDate(payload.createdAt)}</p>
+            </div>
+
+            <table>
+              <colgroup>
+                <col style="width:10%">
+                <col style="width:13%">
+                <col style="width:17%">
+                <col style="width:20%">
+                <col style="width:10%">
+                <col style="width:10%">
+                <col style="width:9%">
+                <col style="width:11%">
+              </colgroup>
+
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Klient</th>
+                  <th>Zweck</th>
+                  <th>Ziel / Zwischen&shy;stopps</th>
+                  <th class="num">Tacho<br>Abfahrt</th>
+                  <th class="num">Tacho<br>Ankunft</th>
+                  <th class="num">km<br>Tacho</th>
+                  <th class="num">km<br>berechnet</th>
+                </tr>
+              </thead>
+
+              <tbody>${rows}</tbody>
+
+              <tfoot>
+                <tr>
+                  <td colspan="6">Summe berufliche Fahrten</td>
+                  <td class="num">${formatTacho(summe.beruflich)}</td>
+                  <td class="num">${formatKm(payload.totalKm)}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <p class="footnote">
+              Grau hinterlegte Zeilen sind Lücken zwischen zwei beruflichen Fahrten
+              (Abfahrtsstand minus vorheriger Ankunftsstand) und gelten als Privatfahrten.
+              „Nicht zuzuordnen“: dazwischen liegt eine Fahrt ohne vollständige Tachostände.
+              Lücken werden nur innerhalb des gewählten Zeitraums berechnet.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
     function render(){
       const payload=readPayload();
 
       if(!payload||!Array.isArray(payload.trips)||!payload.trips.length){
         showError();
+        return;
+      }
+
+      if(payload.liste==='tacho'&&payload.tacho){
+        renderTacho(payload);
         return;
       }
 
@@ -451,7 +582,8 @@
         const payload=readPayload()||{};
         const zeitraum=payload.zeitraum||'';
 
-        const dateiname=('Fahrtenbuch '+zeitraum)
+        const dateiname=('Fahrtenbuch '+
+            (payload.liste==='tacho'?'Tacho ':'')+zeitraum)
           .replace(/[^a-zA-Z0-9äöüÄÖÜß ,.-]/g,'')
           .trim()+'.pdf';
 

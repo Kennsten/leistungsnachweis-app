@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klientenbogen</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    @page{size:A4 portrait;margin:14mm}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#d9dee3;color:#111;font-family:Arial,Helvetica,sans-serif}
+
+    .toolbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;
+      gap:12px;flex-wrap:wrap;padding:12px 16px;background:#fff;border-bottom:1px solid #bbb}
+    .toolbar-title{font-weight:700;font-size:17px}
+    .toolbar-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    button{appearance:none;border:1px solid #9eb2c5;border-radius:10px;padding:10px 16px;background:#eef5fb;
+      color:#18344e;font-size:15px;font-weight:600;cursor:pointer}
+    button.primary{background:#173b5b;border-color:#173b5b;color:#fff}
+    button:disabled{opacity:.6;cursor:default}
+
+    main{padding:22px 12px 40px}
+    .sheet{width:210mm;max-width:100%;min-height:297mm;margin:0 auto;background:#fff;
+      box-shadow:0 4px 18px rgba(0,0,0,.15);padding:14mm}
+    .sheet .kbogen{border:0;padding:0;max-width:none;border-radius:0}
+    .leer{max-width:560px;margin:40px auto;background:#fff;padding:24px;border-radius:12px}
+
+    .kbogen{background:#fff;color:#1f2a24;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45;padding:26px 28px;border-radius:6px;border:1px solid #e2e0d6;max-width:720px;margin:0 auto}
+    .kbogen .kbo-kopfzeile{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;color:#7d8a80;margin-bottom:16px}
+    .kbogen .kbo-kopf{display:flex;gap:16px;align-items:center;margin-bottom:6px}
+    .kbogen .kbo-avatar{width:62px;height:62px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;overflow:hidden}
+    .kbogen .kbo-avatar img{width:100%;height:100%;object-fit:cover}
+    .kbogen .kbo-name{font-size:22px;font-weight:700;margin:0 0 2px;font-family:inherit;color:#1f2a24;letter-spacing:0;text-shadow:none}
+    .kbogen .kbo-leise{color:#6b7770}
+    .kbogen .kbo-abschnitt{border-top:1px solid #e2e0d6;margin-top:14px;padding-top:9px}
+    .kbogen .kbo-titel{font-size:11px;font-weight:700;letter-spacing:.06em;color:#5c7360;margin:0 0 5px}
+    .kbogen .kbo-zeile{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;padding:2px 0}
+    .kbogen .kbo-zeile>span:first-child{color:#6b7770}
+    .kbogen .kbo-kontakt{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;padding:4px 0 8px}
+    .kbogen .kbo-kontakt>span:first-child{color:#6b7770}
+    .kbogen .kbo-kontakt b{font-weight:700}
+    .kbogen a{color:#3f5a46;text-decoration:none;border-bottom:1px dotted #6f8571}
+    .kbogen .kbo-text{white-space:pre-wrap}
+    .kbogen .kbo-fuss{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #e2e0d6;margin-top:22px;padding-top:8px;font-size:11px;color:#7d8a80;font-style:italic}
+    @media (max-width:520px){.kbogen{padding:18px 16px}.kbogen .kbo-zeile,.kbogen .kbo-kontakt{grid-template-columns:1fr;gap:0}.kbogen .kbo-zeile{padding:3px 0}}
+
+    @media print{
+      html,body{background:#fff}
+      .toolbar{display:none}
+      main{padding:0}
+      .sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}
+      .kbogen a{border-bottom:0;color:inherit}
+      .kbo-abschnitt{page-break-inside:avoid}
+    }
+
+    /* Knopf-Arten wie in der App: Symbol vorne, Schließen grau, Drucken umrandet */
+    .kn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .kn::before{content:"";width:1.05em;height:1.05em;flex:0 0 auto;background:currentColor;
+      -webkit-mask:var(--kn-ico) center/contain no-repeat;mask:var(--kn-ico) center/contain no-repeat}
+    .kn-schliessen{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E")}
+    .kn-druck{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4M7 13h10v8H7z'/%3E%3C/svg%3E")}
+    .kn-datei{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2zM9 13h6M9 17h6'/%3E%3C/svg%3E")}
+    button.kn-schliessen{background:#e8ecf0;border-color:#e8ecf0;color:#33465a}
+    button.kn-druck:not(.primary),button.kn-datei:not(.primary){background:#fff;border:1.5px solid #173b5b;color:#173b5b}
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <div class="toolbar-title">Klientenbogen</div>
+    <div class="toolbar-actions">
+      <button type="button" id="closeButton" class="kn kn-schliessen">Schließen</button>
+      <button type="button" id="printButton" class="kn kn-druck">Drucken</button>
+      <button type="button" id="pdfButton" class="kn kn-datei primary">PDF erstellen</button>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <script>
+    function readPayload(){
+      try{
+        return JSON.parse(sessionStorage.getItem('klientenbogen_payload')||'null');
+      }catch(fehler){
+        return null;
+      }
+    }
+
+    function render(){
+      const payload=readPayload();
+      const app=document.getElementById('app');
+
+      if(!payload||!payload.html){
+        app.innerHTML='<div class="leer"><h2>Keine Daten gefunden</h2>'+
+          '<p>Öffne den Klientenbogen bitte über die Klienten-App.</p></div>';
+        document.getElementById('pdfButton').disabled=true;
+        document.getElementById('printButton').disabled=true;
+        return;
+      }
+
+      document.title='Klientenbogen '+payload.name;
+      // Das HTML wurde in der App erzeugt und dort bereits sicher maskiert
+      app.innerHTML='<div class="sheet">'+payload.html+'</div>';
+    }
+
+    async function erstellePdf(){
+      const knopf=document.getElementById('pdfButton');
+      const blatt=document.querySelector('.sheet');
+      if(!blatt)return;
+
+      if(typeof html2canvas==='undefined'||!window.jspdf){
+        alert('Die PDF-Funktion konnte nicht geladen werden. '+
+          'Bitte die Internetverbindung prüfen und die Seite neu laden.');
+        return;
+      }
+
+      const beschriftung=knopf.textContent;
+      knopf.disabled=true;
+      knopf.textContent='PDF wird erstellt …';
+
+      const schatten=blatt.style.boxShadow;
+      const hoehe=blatt.style.minHeight;
+      blatt.style.boxShadow='none';
+      blatt.style.minHeight='0';
+
+      try{
+        const bild=await html2canvas(blatt,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+        const {jsPDF}=window.jspdf;
+        const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+        const seiteBreite=pdf.internal.pageSize.getWidth();
+        const seiteHoehe=pdf.internal.pageSize.getHeight();
+        const rand=0;
+        const mmProPixel=(seiteBreite-rand*2)/bild.width;
+        const seitenHoehePixel=Math.floor((seiteHoehe-rand*2)/mmProPixel);
+
+        // Schnittkanten nur zwischen den Abschnitten
+        const massstab=bild.width/blatt.offsetWidth;
+        const blattOben=blatt.getBoundingClientRect().top+window.scrollY;
+        const kanten=[0];
+        blatt.querySelectorAll('.kbo-abschnitt, .kbo-fuss').forEach(block=>{
+          const kante=Math.round((block.getBoundingClientRect().top+window.scrollY-blattOben)*massstab);
+          if(kante>0&&kante<bild.height)kanten.push(kante);
+        });
+        kanten.push(bild.height);
+
+        let obenPixel=0;
+        let seite=0;
+        while(obenPixel<bild.height){
+          const maximum=obenPixel+seitenHoehePixel;
+          let unten=bild.height;
+          if(maximum<bild.height){
+            const passende=kanten.filter(k=>k>obenPixel&&k<=maximum);
+            unten=passende.length?Math.max.apply(null,passende):maximum;
+          }
+          const teilHoehe=unten-obenPixel;
+          const teil=document.createElement('canvas');
+          teil.width=bild.width;
+          teil.height=teilHoehe;
+          const flaeche=teil.getContext('2d');
+          flaeche.fillStyle='#ffffff';
+          flaeche.fillRect(0,0,teil.width,teil.height);
+          flaeche.drawImage(bild,0,obenPixel,bild.width,teilHoehe,0,0,bild.width,teilHoehe);
+          if(seite>0)pdf.addPage();
+          pdf.addImage(teil.toDataURL('image/jpeg',0.92),'JPEG',rand,rand,seiteBreite-rand*2,teilHoehe*mmProPixel);
+          obenPixel=unten;
+          seite++;
+        }
+
+        const name=(readPayload()||{}).name||'Klient';
+        pdf.save(('Klientenbogen '+name).replace(/[^a-zA-Z0-9äöüÄÖÜß ,.-]/g,'').trim()+'.pdf');
+      }catch(fehler){
+        alert('Das PDF konnte nicht erstellt werden: '+fehler.message);
+      }finally{
+        blatt.style.boxShadow=schatten;
+        blatt.style.minHeight=hoehe;
+        knopf.disabled=false;
+        knopf.textContent=beschriftung;
+      }
+    }
+
+    document.getElementById('printButton').addEventListener('click',()=>window.print());
+    document.getElementById('pdfButton').addEventListener('click',erstellePdf);
+    document.getElementById('closeButton').addEventListener('click',()=>window.close());
+
+    render();
+  </script>
+</body>
+</html>

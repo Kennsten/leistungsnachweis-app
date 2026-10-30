@@ -112,6 +112,33 @@ input[type="time"]{
 }
 
 textarea{resize:vertical}
+textarea.mitwachsen{resize:none;overflow:hidden;line-height:1.35;min-height:48px}
+/* Zwischenstopps: eine Zeile pro Stopp, mit Linien zur Orientierung */
+textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,var(--line) 27px,var(--line) 28px);
+  background-position:0 10px;background-attachment:local}
+.feld-hinweis{font-weight:400;font-size:.82rem;color:var(--muted)}
+.feld-hinweis:empty{display:none}
+.km-knopf{padding:9px 12px;font-size:.88rem}
+.km-warnung{color:var(--danger);font-weight:650}
+.km-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
+.km-knoepfe .km-knopf{flex:1 1 100px}
+.km-strecke{margin:4px 0 0;padding-left:1.3em}
+.km-strecke li{margin:1px 0}
+#kartenDialog{width:min(900px,96vw);max-width:96vw}
+#karte{height:min(65vh,560px);border-radius:var(--radius-item);margin-top:12px;border:1px solid var(--line)}
+.karte-nr{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#C85A3E;color:#fff;font-weight:700;font-size:13px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.karte-nr.start{background:#2f3a2f}
+.route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
+.route-vorschau:empty{display:none}
+.route-vorschau li{position:relative;display:flex;align-items:center;gap:8px;padding:3px 0 3px 0}
+.route-vorschau li+li::before{content:"";position:absolute;left:10px;top:-6px;height:10px;border-left:2px solid var(--line)}
+.route-nr{flex:0 0 22px;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;background:var(--accent);color:var(--ink)}
+.route-vorschau .route-stopp .route-nr{background:var(--brand);color:var(--on-brand)}
+.route-text{overflow-wrap:anywhere}
+.route-text small{color:var(--muted)}
+.route-text{flex:1;min-width:0}
+.route-loeschen{flex:0 0 auto;align-self:center;width:32px;height:32px;margin-left:4px;border:0;border-radius:50%;background:var(--danger-bg);color:var(--danger);font-size:.9rem;font-weight:700;line-height:1}
 .primary,.secondary,.danger{border:0;border-radius:var(--radius-control);padding:13px 17px;font-weight:600}
 .primary{background:var(--brand);color:var(--on-brand)}
 .primary:hover{background:var(--brand-dark)}
@@ -295,7 +322,7 @@ textarea{resize:vertical}
 
 .client-buttons{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(152px,1fr));
   gap:8px;
 }
 
@@ -358,7 +385,115 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   .approval-head .actions,.doc-head .actions{width:100%}
   .client-buttons{grid-template-columns:1fr 1fr}
 }
-/* ---------- Moebius-Design ---------- */
+/* ---------- Dunkles Design ---------- */
+[data-theme="dunkel"]{
+  color-scheme:dark;
+  --ink:#e4e7e2;
+  --muted:#98a39b;
+  --line:#2c332e;
+  --bg:#0b0d0c;
+  --card:#161a17;
+  --accent:#20261f;
+  --brand:#86a98a;
+  --brand-dark:#a7c6aa;
+  --danger:#e3907f;
+  --success:#8cc79a;
+  --on-brand:#0b0d0c;
+  --field:#111412;
+  --danger-bg:#3a201b;
+  --track:#262c27;
+  --warn:#f0a46a;
+  --warn-soft:#e0a070;
+  --ok:#8cc79a;
+  --detail-ink:#d8c2b0;
+  --card-shadow:none;
+}
+[data-theme="dunkel"] dialog{box-shadow:0 20px 50px rgba(0,0,0,.6);border:1px solid var(--line)}
+[data-theme="dunkel"] .card{border-color:var(--line)}
+[data-theme="dunkel"] input,
+[data-theme="dunkel"] textarea,
+[data-theme="dunkel"] select{background:var(--field);color:var(--ink);border-color:var(--line)}
+[data-theme="dunkel"] #backupData.sicherung-faellig{background:#3a2a10;color:#ffd58a;border-color:#c98a1a;box-shadow:0 0 10px 2px rgba(201,138,26,.45)}
+
+/* ---------- Sommer-Design (interner Name „blumen“, damit die gespeicherte Auswahl erhalten bleibt) ---------- */
+[data-theme="blumen"]{
+  --ink:#3a2f1e;
+  --muted:#7d6f55;
+  --line:#f1e0b8;
+  --bg:#fff7e3;
+  --card:#ffffff;
+  --accent:#ffe9b0;
+  --brand:#c2570c;
+  --brand-dark:#9a430a;
+  --danger:#c8402f;
+  --success:#3f8a2c;
+  --on-brand:#ffffff;
+  --field:#fffdf6;
+  --danger-bg:#fbe3dc;
+  --track:#f7ebc8;
+  --warn:#b8560f;
+  --warn-soft:#a35a1f;
+  --ok:#3f8a2c;
+  --detail-ink:#5e4a2a;
+  --radius-card:28px;
+  --radius-item:22px;
+  --radius-control:999px;
+  --card-shadow:0 6px 22px rgba(120,150,40,.12);
+  --heading-font:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;
+}
+[data-theme="blumen"] body{
+  font-family:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,sans-serif;
+  background:linear-gradient(180deg,#4fb0ee 0%,#9ad5f8 38%,#d3eefc 60%,#fff0c6 84%) fixed;
+  background-color:#9ad5f8;
+}
+/* Landschaft: Sommersonne mit Strahlen, Wolken am Himmel, Wiese mit Blumen unten */
+[data-theme="blumen"] body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:var(--blumen-sonne),var(--blumen-wolken),var(--blumen-wiese);
+  background-repeat:no-repeat,repeat-x,repeat-x;
+  background-position:right 3% top 2%,left top 4%,left bottom;
+  background-size:180px 180px,600px 200px,480px 260px;
+}
+[data-theme="blumen"] .card{background:rgba(255,255,255,.9)}
+[data-theme="blumen"] dialog{background:#ffffff}
+[data-theme="blumen"] .card{position:relative;overflow:visible;border-color:var(--line)}
+[data-theme="blumen"] .card::after{
+  content:"";position:absolute;top:-18px;right:-12px;width:74px;height:74px;
+  background-image:var(--blumen-ecke);background-size:contain;background-repeat:no-repeat;
+  pointer-events:none;
+}
+[data-theme="blumen"] .secondary{background:var(--accent);color:var(--ink)}
+[data-theme="blumen"] h1{color:var(--brand-dark)}
+[data-theme="blumen"] .client+.client{border-top:2px dotted #f3d9a0}
+[data-theme="blumen"] .primary{box-shadow:0 3px 10px rgba(194,87,12,.25)}
+[data-theme="blumen"] #backupData.sicherung-faellig{background:#ffd8a8;color:#7a3a00;border-color:#f08c00;box-shadow:0 0 12px 3px rgba(240,140,0,.45)}
+/* Dunkel: Elemente mit festen hellen Farben anpassen */
+[data-theme="dunkel"] .kachel-symbol[data-art]{background:#232a25}
+[data-theme="dunkel"] .termin-bald{border-color:#5b9bd0}
+[data-theme="dunkel"] .termin-bald .termin-marke{background:#1d3347;color:#a9d1f2}
+[data-theme="dunkel"] .termin-nah .termin-marke{background:#1f2c38;color:#a3c2dc}
+[data-theme="dunkel"] .tb-chip.tb-an{color:var(--on-brand)}
+[data-theme="dunkel"] .busy-bar.busy-save .busy-fill{background:var(--brand)}
+[data-theme="dunkel"] dialog::backdrop{background:rgba(0,0,0,.6)}
+/* Sommer: Kalendermarken und Vorschau passend */
+[data-theme="blumen"] .tb-vorschau{background:#fff7e3}
+[data-theme="blumen"]{
+  --blumen-wiese:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27480%27%20height%3D%27260%27%20viewBox%3D%270%200%20480%20260%27%3E%3Cpath%20d%3D%27M0%2070%20C%2080%2040%20160%2040%20240%2062%20S%20400%2090%20480%2070%20L480%20260%20L0%20260%20Z%27%20fill%3D%27%238fd468%27%2F%3E%3Cpath%20d%3D%27M0%20120%20C%20100%2095%20200%20100%20260%20118%20S%20420%20140%20480%20120%20L480%20260%20L0%20260%20Z%27%20fill%3D%27%236cc04a%27%2F%3E%3Cpath%20d%3D%27M0%20180%20C%20120%20160%20240%20170%20300%20182%20S%20430%20196%20480%20180%20L480%20260%20L0%20260%20Z%27%20fill%3D%27%2356ad38%27%2F%3E%3Cpath%20d%3D%27M114%20178%20l%200.6%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M300%2092%20l%202.0%20-8%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M124%20122%20l%20-0.2%20-16%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M402%20166%20l%20-2.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M305%20236%20l%201.4%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M322%2092%20l%200.5%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M145%2086%20l%20-0.2%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M345%20238%20l%202.5%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M190%20224%20l%202.6%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M422%2098%20l%20-1.7%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M463%20159%20l%20-1.2%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M243%20149%20l%200.5%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M280%20243%20l%202.6%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M411%20258%20l%20-2.0%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M413%20254%20l%200.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M343%20118%20l%200.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M137%2091%20l%202.9%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M42%20224%20l%20-2.1%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M141%20218%20l%20-2.7%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M295%2088%20l%20-1.0%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M423%20257%20l%203.0%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M149%2094%20l%20-2.8%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M95%20153%20l%20-2.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M20%20236%20l%202.8%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M430%20148%20l%200.1%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M309%20187%20l%200.7%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M451%20171%20l%201.3%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M114%20134%20l%200.1%20-16%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M263%2082%20l%200.5%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M10%20191%20l%20-2.6%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M301%20164%20l%20-0.9%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M339%20213%20l%20-2.6%20-8%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M324%20253%20l%20-0.3%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M284%20138%20l%20-1.1%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M177%20187%20l%20-0.7%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M371%2085%20l%201.4%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M149%20120%20l%20-1.6%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M90%20158%20l%20-2.4%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M155%20140%20l%20-0.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M411%20110%20l%200.9%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M425%20161%20l%20-2.3%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M254%20114%20l%202.0%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M88%20130%20l%200.9%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M387%20142%20l%20-1.2%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M381%20129%20l%20-0.5%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M201%20154%20l%20-2.1%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M2%20250%20l%202.9%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M208%20251%20l%20-1.7%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M358%20231%20l%200.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M139%20141%20l%20-2.6%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M283%20132%20l%20-2.7%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M434%20205%20l%202.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M432%20184%20l%201.5%20-8%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M82%20134%20l%200.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M199%20249%20l%20-1.0%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M121%20235%20l%201.7%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M169%20116%20l%201.9%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M82%20223%20l%201.8%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M395%2081%20l%202.2%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M24%20129%20l%200.2%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M203%20165%20l%20-3.0%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M26%20103%20l%20-2.6%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M468%20234%20l%200.0%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M152%20137%20l%200.9%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M282%20145%20l%20-1.0%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M59%20180%20l%20-0.7%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M38%20112%20l%200.6%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M376%20148%20l%200.7%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M207%20147%20l%201.2%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M202%20205%20l%20-1.5%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M256%20196%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2856%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28128%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28200%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28272%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28344%20256%20196%29%27%2F%3E%3Ccircle%20cx%3D%27256%27%20cy%3D%27196%27%20r%3D%273.6%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M113%20106%20q%203%204%200%208%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2866%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28138%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28210%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28282%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28354%20113%20106%29%27%2F%3E%3Ccircle%20cx%3D%27113%27%20cy%3D%27106%27%20r%3D%272.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M182%20229%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%2861%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28133%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28205%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28277%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28349%20182%20229%29%27%2F%3E%3Ccircle%20cx%3D%27182%27%20cy%3D%27229%27%20r%3D%274.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M66%20195%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%2851%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28123%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28195%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28267%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28339%2066%20195%29%27%2F%3E%3Ccircle%20cx%3D%2766%27%20cy%3D%27195%27%20r%3D%273.6%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M401%20170%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2847%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28119%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28191%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28263%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28335%20401%20170%29%27%2F%3E%3Ccircle%20cx%3D%27401%27%20cy%3D%27170%27%20r%3D%273.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M348%20175%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2857%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28129%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28201%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28273%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28345%20348%20175%29%27%2F%3E%3Ccircle%20cx%3D%27348%27%20cy%3D%27175%27%20r%3D%273.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M340%20161%20q%203%206%200%2011%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%2854%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28126%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28198%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28270%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28342%20340%20161%29%27%2F%3E%3Ccircle%20cx%3D%27340%27%20cy%3D%27161%27%20r%3D%273.0%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M30%20100%20q%203%204%200%208%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2846%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28118%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28190%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28262%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28334%2030%20100%29%27%2F%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%27100%27%20r%3D%272.0%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M183%20216%20q%203%207%200%2015%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%2859%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28131%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28203%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28275%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28347%20183%20216%29%27%2F%3E%3Ccircle%20cx%3D%27183%27%20cy%3D%27216%27%20r%3D%273.9%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M66%20220%20q%203%208%200%2015%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%2834%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28106%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28178%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28250%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28322%2066%20220%29%27%2F%3E%3Ccircle%20cx%3D%2766%27%20cy%3D%27220%27%20r%3D%274.0%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M330%20131%20q%203%205%200%2010%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%2856%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28128%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28200%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28272%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28344%20330%20131%29%27%2F%3E%3Ccircle%20cx%3D%27330%27%20cy%3D%27131%27%20r%3D%272.5%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M27%20208%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2837%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28109%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28181%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28253%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28325%2027%20208%29%27%2F%3E%3Ccircle%20cx%3D%2727%27%20cy%3D%27208%27%20r%3D%273.8%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M120%20174%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2865%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28137%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28209%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28281%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28353%20120%20174%29%27%2F%3E%3Ccircle%20cx%3D%27120%27%20cy%3D%27174%27%20r%3D%273.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M38%20137%20q%203%205%200%2010%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2813%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2885%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28157%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28229%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28301%2038%20137%29%27%2F%3E%3Ccircle%20cx%3D%2738%27%20cy%3D%27137%27%20r%3D%272.6%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M46%20245%20q%203%208%200%2017%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%2817%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%2889%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28161%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28233%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28305%2046%20245%29%27%2F%3E%3Ccircle%20cx%3D%2746%27%20cy%3D%27245%27%20r%3D%274.4%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M293%20206%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2818%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2890%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28162%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28234%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28306%20293%20206%29%27%2F%3E%3Ccircle%20cx%3D%27293%27%20cy%3D%27206%27%20r%3D%273.7%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M286%20235%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2829%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28101%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28173%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28245%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28317%20286%20235%29%27%2F%3E%3Ccircle%20cx%3D%27286%27%20cy%3D%27235%27%20r%3D%274.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M48%20165%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2859%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28131%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28203%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28275%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28347%2048%20165%29%27%2F%3E%3Ccircle%20cx%3D%2748%27%20cy%3D%27165%27%20r%3D%273.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M455%20151%20q%203%205%200%2011%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2853%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28125%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28197%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28269%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28341%20455%20151%29%27%2F%3E%3Ccircle%20cx%3D%27455%27%20cy%3D%27151%27%20r%3D%272.8%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M320%20168%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2811%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2883%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28155%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28227%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28299%20320%20168%29%27%2F%3E%3Ccircle%20cx%3D%27320%27%20cy%3D%27168%27%20r%3D%273.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M194%20227%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%287%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%2879%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28151%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28223%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28295%20194%20227%29%27%2F%3E%3Ccircle%20cx%3D%27194%27%20cy%3D%27227%27%20r%3D%274.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M354%20232%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2867%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28139%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28211%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28283%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28355%20354%20232%29%27%2F%3E%3Ccircle%20cx%3D%27354%27%20cy%3D%27232%27%20r%3D%274.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3C%2Fsvg%3E");
+  --blumen-wolken:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27600%27%20height%3D%27200%27%3E%3Cg%20fill%3D%27%23ffffff%27%20opacity%3D%27.9%27%3E%3Cellipse%20cx%3D%2790%27%20cy%3D%2770%27%20rx%3D%2746%27%20ry%3D%2718%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%2756%27%20rx%3D%2730%27%20ry%3D%2722%27%2F%3E%3Cellipse%20cx%3D%2770%27%20cy%3D%2760%27%20rx%3D%2722%27%20ry%3D%2716%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%23ffffff%27%20opacity%3D%27.8%27%3E%3Cellipse%20cx%3D%27400%27%20cy%3D%27120%27%20rx%3D%2756%27%20ry%3D%2718%27%2F%3E%3Cellipse%20cx%3D%27430%27%20cy%3D%27104%27%20rx%3D%2732%27%20ry%3D%2722%27%2F%3E%3Cellipse%20cx%3D%27378%27%20cy%3D%27110%27%20rx%3D%2724%27%20ry%3D%2716%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --blumen-sonne:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cg%20stroke%3D%27%23ffc83d%27%20stroke-width%3D%277%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.9%27%3E%3Cline%20x1%3D%27144.1%27%20y1%3D%27104.5%27%20x2%3D%27165.3%27%20y2%3D%27110.2%27%2F%3E%3Cline%20x1%3D%27129.6%27%20y1%3D%27129.6%27%20x2%3D%27145.2%27%20y2%3D%27145.2%27%2F%3E%3Cline%20x1%3D%27104.5%27%20y1%3D%27144.1%27%20x2%3D%27110.2%27%20y2%3D%27165.3%27%2F%3E%3Cline%20x1%3D%2775.5%27%20y1%3D%27144.1%27%20x2%3D%2769.8%27%20y2%3D%27165.3%27%2F%3E%3Cline%20x1%3D%2750.4%27%20y1%3D%27129.6%27%20x2%3D%2734.8%27%20y2%3D%27145.2%27%2F%3E%3Cline%20x1%3D%2735.9%27%20y1%3D%27104.5%27%20x2%3D%2714.7%27%20y2%3D%27110.2%27%2F%3E%3Cline%20x1%3D%2735.9%27%20y1%3D%2775.5%27%20x2%3D%2714.7%27%20y2%3D%2769.8%27%2F%3E%3Cline%20x1%3D%2750.4%27%20y1%3D%2750.4%27%20x2%3D%2734.8%27%20y2%3D%2734.8%27%2F%3E%3Cline%20x1%3D%2775.5%27%20y1%3D%2735.9%27%20x2%3D%2769.8%27%20y2%3D%2714.7%27%2F%3E%3Cline%20x1%3D%27104.5%27%20y1%3D%2735.9%27%20x2%3D%27110.2%27%20y2%3D%2714.7%27%2F%3E%3Cline%20x1%3D%27129.6%27%20y1%3D%2750.4%27%20x2%3D%27145.2%27%20y2%3D%2734.8%27%2F%3E%3Cline%20x1%3D%27144.1%27%20y1%3D%2775.5%27%20x2%3D%27165.3%27%20y2%3D%2769.8%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2790%27%20cy%3D%2790%27%20r%3D%2752%27%20fill%3D%27%23ffe066%27%20opacity%3D%27.35%27%2F%3E%3Ccircle%20cx%3D%2790%27%20cy%3D%2790%27%20r%3D%2740%27%20fill%3D%27%23ffd23f%27%2F%3E%3Ccircle%20cx%3D%2778%27%20cy%3D%2778%27%20r%3D%2714%27%20fill%3D%27%23fff3b0%27%20opacity%3D%27.6%27%2F%3E%3C%2Fsvg%3E");
+  --blumen-ecke:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2774%27%20height%3D%2774%27%3E%3Cellipse%20cx%3D%2718%27%20cy%3D%2756%27%20rx%3D%276.0%27%20ry%3D%2713.2%27%20fill%3D%27%235cb83a%27%20transform%3D%27rotate%28-40%2018%2056%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%2762%27%20rx%3D%276.0%27%20ry%3D%2713.2%27%20fill%3D%27%237bc95a%27%20transform%3D%27rotate%2845%2046%2062%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%280%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%2830%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%2860%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%2890%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28120%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28150%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28180%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28210%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28240%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28270%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28300%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28330%2034%2034%29%27%2F%3E%3Ccircle%20cx%3D%2734%27%20cy%3D%2734%27%20r%3D%279.4%27%20fill%3D%27%238a5a1c%27%2F%3E%3Ccircle%20cx%3D%2734%27%20cy%3D%2734%27%20r%3D%275.1%27%20fill%3D%27%236b4212%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2815%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2887%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28159%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28231%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28303%2060%2016%29%27%2F%3E%3Ccircle%20cx%3D%2760%27%20cy%3D%2716%27%20r%3D%273.4%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%280%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%2872%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28144%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28216%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28288%2012%2018%29%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2718%27%20r%3D%272.5%27%20fill%3D%27%23ffd43b%27%2F%3E%3C%2Fsvg%3E");
+}
+
+/* ---------- Comic-Design (interner Name „moebius“, damit die gespeicherte Auswahl erhalten bleibt) ---------- */
+/* Comic-Schrift „Bangers“ (SIL Open Font License) liegt im Ordner schriften/ –
+   kein Laden von Google, funktioniert auch ohne Internet. */
+@font-face{
+  font-family:"Bangers";
+  src:url("schriften/bangers.woff") format("woff");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}
 
 [data-theme="moebius"] body{
   background:
@@ -392,7 +527,24 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 [data-theme="moebius"] h2,
 [data-theme="moebius"] h3{
   color:#22304a;
-  letter-spacing:var(--heading-spacing);
+  font-family:"Bangers","Chalkboard SE","Comic Sans MS",cursive;
+  font-weight:400;
+  letter-spacing:.045em;
+  line-height:1.1;
+}
+/* Comic-Effekt: versetzter Schatten in Orange wie bei gedruckten Heften */
+[data-theme="moebius"] h1{
+  font-size:2.3rem;
+  text-shadow:3px 3px 0 var(--brand),4px 4px 0 #22304a;
+}
+[data-theme="moebius"] h2{
+  font-size:1.75rem;
+  text-shadow:2px 2px 0 var(--brand);
+}
+[data-theme="moebius"] h3{
+  font-size:1.2rem;
+  letter-spacing:.05em;
+  text-shadow:1px 1px 0 rgba(192,112,64,.55);
 }
 
 [data-theme="moebius"] .card{
@@ -1105,6 +1257,55 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .kachel-aktionen button{flex:1;padding:7px 8px;font-size:.8rem;border-radius:10px}
 .kachel-aktionen .deleteCloudFile{flex:0 0 auto}
 
+/* ---------- Umschalter für die Ansicht (Kacheln/Liste, Datum/Kategorie) ---------- */
+.ansicht-leiste{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+.umschalter{display:inline-flex;gap:2px;padding:3px;border-radius:var(--radius-control);background:var(--track)}
+.umschalter button{border:0;background:none;padding:7px 13px;border-radius:calc(var(--radius-control) - 2px);font:inherit;font-size:.9rem;font-weight:600;color:var(--muted)}
+.umschalter button[aria-pressed="true"]{background:var(--card);color:var(--brand-dark);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* ---------- Dokumente: Listenansicht ---------- */
+#cloudFiles.cloud-liste .cloud-raster{display:flex;flex-direction:column;gap:0;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden}
+#cloudFiles.cloud-liste .cloud-kachel{flex-direction:row;align-items:center;border:0;border-radius:0;box-shadow:none;background:none}
+#cloudFiles.cloud-liste .cloud-kachel+.cloud-kachel{border-top:1px solid var(--line)}
+#cloudFiles.cloud-liste .kachel-oeffnen{display:grid;grid-template-columns:36px 1fr;column-gap:10px;row-gap:1px;align-items:center;padding:9px 12px;min-width:0}
+#cloudFiles.cloud-liste .kachel-symbol{grid-row:1 / span 4;width:36px;height:36px;font-size:1.15rem;border-radius:10px;margin:0}
+#cloudFiles.cloud-liste .kachel-name,
+#cloudFiles.cloud-liste .kachel-meta,
+#cloudFiles.cloud-liste .kachel-pfad,
+#cloudFiles.cloud-liste .kachel-status{grid-column:2}
+#cloudFiles.cloud-liste .kachel-name{-webkit-line-clamp:2}
+#cloudFiles.cloud-liste .kachel-aktionen{flex:0 0 auto;padding:0 10px 0 0}
+#cloudFiles.cloud-liste .kachel-aktionen button{flex:0 0 auto}
+#cloudFiles.cloud-liste .knopf-text{display:none}
+
+/* ---------- Betriebsausgaben: Liste und Gruppen ---------- */
+.gruppen-kopf{margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line);font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;gap:8px}
+.gruppen-kopf span{font-weight:400;color:var(--muted);font-size:.85rem;text-align:right}
+.ausgaben-liste{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden;margin-top:8px}
+.ausgabe-zeile{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:0;background:none;color:var(--ink);font:inherit;text-align:left}
+.ausgabe-zeile+.ausgabe-zeile{border-top:1px solid var(--line)}
+.fahrt-eintrag+.fahrt-eintrag{border-top:1px solid var(--line)}
+.fahrt-details{padding:0 10px 10px}
+.fahrt-details .doc-item{margin-top:0}
+.ausgabe-zeile.offen .az-pfeil{transform:rotate(90deg)}
+.az-pfeil{transition:transform .15s}
+.az-text{flex:1;min-width:0}
+.az-zweck,.az-meta,.az-betrag,.az-status{display:block}
+.az-zweck{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.az-meta{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.az-rechts{flex:0 0 auto;text-align:right}
+.az-betrag{font-weight:700;white-space:nowrap}
+.az-status{font-size:.78rem;color:var(--muted);white-space:nowrap}
+.az-status.fehlt{color:var(--danger);font-weight:650}
+.az-pfeil{flex:0 0 auto;color:var(--muted)}
+/* Tachostände: Lücken zwischen zwei Fahrten */
+.tacho-luecke{display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px dashed var(--line);background:var(--bg,transparent);font-size:.85rem;color:var(--muted)}
+.tacho-luecke .az-text{font-style:italic}
+.tacho-luecke.unklar,.tacho-luecke.fehler{color:var(--warn)}
+.tacho-luecke.fehler{font-weight:650}
+.fahrt-eintrag+.tacho-luecke,.tacho-luecke+.fahrt-eintrag{border-top:1px dashed var(--line)}
+.az-status.ohne-tacho{color:var(--warn);font-weight:650}
+
 /* ---------- pCloud einrichten ---------- */
 .einrichten-schritt{display:flex;gap:12px;margin:14px 0}
 .einrichten-nr{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:flex;align-items:center;justify-content:center;font-weight:700}
@@ -1166,6 +1367,99 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   .kal-anzahl{display:none}
   .kal-punkt{width:7px;height:7px}
 }
+
+/* ---------- Knopf-Arten (Version 1.23) ----------
+   Jede Art hat eine feste Bedeutung, damit man Knöpfe am Aussehen erkennt:
+   kn-speichern  = kräftig gefüllt  (nur einer pro Fenster)
+   kn-bearbeiten = umrandet          kn-neu       = zart getönt
+   kn-schliessen = grau getönt       kn-loeschen  = rot umrandet
+   kn-druck / kn-datei = umrandet mit Drucker- bzw. Dateisymbol
+   kn-nav        = Wechsel in einen anderen Bereich, mit Pfeil am Ende */
+:root{
+  --kn-ico-check:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E");
+  --kn-ico-stift:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4M13.5 6.5l4 4'/%3E%3C/svg%3E");
+  --kn-ico-plus:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+  --kn-ico-x:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E");
+  --kn-ico-muell:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
+  --kn-ico-drucker:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4M7 13h10v8H7z'/%3E%3C/svg%3E");
+  --kn-ico-datei:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2zM9 13h6M9 17h6'/%3E%3C/svg%3E");
+  --kn-ico-pfeil:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E");
+  --kn-rand:1.5px;
+}
+[data-theme="moebius"]{--kn-rand:2px}
+
+.kn.kn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:var(--kn-rand) solid transparent;box-shadow:none;line-height:1.15}
+.kn.kn::before{content:"";flex:0 0 auto;width:1.05em;height:1.05em;background:currentColor;
+  -webkit-mask:var(--kn-ico) center/contain no-repeat;mask:var(--kn-ico) center/contain no-repeat}
+
+.kn.kn-speichern{--kn-ico:var(--kn-ico-check);background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.kn.kn-speichern:hover{background:var(--brand-dark);border-color:var(--brand-dark)}
+[data-theme="moebius"] .kn.kn-speichern{border-color:var(--ink)}
+
+.kn.kn-bearbeiten{--kn-ico:var(--kn-ico-stift);background:transparent;color:var(--brand-dark);border-color:var(--brand)}
+.kn.kn-druck{--kn-ico:var(--kn-ico-drucker);background:transparent;color:var(--brand-dark);border-color:var(--brand)}
+.kn.kn-datei{--kn-ico:var(--kn-ico-datei);background:transparent;color:var(--brand-dark);border-color:var(--brand)}
+
+.kn.kn-neu{--kn-ico:var(--kn-ico-plus);
+  background:color-mix(in srgb,var(--brand) 32%,var(--card));
+  border-color:transparent;
+  color:color-mix(in srgb,var(--brand-dark) 60%,var(--ink))}
+[data-theme="dunkel"] .kn.kn-neu{background:color-mix(in srgb,var(--brand) 20%,var(--card));color:var(--brand-dark)}
+
+.kn.kn-schliessen{--kn-ico:var(--kn-ico-x);background:var(--track);border-color:transparent;
+  color:color-mix(in srgb,var(--ink) 75%,var(--muted))}
+
+.kn.kn-loeschen{--kn-ico:var(--kn-ico-muell);background:var(--card);color:var(--danger);border-color:var(--danger)}
+
+.kn.kn-nav{background:var(--card);color:var(--ink);border-color:var(--track);justify-content:space-between;text-align:left}
+.kn.kn-nav::before{display:none}
+.kn.kn-nav::after{content:"";flex:0 0 auto;width:.95em;height:.95em;background:var(--muted);
+  -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
+.kn.kn-nav:hover{border-color:var(--brand)}
+.client-buttons .kn.kn-nav{min-width:0;gap:4px;padding-right:8px}
+#openCloudSetup.cloud-verbunden{color:var(--ok)}
+
+/* ---------- Klienten-Maske: Abschnitte ---------- */
+.kb-abschnitt{font-size:.95rem;margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--line);color:var(--brand-dark)}
+#clientForm .top+input+.kb-abschnitt{border-top:0;padding-top:0;margin-top:6px}
+.kb-kontakt{border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px 4px;margin:8px 0}
+.kb-kontakt-titel{margin:0 0 2px;font-size:.82rem;font-weight:600;color:var(--muted)}
+
+/* ---------- Klientenbogen ---------- */
+.kbogen{background:#fff;color:#1f2a24;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45;padding:26px 28px;border-radius:6px;border:1px solid #e2e0d6;max-width:720px;margin:0 auto}
+.kbogen .kbo-kopfzeile{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;color:#7d8a80;margin-bottom:16px}
+.kbogen .kbo-kopf{display:flex;gap:16px;align-items:center;margin-bottom:6px}
+.kbogen .kbo-avatar{width:62px;height:62px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;overflow:hidden}
+.kbogen .kbo-avatar img{width:100%;height:100%;object-fit:cover}
+.kbogen .kbo-name{font-size:22px;font-weight:700;margin:0 0 2px;font-family:inherit;color:#1f2a24;letter-spacing:0;text-shadow:none}
+.kbogen .kbo-leise{color:#6b7770}
+.kbogen .kbo-abschnitt{border-top:1px solid #e2e0d6;margin-top:14px;padding-top:9px}
+.kbogen .kbo-titel{font-size:11px;font-weight:700;letter-spacing:.06em;color:#5c7360;margin:0 0 5px}
+.kbogen .kbo-zeile{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;padding:2px 0}
+.kbogen .kbo-zeile>span:first-child{color:#6b7770}
+.kbogen .kbo-kontakt{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;padding:4px 0 8px}
+.kbogen .kbo-kontakt>span:first-child{color:#6b7770}
+.kbogen .kbo-kontakt b{font-weight:700}
+.kbogen a{color:#3f5a46;text-decoration:none;border-bottom:1px dotted #6f8571}
+.kbogen .kbo-text{white-space:pre-wrap}
+.kbogen .kbo-fuss{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #e2e0d6;margin-top:22px;padding-top:8px;font-size:11px;color:#7d8a80;font-style:italic}
+@media (max-width:520px){.kbogen{padding:18px 16px}.kbogen .kbo-zeile,.kbogen .kbo-kontakt{grid-template-columns:1fr;gap:0}.kbogen .kbo-zeile{padding:3px 0}}
+.kb-oeffnen{cursor:pointer}
+.client-name h3.kb-oeffnen{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color .15s}
+.client-name h3.kb-oeffnen:hover{text-decoration-color:currentColor}
+#clientSheetDialog .kbogen{margin-top:12px}
+
+/* Klienten-Maske: Knöpfe oben in der Kopfzeile */
+.kb-kopf{flex-wrap:wrap}
+.kb-kopfknoepfe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;flex:1 1 100%}
+.kb-kopfknoepfe #deleteClientTop{margin-right:auto}
+#clientForm>.actions{align-items:center}
+#clientForm>.actions #deleteClient{flex:0 0 auto;margin-right:auto}
+#clientForm>.actions #clientToSheet,#clientForm>.actions button[type=submit]{flex:0 1 220px}
+#clientForm .kn.kb-klein{padding:6px 10px;font-size:.82rem}
+.kb-kopfknoepfe .kn{padding:11px 16px}
+.kb-kopfknoepfe .kn.kb-klein{padding:6px 10px;font-size:.82rem}
 </style>
 </head>
 <body>
@@ -1210,7 +1504,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Design
         <select id="themeSelect">
           <option value="standard">Standard</option>
-          <option value="moebius">Moebius</option>
+          <option value="moebius">Comic</option>
+          <option value="dunkel">Dunkel</option>
+          <option value="blumen">Sommer</option>
         </select>
       </label>
     </div>
@@ -1231,42 +1527,42 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button
       type="button"
       id="openCalendar"
-      class="secondary">
+      class="kn kn-nav secondary">
       Kalender
     </button>
 
     <button
       type="button"
       id="allApprovals"
-      class="secondary">
+      class="kn kn-nav secondary">
       Alle Bewilligungen
     </button>
 
     <button
       type="button"
       id="allTrips"
-      class="secondary">
+      class="kn kn-nav secondary">
       Gesamt-Fahrtenliste
     </button>
 
     <button
       type="button"
       id="generalTrips"
-      class="secondary">
+      class="kn kn-nav secondary">
       Allgemeine Fahrten
     </button>
 
     <button
       type="button"
       id="allExpenses"
-      class="secondary">
+      class="kn kn-nav secondary">
       Betriebsausgaben
     </button>
 
     <button
       type="button"
       id="allIncome"
-      class="secondary">
+      class="kn kn-nav secondary">
       Einnahmen
     </button>
 
@@ -1293,8 +1589,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       </p>
     </div>
 
-    <button id="newClient" class="primary">
-      + Neuer Klient
+    <button id="newClient" class="kn kn-neu primary">
+      Neuer Klient
     </button>
   </div>
 
@@ -1328,22 +1624,43 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </label>
 
   <div class="actions">
-    <button type="button" id="saveNewPassword" class="primary">
+    <button type="button" id="saveNewPassword" class="kn kn-speichern primary">
       Passwort speichern
     </button>
   </div>
 </dialog>
 
+<dialog id="clientSheetDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Klientenbogen</div>
+      <h2 id="clientSheetTitel"></h2>
+    </div>
+    <button type="button" id="closeClientSheet" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div class="actions">
+    <button type="button" id="clientSheetEdit" class="kn kn-nav secondary">Zur Bearbeitung</button>
+    <button type="button" id="clientSheetPrint" class="kn kn-druck secondary">Drucken / PDF</button>
+  </div>
+  <div id="clientSheet"></div>
+</dialog>
+
 <dialog id="clientDialog">
   <form id="clientForm">
-    <div class="top">
+    <div class="top kb-kopf">
       <h2 id="dialogTitle">Klient anlegen</h2>
-      <button type="button" id="closeDialog" class="secondary">Schließen</button>
+      <div class="kb-kopfknoepfe">
+        <button type="button" id="deleteClientTop" class="kn kn-loeschen danger kb-klein hidden">Löschen</button>
+        <button type="button" id="clientToSheetTop" class="kn kn-nav secondary hidden">Klientenbogen</button>
+        <button type="submit" class="kn kn-speichern primary">Speichern</button>
+        <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
+      </div>
     </div>
     <input type="hidden" id="clientId">
+
+    <h3 class="kb-abschnitt">👤 Person</h3>
     <div class="grid">
-      <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
-      <label>Name, Vorname<input id="clientName" required></label>
+      <label class="span2">Name, Vorname<input id="clientName" required></label>
       <label>Anrede
         <select id="clientAnrede">
           <option value="">keine</option>
@@ -1352,18 +1669,45 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
           <option value="Divers">Divers</option>
         </select>
       </label>
-      <label>Aktenzeichen<input id="aktenzeichen"></label>
       <label>Geburtstag<input id="geburtstag" type="date"></label>
-      <label>Telefon<input id="telefon" type="tel"></label>
-      <label>Mobil<input id="mobil" type="tel"></label>
+      <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
+      <label>Aktenzeichen<input id="aktenzeichen"></label>
+    </div>
+
+    <h3 class="kb-abschnitt">🏠 Adresse und Telefon</h3>
+    <div class="grid">
       <label>Straße<input id="strasse"></label>
       <label>Hausnummer<input id="hausnummer"></label>
-      <label>PLZ<input id="plz"></label>
+      <label>PLZ<input id="plz" inputmode="numeric" maxlength="5"></label>
       <label>Ort<input id="ort"></label>
-      <label>Kontaktperson 1<input id="kontaktperson1"></label>
-      <label>Telefon Kontakt 1<input id="telefon1"></label>
-      <label>Kontaktperson 2<input id="kontaktperson2"></label>
-      <label>Telefon Kontakt 2<input id="telefon2"></label>
+      <label>Telefon<input id="telefon" type="tel" inputmode="tel"></label>
+      <label>Mobil<input id="mobil" type="tel" inputmode="tel"></label>
+    </div>
+
+    <h3 class="kb-abschnitt">👥 Kontaktpersonen</h3>
+      <div class="kb-kontakt">
+        <p class="kb-kontakt-titel">Kontaktperson 1</p>
+        <div class="grid">
+          <label>Name<input id="kontaktperson1" autocomplete="off"></label>
+          <label>Rolle<input id="kontakt1Rolle" placeholder="z. B. gesetzliche Betreuerin" autocomplete="off"></label>
+          <label class="span2">Adresse<input id="kontakt1Adresse" placeholder="Straße Nr., PLZ Ort" autocomplete="off"></label>
+          <label>Telefon<input id="telefon1" type="tel" inputmode="tel"></label>
+          <label>E-Mail<input id="kontakt1Email" type="email" inputmode="email" autocapitalize="off" autocomplete="off"></label>
+        </div>
+      </div>
+      <div class="kb-kontakt">
+        <p class="kb-kontakt-titel">Kontaktperson 2</p>
+        <div class="grid">
+          <label>Name<input id="kontaktperson2" autocomplete="off"></label>
+          <label>Rolle<input id="kontakt2Rolle" placeholder="z. B. gesetzliche Betreuerin" autocomplete="off"></label>
+          <label class="span2">Adresse<input id="kontakt2Adresse" placeholder="Straße Nr., PLZ Ort" autocomplete="off"></label>
+          <label>Telefon<input id="telefon2" type="tel" inputmode="tel"></label>
+          <label>E-Mail<input id="kontakt2Email" type="email" inputmode="email" autocapitalize="off" autocomplete="off"></label>
+        </div>
+      </div>
+
+    <h3 class="kb-abschnitt">🖼 Porträt</h3>
+    <div class="grid">
       <label class="span2">Porträt
         <select id="clientPortrait">
           <option value="">Initialen verwenden</option>
@@ -1375,11 +1719,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         </select>
         <div id="portraitVorschau" class="portrait-preview hidden"></div>
       </label>
+    </div>
+
+    <h3 class="kb-abschnitt">📝 Bemerkungen</h3>
+    <div class="grid">
       <label class="span2">Bemerkungen<textarea id="bemerkungen" rows="3"></textarea></label>
     </div>
+
     <div class="actions">
-      <button type="button" id="deleteClient" class="danger hidden">Löschen</button>
-<button type="submit" class="primary">Speichern</button>
+      <button type="button" id="deleteClient" class="kn kn-loeschen danger kb-klein hidden">Löschen</button>
+      <button type="button" id="clientToSheet" class="kn kn-nav secondary hidden">Klientenbogen</button>
+<button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1390,11 +1740,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentationen</div>
       <h2 id="docsClientName"></h2>
     </div>
-    <button type="button" id="closeDocs" class="secondary">Schließen</button>
+    <button type="button" id="closeDocs" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions" style="margin:16px 0">
-    <button type="button" id="newDoc" class="primary">+ Neue Dokumentation</button>
-    <button type="button" id="printDocs" class="secondary">Dokumentationen drucken</button>
+    <button type="button" id="newDoc" class="kn kn-neu primary">Neue Dokumentation</button>
+    <button type="button" id="printDocs" class="kn kn-druck secondary">Dokumentationen drucken</button>
   </div>
   <label>Suchen
     <input id="docSearch" type="search" placeholder="Datum, Text, Leistungsart oder Kennziffer">
@@ -1410,7 +1760,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Einzeltermin</div>
         <h2 id="docDialogTitle">Dokumentation anlegen</h2>
       </div>
-      <button type="button" id="closeDocForm" class="secondary">Schließen</button>
+      <button type="button" id="closeDocForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="docId">
     <div class="grid">
@@ -1474,8 +1824,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="deleteDoc" class="danger hidden">Löschen</button>
-<button type="submit" id="docSave" class="primary">Speichern</button>
+      <button type="button" id="deleteDoc" class="kn kn-loeschen danger hidden">Löschen</button>
+<button type="submit" id="docSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1490,13 +1840,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <p id="docDeleteText"></p>
   <p class="muted small" id="docDeleteBelegHinweis"></p>
   <div class="actions" style="flex-wrap:wrap">
-    <button type="button" id="docDeleteBoth" class="danger">
+    <button type="button" id="docDeleteBoth" class="kn kn-loeschen danger">
       Dokumentation und Fahrt löschen
     </button>
-    <button type="button" id="docDeleteOnly" class="secondary">
+    <button type="button" id="docDeleteOnly" class="kn kn-loeschen secondary">
       Nur Dokumentation löschen
     </button>
-    <button type="button" id="docDeleteCancel" class="secondary">
+    <button type="button" id="docDeleteCancel" class="kn kn-schliessen secondary">
       Abbrechen
     </button>
   </div>
@@ -1508,10 +1858,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Klientenakte</div>
       <h2 id="approvalsClientName">Bewilligungen</h2>
     </div>
-    <button type="button" id="closeApprovals" class="secondary">Schließen</button>
+    <button type="button" id="closeApprovals" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions">
-    <button type="button" id="newApproval" class="primary">+ Neue Bewilligung</button>
+    <button type="button" id="newApproval" class="kn kn-neu primary">Neue Bewilligung</button>
   </div>
   <div id="approvalsList"></div>
 </dialog>
@@ -1520,14 +1870,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <form id="approvalForm">
     <div class="top">
       <h2 id="approvalDialogTitle">Bewilligung anlegen</h2>
-      <button type="button" id="closeApprovalForm" class="secondary">Schließen</button>
+      <button type="button" id="closeApprovalForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="approvalId">
     <div class="grid">
       <label>Beginn<input id="approvalBeginn" type="date" required></label>
       <label>Ende (optional)<input id="approvalEnde" type="date"></label>
-      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
       <label>Bewilligungsjahr beginnt am (nur falls abweichend)<input id="approvalJahrBeginn" type="date"></label>
+      <label>Fortschreibung des Gesamtplans zum<input id="approvalGesamtplan" type="date"></label>
+      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
       <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
       <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
       <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
@@ -1551,15 +1902,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
             Aus pCloud wählen
           </button>
           <span id="approvalBescheidViewSlot" class="hidden" style="display:flex;flex:1"></span>
-          <button type="button" id="approvalBescheidLoesen" class="danger hidden">
+          <button type="button" id="approvalBescheidLoesen" class="kn kn-loeschen danger hidden">
             Zuordnung lösen
           </button>
         </div>
       </div>
     </div>
     <div class="actions">
-      <button type="button" id="deleteApproval" class="danger hidden">Löschen</button>
-      <button type="submit" class="primary">Speichern</button>
+      <button type="button" id="deleteApproval" class="kn kn-loeschen danger hidden">Löschen</button>
+      <button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1574,7 +1925,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button
       type="button"
       id="closeAllApprovals"
-      class="secondary">
+      class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -1596,14 +1947,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button
         type="button"
         id="printAllTrips"
-        class="primary">
+        class="kn kn-nav primary">
         Fahrtenbuch öffnen
       </button>
 
       <button
         type="button"
         id="closeAllTrips"
-        class="secondary">
+        class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -1635,6 +1986,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </label>
 </div>
 
+<div class="ansicht-leiste">
+  <div class="umschalter" id="allTripsListe" role="group" aria-label="Welche Liste">
+    <button type="button" data-wert="berechnet">Berechnete km</button>
+    <button type="button" data-wert="tacho">Tachostände</button>
+  </div>
+  <div class="umschalter" id="allTripsAnsicht" role="group" aria-label="Darstellung der Fahrten">
+    <button type="button" data-wert="liste">☰ Liste</button>
+    <button type="button" data-wert="karten">▦ Karten</button>
+  </div>
+</div>
+
 <div id="allTripsList">
   <p class="muted">
     Fahrten werden geladen …
@@ -1647,13 +2009,35 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Steuerliches Fahrtenbuch</div>
       <h2 id="tripsClientName">Fahrtenbuch</h2>
     </div>
-    <button type="button" id="closeTrips" class="secondary">Schließen</button>
+    <button type="button" id="closeTrips" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions" style="margin:16px 0">
-    <button type="button" id="newTrip" class="primary">+ Neue Fahrt</button>
-    <button type="button" id="newDocFromTrips" class="secondary">+ Neue Dokumentation</button>
+    <button type="button" id="newTrip" class="kn kn-neu primary">Neue Fahrt</button>
+    <button type="button" id="newDocFromTrips" class="kn kn-neu secondary">Neue Dokumentation</button>
   </div>
+<div class="ansicht-leiste">
+  <div class="umschalter" id="tripsAnsicht" role="group" aria-label="Darstellung der Fahrten">
+    <button type="button" data-wert="liste">☰ Liste</button>
+    <button type="button" data-wert="karten">▦ Karten</button>
+  </div>
+</div>
+
   <div id="tripsList"><p class="muted">Noch keine Fahrten vorhanden.</p></div>
+</dialog>
+
+<dialog id="kartenDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Berechnete Strecke</div>
+      <h2 id="kartenTitel">Karte</h2>
+    </div>
+    <button type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="karte"></div>
+  <p class="muted small" style="margin:8px 0 0">
+    Kartendaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende ·
+    Strecke: openrouteservice (HeiGIT)
+  </p>
 </dialog>
 
 <dialog id="tripFormDialog">
@@ -1663,7 +2047,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Fahrtenbuch</div>
         <h2 id="tripDialogTitle">Fahrt anlegen</h2>
       </div>
-      <button type="button" id="closeTripForm" class="secondary">Schließen</button>
+      <button type="button" id="closeTripForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
 
     <input type="hidden" id="tripId">
@@ -1698,14 +2082,33 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
       <label>Kilometer gesamt
         <input id="tripKilometers" type="number" min="0" step="0.1" inputmode="decimal" required>
+        <div class="km-knoepfe">
+          <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
+          <button type="button" id="tripKarte" class="secondary km-knopf">🗺 Karte</button>
+          <button type="button" id="tripGoogleMaps" class="secondary km-knopf">Google Maps</button>
+        </div>
+        <span id="tripKmHinweis" class="feld-hinweis"></span>
       </label>
+
+      <label>Tachostand Abfahrt
+        <input id="tripTachoStart" type="number" min="0" step="1" inputmode="numeric" placeholder="optional">
+      </label>
+
+      <label>Tachostand Ankunft
+        <input id="tripTachoEnde" type="number" min="0" step="1" inputmode="numeric" placeholder="optional">
+      </label>
+
+      <div class="span2 feld-hinweis" id="tripTachoHinweis"></div>
 
       <label class="span2">Startadresse
         <input id="tripStartAddress" required>
       </label>
 
       <label class="span2">Zwischenstopps
-        <input id="tripStopovers" placeholder="z. B. Apotheke - Sparkasse">
+        <span class="feld-hinweis">Ein Stopp pro Zeile – mit ⏎ zum nächsten Stopp</span>
+        <textarea id="tripStopovers" rows="2" class="mitwachsen stopp-feld"
+          placeholder="z. B. Apotheke&#10;Sparkasse"></textarea>
+        <ol id="tripRoute" class="route-vorschau" aria-label="Streckenvorschau"></ol>
       </label>
 
       <label class="span2">Gespeicherten Stopp anhängen
@@ -1734,8 +2137,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="deleteTrip" class="danger hidden">Löschen</button>
-<button type="submit" id="tripSave" class="primary">Speichern</button>
+      <button type="button" id="deleteTrip" class="kn kn-loeschen danger hidden">Löschen</button>
+<button type="submit" id="tripSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1746,7 +2149,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Fahrtenbuch</div>
       <h2>Gespeicherte Stopps</h2>
     </div>
-    <button type="button" id="closeStopManager" class="secondary">
+    <button type="button" id="closeStopManager" class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -1765,7 +2168,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="button" id="cloudRefresh" class="secondary">
         Aktualisieren
       </button>
-      <button type="button" id="closeCloud" class="secondary">
+      <button type="button" id="closeCloud" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -1801,6 +2204,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <input id="cloudSuche" type="search"
         placeholder="Dateiname, auch in allen Unterordnern">
     </label>
+    <div class="ansicht-leiste">
+      <div class="umschalter" id="cloudAnsicht" role="group" aria-label="Ansicht der Dokumente">
+        <button type="button" data-wert="kacheln">▦ Kacheln</button>
+        <button type="button" data-wert="liste">☰ Liste</button>
+      </div>
+    </div>
   </div>
 
   <div id="cloudActions" class="actions hidden" style="margin-top:12px">
@@ -1823,14 +2232,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumente und Belege</div>
       <h2>pCloud einrichten</h2>
     </div>
-    <button type="button" id="closeCloudSetup" class="secondary">Schließen</button>
+    <button type="button" id="closeCloudSetup" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="summary-box">
     <div id="cloudSetupStatus" class="einrichten-status"></div>
     <div class="actions" style="margin-top:12px">
       <button type="button" id="cloudSetupVerbinden" class="primary">Mit pCloud verbinden</button>
-      <button type="button" id="cloudSetupTrennen" class="danger hidden">Verbindung trennen</button>
+      <button type="button" id="cloudSetupTrennen" class="kn kn-loeschen danger hidden">Verbindung trennen</button>
     </div>
   </div>
 
@@ -1907,7 +2316,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentation</div>
       <h2>Textbausteine</h2>
     </div>
-    <button type="button" id="closeSnippets" class="secondary">Schließen</button>
+    <button type="button" id="closeSnippets" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <form id="snippetForm">
@@ -1931,10 +2340,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </label>
 
     <div class="actions">
-      <button type="button" id="snippetReset" class="secondary hidden">
+      <button type="button" id="snippetReset" class="kn kn-schliessen secondary hidden">
         Abbrechen
       </button>
-      <button type="submit" id="snippetSave" class="primary">
+      <button type="submit" id="snippetSave" class="kn kn-speichern primary">
         Baustein speichern
       </button>
     </div>
@@ -1942,9 +2351,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
   <div style="margin-top:14px">
     <button type="button" id="snippetStartliste" class="secondary" style="width:100%">
-      Startliste einfügen
+      Vorgefertigte Bausteine wiederherstellen
     </button>
-    <p class="muted small">Legt die vorbereiteten Bausteine an. Vorhandene mit gleichem Namen werden übersprungen.</p>
+    <p class="muted small">Holt gelöschte Bausteine aus der mitgelieferten Sammlung zurück. Vorhandene bleiben unverändert.</p>
   </div>
 
   <div id="snippetList"></div>
@@ -1956,17 +2365,22 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentation</div>
       <h2>Textbausteine einfügen</h2>
     </div>
-    <button type="button" id="closeSnippetPicker" class="secondary">Schließen</button>
+    <button type="button" id="closeSnippetPicker" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
   <div id="snippetPickerList"></div>
+  <div style="margin-top:10px">
+    <button type="button" id="snippetPickerNew" class="kn kn-neu secondary" style="width:100%">
+      Textbaustein erstellen
+    </button>
+  </div>
   <div class="tb-gruppe">
     <h3>Vorschau</h3>
     <div id="snippetPreview" class="tb-vorschau muted">Noch nichts ausgewählt.</div>
   </div>
   <div class="actions" style="margin-top:14px">
     <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
-    <button type="button" id="snippetPickerInsert" class="primary">Text einfügen</button>
+    <button type="button" id="snippetPickerInsert" class="kn kn-speichern primary">Text übernehmen</button>
   </div>
 </dialog>
 
@@ -1982,7 +2396,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Sätze
       </button>
 
-      <button type="button" id="closeIncome" class="secondary">
+      <button type="button" id="closeIncome" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2004,7 +2418,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Einnahmen</div>
       <h2>Vergütungssätze</h2>
     </div>
-    <button type="button" id="closeRates" class="secondary">Schließen</button>
+    <button type="button" id="closeRates" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <form id="rateForm">
@@ -2030,7 +2444,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="submit" class="primary">Satz speichern</button>
+      <button type="submit" class="kn kn-speichern primary">Satz speichern</button>
     </div>
   </form>
 
@@ -2043,11 +2457,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentationen drucken</div>
       <h2 id="docRangeClientName">Zeitraum wählen</h2>
     </div>
-    <button type="button" id="closeDocRange" class="secondary">Schließen</button>
+    <button type="button" id="closeDocRange" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="actions" style="margin:14px 0">
-    <button type="button" id="docRangeAll" class="secondary">
+    <button type="button" id="docRangeAll" class="kn kn-nav secondary">
       Alle Dokumentationen
     </button>
   </div>
@@ -2089,11 +2503,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Übersicht öffnen
       </button>
 
-      <button type="button" id="newExpense" class="secondary">
-        + Neue Ausgabe
+      <button type="button" id="newExpense" class="kn kn-neu secondary">
+        Neue Ausgabe
       </button>
 
-      <button type="button" id="closeExpenses" class="secondary">
+      <button type="button" id="closeExpenses" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2113,6 +2527,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </label>
   </div>
 
+  <div class="ansicht-leiste">
+    <div class="umschalter" id="expensesSortierung" role="group" aria-label="Sortierung der Ausgaben">
+      <button type="button" data-wert="datum">Nach Datum</button>
+      <button type="button" data-wert="kategorie">Nach Kategorie</button>
+    </div>
+    <div class="umschalter" id="expensesAnsicht" role="group" aria-label="Darstellung der Ausgaben">
+      <button type="button" data-wert="liste">☰ Liste</button>
+      <button type="button" data-wert="karten">▦ Karten</button>
+    </div>
+  </div>
+
   <div id="expensesList">
     <p class="muted">Ausgaben werden geladen …</p>
   </div>
@@ -2125,7 +2550,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Betriebsausgabe</div>
         <h2 id="expenseDialogTitle">Ausgabe anlegen</h2>
       </div>
-      <button type="button" id="closeExpenseForm" class="secondary">
+      <button type="button" id="closeExpenseForm" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2185,11 +2610,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div style="font-weight:650;margin-bottom:6px">Beleg (Foto oder PDF)</div>
         <div id="expenseBelegStatus" class="muted small"></div>
         <div class="actions" style="margin-top:10px">
-          <button type="button" id="expenseBelegPick" class="secondary">
+          <button type="button" id="expenseBelegPick" class="kn kn-neu secondary">
             Beleg hinzufügen
           </button>
           <span id="expenseBelegViewSlot" class="hidden" style="display:flex;flex:1"></span>
-          <button type="button" id="expenseBelegRemove" class="danger hidden">
+          <button type="button" id="expenseBelegRemove" class="kn kn-loeschen danger hidden">
             Entfernen
           </button>
         </div>
@@ -2204,8 +2629,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="deleteExpense" class="danger hidden">Löschen</button>
-      <button type="submit" id="expenseSave" class="primary">Speichern</button>
+      <button type="button" id="deleteExpense" class="kn kn-loeschen danger hidden">Löschen</button>
+      <button type="submit" id="expenseSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -2216,7 +2641,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Kalender</div>
       <h2 id="kalTitel">Termine</h2>
     </div>
-    <button type="button" id="kalClose" class="secondary">Schließen</button>
+    <button type="button" id="kalClose" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="kal-leiste">
@@ -2224,12 +2649,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="kalHeute" class="secondary">Heute</button>
     <button type="button" id="kalVor" class="secondary" aria-label="Weiter">›</button>
     <span style="flex:1"></span>
-    <button type="button" id="kalMonat" class="primary">Monat</button>
-    <button type="button" id="kalWoche" class="secondary">Woche</button>
+    <div class="umschalter" role="group" aria-label="Kalenderansicht">
+      <button type="button" id="kalMonat" aria-pressed="true">Monat</button>
+      <button type="button" id="kalWoche" aria-pressed="false">Woche</button>
+    </div>
   </div>
 
   <div class="actions" style="margin:10px 0">
-    <button type="button" id="kalNeu" class="primary">+ Termin planen</button>
+    <button type="button" id="kalNeu" class="kn kn-neu primary">Termin planen</button>
   </div>
 
   <div id="kalInhalt"></div>
@@ -2253,7 +2680,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Kalender</div>
         <h2 id="terminTitel">Termin planen</h2>
       </div>
-      <button type="button" id="terminClose" class="secondary">Schließen</button>
+      <button type="button" id="terminClose" class="kn kn-schliessen secondary">Schließen</button>
     </div>
 
     <div class="grid">
@@ -2311,8 +2738,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="terminDelete" class="danger hidden">Löschen</button>
-      <button type="submit" id="terminSave" class="primary">Speichern</button>
+      <button type="button" id="terminDelete" class="kn kn-loeschen danger hidden">Löschen</button>
+      <button type="submit" id="terminSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -2324,7 +2751,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <h2 id="monthlyClientName">Monatsnachweis</h2>
     </div>
 
-    <button type="button" id="closeMonthly" class="secondary">
+    <button type="button" id="closeMonthly" class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -2342,8 +2769,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.3';
-const APP_STAND='23.10.2026';
+const APP_VERSION='1.30';
+const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -2472,6 +2899,8 @@ let activeTripsClient=null;
 let tripsAllgemein=false;
 let trips=[];
   let tripSaving=false;
+  // Stand der Fahrt beim Öffnen des Formulars (Schutz vor ungewollten Änderungen)
+  let tripGeoeffnet=null;
 let tripStopSuggestions=[];
 let allTripsPayload=null;
 let pendingTripForDoc=null;
@@ -2769,6 +3198,7 @@ function applyTripDocumentation(documentationId){
 
   if(!$('tripStopovers').value.trim()){
     $('tripStopovers').value=terminAdresse;
+    stoppFeldAnpassen();
   }
 
   $('tripDestination').value=$('tripStartAddress').value||START_ADRESSE;
@@ -2997,7 +3427,11 @@ function renderClients(){
       <div class="client${istEhemalig(c.id)?' client-former':''}">
         <div class="client-head">
           <div
-            class="client-avatar"
+            class="client-avatar kb-oeffnen"
+            data-id="${c.id}"
+            role="button"
+            tabindex="0"
+            aria-label="Klientenbogen öffnen"
             style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
             ${
               c.portrait &&
@@ -3009,8 +3443,8 @@ function renderClients(){
 
           <div class="client-name">
             <div class="client-name-row">
-              <h3>${esc(c.name)}</h3>
-              <button class="secondary edit name-edit" data-id="${c.id}">
+              <h3 class="kb-oeffnen" data-id="${c.id}" role="button" tabindex="0">${esc(c.name)}</h3>
+              <button class="kn kn-bearbeiten secondary edit name-edit" data-id="${c.id}">
                 Bearbeiten
               </button>
             </div>
@@ -3023,11 +3457,11 @@ function renderClients(){
         </div>
 
         <div class="client-buttons">
-          <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
-          <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
-          <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
-          <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
-          <button class="secondary cloud" data-id="${c.id}">Dokumente</button>
+          <button class="kn kn-nav secondary docs" data-id="${c.id}">Dokumentation</button>
+          <button class="kn kn-nav secondary approvals" data-id="${c.id}">Bewilligungen</button>
+          <button class="kn kn-nav secondary trips" data-id="${c.id}">Fahrtenbuch</button>
+          <button class="kn kn-nav secondary monthly" data-id="${c.id}">Monatsnachweis</button>
+          <button class="kn kn-nav secondary cloud" data-id="${c.id}">Dokumente</button>
         </div>
       </div>
     `;
@@ -3047,6 +3481,10 @@ function renderClients(){
   }
 
   document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openClient(b.dataset.id));
+  document.querySelectorAll('.kb-oeffnen').forEach(b=>{
+    b.onclick=()=>klientenbogenOeffnen(b.dataset.id);
+    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();klientenbogenOeffnen(b.dataset.id);}};
+  });
   document.querySelectorAll('.docs').forEach(b=>b.onclick=()=>openDocs(b.dataset.id));
   document.querySelectorAll('.approvals').forEach(b=>b.onclick=()=>openApprovals(b.dataset.id));
   document.querySelectorAll('.trips').forEach(b=>b.onclick=()=>openTrips(b.dataset.id));
@@ -3072,11 +3510,20 @@ function openClient(id=''){
   $('telefon1').value=c.telefon1||'';
   $('kontaktperson2').value=c.kontaktperson2||'';
   $('telefon2').value=c.telefon2||'';
+  [1,2].forEach(n=>{
+    $('kontakt'+n+'Rolle').value=c['kontakt'+n+'_rolle']||'';
+    $('kontakt'+n+'Adresse').value=c['kontakt'+n+'_adresse']||'';
+    $('kontakt'+n+'Email').value=c['kontakt'+n+'_email']||'';
+  });
   $('bemerkungen').value=c.bemerkungen||'';
   $('clientPortrait').value=c.portrait||'';
   updatePortraitVorschau();
   $('deleteClient').classList.toggle('hidden',!id);
+  $('clientToSheet').classList.toggle('hidden',!id);
+  $('clientToSheetTop').classList.toggle('hidden',!id);
+  $('deleteClientTop').classList.toggle('hidden',!id);
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
+  clientFormStand=clientFormWerte();
   $('clientDialog').showModal();
 }
 
@@ -3107,6 +3554,28 @@ const AVATAR_FARBEN=[
   {bg:'#f0eadf',ink:'#71603f'}
 ];
 
+const AVATAR_FARBEN_DUNKEL=[
+  {bg:'#24332a',ink:'#a8d4b2'},
+  {bg:'#3a2c22',ink:'#e6bf9c'},
+  {bg:'#252e3d',ink:'#a9bde0'},
+  {bg:'#3a2630',ink:'#e2aac0'},
+  {bg:'#33321f',ink:'#d9d39a'},
+  {bg:'#203236',ink:'#9fd0d8'},
+  {bg:'#2e2638',ink:'#c7b2e6'},
+  {bg:'#352e22',ink:'#e0c99a'}
+];
+
+const AVATAR_FARBEN_BLUMEN=[
+  {bg:'#ffe066',ink:'#6b4a00'},
+  {bg:'#c3f0a8',ink:'#2f6b1a'},
+  {bg:'#ffc2c6',ink:'#9a2430'},
+  {bg:'#bfe3ff',ink:'#1d5a8a'},
+  {bg:'#e3c8ff',ink:'#5a2a8a'},
+  {bg:'#ffd3a8',ink:'#8a4a10'},
+  {bg:'#ffc9e3',ink:'#8a2a5c'},
+  {bg:'#d4f5e4',ink:'#1f6b4a'}
+];
+
 const AVATAR_FARBEN_MOEBIUS=[
   {bg:'#efdcc2',ink:'#8a5a2e'},
   {bg:'#e6d3bb',ink:'#7a4a24'},
@@ -3126,10 +3595,12 @@ function avatarFarbe(text){
     summe+=wert.charCodeAt(i);
   }
 
+  const design=document.documentElement.getAttribute('data-theme');
   const palette=
-    document.documentElement.getAttribute('data-theme')==='moebius'
-      ? AVATAR_FARBEN_MOEBIUS
-      : AVATAR_FARBEN;
+    design==='moebius'?AVATAR_FARBEN_MOEBIUS:
+    design==='dunkel'?AVATAR_FARBEN_DUNKEL:
+    design==='blumen'?AVATAR_FARBEN_BLUMEN:
+    AVATAR_FARBEN;
 
   return palette[summe%palette.length];
 }
@@ -3166,6 +3637,204 @@ function formatKm(value){
   return number.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
 }
   
+/* ---------- Tachostände ---------- */
+// Tachostand als ganze Zahl mit Tausenderpunkt, z. B. 45.230
+function formatTacho(value){
+  if(value==null||value==='')return '';
+  return Number(value).toLocaleString('de-DE',{maximumFractionDigits:0});
+}
+
+// Liest ein Tachostand-Feld: leer → null, sonst ganze Zahl (NaN bei Unsinn)
+function tachoFeldLesen(id){
+  const text=String($(id).value||'').trim().replace(/[.\s]/g,'').replace(',','.');
+  if(!text)return null;
+  const zahl=Number(text);
+  return Number.isFinite(zahl)&&zahl>=0?Math.round(zahl):NaN;
+}
+
+// Gefahrene km laut Tacho – nur wenn beide Stände da sind
+function tachoKm(trip){
+  if(trip.tacho_start==null||trip.tacho_ende==null)return null;
+  return Number(trip.tacho_ende)-Number(trip.tacho_start);
+}
+
+// Zeile „Tacho: 45.230 → 45.258 (28 km)“ für Kacheln
+function tachoMetaHtml(trip){
+  if(trip.tacho_start==null&&trip.tacho_ende==null)return '';
+  const km=tachoKm(trip);
+  return '<div class="meta">Tacho: '+
+    (formatTacho(trip.tacho_start)||'?')+' → '+(formatTacho(trip.tacho_ende)||'?')+
+    (km!=null?' ('+formatTacho(km)+' km)':'')+'</div>';
+}
+
+// Hinweis unter den Tachofeldern im Formular aktualisieren
+function tachoHinweisZeigen(){
+  const start=tachoFeldLesen('tripTachoStart');
+  const ende=tachoFeldLesen('tripTachoEnde');
+  const feld=$('tripTachoHinweis');
+  feld.classList.remove('km-warnung');
+
+  if(Number.isNaN(start)||Number.isNaN(ende)){
+    feld.textContent='Bitte nur ganze Zahlen eintragen (z. B. 45230).';
+    feld.classList.add('km-warnung');
+    return;
+  }
+  if(start==null||ende==null){
+    feld.textContent=feld.dataset.vorschlag||
+      'Freiwillig: Tachostände für den Nachweis beim Finanzamt.';
+    return;
+  }
+  if(ende<start){
+    feld.textContent='Der Ankunftsstand ist kleiner als der Abfahrtsstand.';
+    feld.classList.add('km-warnung');
+    return;
+  }
+  const berechnet=Number(String($('tripKilometers').value||'').replace(',','.'));
+  feld.textContent='= '+formatTacho(ende-start)+' km laut Tacho'+
+    (Number.isFinite(berechnet)&&berechnet>0
+      ? ' (berechnet: '+formatKm(berechnet)+' km)'
+      : '');
+}
+
+// Neue Fahrt: Abfahrtsstand aus der letzten Fahrt mit Ankunftsstand vorschlagen
+async function tachoVorschlagLaden(datum){
+  const feld=$('tripTachoHinweis');
+  feld.dataset.vorschlag='';
+  try{
+    const {data,error}=await sb
+      .from('trip_entries')
+      .select('trip_date,tacho_ende')
+      .not('tacho_ende','is',null)
+      .lte('trip_date',datum||todayIso())
+      .order('trip_date',{ascending:false})
+      .order('tacho_ende',{ascending:false})
+      .limit(1);
+
+    // Fehler (z. B. Spalte noch nicht angelegt) still übergehen
+    if(error||!data||!data.length)return;
+    if($('tripTachoStart').value.trim())return;
+
+    $('tripTachoStart').value=String(data[0].tacho_ende);
+    feld.dataset.vorschlag='Abfahrtsstand übernommen aus der Fahrt vom '+
+      formatDate(data[0].trip_date)+'. Bitte mit dem Tacho vergleichen.';
+  }finally{
+    tachoHinweisZeigen();
+  }
+}
+
+// Baut die Tacho-Liste: Fahrten in zeitlicher Reihenfolge, dazwischen die Lücken.
+// Lücke = Abfahrtsstand minus Ankunftsstand der vorherigen Fahrt.
+// Liegt dazwischen eine Fahrt ohne Tachostände, ist die Lücke „nicht zuzuordnen“.
+function tachoZeilenBauen(fahrten){
+  const sortiert=fahrten.slice().sort((a,b)=>
+    String(a.trip_date).localeCompare(String(b.trip_date)) ||
+    (Number(a.tacho_start??Infinity)-Number(b.tacho_start??Infinity)) ||
+    String(a.created_at||'').localeCompare(String(b.created_at||''))
+  );
+
+  const zeilen=[];
+  const summe={beruflich:0,privat:0,unklar:0,ohneTacho:0,mitTacho:0};
+  let vorher=null;          // {stand, datum}
+  let dazwischenOhne=false; // Fahrt ohne vollständige Stände seit vorher
+
+  sortiert.forEach(trip=>{
+    const start=trip.tacho_start!=null?Number(trip.tacho_start):null;
+    const ende=trip.tacho_ende!=null?Number(trip.tacho_ende):null;
+
+    if(start!=null&&vorher){
+      const diff=start-vorher.stand;
+      if(diff>0){
+        const typ=dazwischenOhne?'unklar':'privat';
+        summe[typ]+=diff;
+        zeilen.push({typ,km:diff,von:vorher.stand,bis:start,
+          vonDatum:vorher.datum,bisDatum:trip.trip_date});
+      }else if(diff<0){
+        zeilen.push({typ:'fehler',km:diff,von:vorher.stand,bis:start,
+          vonDatum:vorher.datum,bisDatum:trip.trip_date});
+      }
+    }
+
+    const km=tachoKm(trip);
+    zeilen.push({typ:'fahrt',trip,km});
+
+    if(km!=null){
+      summe.beruflich+=km;
+      summe.mitTacho++;
+      vorher={stand:ende,datum:trip.trip_date};
+      dazwischenOhne=false;
+    }else{
+      summe.ohneTacho++;
+      if(ende!=null)vorher={stand:ende,datum:trip.trip_date};
+      else if(start!=null)vorher={stand:start,datum:trip.trip_date};
+      if(vorher)dazwischenOhne=true;
+    }
+  });
+
+  return {zeilen,summe};
+}
+
+// Text einer Lückenzeile
+function tachoLueckeText(z){
+  const zeitraum=z.vonDatum===z.bisDatum
+    ? 'am '+formatDate(z.bisDatum)
+    : formatDate(z.vonDatum)+' – '+formatDate(z.bisDatum);
+  const staende=formatTacho(z.von)+' → '+formatTacho(z.bis);
+  if(z.typ==='privat')return {titel:'Privatfahrten '+zeitraum,meta:'Tacho '+staende};
+  if(z.typ==='unklar')return {
+    titel:'Nicht zuzuordnen '+zeitraum,
+    meta:'Tacho '+staende+' · enthält eine Fahrt ohne vollständige Tachostände'
+  };
+  return {
+    titel:'Tachostände passen nicht '+zeitraum,
+    meta:'Abfahrt '+formatTacho(z.bis)+' ist kleiner als die vorherige Ankunft '+formatTacho(z.von)
+  };
+}
+
+/* ---------- Fahrten als kompakte Liste ---------- */
+// Eine Zeile: Zweck, darunter Datum · Klient · Ziel, rechts die Kilometer.
+// klasse bestimmt, was beim Antippen passiert (Bearbeiten oder Fahrtenbuch öffnen).
+function fahrtZeile(trip,klientText,klasse){
+  // Rundfahrten enden an der Startadresse; dann ist der Zwischenstopp aussagekräftiger
+  const zielAdresse=trip.destination_address||trip.destination||'';
+  const stopps=trip.intermediate_stops||trip.stopovers||'';
+  const ziel=stopps||(zielAdresse!==trip.start_address?zielAdresse:'');
+  const meta=[formatDate(trip.trip_date),klientText,ziel]
+    .filter(Boolean).join(' · ');
+
+  return `
+    <button type="button" class="ausgabe-zeile ${klasse}"
+      data-id="${esc(trip.id)}"
+      data-client-id="${esc(trip.client_id||'')}"
+      data-allgemein="${trip.allgemein?'1':''}">
+      <span class="az-text">
+        <span class="az-zweck">${esc(trip.purpose||ziel||zielAdresse||'Fahrt')}</span>
+        <span class="az-meta">${esc(meta)}</span>
+      </span>
+      <span class="az-rechts">
+        <span class="az-betrag">${formatKm(trip.kilometers)} km</span>
+      </span>
+      <span class="az-pfeil" aria-hidden="true">›</span>
+    </button>
+  `;
+}
+
+// Jedes Fenster merkt sich seine eigene Darstellung
+const gesamtFahrtenAnsicht=umschalterEinrichten(
+  'allTripsAnsicht','ansichtGesamtFahrten','liste',
+  ()=>{if($('allTripsDialog').open)loadAllTrips();}
+);
+
+// Gesamtfahrten: Liste mit berechneten km oder mit Tachoständen
+const gesamtFahrtenListe=umschalterEinrichten(
+  'allTripsListe','listeGesamtFahrten','berechnet',
+  ()=>{if($('allTripsDialog').open)loadAllTrips();}
+);
+
+const fahrtenbuchAnsicht=umschalterEinrichten(
+  'tripsAnsicht','ansichtFahrtenbuch','liste',
+  ()=>{if($('tripsDialog').open)loadTrips();}
+);
+
 async function loadAllTrips(){
   $('allTripsList').innerHTML=
     '<p class="muted">Fahrten werden geladen …</p>';
@@ -3269,25 +3938,17 @@ async function loadAllTrips(){
         stops:trip.intermediate_stops||trip.stopovers||'',
         destination:trip.destination_address||trip.destination||'',
         purpose:trip.purpose||'',
-        km:Number(trip.kilometers||0)
+        km:Number(trip.kilometers||0),
+        tachoStart:trip.tacho_start??null,
+        tachoEnde:trip.tacho_ende??null
       }))
   };
 
+  const tachoListe=gesamtFahrtenListe()==='tacho';
+  $('allTripsAnsicht').classList.toggle('hidden',tachoListe);
 
-  $('allTripsList').innerHTML=`
-    <div class="summary-box">
-      <div class="summary-row">
-        <span>Fahrten</span>
-        <strong>${allTrips.length}</strong>
-      </div>
 
-      <div class="summary-row">
-        <span>Kilometer gesamt</span>
-        <strong>${formatKm(totalKm)} km</strong>
-      </div>
-    </div>
-
-    ${allTrips.map(trip=>`
+  const karteHtml=trip=>`
       <div class="doc-item">
         <div class="doc-head">
           <div>
@@ -3325,20 +3986,154 @@ async function loadAllTrips(){
             <div class="meta">
               ${esc(trip.purpose||'')}
             </div>
+            ${tachoMetaHtml(trip)}
           </div>
 
           <button
             type="button"
-            class="secondary openAllTrip"
+            class="kn kn-nav secondary openAllTrip"
             data-client-id="${esc(trip.client_id||'')}"
             data-allgemein="${trip.allgemein?'1':''}">
-            Öffnen
+            ${trip.allgemein?'Zu den allgemeinen Fahrten':'Zu den Fahrten des Klienten'}
           </button>
         </div>
       </div>
-    `).join('')}
+`;
+
+  if(tachoListe){
+    const {zeilen,summe}=tachoZeilenBauen(allTrips);
+
+    allTripsPayload.liste='tacho';
+    allTripsPayload.tacho={
+      summe,
+      zeilen:zeilen.map(z=>z.typ==='fahrt'
+        ? {
+            typ:'fahrt',
+            date:z.trip.trip_date,
+            client:z.trip.allgemein?'Allgemein':clientName(z.trip.client_id),
+            purpose:z.trip.purpose||'',
+            ziel:z.trip.intermediate_stops||z.trip.stopovers||
+              z.trip.destination_address||z.trip.destination||'',
+            tachoStart:z.trip.tacho_start??null,
+            tachoEnde:z.trip.tacho_ende??null,
+            km:z.km,
+            kmBerechnet:Number(z.trip.kilometers||0)
+          }
+        : {...z,text:tachoLueckeText(z)}
+      )
+    };
+
+    $('allTripsList').innerHTML=`
+      <div class="summary-box">
+        <div class="summary-row">
+          <span>Berufliche km laut Tacho</span>
+          <strong>${formatTacho(summe.beruflich)} km</strong>
+        </div>
+        <div class="summary-row">
+          <span>Privat (Lücken)</span>
+          <strong>${formatTacho(summe.privat)} km</strong>
+        </div>
+        ${summe.unklar?`
+        <div class="summary-row">
+          <span>Nicht zuzuordnen</span>
+          <strong>${formatTacho(summe.unklar)} km</strong>
+        </div>`:''}
+        <div class="summary-row">
+          <span>Fahrten mit / ohne Tachostand</span>
+          <strong>${summe.mitTacho} / ${summe.ohneTacho}</strong>
+        </div>
+      </div>
+      ${summe.ohneTacho
+        ? '<p class="muted small">Fahrten ohne vollständige Tachostände sind markiert. '+
+          'Tippe sie an und ergänze die Stände über „Zu den Fahrten“.</p>'
+        : ''}
+      <div class="ausgaben-liste">
+        ${zeilen.map(z=>{
+          if(z.typ!=='fahrt'){
+            const t=tachoLueckeText(z);
+            return `
+              <div class="tacho-luecke ${z.typ}">
+                <span class="az-text">
+                  <span class="az-zweck">${esc(t.titel)}</span>
+                  <span class="az-meta">${esc(t.meta)}</span>
+                </span>
+                <span class="az-rechts">
+                  <span class="az-betrag">${z.typ==='fehler'?'⚠':formatTacho(z.km)+' km'}</span>
+                </span>
+              </div>`;
+          }
+          const trip=z.trip;
+          const meta=[
+            formatDate(trip.trip_date),
+            trip.allgemein?'Allgemein':clientName(trip.client_id),
+            (trip.tacho_start!=null||trip.tacho_ende!=null)
+              ? 'Tacho '+(formatTacho(trip.tacho_start)||'?')+' → '+(formatTacho(trip.tacho_ende)||'?')
+              : ''
+          ].filter(Boolean).join(' · ');
+          return `
+            <div class="fahrt-eintrag">
+              <button type="button" class="ausgabe-zeile zeigeFahrtKarte" aria-expanded="false">
+                <span class="az-text">
+                  <span class="az-zweck">${esc(trip.purpose||'Fahrt')}</span>
+                  <span class="az-meta">${esc(meta)}</span>
+                </span>
+                <span class="az-rechts">
+                  ${z.km!=null
+                    ? `<span class="az-betrag">${formatTacho(z.km)} km</span>
+                       <span class="az-status">berechnet ${formatKm(trip.kilometers)}</span>`
+                    : `<span class="az-status ohne-tacho">ohne Tacho</span>
+                       <span class="az-status">berechnet ${formatKm(trip.kilometers)}</span>`}
+                </span>
+                <span class="az-pfeil" aria-hidden="true">›</span>
+              </button>
+              <div class="fahrt-details hidden">${karteHtml(trip)}</div>
+            </div>`;
+        }).join('')}
+      </div>
+    `;
+  }else{
+  allTripsPayload.liste='berechnet';
+  $('allTripsList').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Fahrten</span>
+        <strong>${allTrips.length}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Kilometer gesamt</span>
+        <strong>${formatKm(totalKm)} km</strong>
+      </div>
+    </div>
+
+    ${gesamtFahrtenAnsicht()==='karten'
+      ? allTrips.map(karteHtml).join('')
+      : '<div class="ausgaben-liste">'+allTrips.map(trip=>`
+          <div class="fahrt-eintrag">
+            ${fahrtZeile(
+              trip,
+              trip.allgemein?'Allgemein':clientName(trip.client_id),
+              'zeigeFahrtKarte'
+            )}
+            <div class="fahrt-details hidden">${karteHtml(trip)}</div>
+          </div>
+        `).join('')+'</div>'
+    }
 
   `;
+  }
+
+  // Listenansicht: Zeile klappt die Kachel dieser Fahrt auf und zu
+  document
+    .querySelectorAll('#allTripsList .zeigeFahrtKarte')
+    .forEach(zeile=>{
+      zeile.onclick=()=>{
+        const details=zeile.nextElementSibling;
+        const offen=details.classList.toggle('hidden')===false;
+        zeile.classList.toggle('offen',offen);
+        zeile.setAttribute('aria-expanded',String(offen));
+      };
+    });
 
   document
     .querySelectorAll('.openAllTrip')
@@ -3391,7 +4186,8 @@ async function loadTrips(){
           <strong>${formatKm(totalKm)} km</strong>
         </div>
       </div>
-      ${trips.map(t=>`
+      ${fahrtenbuchAnsicht()==='karten'
+        ? trips.map(t=>`
         <div class="doc-item">
           <div class="doc-head">
             <div>
@@ -3399,23 +4195,26 @@ async function loadTrips(){
               <div class="meta">${esc(t.start_address||'')} → ${esc(t.destination_address||t.destination||'')}</div>
               ${t.intermediate_stops||t.stopovers?`<div class="meta">Zwischenstopps: ${esc(t.intermediate_stops||t.stopovers)}</div>`:''}
               <div class="meta">${esc(t.purpose||'')}</div>
+              ${tachoMetaHtml(t)}
             </div>
                 <div class="actions">
 
-              <button type="button" class="secondary editTrip" data-id="${t.id}">Bearbeiten</button>
+              <button type="button" class="kn kn-bearbeiten secondary editTrip" data-id="${t.id}">Bearbeiten</button>
               ${
                 tripsAllgemein
                   ? ''
                   : t.documentation_id
-                    ? `<button type="button" class="secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
-                    : `<button type="button" class="secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
+                    ? `<button type="button" class="kn kn-nav secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
+                    : `<button type="button" class="kn kn-neu secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
               }
                                 <button type="button" class="secondary expenseFromTrip" data-id="${t.id}">Parkticket</button>
 
             </div>
           </div>
         </div>
-      `).join('')}
+`).join('')
+        : '<div class="ausgaben-liste">'+trips.map(t=>fahrtZeile(t,'','editTrip')).join('')+'</div>'
+      }
     `
     : '<p class="muted">Noch keine Fahrten vorhanden.</p>';
 
@@ -3488,7 +4287,7 @@ function renderStopManager(){
 
           <button
             type="button"
-            class="secondary deleteStop"
+            class="kn kn-loeschen secondary deleteStop"
             data-name="${esc(name)}">
             Löschen
           </button>
@@ -3529,6 +4328,185 @@ async function deleteStopover(name){
   toast('Stopp gelöscht');
 }
 
+/* ---------- Kilometer berechnen (OpenRouteService über Netlify-Funktion) ---------- */
+// Gesendet werden nur die Adressen, keine Namen und kein Fahrtzweck.
+// Hausnummern muss man nicht eintippen. Steht bei einem Stopp nur die
+// Straße des Klienten, wird für die Berechnung seine vollständige Adresse
+// (mit Hausnummer) genommen, damit die Strecke genauer wird.
+function strassenSchluessel(text){
+  return String(text||'')
+    .split(',')[0]
+    .toLowerCase()
+    .replace(/straße/g,'str.')
+    .replace(/strasse/g,'str.')
+    .replace(/\s*\d+\s*[a-z]?(\s*[-\/]\s*\d+\s*[a-z]?)?\s*$/,'')
+    .replace(/[\s.-]+/g,'');
+}
+
+function adresseFuerBerechnung(stopp){
+  const klient=!tripsAllgemein&&activeTripsClient;
+  if(!klient||!klient.strasse||!klient.hausnummer)return stopp;
+
+  const strassenteil=String(stopp).split(',')[0].trim();
+  const hatNummer=/\d+\s*[a-zA-Z]?\s*$/.test(strassenteil);
+
+  if(!hatNummer && strassenSchluessel(stopp)===strassenSchluessel(klient.strasse)){
+    return clientDestination(klient);
+  }
+
+  return stopp;
+}
+// Adressen der Fahrt in der Reihenfolge Start, Stopps, Ziel
+function fahrtAdressen(){
+  const start=$('tripStartAddress').value.trim();
+  const ziel=$('tripDestination').value.trim();
+  const stopps=String($('tripStopovers').value||'')
+    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
+
+  if(!start||!ziel)return null;
+  return [start,...stopps.map(adresseFuerBerechnung),ziel];
+}
+
+// Letzte Berechnung merken, damit die Karte nicht erneut abfragen muss
+let letzteRoute=null;
+
+async function routeAbfragen(adressen){
+  const schluessel=adressen.join('|');
+  if(letzteRoute&&letzteRoute.schluessel===schluessel)return letzteRoute.ergebnis;
+
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw new Error('Bitte neu anmelden.');
+
+  const antwort=await busyFetch('/.netlify/functions/route-km',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      Authorization:'Bearer '+session.access_token
+    },
+    body:JSON.stringify({adressen})
+  });
+
+  let ergebnis={};
+  try{ergebnis=await antwort.json();}catch(e){}
+
+  if(!antwort.ok||!Number.isFinite(ergebnis.km)){
+    throw new Error(ergebnis.fehler||'Kilometer konnten nicht berechnet werden.');
+  }
+
+  letzteRoute={schluessel,ergebnis};
+  return ergebnis;
+}
+
+async function kilometerBerechnen(){
+  const knopf=$('tripKmBerechnen');
+  const hinweis=$('tripKmHinweis');
+  const adressen=fahrtAdressen();
+
+  if(!adressen){
+    toast('Bitte zuerst Start- und Zieladresse eintragen.');
+    return;
+  }
+
+  const vorher=$('tripKilometers').value.trim();
+
+  knopf.disabled=true;
+  knopf.textContent='Wird berechnet …';
+  hinweis.textContent='';
+
+  try{
+    const ergebnis={...(await routeAbfragen(adressen))};
+
+    // Kaufmännisch auf ganze Kilometer runden (13,4 → 13, 13,5 → 14)
+    const genau=ergebnis.km;
+    ergebnis.km=Math.round(genau+1e-9);
+
+    const warnungen=ergebnis.unsicher||[];
+    const uebernehmen=
+      !vorher ||
+      Number(vorher.replace(',','.'))===ergebnis.km ||
+      confirm(
+        'Berechnet: '+formatKm(ergebnis.km)+' km.\n'+
+        'Eingetragen sind '+formatKm(Number(vorher.replace(',','.')))+' km.\n\n'+
+        'Berechneten Wert übernehmen?'
+      );
+
+    if(uebernehmen)$('tripKilometers').value=String(ergebnis.km);
+
+    // Gefundene Orte und Warnungen immer anzeigen, auch wenn nicht übernommen
+    hinweis.innerHTML=
+      (warnungen.length
+        ? '<span class="km-warnung">'+warnungen.map(w=>
+            '⚠ „'+esc(w.eingabe)+'“ nur ungefähr gefunden: '+esc(w.gefunden)
+          ).join('<br>')+'<br>Bitte Schreibweise prüfen.</span><br>'
+        : '')+
+      '<strong>'+esc(formatKm(genau))+' km</strong> berechnet, gerundet '+
+      ergebnis.km+' km'+(uebernehmen?'':' (nicht übernommen)')+
+      '<ol class="km-strecke">'+
+        (ergebnis.punkte||[]).map(p=>'<li>'+esc(p)+'</li>').join('')+
+      '</ol>';
+
+    if(warnungen.length){
+      toast('Achtung: Nicht alle Adressen wurden genau gefunden.');
+    }
+  }catch(fehler){
+    toast(fehler.message);
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent='📍 Kilometer berechnen';
+  }
+}
+
+// Gespeichert werden Stopps mit „ - " getrennt, angezeigt eine Zeile pro Stopp
+function stoppsAlsZeilen(wert){
+  return normalizeStopovers(wert).split(/\s+-\s+/).filter(Boolean).join('\n');
+}
+
+// Passt die Höhe des Zwischenstopp-Feldes an und zeichnet die Streckenvorschau
+function stoppFeldAnpassen(){
+  const feld=$('tripStopovers');
+  feld.style.height='auto';
+  feld.style.height=(feld.scrollHeight+2)+'px';
+  routeVorschauZeichnen();
+}
+
+// Entfernt einen Zwischenstopp über den ✕-Knopf in der Streckenvorschau
+function stoppEntfernen(index){
+  const feld=$('tripStopovers');
+  const stopps=String(feld.value||'')
+    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
+
+  stopps.splice(index,1);
+  feld.value=stopps.join('\n');
+  stoppFeldAnpassen();
+  suggestTripKilometers();
+}
+
+function routeVorschauZeichnen(){
+  const liste=$('tripRoute');
+  if(!liste)return;
+
+  const stopps=String($('tripStopovers').value||'')
+    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
+
+  if(!stopps.length){liste.innerHTML='';return;}
+
+  const start=$('tripStartAddress').value.trim();
+  const ziel=$('tripDestination').value.trim();
+  const zeile=(nr,klasse,text,zusatz,index)=>
+    '<li class="'+klasse+'"><span class="route-nr">'+nr+'</span>'+
+    '<span class="route-text">'+esc(text)+(zusatz?' <small>'+zusatz+'</small>':'')+'</span>'+
+    (index!=null
+      ? '<button type="button" class="route-loeschen" data-index="'+index+'" '+
+        'aria-label="Stopp „'+esc(text)+'“ entfernen">✕</button>'
+      : '')+
+    '</li>';
+
+  liste.innerHTML=
+    (start?zeile('▶','route-start',start,'Start'):'')+
+    stopps.map((t,i)=>zeile(i+1,'route-stopp',t,'',i)).join('')+
+    (ziel?zeile('■','route-ziel',ziel,ziel===start?'Ziel · zurück':'Ziel'):'');
+}
+
 function appendStopover(name){
   if(!name)return;
 
@@ -3536,9 +4514,10 @@ function appendStopover(name){
   const vorhanden=feld.value.trim();
 
   feld.value=vorhanden
-    ? vorhanden+' - '+name
+    ? vorhanden+'\n'+name
     : name;
 
+  stoppFeldAnpassen();
   suggestTripKilometers();
 }
 
@@ -3546,14 +4525,30 @@ async function openTripForm(id=''){
   const trip=trips.find(t=>String(t.id)===String(id))||{};
 
   $('tripId').value=trip.id||'';
+  tripGeoeffnet=trip.id
+    ? {
+        id:String(trip.id),
+        kilometers:Number(trip.kilometers),
+        trip_date:trip.trip_date||'',
+        intermediate_stops:trip.intermediate_stops||'',
+        updated_at:trip.updated_at||null,
+        hatteTacho:trip.tacho_start!=null||trip.tacho_ende!=null
+      }
+    : null;
   $('tripDate').value=trip.trip_date||todayIso();
   $('tripStartAddress').value=trip.start_address||START_ADRESSE;
-  $('tripStopovers').value=trip.intermediate_stops||trip.stopovers||'';
+  $('tripStopovers').value=stoppsAlsZeilen(trip.intermediate_stops||trip.stopovers||'');
   $('tripDestination').value=
     trip.destination_address||
     trip.destination||
     $('tripStartAddress').value;
   $('tripKilometers').value=trip.kilometers??'';
+  $('tripKmHinweis').textContent='';
+  $('tripTachoStart').value=trip.tacho_start??'';
+  $('tripTachoEnde').value=trip.tacho_ende??'';
+  $('tripTachoHinweis').dataset.vorschlag='';
+  tachoHinweisZeigen();
+  if(!trip.id)tachoVorschlagLaden($('tripDate').value);
   $('tripPurpose').value=trip.purpose||'';
   $('tripNotes').value=trip.notes||'';
 await loadTripDocumentations(id);
@@ -3566,6 +4561,7 @@ $('tripDocumentation').value=trip.documentation_id||'';
     : (id?'Fahrt bearbeiten':'Fahrt anlegen');
   $('deleteTrip').classList.toggle('hidden',!id);
   $('tripFormDialog').showModal();
+  stoppFeldAnpassen();
 }
 
 function routeKey(value){
@@ -3655,6 +4651,56 @@ async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilo
   }catch(fehler){
     return;
   }
+}
+
+// Vor dem Speichern einer bestehenden Fahrt:
+// 1. Wurde sie inzwischen woanders (z. B. auf einem anderen Gerät) geändert?
+// 2. Wurden die Kilometer geändert?
+// Gibt false zurück, wenn nicht gespeichert werden soll.
+async function fahrtAenderungPruefen(id,row){
+  const alt=tripGeoeffnet&&tripGeoeffnet.id===String(id)?tripGeoeffnet:null;
+  if(!alt)return true;
+
+  const {data:aktuell,error}=await sb
+    .from('trip_entries')
+    .select('*')
+    .eq('id',id)
+    .maybeSingle();
+
+  if(!error && aktuell){
+    const inzwischenGeaendert=
+      (alt.updated_at && aktuell.updated_at && aktuell.updated_at!==alt.updated_at) ||
+      Number(aktuell.kilometers)!==alt.kilometers ||
+      (aktuell.trip_date||'')!==alt.trip_date ||
+      (aktuell.intermediate_stops||'')!==alt.intermediate_stops;
+
+    if(inzwischenGeaendert && !confirm(
+      'Diese Fahrt wurde geändert, nachdem du sie geöffnet hast – '+
+      'vielleicht auf einem anderen Gerät.\n\n'+
+      'Gespeichert ist jetzt: '+formatDate(aktuell.trip_date)+' · '+
+      formatKm(aktuell.kilometers)+' km\n'+
+      'Du würdest speichern: '+formatDate(row.trip_date)+' · '+
+      formatKm(row.kilometers)+' km\n\n'+
+      'Trotzdem mit deinen Angaben überschreiben?'
+    )){
+      return false;
+    }
+
+    // Bereits bestätigt – keine zweite Rückfrage zu den Kilometern
+    if(inzwischenGeaendert)return true;
+  }
+
+  const vorher=aktuell?Number(aktuell.kilometers):alt.kilometers;
+
+  if(Number.isFinite(vorher) && vorher!==row.kilometers && !confirm(
+    'Kilometer der Fahrt vom '+formatDate(row.trip_date)+
+    ' von '+formatKm(vorher)+' km auf '+formatKm(row.kilometers)+
+    ' km ändern?'
+  )){
+    return false;
+  }
+
+  return true;
 }
 
 async function suggestTripKilometers(){
@@ -3825,7 +4871,7 @@ function terminZeileHtml(t){
           <button class="${rel.stufe==='vergangen'?'primary':'secondary'} docFromTermin" data-id="${esc(t.id)}">
             Dokumentation anlegen
           </button>
-          <button class="danger cancelTermin" data-id="${esc(t.id)}">Löschen</button>
+          <button class="kn kn-loeschen danger cancelTermin" data-id="${esc(t.id)}">Löschen</button>
         </div>
       </div>
     </div>
@@ -3880,12 +4926,12 @@ function renderDocs(){
           ${d.besonderheiten?`<div class="meta">Vereinbarungen / Besonderheiten: ${esc(d.besonderheiten)}</div>`:''}
         </div>
           <div class="actions">
-            <button class="secondary editDoc" data-id="${d.id}">Bearbeiten</button>
+            <button class="kn kn-bearbeiten secondary editDoc" data-id="${d.id}">Bearbeiten</button>
             ${(()=>{
               const fahrt=fahrtZuDoku(d.id);
 
               if(fahrt){
-                return '<button class="secondary showTripOfDoc" data-id="'+
+                return '<button class="kn kn-nav secondary showTripOfDoc" data-id="'+
                   esc(d.id)+'">Fahrt anschauen</button>';
               }
 
@@ -4499,7 +5545,7 @@ function approvalWindow(approval,liste){
   return {
     start:period.start,
     ende:period.ende,
-    label:'Bewilligungsjahr '+period.nummer
+    label:'Laufendes Bewilligungsjahr '+period.nummer
   };
 }
 
@@ -4611,7 +5657,7 @@ if(!isOtherLeistungstraeger(approval)){
 
             <button
               type="button"
-              class="secondary openAllApproval"
+              class="kn kn-nav secondary openAllApproval"
               data-client-id="${esc(a.client_id)}">
               Öffnen
             </button>
@@ -4744,6 +5790,11 @@ ${
        </div>`
     : ''
 }
+${
+  a.gesamtplan_fortschreibung_am
+    ? `<div class="meta">Fortschreibung des Gesamtplans zum ${formatDate(a.gesamtplan_fortschreibung_am)}</div>`
+    : ''
+}
 <div class="meta">
   ${esc(fenster.label)}:
   ${formatDate(fenster.start)} – ${formatDate(minusEinTag(fenster.ende))}
@@ -4773,7 +5824,7 @@ ${formatFls(restFls)} FLS
           ${a.bescheid_datei_id
             ? `<button type="button" class="secondary viewBescheid" data-file="${esc(a.bescheid_datei_id)}">Bescheid ansehen</button>`
             : ''}
-          <button class="secondary editApproval" data-id="${a.id}">Bearbeiten</button>
+          <button class="kn kn-bearbeiten secondary editApproval" data-id="${a.id}">Bearbeiten</button>
         </div>
       </div>
     </div>
@@ -4863,6 +5914,7 @@ function openApprovalForm(id=''){
   $('approvalId').value=a.id||'';
   $('approvalBeginn').value=a.beginn||'';
   $('approvalEnde').value=a.ende||'';
+  $('approvalGesamtplan').value=a.gesamtplan_fortschreibung_am||'';
   $('approvalVerlaufsbericht').value=a.verlaufsbericht_am||'';
   $('approvalBerichtFaellig').value=a.verlaufsbericht_faellig_am||'';
   $('approvalJahrBeginn').value=a.bewilligungsjahr_beginn||'';
@@ -5137,8 +6189,20 @@ $('clientForm').onsubmit=async e=>{
     portrait:$('clientPortrait').value||null,
     anrede:$('clientAnrede').value||null
   };
+  [1,2].forEach(n=>{
+    row['kontakt'+n+'_rolle']=$('kontakt'+n+'Rolle').value.trim()||null;
+    row['kontakt'+n+'_adresse']=$('kontakt'+n+'Adresse').value.trim()||null;
+    row['kontakt'+n+'_email']=$('kontakt'+n+'Email').value.trim()||null;
+  });
   const speichern=z=>id?sb.from('clients').update(z).eq('id',id):sb.from('clients').insert(z);
   let {error}=await speichern(row);
+  // Falls die neuen Kontaktspalten noch fehlen: ohne sie speichern
+  if(error&&/kontakt[12]_/.test(error.message)){
+    const ohne={...row};
+    Object.keys(ohne).filter(k=>/^kontakt[12]_/.test(k)).forEach(k=>delete ohne[k]);
+    ({error}=await speichern(ohne));
+    if(!error)toast('Hinweis: Rolle, Adresse und E-Mail der Kontaktpersonen noch nicht gespeichert – SQL-Befehl fehlt.');
+  }
   // Falls die Spalte „anrede" noch fehlt: ohne Anrede speichern
   if(error&&/anrede/.test(error.message)){
     const {anrede,...ohneAnrede}=row;
@@ -5721,6 +6785,7 @@ $('tripDate').onchange=()=>{
 
   if(feld.value.includes(falsch)){
     feld.value=feld.value.replace(falsch,richtig);
+    stoppFeldAnpassen();
     toast('SuPA-Adresse an das Datum angepasst');
   }
 };
@@ -5748,18 +6813,181 @@ $('tripStopPicker').onchange=()=>{
 
 $('tripStopovers').onblur=()=>{
   const feld=$('tripStopovers');
-  const bereinigt=normalizeStopovers(feld.value);
+  const bereinigt=stoppsAlsZeilen(feld.value);
 
   if(bereinigt!==feld.value){
     feld.value=bereinigt;
   }
 
+  stoppFeldAnpassen();
   suggestTripKilometers();
 };
 
+$('tripStopovers').oninput=stoppFeldAnpassen;
+
+$('tripKmBerechnen').onclick=kilometerBerechnen;
+$('tripTachoStart').oninput=()=>{
+  $('tripTachoHinweis').dataset.vorschlag='';
+  tachoHinweisZeigen();
+};
+$('tripTachoEnde').oninput=tachoHinweisZeigen;
+$('tripKilometers').addEventListener('input',tachoHinweisZeigen);
+
+/* ---------- Karte der berechneten Strecke (Leaflet + OpenStreetMap) ---------- */
+let leafletGeladen=null;
+let kartenObjekt=null;
+
+function leafletLaden(){
+  if(window.L)return Promise.resolve();
+  if(leafletGeladen)return leafletGeladen;
+
+  leafletGeladen=new Promise((fertig,fehler)=>{
+    const css=document.createElement('link');
+    css.rel='stylesheet';
+    css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+
+    const js=document.createElement('script');
+    js.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    js.onload=()=>fertig();
+    js.onerror=()=>{leafletGeladen=null;fehler(new Error('Karte konnte nicht geladen werden.'));};
+    document.head.appendChild(js);
+  });
+
+  return leafletGeladen;
+}
+
+// Entschlüsselt die Streckenlinie von openrouteservice (Polyline, 5 Stellen)
+function linieEntschluesseln(text){
+  const punkte=[];
+  let i=0,lat=0,lon=0;
+
+  while(i<text.length){
+    for(const achse of [0,1]){
+      let wert=0,verschiebung=0,b;
+      do{
+        b=text.charCodeAt(i++)-63;
+        wert|=(b&0x1f)<<verschiebung;
+        verschiebung+=5;
+      }while(b>=0x20);
+      const delta=(wert&1)?~(wert>>1):(wert>>1);
+      if(achse===0)lat+=delta;else lon+=delta;
+    }
+    punkte.push([lat/1e5,lon/1e5]);
+  }
+
+  return punkte;
+}
+
+async function karteZeigen(){
+  const knopf=$('tripKarte');
+  const adressen=fahrtAdressen();
+
+  if(!adressen){
+    toast('Bitte zuerst Start- und Zieladresse eintragen.');
+    return;
+  }
+
+  knopf.disabled=true;
+  knopf.textContent='Lädt …';
+
+  try{
+    const [ergebnis]=await Promise.all([routeAbfragen(adressen),leafletLaden()]);
+
+    $('kartenTitel').textContent=formatKm(ergebnis.km)+' km';
+    $('kartenDialog').showModal();
+
+    if(kartenObjekt){kartenObjekt.remove();kartenObjekt=null;}
+
+    kartenObjekt=L.map('karte');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'© OpenStreetMap'
+    }).addTo(kartenObjekt);
+
+    const linie=ergebnis.linie?linieEntschluesseln(ergebnis.linie):[];
+    const koordinaten=ergebnis.koordinaten||[];
+    const punkte=ergebnis.punkte||[];
+    const letzter=koordinaten.length-1;
+    const rundfahrt=letzter>0&&
+      koordinaten[0][0]===koordinaten[letzter][0]&&
+      koordinaten[0][1]===koordinaten[letzter][1];
+
+    if(linie.length){
+      L.polyline(linie,{color:'#C85A3E',weight:5,opacity:.85}).addTo(kartenObjekt);
+    }
+
+    koordinaten.forEach((k,i)=>{
+      if(rundfahrt&&i===letzter)return;
+      const istStart=i===0;
+      const istZiel=i===letzter;
+      const beschriftung=istStart?'▶':(istZiel?'■':String(i));
+      L.marker(k,{
+        icon:L.divIcon({
+          className:'',
+          html:'<div class="karte-nr'+(istStart||istZiel?' start':'')+'">'+beschriftung+'</div>',
+          iconSize:[26,26],
+          iconAnchor:[13,13]
+        })
+      }).bindPopup(esc(punkte[i]||'')+(istStart&&rundfahrt?' (Start und Ziel)':''))
+        .addTo(kartenObjekt);
+    });
+
+    const grenzen=L.latLngBounds(linie.length?linie:koordinaten);
+    setTimeout(()=>{
+      kartenObjekt.invalidateSize();
+      kartenObjekt.fitBounds(grenzen,{padding:[24,24]});
+    },60);
+  }catch(fehler){
+    toast(fehler.message);
+  }finally{
+    knopf.disabled=false;
+    knopf.textContent='🗺 Karte';
+  }
+}
+
+$('tripKarte').onclick=karteZeigen;
+$('closeKarte').onclick=()=>$('kartenDialog').close();
+
+
+// Öffnet die Fahrt mit allen Stopps in Google Maps (App oder Webseite).
+// Die Adressen gehen nur an Google, wenn du diesen Knopf antippst.
+$('tripGoogleMaps').onclick=()=>{
+  const start=$('tripStartAddress').value.trim();
+  const ziel=$('tripDestination').value.trim();
+  const stopps=String($('tripStopovers').value||'')
+    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean)
+    .map(adresseFuerBerechnung);
+
+  if(!start||!ziel){
+    toast('Bitte zuerst Start- und Zieladresse eintragen.');
+    return;
+  }
+
+  const werte=new URLSearchParams({
+    api:'1',
+    origin:start,
+    destination:ziel,
+    travelmode:'driving'
+  });
+  if(stopps.length)werte.set('waypoints',stopps.join('|'));
+
+  window.open('https://www.google.com/maps/dir/?'+werte.toString(),'_blank','noopener');
+};
+
+$('tripRoute').onclick=e=>{
+  const knopf=e.target.closest('.route-loeschen');
+  if(!knopf)return;
+  e.preventDefault();
+  stoppEntfernen(Number(knopf.dataset.index));
+};
+
 $('tripStartAddress').onchange=()=>{
+  routeVorschauZeichnen();
   suggestTripKilometers();
 };
+$('tripStartAddress').oninput=routeVorschauZeichnen;
+$('tripDestination').oninput=routeVorschauZeichnen;
 
   $('tripDestination').onchange=()=>{
     suggestTripKilometers();
@@ -5807,6 +7035,32 @@ $('tripForm').onsubmit=async e=>{
     notes:$('tripNotes').value.trim()||null
   };
 
+  // Tachostände (freiwillig). Nur mitsenden, wenn eingetragen oder vorher vorhanden –
+  // so funktioniert das Speichern auch, falls die Datenbankspalten noch fehlen.
+  const tachoStart=tachoFeldLesen('tripTachoStart');
+  const tachoEnde=tachoFeldLesen('tripTachoEnde');
+
+  if(Number.isNaN(tachoStart)||Number.isNaN(tachoEnde)){
+    toast('Bitte bei den Tachoständen nur ganze Zahlen eintragen.');
+    return;
+  }
+  if(tachoStart!=null&&tachoEnde!=null){
+    if(tachoEnde<tachoStart){
+      toast('Der Tachostand bei Ankunft ist kleiner als bei Abfahrt.');
+      return;
+    }
+    if(tachoEnde-tachoStart>1000 && !confirm(
+      'Laut Tacho wären das '+formatTacho(tachoEnde-tachoStart)+
+      ' km. Stimmen die Tachostände?'
+    )){
+      return;
+    }
+  }
+  if(tachoStart!=null||tachoEnde!=null||(tripGeoeffnet&&tripGeoeffnet.hatteTacho)){
+    row.tacho_start=tachoStart;
+    row.tacho_ende=tachoEnde;
+  }
+
   if(
     !row.trip_date ||
     !row.start_address ||
@@ -5830,6 +7084,8 @@ $('tripForm').onsubmit=async e=>{
   saveButton.textContent='Wird gespeichert …';
 
   try{
+    if(id && !(await fahrtAenderungPruefen(id,row)))return;
+
     const query=id
       ? sb
           .from('trip_entries')
@@ -6463,7 +7719,7 @@ $('monthlyMonth').onchange=async()=>{
           <button
             type="button"
             id="printMonthlyDocs"
-            class="secondary"
+            class="kn kn-druck secondary"
             style="width:100%;margin-top:10px"
           >
             Dokumentationen dieses Monats drucken
@@ -6523,6 +7779,7 @@ $('approvalForm').onsubmit=async e=>{
     client_id:savedClientId,
     beginn:$('approvalBeginn').value,
     ende:$('approvalEnde').value||null,
+    gesamtplan_fortschreibung_am:$('approvalGesamtplan').value||null,
     verlaufsbericht_am:$('approvalVerlaufsbericht').value||null,
     verlaufsbericht_faellig_am:$('approvalBerichtFaellig').value||null,
     bewilligungsjahr_beginn:$('approvalJahrBeginn').value||null,
@@ -6540,11 +7797,18 @@ $('approvalForm').onsubmit=async e=>{
   if(row.ende&&row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
-  const q=id
-    ? sb.from('bewilligungen').update(row).eq('id',id).select('id,client_id').single()
-    : sb.from('bewilligungen').insert(row).select('id,client_id').single();
+  const speichern=z=>id
+    ? sb.from('bewilligungen').update(z).eq('id',id).select('id,client_id').single()
+    : sb.from('bewilligungen').insert(z).select('id,client_id').single();
 
-  const {data:savedApproval,error}=await q;
+  let {data:savedApproval,error}=await speichern(row);
+
+  // Falls die Spalte für die Gesamtplan-Fortschreibung noch fehlt: ohne sie speichern
+  if(error&&/gesamtplan_fortschreibung_am/.test(error.message)){
+    const {gesamtplan_fortschreibung_am,...ohne}=row;
+    ({data:savedApproval,error}=await speichern(ohne));
+    if(!error)toast('Hinweis: Fortschreibung des Gesamtplans noch nicht gespeichert – SQL-Befehl fehlt.');
+  }
 
   if(error){
     toast('Bewilligung konnte nicht gespeichert werden: '+error.message);
@@ -6599,12 +7863,27 @@ function pcloudAdresse(){
   return window.location.origin+'/index.html';
 }
 
+// Name des verbundenen Anbieters – später für weitere Clouds erweiterbar
+const CLOUD_ANBIETER_NAME='pCloud';
+
+// Beschriftung des Knopfs auf der Startseite: „eingerichtet" oder „einrichten"
+function cloudStartKnopfZeichnen(){
+  const knopf=$('openCloudSetup');
+  if(!knopf)return;
+  const verbunden=Boolean(pcloudToken);
+  knopf.textContent=verbunden
+    ? '✓ '+CLOUD_ANBIETER_NAME+' eingerichtet'
+    : CLOUD_ANBIETER_NAME+' einrichten';
+  knopf.classList.toggle('cloud-verbunden',verbunden);
+}
+
 function pcloudTokenLaden(){
   try{
     pcloudToken=localStorage.getItem(PCLOUD_SPEICHER)||null;
   }catch(fehler){
     pcloudToken=null;
   }
+  cloudStartKnopfZeichnen();
 }
 
 function pcloudTokenSpeichern(wert){
@@ -6619,6 +7898,8 @@ function pcloudTokenSpeichern(wert){
   }catch(fehler){
     // nicht speicherbar, gilt nur für diese Sitzung
   }
+
+  cloudStartKnopfZeichnen();
 }
 
 function pcloudRueckkehrPruefen(){
@@ -6989,6 +8270,45 @@ function cloudPfadZeichnen(){
   });
 }
 
+/* ---------- Ansichts-Umschalter (wird auf dem Gerät gemerkt) ---------- */
+function ansichtLesen(schluessel,standard,erlaubt){
+  let wert=null;
+  try{wert=localStorage.getItem(schluessel);}catch(e){}
+  return erlaubt.includes(wert)?wert:standard;
+}
+
+function ansichtMerken(schluessel,wert){
+  try{localStorage.setItem(schluessel,wert);}catch(e){}
+}
+
+function umschalterZeigen(id,wert){
+  $(id).querySelectorAll('button').forEach(
+    b=>b.setAttribute('aria-pressed',String(b.dataset.wert===wert))
+  );
+}
+
+// Verbindet einen Umschalter: merkt die Wahl und ruft beiWechsel auf
+function umschalterEinrichten(id,schluessel,standard,beiWechsel){
+  const knoepfe=[...$(id).querySelectorAll('button')];
+  const erlaubt=knoepfe.map(b=>b.dataset.wert);
+
+  umschalterZeigen(id,ansichtLesen(schluessel,standard,erlaubt));
+
+  knoepfe.forEach(b=>b.onclick=()=>{
+    ansichtMerken(schluessel,b.dataset.wert);
+    umschalterZeigen(id,b.dataset.wert);
+    beiWechsel(b.dataset.wert);
+  });
+
+  return ()=>ansichtLesen(schluessel,standard,erlaubt);
+}
+
+const cloudAnsicht=umschalterEinrichten(
+  'cloudAnsicht','ansichtDokumente','kacheln',
+  wert=>$('cloudFiles').classList.toggle('cloud-liste',wert==='liste')
+);
+$('cloudFiles').classList.toggle('cloud-liste',cloudAnsicht()==='liste');
+
 const CLOUD_MONATE=['Januar','Februar','März','April','Mai','Juni','Juli',
   'August','September','Oktober','November','Dezember'];
 
@@ -7031,9 +8351,9 @@ function cloudDateiKachel(f,pfadText){
     );
   }else{
     aktionen.push(
-      '<button type="button" class="danger deleteCloudFile" '+
+      '<button type="button" class="kn kn-loeschen danger deleteCloudFile" '+
       'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'" '+
-      'aria-label="Löschen">🗑 Löschen</button>'
+      'aria-label="Löschen">🗑<span class="knopf-text"> Löschen</span></button>'
     );
   }
 
@@ -7317,7 +8637,7 @@ async function cloudDateiOeffnen(knopf,fileId){
       verweis.className='kachel-oeffnen';
       verweis.innerHTML=beschriftung;
     }else{
-      verweis.className='secondary cloud-open-link';
+      verweis.className='cloud-open-link';
     }
 
     zeige(verweis,'Jetzt öffnen ›');
@@ -7501,6 +8821,7 @@ function cloudSetupZeichnen(){
     : 'Mit pCloud verbinden';
 
   $('cloudSetupTrennen').classList.toggle('hidden',!verbunden);
+  cloudStartKnopfZeichnen();
 }
 
 function cloudSetupOeffnen(){
@@ -7866,55 +9187,10 @@ function renderExpenses(){
     return c?c.name:'';
   };
 
-  $('expensesList').innerHTML=`
-    <div class="summary-box">
-      <div class="summary-row">
-        <span>Belege</span>
-        <strong>${expenses.length}</strong>
-      </div>
+  const sortierung=ausgabenSortierung();
+  const ansicht=ausgabenAnsicht();
 
-      <div class="summary-row">
-        <span>Summe gesamt</span>
-        <strong>${formatEuro(summeBrutto)}</strong>
-      </div>
-
-      <div class="summary-row">
-        <span>Davon absetzbar</span>
-        <strong>${formatEuro(summeAbzugsfaehig)}</strong>
-      </div>
-
-      ${
-        ohneBeleg.length
-          ? `<div class="monthly-warning">
-               ⚠ ${
-                 ohneBeleg.length===1
-                   ? 'Ein Beleg fehlt noch'
-                   : ohneBeleg.length+' Belege fehlen noch'
-               }
-               <div class="monthly-check-details">
-                 ${ohneBeleg.map(e=>
-                   '<div><button type="button" class="jumpToExpense" '+
-                   'data-id="'+esc(e.id)+'">'+
-                   'Beleg '+esc(String(e.beleg_nr||'').padStart(3,'0'))+
-                   ' · '+formatDate(e.datum)+
-                   ' · '+formatEuro(e.betrag)+
-                   '</button></div>'
-                 ).join('')}
-               </div>
-             </div>`
-          : ''
-      }
-    </div>
-
-    <div class="summary-box">
-      <div class="summary-row">
-        <span><strong>Nach Kategorie</strong></span>
-        <strong></strong>
-      </div>
-      ${kategorieZeilen}
-    </div>
-
-    ${expenses.map(e=>`
+  const karteHtml=e=>`
       <div class="doc-item">
         <div class="doc-head">
           <div>
@@ -7965,28 +9241,147 @@ function renderExpenses(){
             }
             <button
               type="button"
-              class="secondary editExpense"
+              class="kn kn-bearbeiten secondary editExpense"
               data-id="${esc(e.id)}">
               Bearbeiten
             </button>
           </div>
         </div>
       </div>
-    `).join('')}
+`;
+
+  const zeileHtml=e=>{
+    const status=e.beleg_datei_id
+      ? '<span class="az-status">📎 Beleg</span>'
+      : (e.beleg_vorhanden
+          ? '<span class="az-status">✓ Papier</span>'
+          : '<span class="az-status fehlt">⚠ Beleg fehlt</span>');
+
+    const meta=[
+      'Beleg '+String(e.beleg_nr||'').padStart(3,'0'),
+      formatDate(e.datum),
+      sortierung==='kategorie'?'':(e.kategorie||''),
+      e.client_id?clientName(e.client_id):''
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <button type="button" class="ausgabe-zeile editExpense" data-id="${esc(e.id)}">
+        <span class="az-text">
+          <span class="az-zweck">${esc(e.zweck||e.kategorie||'Ohne Zweck')}</span>
+          <span class="az-meta">${esc(meta)}</span>
+        </span>
+        <span class="az-rechts">
+          <span class="az-betrag">${formatEuro(e.betrag)}</span>
+          ${status}
+        </span>
+        <span class="az-pfeil" aria-hidden="true">›</span>
+      </button>
+    `;
+  };
+
+  const eintraegeHtml=liste=>ansicht==='karten'
+    ? liste.map(karteHtml).join('')
+    : '<div class="ausgaben-liste">'+liste.map(zeileHtml).join('')+'</div>';
+
+  let hauptteil='';
+
+  if(sortierung==='kategorie'){
+    // Reihenfolge wie im Auswahlfeld, unbekannte Kategorien ans Ende
+    const reihenfolge=AUSGABEN_KATEGORIEN.concat(
+      Object.keys(proKategorie).filter(k=>!AUSGABEN_KATEGORIEN.includes(k))
+    );
+
+    hauptteil=reihenfolge
+      .filter(name=>proKategorie[name]!==undefined)
+      .map(name=>{
+        const liste=expenses.filter(e=>(e.kategorie||'Sonstiges')===name);
+        return `
+          <div class="gruppen-kopf">
+            ${esc(name)}
+            <span>${liste.length} ${liste.length===1?'Beleg':'Belege'} · ${formatEuro(proKategorie[name])}</span>
+          </div>
+          ${eintraegeHtml(liste)}
+        `;
+      }).join('');
+  }else{
+    hauptteil=eintraegeHtml(expenses);
+  }
+
+  $('expensesList').innerHTML=`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Belege</span>
+        <strong>${expenses.length}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Summe gesamt</span>
+        <strong>${formatEuro(summeBrutto)}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Davon absetzbar</span>
+        <strong>${formatEuro(summeAbzugsfaehig)}</strong>
+      </div>
+
+      ${
+        ohneBeleg.length
+          ? `<div class="monthly-warning">
+               ⚠ ${
+                 ohneBeleg.length===1
+                   ? 'Ein Beleg fehlt noch'
+                   : ohneBeleg.length+' Belege fehlen noch'
+               }
+               <div class="monthly-check-details">
+                 ${ohneBeleg.map(e=>
+                   '<div><button type="button" class="jumpToExpense" '+
+                   'data-id="'+esc(e.id)+'">'+
+                   'Beleg '+esc(String(e.beleg_nr||'').padStart(3,'0'))+
+                   ' · '+formatDate(e.datum)+
+                   ' · '+formatEuro(e.betrag)+
+                   '</button></div>'
+                 ).join('')}
+               </div>
+             </div>`
+          : ''
+      }
+    </div>
+
+${sortierung==='kategorie'?'':`
+    <div class="summary-box">
+      <div class="summary-row">
+        <span><strong>Nach Kategorie</strong></span>
+        <strong></strong>
+      </div>
+      ${kategorieZeilen}
+    </div>
+
+`}
+    ${hauptteil}
   `;
 
-  document.querySelectorAll('.editExpense').forEach(
+  document.querySelectorAll('#expensesList .editExpense').forEach(
     b=>b.onclick=()=>openExpenseForm(b.dataset.id)
   );
 
-  document.querySelectorAll('.jumpToExpense').forEach(
+  document.querySelectorAll('#expensesList .jumpToExpense').forEach(
     b=>b.onclick=()=>openExpenseForm(b.dataset.id)
   );
 
-  document.querySelectorAll('.viewBeleg').forEach(
+  document.querySelectorAll('#expensesList .viewBeleg').forEach(
     b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.file)
   );
 }
+
+const ausgabenSortierung=umschalterEinrichten(
+  'expensesSortierung','ansichtAusgabenSortierung','datum',
+  ()=>{if(expenses.length)renderExpenses();}
+);
+
+const ausgabenAnsicht=umschalterEinrichten(
+  'expensesAnsicht','ansichtAusgabenDarstellung','liste',
+  ()=>{if(expenses.length)renderExpenses();}
+);
 
 async function openExpenseForm(id='',vorgabe={}){
   const e=expenses.find(x=>String(x.id)===String(id))||{};
@@ -8357,7 +9752,7 @@ function renderRates(){
             </div>
             <button
               type="button"
-              class="secondary deleteRate"
+              class="kn kn-loeschen secondary deleteRate"
               data-id="${esc(s.id)}">
               Löschen
             </button>
@@ -8992,7 +10387,8 @@ function tbImSatz(t){
   return w.join(' ');
 }
 
-/* Inhalte: „Inhalte: A, B und C."
+/* Inhalte ohne Vorspann: „A, B und C."
+   Das erste Wort bleibt groß, die folgenden werden im Satz angepasst.
    Teile mit Komma kommen ans Ende, damit der Satz lesbar bleibt. */
 function tbInhaltSatz(texte){
   const teile=texte.map(tbOhnePunkt).filter(Boolean);
@@ -9001,13 +10397,13 @@ function tbInhaltSatz(texte){
 
   const ohneKomma=teile.filter(t=>!t.includes(','));
   const mitKomma=teile.filter(t=>t.includes(','));
-  const liste=[...ohneKomma,...mitKomma].map(tbImSatz);
+  const liste=[...ohneKomma,...mitKomma].map((t,i)=>i?tbImSatz(t):t);
 
   if(mitKomma.length>1){
-    return 'Inhalte: '+liste.join('; ')+'.';
+    return liste.join('; ')+'.';
   }
   const schluss=liste.some(t=>/ und /.test(t))?' sowie ':' und ';
-  return 'Inhalte: '+tbVerbinden(liste,schluss)+'.';
+  return tbVerbinden(liste,schluss)+'.';
 }
 
 /* „Klient*in" durch „T. Müller" ersetzen (Anrede bestimmt nur „er"/„sie").
@@ -9045,7 +10441,7 @@ function tbZusammensetzen(ids){
     nach('kontakt').map(tbMitPunkt).join(' '),
     tbBefindenSatz(nach('befinden')),
     tbInhaltSatz(nach('inhalt'))
-  ].filter(Boolean).join(' ');
+  ].filter(Boolean).join('\n');   // Kontakt, Befinden, Inhalt je eine eigene Zeile
 
   return tbNamenEinsetzen(text);
 }
@@ -9056,7 +10452,7 @@ function renderSnippetPicker(){
 
   if(!textbausteine.length){
     ziel.innerHTML='<p class="muted">Noch keine Bausteine angelegt. '+
-      'Unter „Bausteine verwalten" kannst du die Startliste einfügen.</p>';
+      'Tippe auf „Textbaustein erstellen" oder hole unter „Bausteine verwalten" die vorgefertigten Bausteine zurück.</p>';
     renderSnippetPreview();
     return;
   }
@@ -9112,7 +10508,7 @@ function fuegeZusammengesetztEin(){
   const feld=$('docText');
   const vorhanden=feld.value.replace(/\s+$/,'');
 
-  feld.value=vorhanden?vorhanden+' '+text:text;
+  feld.value=vorhanden?vorhanden+'\n'+text:text;
 
   tbAuswahl=[];
   $('snippetPickerDialog').close();
@@ -9121,7 +10517,7 @@ function fuegeZusammengesetztEin(){
   feld.setSelectionRange(feld.value.length,feld.value.length);
   feld.scrollTop=feld.scrollHeight;
 
-  toast('Text eingefügt');
+  toast('Text übernommen');
 }
 
 async function startlisteEinfuegen(automatisch=false){
@@ -9143,11 +10539,11 @@ async function startlisteEinfuegen(automatisch=false){
     .filter(z=>!vorhanden.has(z.titel.toLowerCase()));
 
   if(!neu.length){
-    if(!automatisch)toast('Alle Bausteine der Startliste sind schon vorhanden.');
+    if(!automatisch)toast('Alle vorgefertigten Bausteine sind schon vorhanden.');
     return false;
   }
 
-  if(!automatisch&&!confirm(neu.length+' Bausteine aus der Startliste anlegen?'))return false;
+  if(!automatisch&&!confirm(neu.length+' vorgefertigte Bausteine wiederherstellen?'))return false;
 
   const {error}=await sb.from('textbausteine').insert(neu);
 
@@ -9156,7 +10552,7 @@ async function startlisteEinfuegen(automatisch=false){
     if(/art/.test(error.message)){
       toast('Bitte zuerst den SQL-Befehl für die Spalte „art" ausführen.');
     }else{
-      toast('Startliste konnte nicht angelegt werden: '+error.message);
+      toast('Bausteine konnten nicht wiederhergestellt werden: '+error.message);
     }
     return false;
   }
@@ -9185,10 +10581,10 @@ function renderSnippetList(){
           <p class="doc-text">${esc(b.text)}</p>
         </div>
         <div class="actions">
-          <button type="button" class="secondary editSnippet" data-id="${esc(b.id)}">
+          <button type="button" class="kn kn-bearbeiten secondary editSnippet" data-id="${esc(b.id)}">
             Bearbeiten
           </button>
-          <button type="button" class="danger deleteSnippet" data-id="${esc(b.id)}">
+          <button type="button" class="kn kn-loeschen danger deleteSnippet" data-id="${esc(b.id)}">
             Löschen
           </button>
         </div>
@@ -9265,7 +10661,19 @@ $('snippetPickerReset').onclick=()=>{tbAuswahl=[];renderSnippetPicker();};
 $('snippetPickerInsert').onclick=fuegeZusammengesetztEin;
 $('snippetStartliste').onclick=startlisteEinfuegen;
 
+// Merkt sich, ob das Formular aus der Auswahl heraus geöffnet wurde
+let tbNeuAusAuswahl=false;
+
+$('snippetPickerNew').onclick=()=>{
+  tbNeuAusAuswahl=true;
+  resetSnippetForm();
+  renderSnippetList();
+  $('snippetDialog').showModal();
+  $('snippetTitle').focus();
+};
+
 $('manageSnippets').onclick=async()=>{
+  tbNeuAusAuswahl=false;
   await loadTextbausteine();
   resetSnippetForm();
   renderSnippetList();
@@ -9273,6 +10681,15 @@ $('manageSnippets').onclick=async()=>{
 };
 
 $('closeSnippets').onclick=()=>$('snippetDialog').close();
+
+// Beim Schließen der Verwaltung die Auswahl auf den neuesten Stand bringen
+$('snippetDialog').addEventListener('close',()=>{
+  tbNeuAusAuswahl=false;
+  if($('snippetPickerDialog').open){
+    tbAuswahl=tbAuswahl.filter(id=>textbausteine.some(b=>String(b.id)===id));
+    renderSnippetPicker();
+  }
+});
 $('snippetReset').onclick=resetSnippetForm;
 
 $('snippetForm').onsubmit=async e=>{
@@ -9295,16 +10712,23 @@ $('snippetForm').onsubmit=async e=>{
     art:$('snippetArt').value
   };
 
+  if(!id){
+    const sortMax=textbausteine.reduce(
+      (m,b)=>Math.max(m,Number(b.sortierung)||0),0
+    );
+    zeile.sortierung=sortMax+1;
+  }
+
   const speichern=z=>id
     ? sb.from('textbausteine').update(z).eq('id',id)
-    : sb.from('textbausteine').insert(z);
+    : sb.from('textbausteine').insert(z).select('id').single();
 
-  let {error}=await speichern(zeile);
+  let {data,error}=await speichern(zeile);
 
   // Falls die Spalte „art" noch fehlt: ohne Art speichern
   if(error&&/art/.test(error.message)){
     const {art,...ohneArt}=zeile;
-    ({error}=await speichern(ohneArt));
+    ({data,error}=await speichern(ohneArt));
   }
 
   if(error){
@@ -9318,6 +10742,218 @@ $('snippetForm').onsubmit=async e=>{
 
   await loadTextbausteine();
   renderSnippetList();
+
+  // Neu aus der Auswahl erstellt: gleich antippen und zurück zur Auswahl
+  if(!id&&tbNeuAusAuswahl){
+    const neueId=data&&data.id!=null?String(data.id):null;
+    if(neueId&&!tbAuswahl.includes(neueId))tbAuswahl=[...tbAuswahl,neueId];
+    $('snippetDialog').close();
+  }
+};
+
+
+/* ---------- Klientenbogen ---------- */
+// Übersichtliche, druckbare Seite mit allen wichtigen Angaben eines Klienten
+
+let klientenbogenAktuell=null;
+
+function kbAlter(geburtstag){
+  if(!geburtstag)return null;
+  const g=new Date(geburtstag+'T00:00:00');
+  const h=new Date();
+  let jahre=h.getFullYear()-g.getFullYear();
+  const vorGeburtstag=h.getMonth()<g.getMonth()||
+    (h.getMonth()===g.getMonth()&&h.getDate()<g.getDate());
+  if(vorGeburtstag)jahre--;
+  return jahre>=0?jahre:null;
+}
+
+function kbTelefon(nummer){
+  const text=String(nummer||'').trim();
+  if(!text)return '';
+  const wahl=text.replace(/[^\d+]/g,'');
+  return wahl?'<a href="tel:'+esc(wahl)+'">'+esc(text)+'</a>':esc(text);
+}
+
+function kbEmail(adresse){
+  const text=String(adresse||'').trim();
+  if(!text)return '';
+  return '<a href="mailto:'+esc(text)+'">'+esc(text)+'</a>';
+}
+
+function kbZahl(wert){
+  return Number(wert).toLocaleString('de-DE',{maximumFractionDigits:2});
+}
+
+function kbZeile(titel,inhaltHtml){
+  if(!inhaltHtml)return '';
+  return '<div class="kbo-zeile"><span>'+esc(titel)+'</span><span>'+inhaltHtml+'</span></div>';
+}
+
+function kbAbschnitt(titel,inhaltHtml){
+  if(!inhaltHtml)return '';
+  return '<div class="kbo-abschnitt"><p class="kbo-titel">'+esc(titel)+'</p>'+inhaltHtml+'</div>';
+}
+
+function klientenbogenHtml(c,bewilligung){
+  const farben=AVATAR_FARBEN[
+    String(c.client_code||c.name||'').split('').reduce((s,z)=>s+z.charCodeAt(0),0)%AVATAR_FARBEN.length
+  ];
+  const mitBild=c.portrait&&document.documentElement.getAttribute('data-theme')==='moebius';
+  const avatar=mitBild
+    ? '<img src="bilder/'+esc(c.portrait)+'" alt="">'
+    : esc(clientInitialen(c.name));
+
+  const alter=kbAlter(c.geburtstag);
+  const unterzeile=[
+    c.anrede,
+    c.client_code?'Klienten-ID '+c.client_code:'',
+    c.aktenzeichen?'Aktenzeichen '+c.aktenzeichen:''
+  ].filter(Boolean).map(esc).join(' · ');
+
+  const adresse=[
+    [c.strasse,c.hausnummer].filter(Boolean).join(' '),
+    [c.plz,c.ort].filter(Boolean).join(' ')
+  ].filter(Boolean).join(', ');
+
+  const erreichbar=
+    kbZeile('Adresse',esc(adresse))+
+    kbZeile('Telefon',kbTelefon(c.telefon))+
+    kbZeile('Mobil',kbTelefon(c.mobil));
+
+  const kontakte=[1,2].map(n=>{
+    const name=String(c['kontaktperson'+n]||'').trim();
+    const rolle=String(c['kontakt'+n+'_rolle']||'').trim();
+    const adr=String(c['kontakt'+n+'_adresse']||'').trim();
+    const tel=c['telefon'+n];
+    const mail=c['kontakt'+n+'_email'];
+    if(!name&&!adr&&!tel&&!mail)return '';
+    const erreichbarkeit=[kbTelefon(tel),kbEmail(mail)].filter(Boolean).join(' · ');
+    return '<div class="kbo-kontakt"><span>'+esc(rolle||('Kontakt '+n))+'</span><span>'+
+      (name?'<b>'+esc(name)+'</b><br>':'')+
+      (adr?esc(adr)+'<br>':'')+
+      erreichbarkeit+
+      '</span></div>';
+  }).join('');
+
+  let bewilligt='';
+  if(bewilligung){
+    const zeitraum=formatDate(bewilligung.beginn)+' – '+
+      (bewilligung.ende?formatDate(bewilligung.ende):'offen');
+    const kontingent=[
+      bewilligung.wochen_fls!=null&&bewilligung.wochen_fls!==''
+        ? kbZahl(bewilligung.wochen_fls)+' FLS pro Woche':'',
+      bewilligung.stundenkontingent
+        ? kbZahl(bewilligung.stundenkontingent)+' FLS pro 12 Monate':''
+    ].filter(Boolean).join(' · ');
+    const traeger=[
+      bewilligung.kostentraeger||bewilligung.leistungstraeger_typ,
+      bewilligung.ansprechpartner?'Ansprechpartner: '+bewilligung.ansprechpartner:''
+    ].filter(Boolean).join(' · ');
+    bewilligt=
+      kbZeile(bewilligung._laufend?'Zeitraum':'Letzte Bewilligung',esc(zeitraum))+
+      kbZeile('Gesamtplan',bewilligung.gesamtplan_fortschreibung_am
+        ? esc('Fortschreibung zum '+formatDate(bewilligung.gesamtplan_fortschreibung_am)):'')+
+      kbZeile('Kontingent',esc(kontingent))+
+      kbZeile('Leistungsträger',esc(traeger));
+  }else{
+    bewilligt=kbZeile('Zeitraum','keine Bewilligung eingetragen');
+  }
+
+  const ampel=berichtAmpel(c.id);
+  const berichte=kbZeile('Stand',esc(ampel.symbol+' '+ampel.text));
+
+  const bemerkung=String(c.bemerkungen||'').trim();
+
+  return '<div class="kbogen">'+
+    '<div class="kbo-kopfzeile"><span>KLIENTENBOGEN</span><span>Stand '+esc(formatDate(todayIso()))+'</span></div>'+
+    '<div class="kbo-kopf">'+
+      '<div class="kbo-avatar" style="background:'+farben.bg+';color:'+farben.ink+'">'+avatar+'</div>'+
+      '<div><p class="kbo-name">'+esc(c.name||'')+'</p>'+
+        (unterzeile?'<div class="kbo-leise">'+unterzeile+'</div>':'')+
+        (c.geburtstag?'<div class="kbo-leise">geboren '+esc(formatDate(c.geburtstag))+
+          (alter!=null?' ('+alter+' Jahre)':'')+'</div>':'')+
+      '</div>'+
+    '</div>'+
+    kbAbschnitt('ERREICHBARKEIT',erreichbar)+
+    kbAbschnitt('KONTAKTPERSONEN',kontakte)+
+    kbAbschnitt('BEWILLIGUNG',bewilligt)+
+    kbAbschnitt('BERICHTE',berichte)+
+    kbAbschnitt('BEMERKUNGEN',bemerkung?'<div class="kbo-text">'+esc(bemerkung)+'</div>':'')+
+    '<div class="kbo-fuss"><span>Vertraulich – enthält personenbezogene Daten. Sicher aufbewahren, nicht weitergeben.</span></div>'+
+  '</div>';
+}
+
+async function klientenbogenOeffnen(id){
+  const c=clients.find(x=>String(x.id)===String(id));
+  if(!c)return;
+
+  // Laufende Bewilligung, sonst die zuletzt begonnene
+  const laufend=laufendeBewilligungen(c.id)[0];
+  const eigene=clientApprovals
+    .filter(a=>String(a.client_id)===String(c.id))
+    .sort((a,b)=>String(b.beginn||'').localeCompare(String(a.beginn||'')));
+  const auswahl=laufend||eigene[0]||null;
+
+  let bewilligung=null;
+  if(auswahl){
+    const {data}=await sb.from('bewilligungen').select('*').eq('id',auswahl.id).maybeSingle();
+    bewilligung=data?{...data,_laufend:Boolean(laufend)}:null;
+  }
+
+  const html=klientenbogenHtml(c,bewilligung);
+  klientenbogenAktuell={id:c.id,name:c.name||'Klient',html};
+
+  $('clientSheetTitel').textContent=c.name||'';
+  $('clientSheet').innerHTML=html;
+  $('clientSheetDialog').showModal();
+}
+
+
+// Merkt sich den Stand der Maske beim Öffnen, um ungespeicherte Änderungen zu erkennen
+let clientFormStand='';
+
+function clientFormWerte(){
+  return JSON.stringify(
+    [...document.querySelectorAll('#clientForm input,#clientForm select,#clientForm textarea')]
+      .map(f=>f.value)
+  );
+}
+
+$('clientToSheet').onclick=()=>{
+  const id=$('clientId').value;
+  if(!id)return;
+  if(clientFormWerte()!==clientFormStand&&
+    !confirm('Es gibt ungespeicherte Änderungen. Ohne Speichern zum Klientenbogen wechseln?')){
+    return;
+  }
+  $('clientDialog').close();
+  klientenbogenOeffnen(id);
+};
+
+$('clientToSheetTop').onclick=()=>$('clientToSheet').click();
+$('deleteClientTop').onclick=()=>$('deleteClient').click();
+
+$('closeClientSheet').onclick=()=>$('clientSheetDialog').close();
+
+$('clientSheetEdit').onclick=()=>{
+  const id=klientenbogenAktuell&&klientenbogenAktuell.id;
+  $('clientSheetDialog').close();
+  if(id)openClient(id);
+};
+
+$('clientSheetPrint').onclick=()=>{
+  if(!klientenbogenAktuell)return;
+  try{
+    sessionStorage.setItem('klientenbogen_payload',JSON.stringify({
+      name:klientenbogenAktuell.name,
+      html:klientenbogenAktuell.html
+    }));
+  }catch(fehler){
+    toast('Der Klientenbogen konnte nicht übergeben werden.');
+    return;
+  }
+  window.open('klientenbogen.html','_blank');
 };
 
 $('backupData').onclick=erstelleSicherung;
@@ -9482,8 +11118,8 @@ function kalEintraegeAm(iso){
 function kalZeichnen(){
   const {start,ende}=kalZeitraum();
 
-  $('kalMonat').className=kalAnsicht==='monat'?'primary':'secondary';
-  $('kalWoche').className=kalAnsicht==='woche'?'primary':'secondary';
+  $('kalMonat').setAttribute('aria-pressed',String(kalAnsicht==='monat'));
+  $('kalWoche').setAttribute('aria-pressed',String(kalAnsicht==='woche'));
 
   if(kalAnsicht==='monat'){
     $('kalTitel').textContent=kalDatum.toLocaleDateString('de-DE',{
@@ -10320,7 +11956,9 @@ const DESIGN_SPEICHER='qa_design';
 
 const DESIGN_THEME_FARBEN={
   standard:'#C85A3E',
-  moebius:'#c07040'
+  moebius:'#c07040',
+  dunkel:'#0b0d0c',
+  blumen:'#4fb0ee'
 };
 
 function setzeDesign(name){
