@@ -1711,6 +1711,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
+      <button type="button" id="clientToSheet" class="kn kn-nav secondary hidden">Klientenbogen</button>
       <button type="button" id="deleteClient" class="kn kn-loeschen danger hidden">Löschen</button>
 <button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
@@ -2751,7 +2752,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.26';
+const APP_VERSION='1.27';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3501,7 +3502,9 @@ function openClient(id=''){
   $('clientPortrait').value=c.portrait||'';
   updatePortraitVorschau();
   $('deleteClient').classList.toggle('hidden',!id);
+  $('clientToSheet').classList.toggle('hidden',!id);
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
+  clientFormStand=clientFormWerte();
   $('clientDialog').showModal();
 }
 
@@ -10870,6 +10873,28 @@ async function klientenbogenOeffnen(id){
   $('clientSheet').innerHTML=html;
   $('clientSheetDialog').showModal();
 }
+
+
+// Merkt sich den Stand der Maske beim Öffnen, um ungespeicherte Änderungen zu erkennen
+let clientFormStand='';
+
+function clientFormWerte(){
+  return JSON.stringify(
+    [...document.querySelectorAll('#clientForm input,#clientForm select,#clientForm textarea')]
+      .map(f=>f.value)
+  );
+}
+
+$('clientToSheet').onclick=()=>{
+  const id=$('clientId').value;
+  if(!id)return;
+  if(clientFormWerte()!==clientFormStand&&
+    !confirm('Es gibt ungespeicherte Änderungen. Ohne Speichern zum Klientenbogen wechseln?')){
+    return;
+  }
+  $('clientDialog').close();
+  klientenbogenOeffnen(id);
+};
 
 $('closeClientSheet').onclick=()=>$('clientSheetDialog').close();
 
