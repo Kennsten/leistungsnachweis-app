@@ -23,12 +23,28 @@
 const ROUTEN_URL = 'https://api.heigit.org/openrouteservice/v2/directions/driving-car';
 const SUCHE_URL = 'https://api.heigit.org/pelias/v1/search';
 
-// Supabase-Projekt der App. Für die Verkaufsversion (Frankfurt) können
-// die Werte über Netlify-Umgebungsvariablen ersetzt werden.
-const SUPABASE_URL =
-  process.env.SUPABASE_URL || 'https://bhrygputoysiwchzlygn.supabase.co';
-const SUPABASE_KEY =
-  process.env.SUPABASE_ANON_KEY || 'sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C';
+// Supabase-Projekte der App. Welches gilt, entscheidet die Adresse, unter
+// der die App läuft: Die Verkaufsversion (produkt--…) nutzt Frankfurt,
+// alle anderen Adressen das bisherige Projekt. So funktioniert dieselbe
+// Datei in beiden Zweigen.
+const PROJEKT_EIGEN = {
+  url: 'https://bhrygputoysiwchzlygn.supabase.co',
+  key: 'sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C'
+};
+const PROJEKT_FRANKFURT = {
+  url: 'https://luizzjsxufsezgpjypwx.supabase.co',
+  key: 'sb_publishable_i5miPJA-UhIWaeTGywSmoA_aLLba56l'
+};
+
+function projektFuer(request) {
+  let host = '';
+  try {
+    host = new URL(request.url).hostname;
+  } catch (fehler) {
+    host = '';
+  }
+  return host.startsWith('produkt--') ? PROJEKT_FRANKFURT : PROJEKT_EIGEN;
+}
 
 const MAX_PUNKTE = 12;
 
@@ -59,8 +75,9 @@ export default async (request) => {
   }
 
   try {
-    const pruefung = await fetch(SUPABASE_URL + '/auth/v1/user', {
-      headers: { apikey: SUPABASE_KEY, Authorization: anmeldung }
+    const projekt = projektFuer(request);
+    const pruefung = await fetch(projekt.url + '/auth/v1/user', {
+      headers: { apikey: projekt.key, Authorization: anmeldung }
     });
     if (!pruefung.ok) {
       return json(401, { fehler: 'Anmeldung abgelaufen. Bitte neu anmelden.' });
