@@ -2222,13 +2222,18 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
   <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
   <div id="snippetPickerList"></div>
+  <div style="margin-top:10px">
+    <button type="button" id="snippetPickerNew" class="secondary" style="width:100%">
+      ＋ Textbaustein erstellen
+    </button>
+  </div>
   <div class="tb-gruppe">
     <h3>Vorschau</h3>
     <div id="snippetPreview" class="tb-vorschau muted">Noch nichts ausgewählt.</div>
   </div>
   <div class="actions" style="margin-top:14px">
     <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
-    <button type="button" id="snippetPickerInsert" class="primary">Text einfügen</button>
+    <button type="button" id="snippetPickerInsert" class="primary">Text übernehmen</button>
   </div>
 </dialog>
 
@@ -2615,8 +2620,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.21';
-const APP_STAND='28.10.2026';
+const APP_VERSION='1.22';
+const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -10237,7 +10242,7 @@ function renderSnippetPicker(){
 
   if(!textbausteine.length){
     ziel.innerHTML='<p class="muted">Noch keine Bausteine angelegt. '+
-      'Unter „Bausteine verwalten" kannst du die Startliste einfügen.</p>';
+      'Tippe auf „Textbaustein erstellen" oder lege unter „Bausteine verwalten" die Startliste an.</p>';
     renderSnippetPreview();
     return;
   }
@@ -10302,7 +10307,7 @@ function fuegeZusammengesetztEin(){
   feld.setSelectionRange(feld.value.length,feld.value.length);
   feld.scrollTop=feld.scrollHeight;
 
-  toast('Text eingefügt');
+  toast('Text übernommen');
 }
 
 async function startlisteEinfuegen(automatisch=false){
@@ -10446,7 +10451,19 @@ $('snippetPickerReset').onclick=()=>{tbAuswahl=[];renderSnippetPicker();};
 $('snippetPickerInsert').onclick=fuegeZusammengesetztEin;
 $('snippetStartliste').onclick=startlisteEinfuegen;
 
+// Merkt sich, ob das Formular aus der Auswahl heraus geöffnet wurde
+let tbNeuAusAuswahl=false;
+
+$('snippetPickerNew').onclick=()=>{
+  tbNeuAusAuswahl=true;
+  resetSnippetForm();
+  renderSnippetList();
+  $('snippetDialog').showModal();
+  $('snippetTitle').focus();
+};
+
 $('manageSnippets').onclick=async()=>{
+  tbNeuAusAuswahl=false;
   await loadTextbausteine();
   resetSnippetForm();
   renderSnippetList();
@@ -10454,6 +10471,15 @@ $('manageSnippets').onclick=async()=>{
 };
 
 $('closeSnippets').onclick=()=>$('snippetDialog').close();
+
+// Beim Schließen der Verwaltung die Auswahl auf den neuesten Stand bringen
+$('snippetDialog').addEventListener('close',()=>{
+  tbNeuAusAuswahl=false;
+  if($('snippetPickerDialog').open){
+    tbAuswahl=tbAuswahl.filter(id=>textbausteine.some(b=>String(b.id)===id));
+    renderSnippetPicker();
+  }
+});
 $('snippetReset').onclick=resetSnippetForm;
 
 $('snippetForm').onsubmit=async e=>{
@@ -10476,16 +10502,23 @@ $('snippetForm').onsubmit=async e=>{
     art:$('snippetArt').value
   };
 
+  if(!id){
+    const sortMax=textbausteine.reduce(
+      (m,b)=>Math.max(m,Number(b.sortierung)||0),0
+    );
+    zeile.sortierung=sortMax+1;
+  }
+
   const speichern=z=>id
     ? sb.from('textbausteine').update(z).eq('id',id)
-    : sb.from('textbausteine').insert(z);
+    : sb.from('textbausteine').insert(z).select('id').single();
 
-  let {error}=await speichern(zeile);
+  let {data,error}=await speichern(zeile);
 
   // Falls die Spalte „art" noch fehlt: ohne Art speichern
   if(error&&/art/.test(error.message)){
     const {art,...ohneArt}=zeile;
-    ({error}=await speichern(ohneArt));
+    ({data,error}=await speichern(ohneArt));
   }
 
   if(error){
@@ -10499,6 +10532,13 @@ $('snippetForm').onsubmit=async e=>{
 
   await loadTextbausteine();
   renderSnippetList();
+
+  // Neu aus der Auswahl erstellt: gleich antippen und zurück zur Auswahl
+  if(!id&&tbNeuAusAuswahl){
+    const neueId=data&&data.id!=null?String(data.id):null;
+    if(neueId&&!tbAuswahl.includes(neueId))tbAuswahl=[...tbAuswahl,neueId];
+    $('snippetDialog').close();
+  }
 };
 
 $('backupData').onclick=erstelleSicherung;
