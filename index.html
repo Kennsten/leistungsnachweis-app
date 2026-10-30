@@ -322,7 +322,7 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 
 .client-buttons{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(152px,1fr));
   gap:8px;
 }
 
@@ -1259,10 +1259,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 /* ---------- Umschalter für die Ansicht (Kacheln/Liste, Datum/Kategorie) ---------- */
 .ansicht-leiste{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
-.umschalter{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-control);overflow:hidden;background:var(--card)}
-.umschalter button{border:0;background:none;padding:8px 14px;font:inherit;font-size:.9rem;font-weight:600;color:var(--muted)}
-.umschalter button+button{border-left:1px solid var(--line)}
-.umschalter button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+.umschalter{display:inline-flex;gap:2px;padding:3px;border-radius:var(--radius-control);background:var(--track)}
+.umschalter button{border:0;background:none;padding:7px 13px;border-radius:calc(var(--radius-control) - 2px);font:inherit;font-size:.9rem;font-weight:600;color:var(--muted)}
+.umschalter button[aria-pressed="true"]{background:var(--card);color:var(--brand-dark);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 /* ---------- Dokumente: Listenansicht ---------- */
 #cloudFiles.cloud-liste .cloud-raster{display:flex;flex-direction:column;gap:0;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset);overflow:hidden}
@@ -1368,6 +1367,57 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   .kal-anzahl{display:none}
   .kal-punkt{width:7px;height:7px}
 }
+
+/* ---------- Knopf-Arten (Version 1.23) ----------
+   Jede Art hat eine feste Bedeutung, damit man Knöpfe am Aussehen erkennt:
+   kn-speichern  = kräftig gefüllt  (nur einer pro Fenster)
+   kn-bearbeiten = umrandet          kn-neu       = zart getönt
+   kn-schliessen = grau getönt       kn-loeschen  = rot umrandet
+   kn-druck / kn-datei = umrandet mit Drucker- bzw. Dateisymbol
+   kn-nav        = Wechsel in einen anderen Bereich, mit Pfeil am Ende */
+:root{
+  --kn-ico-check:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E");
+  --kn-ico-stift:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4M13.5 6.5l4 4'/%3E%3C/svg%3E");
+  --kn-ico-plus:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+  --kn-ico-x:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E");
+  --kn-ico-muell:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
+  --kn-ico-drucker:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4M7 13h10v8H7z'/%3E%3C/svg%3E");
+  --kn-ico-datei:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2zM9 13h6M9 17h6'/%3E%3C/svg%3E");
+  --kn-ico-pfeil:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E");
+  --kn-rand:1.5px;
+}
+[data-theme="moebius"]{--kn-rand:2px}
+
+.kn.kn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:var(--kn-rand) solid transparent;box-shadow:none;line-height:1.15}
+.kn.kn::before{content:"";flex:0 0 auto;width:1.05em;height:1.05em;background:currentColor;
+  -webkit-mask:var(--kn-ico) center/contain no-repeat;mask:var(--kn-ico) center/contain no-repeat}
+
+.kn.kn-speichern{--kn-ico:var(--kn-ico-check);background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.kn.kn-speichern:hover{background:var(--brand-dark);border-color:var(--brand-dark)}
+[data-theme="moebius"] .kn.kn-speichern{border-color:var(--ink)}
+
+.kn.kn-bearbeiten{--kn-ico:var(--kn-ico-stift);background:transparent;color:var(--brand-dark);border-color:var(--brand)}
+.kn.kn-druck{--kn-ico:var(--kn-ico-drucker);background:transparent;color:var(--brand-dark);border-color:var(--brand)}
+.kn.kn-datei{--kn-ico:var(--kn-ico-datei);background:transparent;color:var(--brand-dark);border-color:var(--brand)}
+
+.kn.kn-neu{--kn-ico:var(--kn-ico-plus);
+  background:color-mix(in srgb,var(--brand) 32%,var(--card));
+  border-color:transparent;
+  color:color-mix(in srgb,var(--brand-dark) 60%,var(--ink))}
+[data-theme="dunkel"] .kn.kn-neu{background:color-mix(in srgb,var(--brand) 20%,var(--card));color:var(--brand-dark)}
+
+.kn.kn-schliessen{--kn-ico:var(--kn-ico-x);background:var(--track);border-color:transparent;
+  color:color-mix(in srgb,var(--ink) 75%,var(--muted))}
+
+.kn.kn-loeschen{--kn-ico:var(--kn-ico-muell);background:var(--card);color:var(--danger);border-color:var(--danger)}
+
+.kn.kn-nav{background:var(--card);color:var(--ink);border-color:var(--track);justify-content:space-between;text-align:left}
+.kn.kn-nav::before{display:none}
+.kn.kn-nav::after{content:"";flex:0 0 auto;width:.95em;height:.95em;background:var(--muted);
+  -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
+.kn.kn-nav:hover{border-color:var(--brand)}
+.client-buttons .kn.kn-nav{min-width:0;gap:4px;padding-right:8px}
 </style>
 </head>
 <body>
@@ -1435,42 +1485,42 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button
       type="button"
       id="openCalendar"
-      class="secondary">
+      class="kn kn-nav secondary">
       Kalender
     </button>
 
     <button
       type="button"
       id="allApprovals"
-      class="secondary">
+      class="kn kn-nav secondary">
       Alle Bewilligungen
     </button>
 
     <button
       type="button"
       id="allTrips"
-      class="secondary">
+      class="kn kn-nav secondary">
       Gesamt-Fahrtenliste
     </button>
 
     <button
       type="button"
       id="generalTrips"
-      class="secondary">
+      class="kn kn-nav secondary">
       Allgemeine Fahrten
     </button>
 
     <button
       type="button"
       id="allExpenses"
-      class="secondary">
+      class="kn kn-nav secondary">
       Betriebsausgaben
     </button>
 
     <button
       type="button"
       id="allIncome"
-      class="secondary">
+      class="kn kn-nav secondary">
       Einnahmen
     </button>
 
@@ -1497,8 +1547,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       </p>
     </div>
 
-    <button id="newClient" class="primary">
-      + Neuer Klient
+    <button id="newClient" class="kn kn-neu primary">
+      Neuer Klient
     </button>
   </div>
 
@@ -1532,7 +1582,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </label>
 
   <div class="actions">
-    <button type="button" id="saveNewPassword" class="primary">
+    <button type="button" id="saveNewPassword" class="kn kn-speichern primary">
       Passwort speichern
     </button>
   </div>
@@ -1542,7 +1592,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <form id="clientForm">
     <div class="top">
       <h2 id="dialogTitle">Klient anlegen</h2>
-      <button type="button" id="closeDialog" class="secondary">Schließen</button>
+      <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="clientId">
     <div class="grid">
@@ -1582,8 +1632,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label class="span2">Bemerkungen<textarea id="bemerkungen" rows="3"></textarea></label>
     </div>
     <div class="actions">
-      <button type="button" id="deleteClient" class="danger hidden">Löschen</button>
-<button type="submit" class="primary">Speichern</button>
+      <button type="button" id="deleteClient" class="kn kn-loeschen danger hidden">Löschen</button>
+<button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1594,11 +1644,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentationen</div>
       <h2 id="docsClientName"></h2>
     </div>
-    <button type="button" id="closeDocs" class="secondary">Schließen</button>
+    <button type="button" id="closeDocs" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions" style="margin:16px 0">
-    <button type="button" id="newDoc" class="primary">+ Neue Dokumentation</button>
-    <button type="button" id="printDocs" class="secondary">Dokumentationen drucken</button>
+    <button type="button" id="newDoc" class="kn kn-neu primary">Neue Dokumentation</button>
+    <button type="button" id="printDocs" class="kn kn-druck secondary">Dokumentationen drucken</button>
   </div>
   <label>Suchen
     <input id="docSearch" type="search" placeholder="Datum, Text, Leistungsart oder Kennziffer">
@@ -1614,7 +1664,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Einzeltermin</div>
         <h2 id="docDialogTitle">Dokumentation anlegen</h2>
       </div>
-      <button type="button" id="closeDocForm" class="secondary">Schließen</button>
+      <button type="button" id="closeDocForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="docId">
     <div class="grid">
@@ -1678,8 +1728,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="deleteDoc" class="danger hidden">Löschen</button>
-<button type="submit" id="docSave" class="primary">Speichern</button>
+      <button type="button" id="deleteDoc" class="kn kn-loeschen danger hidden">Löschen</button>
+<button type="submit" id="docSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1694,13 +1744,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <p id="docDeleteText"></p>
   <p class="muted small" id="docDeleteBelegHinweis"></p>
   <div class="actions" style="flex-wrap:wrap">
-    <button type="button" id="docDeleteBoth" class="danger">
+    <button type="button" id="docDeleteBoth" class="kn kn-loeschen danger">
       Dokumentation und Fahrt löschen
     </button>
-    <button type="button" id="docDeleteOnly" class="secondary">
+    <button type="button" id="docDeleteOnly" class="kn kn-loeschen secondary">
       Nur Dokumentation löschen
     </button>
-    <button type="button" id="docDeleteCancel" class="secondary">
+    <button type="button" id="docDeleteCancel" class="kn kn-schliessen secondary">
       Abbrechen
     </button>
   </div>
@@ -1712,10 +1762,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Klientenakte</div>
       <h2 id="approvalsClientName">Bewilligungen</h2>
     </div>
-    <button type="button" id="closeApprovals" class="secondary">Schließen</button>
+    <button type="button" id="closeApprovals" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions">
-    <button type="button" id="newApproval" class="primary">+ Neue Bewilligung</button>
+    <button type="button" id="newApproval" class="kn kn-neu primary">Neue Bewilligung</button>
   </div>
   <div id="approvalsList"></div>
 </dialog>
@@ -1724,7 +1774,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <form id="approvalForm">
     <div class="top">
       <h2 id="approvalDialogTitle">Bewilligung anlegen</h2>
-      <button type="button" id="closeApprovalForm" class="secondary">Schließen</button>
+      <button type="button" id="closeApprovalForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="approvalId">
     <div class="grid">
@@ -1755,15 +1805,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
             Aus pCloud wählen
           </button>
           <span id="approvalBescheidViewSlot" class="hidden" style="display:flex;flex:1"></span>
-          <button type="button" id="approvalBescheidLoesen" class="danger hidden">
+          <button type="button" id="approvalBescheidLoesen" class="kn kn-loeschen danger hidden">
             Zuordnung lösen
           </button>
         </div>
       </div>
     </div>
     <div class="actions">
-      <button type="button" id="deleteApproval" class="danger hidden">Löschen</button>
-      <button type="submit" class="primary">Speichern</button>
+      <button type="button" id="deleteApproval" class="kn kn-loeschen danger hidden">Löschen</button>
+      <button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -1778,7 +1828,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button
       type="button"
       id="closeAllApprovals"
-      class="secondary">
+      class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -1800,14 +1850,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button
         type="button"
         id="printAllTrips"
-        class="primary">
+        class="kn kn-nav primary">
         Fahrtenbuch öffnen
       </button>
 
       <button
         type="button"
         id="closeAllTrips"
-        class="secondary">
+        class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -1862,11 +1912,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Steuerliches Fahrtenbuch</div>
       <h2 id="tripsClientName">Fahrtenbuch</h2>
     </div>
-    <button type="button" id="closeTrips" class="secondary">Schließen</button>
+    <button type="button" id="closeTrips" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions" style="margin:16px 0">
-    <button type="button" id="newTrip" class="primary">+ Neue Fahrt</button>
-    <button type="button" id="newDocFromTrips" class="secondary">+ Neue Dokumentation</button>
+    <button type="button" id="newTrip" class="kn kn-neu primary">Neue Fahrt</button>
+    <button type="button" id="newDocFromTrips" class="kn kn-neu secondary">Neue Dokumentation</button>
   </div>
 <div class="ansicht-leiste">
   <div class="umschalter" id="tripsAnsicht" role="group" aria-label="Darstellung der Fahrten">
@@ -1884,7 +1934,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Berechnete Strecke</div>
       <h2 id="kartenTitel">Karte</h2>
     </div>
-    <button type="button" id="closeKarte" class="secondary">Schließen</button>
+    <button type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="karte"></div>
   <p class="muted small" style="margin:8px 0 0">
@@ -1900,7 +1950,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Fahrtenbuch</div>
         <h2 id="tripDialogTitle">Fahrt anlegen</h2>
       </div>
-      <button type="button" id="closeTripForm" class="secondary">Schließen</button>
+      <button type="button" id="closeTripForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
 
     <input type="hidden" id="tripId">
@@ -1990,8 +2040,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="deleteTrip" class="danger hidden">Löschen</button>
-<button type="submit" id="tripSave" class="primary">Speichern</button>
+      <button type="button" id="deleteTrip" class="kn kn-loeschen danger hidden">Löschen</button>
+<button type="submit" id="tripSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -2002,7 +2052,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Fahrtenbuch</div>
       <h2>Gespeicherte Stopps</h2>
     </div>
-    <button type="button" id="closeStopManager" class="secondary">
+    <button type="button" id="closeStopManager" class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -2021,7 +2071,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="button" id="cloudRefresh" class="secondary">
         Aktualisieren
       </button>
-      <button type="button" id="closeCloud" class="secondary">
+      <button type="button" id="closeCloud" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2085,14 +2135,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumente und Belege</div>
       <h2>pCloud einrichten</h2>
     </div>
-    <button type="button" id="closeCloudSetup" class="secondary">Schließen</button>
+    <button type="button" id="closeCloudSetup" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="summary-box">
     <div id="cloudSetupStatus" class="einrichten-status"></div>
     <div class="actions" style="margin-top:12px">
       <button type="button" id="cloudSetupVerbinden" class="primary">Mit pCloud verbinden</button>
-      <button type="button" id="cloudSetupTrennen" class="danger hidden">Verbindung trennen</button>
+      <button type="button" id="cloudSetupTrennen" class="kn kn-loeschen danger hidden">Verbindung trennen</button>
     </div>
   </div>
 
@@ -2169,7 +2219,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentation</div>
       <h2>Textbausteine</h2>
     </div>
-    <button type="button" id="closeSnippets" class="secondary">Schließen</button>
+    <button type="button" id="closeSnippets" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <form id="snippetForm">
@@ -2193,10 +2243,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </label>
 
     <div class="actions">
-      <button type="button" id="snippetReset" class="secondary hidden">
+      <button type="button" id="snippetReset" class="kn kn-schliessen secondary hidden">
         Abbrechen
       </button>
-      <button type="submit" id="snippetSave" class="primary">
+      <button type="submit" id="snippetSave" class="kn kn-speichern primary">
         Baustein speichern
       </button>
     </div>
@@ -2218,13 +2268,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentation</div>
       <h2>Textbausteine einfügen</h2>
     </div>
-    <button type="button" id="closeSnippetPicker" class="secondary">Schließen</button>
+    <button type="button" id="closeSnippetPicker" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
   <div id="snippetPickerList"></div>
   <div style="margin-top:10px">
-    <button type="button" id="snippetPickerNew" class="secondary" style="width:100%">
-      ＋ Textbaustein erstellen
+    <button type="button" id="snippetPickerNew" class="kn kn-neu secondary" style="width:100%">
+      Textbaustein erstellen
     </button>
   </div>
   <div class="tb-gruppe">
@@ -2233,7 +2283,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
   <div class="actions" style="margin-top:14px">
     <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
-    <button type="button" id="snippetPickerInsert" class="primary">Text übernehmen</button>
+    <button type="button" id="snippetPickerInsert" class="kn kn-speichern primary">Text übernehmen</button>
   </div>
 </dialog>
 
@@ -2249,7 +2299,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Sätze
       </button>
 
-      <button type="button" id="closeIncome" class="secondary">
+      <button type="button" id="closeIncome" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2271,7 +2321,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Einnahmen</div>
       <h2>Vergütungssätze</h2>
     </div>
-    <button type="button" id="closeRates" class="secondary">Schließen</button>
+    <button type="button" id="closeRates" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <form id="rateForm">
@@ -2297,7 +2347,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="submit" class="primary">Satz speichern</button>
+      <button type="submit" class="kn kn-speichern primary">Satz speichern</button>
     </div>
   </form>
 
@@ -2310,11 +2360,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentationen drucken</div>
       <h2 id="docRangeClientName">Zeitraum wählen</h2>
     </div>
-    <button type="button" id="closeDocRange" class="secondary">Schließen</button>
+    <button type="button" id="closeDocRange" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="actions" style="margin:14px 0">
-    <button type="button" id="docRangeAll" class="secondary">
+    <button type="button" id="docRangeAll" class="kn kn-nav secondary">
       Alle Dokumentationen
     </button>
   </div>
@@ -2356,11 +2406,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Übersicht öffnen
       </button>
 
-      <button type="button" id="newExpense" class="secondary">
-        + Neue Ausgabe
+      <button type="button" id="newExpense" class="kn kn-neu secondary">
+        Neue Ausgabe
       </button>
 
-      <button type="button" id="closeExpenses" class="secondary">
+      <button type="button" id="closeExpenses" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2403,7 +2453,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Betriebsausgabe</div>
         <h2 id="expenseDialogTitle">Ausgabe anlegen</h2>
       </div>
-      <button type="button" id="closeExpenseForm" class="secondary">
+      <button type="button" id="closeExpenseForm" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -2463,11 +2513,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div style="font-weight:650;margin-bottom:6px">Beleg (Foto oder PDF)</div>
         <div id="expenseBelegStatus" class="muted small"></div>
         <div class="actions" style="margin-top:10px">
-          <button type="button" id="expenseBelegPick" class="secondary">
+          <button type="button" id="expenseBelegPick" class="kn kn-neu secondary">
             Beleg hinzufügen
           </button>
           <span id="expenseBelegViewSlot" class="hidden" style="display:flex;flex:1"></span>
-          <button type="button" id="expenseBelegRemove" class="danger hidden">
+          <button type="button" id="expenseBelegRemove" class="kn kn-loeschen danger hidden">
             Entfernen
           </button>
         </div>
@@ -2482,8 +2532,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="deleteExpense" class="danger hidden">Löschen</button>
-      <button type="submit" id="expenseSave" class="primary">Speichern</button>
+      <button type="button" id="deleteExpense" class="kn kn-loeschen danger hidden">Löschen</button>
+      <button type="submit" id="expenseSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -2494,7 +2544,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Kalender</div>
       <h2 id="kalTitel">Termine</h2>
     </div>
-    <button type="button" id="kalClose" class="secondary">Schließen</button>
+    <button type="button" id="kalClose" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="kal-leiste">
@@ -2502,12 +2552,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="kalHeute" class="secondary">Heute</button>
     <button type="button" id="kalVor" class="secondary" aria-label="Weiter">›</button>
     <span style="flex:1"></span>
-    <button type="button" id="kalMonat" class="primary">Monat</button>
-    <button type="button" id="kalWoche" class="secondary">Woche</button>
+    <div class="umschalter" role="group" aria-label="Kalenderansicht">
+      <button type="button" id="kalMonat" aria-pressed="true">Monat</button>
+      <button type="button" id="kalWoche" aria-pressed="false">Woche</button>
+    </div>
   </div>
 
   <div class="actions" style="margin:10px 0">
-    <button type="button" id="kalNeu" class="primary">+ Termin planen</button>
+    <button type="button" id="kalNeu" class="kn kn-neu primary">Termin planen</button>
   </div>
 
   <div id="kalInhalt"></div>
@@ -2531,7 +2583,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Kalender</div>
         <h2 id="terminTitel">Termin planen</h2>
       </div>
-      <button type="button" id="terminClose" class="secondary">Schließen</button>
+      <button type="button" id="terminClose" class="kn kn-schliessen secondary">Schließen</button>
     </div>
 
     <div class="grid">
@@ -2589,8 +2641,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
 
     <div class="actions">
-      <button type="button" id="terminDelete" class="danger hidden">Löschen</button>
-      <button type="submit" id="terminSave" class="primary">Speichern</button>
+      <button type="button" id="terminDelete" class="kn kn-loeschen danger hidden">Löschen</button>
+      <button type="submit" id="terminSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
 </dialog>
@@ -2602,7 +2654,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <h2 id="monthlyClientName">Monatsnachweis</h2>
     </div>
 
-    <button type="button" id="closeMonthly" class="secondary">
+    <button type="button" id="closeMonthly" class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -2620,7 +2672,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.22';
+const APP_VERSION='1.23';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3291,7 +3343,7 @@ function renderClients(){
           <div class="client-name">
             <div class="client-name-row">
               <h3>${esc(c.name)}</h3>
-              <button class="secondary edit name-edit" data-id="${c.id}">
+              <button class="kn kn-bearbeiten secondary edit name-edit" data-id="${c.id}">
                 Bearbeiten
               </button>
             </div>
@@ -3304,11 +3356,11 @@ function renderClients(){
         </div>
 
         <div class="client-buttons">
-          <button class="secondary docs" data-id="${c.id}">Dokumentation</button>
-          <button class="secondary approvals" data-id="${c.id}">Bewilligungen</button>
-          <button class="secondary trips" data-id="${c.id}">Fahrtenbuch</button>
-          <button class="secondary monthly" data-id="${c.id}">Monatsnachweis</button>
-          <button class="secondary cloud" data-id="${c.id}">Dokumente</button>
+          <button class="kn kn-nav secondary docs" data-id="${c.id}">Dokumentation</button>
+          <button class="kn kn-nav secondary approvals" data-id="${c.id}">Bewilligungen</button>
+          <button class="kn kn-nav secondary trips" data-id="${c.id}">Fahrtenbuch</button>
+          <button class="kn kn-nav secondary monthly" data-id="${c.id}">Monatsnachweis</button>
+          <button class="kn kn-nav secondary cloud" data-id="${c.id}">Dokumente</button>
         </div>
       </div>
     `;
@@ -3825,7 +3877,7 @@ async function loadAllTrips(){
 
           <button
             type="button"
-            class="secondary openAllTrip"
+            class="kn kn-nav secondary openAllTrip"
             data-client-id="${esc(trip.client_id||'')}"
             data-allgemein="${trip.allgemein?'1':''}">
             ${trip.allgemein?'Zu den allgemeinen Fahrten':'Zu den Fahrten des Klienten'}
@@ -4033,13 +4085,13 @@ async function loadTrips(){
             </div>
                 <div class="actions">
 
-              <button type="button" class="secondary editTrip" data-id="${t.id}">Bearbeiten</button>
+              <button type="button" class="kn kn-bearbeiten secondary editTrip" data-id="${t.id}">Bearbeiten</button>
               ${
                 tripsAllgemein
                   ? ''
                   : t.documentation_id
-                    ? `<button type="button" class="secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
-                    : `<button type="button" class="secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
+                    ? `<button type="button" class="kn kn-nav secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
+                    : `<button type="button" class="kn kn-neu secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
               }
                                 <button type="button" class="secondary expenseFromTrip" data-id="${t.id}">Parkticket</button>
 
@@ -4121,7 +4173,7 @@ function renderStopManager(){
 
           <button
             type="button"
-            class="secondary deleteStop"
+            class="kn kn-loeschen secondary deleteStop"
             data-name="${esc(name)}">
             Löschen
           </button>
@@ -4705,7 +4757,7 @@ function terminZeileHtml(t){
           <button class="${rel.stufe==='vergangen'?'primary':'secondary'} docFromTermin" data-id="${esc(t.id)}">
             Dokumentation anlegen
           </button>
-          <button class="danger cancelTermin" data-id="${esc(t.id)}">Löschen</button>
+          <button class="kn kn-loeschen danger cancelTermin" data-id="${esc(t.id)}">Löschen</button>
         </div>
       </div>
     </div>
@@ -4760,12 +4812,12 @@ function renderDocs(){
           ${d.besonderheiten?`<div class="meta">Vereinbarungen / Besonderheiten: ${esc(d.besonderheiten)}</div>`:''}
         </div>
           <div class="actions">
-            <button class="secondary editDoc" data-id="${d.id}">Bearbeiten</button>
+            <button class="kn kn-bearbeiten secondary editDoc" data-id="${d.id}">Bearbeiten</button>
             ${(()=>{
               const fahrt=fahrtZuDoku(d.id);
 
               if(fahrt){
-                return '<button class="secondary showTripOfDoc" data-id="'+
+                return '<button class="kn kn-nav secondary showTripOfDoc" data-id="'+
                   esc(d.id)+'">Fahrt anschauen</button>';
               }
 
@@ -5491,7 +5543,7 @@ if(!isOtherLeistungstraeger(approval)){
 
             <button
               type="button"
-              class="secondary openAllApproval"
+              class="kn kn-nav secondary openAllApproval"
               data-client-id="${esc(a.client_id)}">
               Öffnen
             </button>
@@ -5653,7 +5705,7 @@ ${formatFls(restFls)} FLS
           ${a.bescheid_datei_id
             ? `<button type="button" class="secondary viewBescheid" data-file="${esc(a.bescheid_datei_id)}">Bescheid ansehen</button>`
             : ''}
-          <button class="secondary editApproval" data-id="${a.id}">Bearbeiten</button>
+          <button class="kn kn-bearbeiten secondary editApproval" data-id="${a.id}">Bearbeiten</button>
         </div>
       </div>
     </div>
@@ -7535,7 +7587,7 @@ $('monthlyMonth').onchange=async()=>{
           <button
             type="button"
             id="printMonthlyDocs"
-            class="secondary"
+            class="kn kn-druck secondary"
             style="width:100%;margin-top:10px"
           >
             Dokumentationen dieses Monats drucken
@@ -8142,7 +8194,7 @@ function cloudDateiKachel(f,pfadText){
     );
   }else{
     aktionen.push(
-      '<button type="button" class="danger deleteCloudFile" '+
+      '<button type="button" class="kn kn-loeschen danger deleteCloudFile" '+
       'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'" '+
       'aria-label="Löschen">🗑<span class="knopf-text"> Löschen</span></button>'
     );
@@ -9031,7 +9083,7 @@ function renderExpenses(){
             }
             <button
               type="button"
-              class="secondary editExpense"
+              class="kn kn-bearbeiten secondary editExpense"
               data-id="${esc(e.id)}">
               Bearbeiten
             </button>
@@ -9542,7 +9594,7 @@ function renderRates(){
             </div>
             <button
               type="button"
-              class="secondary deleteRate"
+              class="kn kn-loeschen secondary deleteRate"
               data-id="${esc(s.id)}">
               Löschen
             </button>
@@ -10371,10 +10423,10 @@ function renderSnippetList(){
           <p class="doc-text">${esc(b.text)}</p>
         </div>
         <div class="actions">
-          <button type="button" class="secondary editSnippet" data-id="${esc(b.id)}">
+          <button type="button" class="kn kn-bearbeiten secondary editSnippet" data-id="${esc(b.id)}">
             Bearbeiten
           </button>
-          <button type="button" class="danger deleteSnippet" data-id="${esc(b.id)}">
+          <button type="button" class="kn kn-loeschen danger deleteSnippet" data-id="${esc(b.id)}">
             Löschen
           </button>
         </div>
@@ -10703,8 +10755,8 @@ function kalEintraegeAm(iso){
 function kalZeichnen(){
   const {start,ende}=kalZeitraum();
 
-  $('kalMonat').className=kalAnsicht==='monat'?'primary':'secondary';
-  $('kalWoche').className=kalAnsicht==='woche'?'primary':'secondary';
+  $('kalMonat').setAttribute('aria-pressed',String(kalAnsicht==='monat'));
+  $('kalWoche').setAttribute('aria-pressed',String(kalAnsicht==='woche'));
 
   if(kalAnsicht==='monat'){
     $('kalTitel').textContent=kalDatum.toLocaleDateString('de-DE',{

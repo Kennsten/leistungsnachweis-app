@@ -210,6 +210,16 @@
       tfoot{display:table-footer-group}
       tr{page-break-inside:avoid}
     }
+  
+    /* Knopf-Arten wie in der App: Symbol vorne, Schließen grau, Drucken umrandet */
+    .kn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .kn::before{content:"";width:1.05em;height:1.05em;flex:0 0 auto;background:currentColor;
+      -webkit-mask:var(--kn-ico) center/contain no-repeat;mask:var(--kn-ico) center/contain no-repeat}
+    .kn-schliessen{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E")}
+    .kn-druck{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4M7 13h10v8H7z'/%3E%3C/svg%3E")}
+    .kn-datei{--kn-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3v4a1 1 0 0 0 1 1h4M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2zM9 13h6M9 17h6'/%3E%3C/svg%3E")}
+    button.kn-schliessen{background:#e8ecf0;border-color:#e8ecf0;color:#33465a}
+    button.kn-druck:not(.primary),button.kn-datei:not(.primary){background:#fff;border:1.5px solid #173b5b;color:#173b5b}
   </style>
 </head>
 
@@ -217,9 +227,9 @@
   <div class="toolbar">
     <div class="toolbar-title">Fahrtenbuch</div>
     <div class="toolbar-actions">
-      <button type="button" id="closeButton">Schließen</button>
-      <button type="button" id="printButton">Drucken</button>
-      <button type="button" id="pdfButton" class="primary">PDF erstellen</button>
+      <button type="button" id="closeButton" class="kn kn-schliessen">Schließen</button>
+      <button type="button" id="printButton" class="kn kn-druck">Drucken</button>
+      <button type="button" id="pdfButton" class="kn kn-datei primary">PDF erstellen</button>
     </div>
   </div>
 
