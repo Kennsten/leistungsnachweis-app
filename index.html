@@ -1871,8 +1871,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="grid">
       <label>Beginn<input id="approvalBeginn" type="date" required></label>
       <label>Ende (optional)<input id="approvalEnde" type="date"></label>
-      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
       <label>Bewilligungsjahr beginnt am (nur falls abweichend)<input id="approvalJahrBeginn" type="date"></label>
+      <label>Fortschreibung des Gesamtplans zum<input id="approvalGesamtplan" type="date"></label>
+      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
       <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
       <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
       <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
@@ -2763,7 +2764,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.28';
+const APP_VERSION='1.29';
 const APP_STAND='30.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5539,7 +5540,7 @@ function approvalWindow(approval,liste){
   return {
     start:period.start,
     ende:period.ende,
-    label:'Bewilligungsjahr '+period.nummer
+    label:'Laufendes Bewilligungsjahr '+period.nummer
   };
 }
 
@@ -5784,6 +5785,11 @@ ${
        </div>`
     : ''
 }
+${
+  a.gesamtplan_fortschreibung_am
+    ? `<div class="meta">Fortschreibung des Gesamtplans zum ${formatDate(a.gesamtplan_fortschreibung_am)}</div>`
+    : ''
+}
 <div class="meta">
   ${esc(fenster.label)}:
   ${formatDate(fenster.start)} – ${formatDate(minusEinTag(fenster.ende))}
@@ -5903,6 +5909,7 @@ function openApprovalForm(id=''){
   $('approvalId').value=a.id||'';
   $('approvalBeginn').value=a.beginn||'';
   $('approvalEnde').value=a.ende||'';
+  $('approvalGesamtplan').value=a.gesamtplan_fortschreibung_am||'';
   $('approvalVerlaufsbericht').value=a.verlaufsbericht_am||'';
   $('approvalBerichtFaellig').value=a.verlaufsbericht_faellig_am||'';
   $('approvalJahrBeginn').value=a.bewilligungsjahr_beginn||'';
@@ -7767,6 +7774,7 @@ $('approvalForm').onsubmit=async e=>{
     client_id:savedClientId,
     beginn:$('approvalBeginn').value,
     ende:$('approvalEnde').value||null,
+    gesamtplan_fortschreibung_am:$('approvalGesamtplan').value||null,
     verlaufsbericht_am:$('approvalVerlaufsbericht').value||null,
     verlaufsbericht_faellig_am:$('approvalBerichtFaellig').value||null,
     bewilligungsjahr_beginn:$('approvalJahrBeginn').value||null,
@@ -7784,11 +7792,18 @@ $('approvalForm').onsubmit=async e=>{
   if(row.ende&&row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
-  const q=id
-    ? sb.from('bewilligungen').update(row).eq('id',id).select('id,client_id').single()
-    : sb.from('bewilligungen').insert(row).select('id,client_id').single();
+  const speichern=z=>id
+    ? sb.from('bewilligungen').update(z).eq('id',id).select('id,client_id').single()
+    : sb.from('bewilligungen').insert(z).select('id,client_id').single();
 
-  const {data:savedApproval,error}=await q;
+  let {data:savedApproval,error}=await speichern(row);
+
+  // Falls die Spalte für die Gesamtplan-Fortschreibung noch fehlt: ohne sie speichern
+  if(error&&/gesamtplan_fortschreibung_am/.test(error.message)){
+    const {gesamtplan_fortschreibung_am,...ohne}=row;
+    ({data:savedApproval,error}=await speichern(ohne));
+    if(!error)toast('Hinweis: Fortschreibung des Gesamtplans noch nicht gespeichert – SQL-Befehl fehlt.');
+  }
 
   if(error){
     toast('Bewilligung konnte nicht gespeichert werden: '+error.message);
@@ -8617,7 +8632,7 @@ async function cloudDateiOeffnen(knopf,fileId){
       verweis.className='kachel-oeffnen';
       verweis.innerHTML=beschriftung;
     }else{
-      verweis.className='secondary cloud-open-link';
+      verweis.className='cloud-open-link';
     }
 
     zeige(verweis,'Jetzt öffnen ›');
@@ -10832,6 +10847,8 @@ function klientenbogenHtml(c,bewilligung){
     ].filter(Boolean).join(' · ');
     bewilligt=
       kbZeile(bewilligung._laufend?'Zeitraum':'Letzte Bewilligung',esc(zeitraum))+
+      kbZeile('Gesamtplan',bewilligung.gesamtplan_fortschreibung_am
+        ? esc('Fortschreibung zum '+formatDate(bewilligung.gesamtplan_fortschreibung_am)):'')+
       kbZeile('Kontingent',esc(kontingent))+
       kbZeile('Leistungsträger',esc(traeger));
   }else{
