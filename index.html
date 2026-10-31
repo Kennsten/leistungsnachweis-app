@@ -2271,9 +2271,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <h3 style="margin-top:22px">Tresor</h3>
   <p class="muted small">Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
   <div class="actions">
-    <button type="button" id="tresorSperren" class="kn secondary">Jetzt sperren</button>
-    <button type="button" id="tresorPasswortAendern" class="kn secondary">Tresor-Passwort ändern</button>
-    <button type="button" id="tresorNotfallblatt" class="kn secondary">Neues Notfallblatt</button>
+    <button type="button" id="tresorSperren" class="secondary">Jetzt sperren</button>
+    <button type="button" id="tresorPasswortAendern" class="secondary">Tresor-Passwort ändern</button>
+    <button type="button" id="tresorNotfallblattDrucken" class="secondary">Notfallblatt neu drucken</button>
+    <button type="button" id="tresorNotfallblatt" class="secondary">Neuer Wiederherstellungsschlüssel</button>
   </div>
 </dialog>
 
@@ -2820,7 +2821,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.8 Verkaufsversion';
+const APP_VERSION='0.9 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -8941,6 +8942,7 @@ $('closeSettings').onclick=()=>$('settingsDialog').close();
 $('tresorSperren').onclick=()=>{$('settingsDialog').close();Tresor.sperren()};
 $('tresorPasswortAendern').onclick=()=>{$('settingsDialog').close();Tresor.passwortAendern()};
 $('tresorNotfallblatt').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattErneuern()};
+$('tresorNotfallblattDrucken').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattDrucken()};
 
 $('settingsForm').onsubmit=async e=>{
   e.preventDefault();

@@ -1021,9 +1021,88 @@
     };
   }
 
+  function ansichtNotfallblattDrucken() {
+    zeigen(`
+      <h2>Notfallblatt neu drucken</h2>
+      <p>Damit bekommst du ein neues Notfallblatt mit <b>deinem bisherigen Wiederherstellungsschlüssel</b>
+      und den aktuellen Erklärungen. Der Schlüssel bleibt gleich, dein altes Blatt bleibt gültig.</p>
+      <p>Die App speichert den Schlüssel aus Sicherheitsgründen nicht. Bitte gib ihn deshalb von deinem
+      bisherigen Notfallblatt ein oder lies dessen QR-Code mit der Kamera ein.</p>
+      <form id="tDrucken">
+        <label>Wiederherstellungsschlüssel
+          <input id="tCode" class="t-codefeld" autocomplete="off" autocapitalize="characters" spellcheck="false"
+            placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" data-fokus>
+        </label>
+        <div class="t-zaehler" id="tCodeZaehler"></div>
+        <p><button type="button" id="tKamera" class="secondary">QR-Code mit Kamera einlesen</button></p>
+        <div id="tKameraBox"></div>
+        <p class="t-fehler"></p>
+        <div class="actions">
+          <button type="submit" class="primary">Prüfen</button>
+          <button type="button" id="tZurueck" class="secondary">Abbrechen</button>
+        </div>
+      </form>`);
+
+    const feld = $t('#tCode');
+    const zaehler = $t('#tCodeZaehler');
+    const codeAnzeigen = () => {
+      const c = codeNormalisieren(feld.value).slice(0, CODE_LAENGE);
+      const formatiert = codeFormatieren(c);
+      if (feld.value !== formatiert) feld.value = formatiert;
+      zaehler.textContent = c.length + ' von ' + CODE_LAENGE + ' Zeichen';
+    };
+    feld.addEventListener('input', codeAnzeigen);
+    codeAnzeigen();
+    $t('#tZurueck').onclick = schliessen;
+    $t('#tKamera').onclick = () =>
+      kameraStarten($t('#tKameraBox'), (gelesen) => {
+        feld.value = gelesen;
+        codeAnzeigen();
+      });
+
+    $t('#tDrucken').onsubmit = async (e) => {
+      e.preventDefault();
+      const code = codeNormalisieren(feld.value);
+      if (!codeGueltig(code)) {
+        return fehlerZeigen('Der Wiederherstellungsschlüssel ist unvollständig oder enthält ungültige Zeichen.');
+      }
+      laeuft('Schlüssel wird geprüft …');
+      try {
+        // Neuesten Stand holen; ohne Internet den Stand auf dem Gerät nutzen
+        try {
+          const frisch = await serverLesen();
+          if (frisch) { stand = frisch; geraetSchreiben(frisch); }
+        } catch (ohneNetz) { /* Stand vom Gerät */ }
+        const roh = stand ? await mitCodeOeffnen(code, stand.notfall_huelle) : null;
+        if (!roh) {
+          ansichtNotfallblattDrucken();
+          $t('#tCode').value = codeFormatieren(code);
+          fehlerZeigen('Dieser Wiederherstellungsschlüssel passt nicht zu deinem Tresor. Ist es das neueste Notfallblatt?');
+          return;
+        }
+        roh.fill(0);
+        skriptLaden('lib/jspdf.umd.min.js').catch(() => null);
+        zeigen(`
+          <h2>Schlüssel stimmt</h2>
+          <p>Jetzt kannst du das Notfallblatt mit den aktuellen Erklärungen erzeugen.
+          Danach das alte Blatt durch das neue ersetzen.</p>
+          <div class="t-code">${gruppenHtml(code)}</div>
+          <p class="t-fehler"></p>
+          <div class="actions">
+            <button type="button" id="tPdf" class="kn kn-druck">Notfallblatt als PDF (zum Drucken)</button>
+            <button type="button" id="tFertig" class="secondary">Fertig</button>
+          </div>`);
+        $t('#tPdf').onclick = () => notfallblattTeilen(code).catch((f) => fehlerZeigen(fehlermeldungText(f)));
+        $t('#tFertig').onclick = schliessen;
+      } catch (fehler) {
+        ansichtFehler(fehlermeldungText(fehler), ansichtNotfallblattDrucken, schliessen);
+      }
+    };
+  }
+
   function ansichtNotfallblattErneuern() {
     zeigen(`
-      <h2>Neues Notfallblatt</h2>
+      <h2>Neuer Wiederherstellungsschlüssel</h2>
       <div class="t-warnung">Dabei entsteht ein <b>neuer Wiederherstellungsschlüssel</b>.
       Dein bisheriges Notfallblatt wird damit ungültig und sollte vernichtet werden.</div>
       <form id="tErneuern">
@@ -1178,6 +1257,7 @@
     istOffen: () => Boolean(schluessel),
     passwortAendern: () => { if (schluessel) ansichtPasswortAendern(); },
     notfallblattErneuern: () => { if (schluessel) ansichtNotfallblattErneuern(); },
+    notfallblattDrucken: () => { if (schluessel) ansichtNotfallblattDrucken(); },
     // Für Bauabschnitt 4: Zugriff auf den Datenschlüssel (nicht auslesbar)
     datenschluessel: () => schluessel,
     // Nur für Tests
