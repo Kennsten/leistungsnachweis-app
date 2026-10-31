@@ -322,7 +322,7 @@
 #tresorDialog video{width:100%;border-radius:12px;background:#000;margin-top:10px}
 #tresorDialog .actions{margin-top:16px}
 #tresorDialog .actions button{flex:1 1 auto}
-#tresorDialog .t-link{background:none;border:0;padding:8px 0;color:var(--brand-dark);text-decoration:underline;font:inherit;cursor:pointer}
+#tresorDialog .t-link{background:none;border:0;padding:8px 0;text-align:left;color:var(--brand-dark);text-decoration:underline;font:inherit;cursor:pointer}
 #tresorDialog .t-laeuft{display:flex;gap:12px;align-items:center;margin:24px 0}
 #tresorDialog .t-kreis{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand);animation:tresorDreh 0.9s linear infinite}
 @keyframes tresorDreh{to{transform:rotate(360deg)}}
@@ -684,6 +684,7 @@
     zeigen(`
       <h2>Tresor gesperrt</h2>
       <p class="muted">${esc(mail)}</p>
+      <p>Gib dein <b>Tresor-Passwort</b> ein. Es schützt deine Klientendaten und ist nicht dasselbe wie dein Anmelde-Passwort.</p>
       <form id="tEntsperren">
         ${benutzerFeld()}
         <label>Tresor-Passwort
@@ -695,7 +696,7 @@
           <button type="button" id="tAbmelden" class="secondary">Abmelden</button>
         </div>
       </form>
-      <p><button type="button" id="tVergessen" class="t-link">Tresor-Passwort vergessen?</button></p>`);
+      <p><button type="button" id="tVergessen" class="t-link">Tresor-Passwort vergessen? Mit dem Wiederherstellungsschlüssel vom Notfallblatt ein neues festlegen.</button></p>`);
 
     $t('#tAbmelden').onclick = abmeldenKlick;
     $t('#tVergessen').onclick = () => ansichtWiederherstellen();
@@ -730,7 +731,10 @@
   function ansichtWiederherstellen() {
     zeigen(`
       <h2>Tresor-Passwort vergessen</h2>
-      <p>Gib den Wiederherstellungsschlüssel von deinem Notfallblatt ein oder lies den QR-Code mit der Kamera ein.</p>
+      <p>Hier brauchst du den <b>Wiederherstellungsschlüssel</b> von deinem Notfallblatt –
+      32 Zeichen in 8 Vierergruppen, z. B. <code>QA7F-K29P-…</code>.
+      Du kannst ihn eintippen oder den QR-Code mit der Kamera einlesen.
+      Danach legst du ein neues Tresor-Passwort fest. Deine Daten bleiben erhalten.</p>
       <form id="tWieder">
         ${benutzerFeld()}
         <label>Wiederherstellungsschlüssel
