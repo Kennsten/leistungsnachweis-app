@@ -17,6 +17,7 @@
 <script src="lib/argon2.umd.min.js"></script>
 <script src="lib/qrcode.js"></script>
 <script src="tresor.js"></script>
+<script src="daten.js"></script>
 <style>
 :root{
   --ink:#2f3a34;
@@ -2821,7 +2822,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.10 Verkaufsversion';
+const APP_VERSION='0.11 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -2936,6 +2937,10 @@ async function mitSchritten(text,anfragen){
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
   global:{fetch:busyFetch}
 });
+
+// Alle Datenzugriffe laufen über die Datenzugriff-Schicht (daten.js).
+// Speicher ist vorerst Supabase; ab Bauabschnitt 4 die Datenbank auf dem Gerät.
+Daten.verbinden(sb);
 const $=id=>document.getElementById(id);
 
 let user=null;
@@ -3156,7 +3161,7 @@ async function loadTripDocumentations(currentTripId=''){
     renderTripDocumentationOptions();
     return;
   }
-  const {data:usedTrips}=await sb
+  const {data:usedTrips}=await Daten
     .from('trip_entries')
     .select('documentation_id')
     .eq('client_id',activeTripsClient.id);
@@ -3171,7 +3176,7 @@ async function loadTripDocumentations(currentTripId=''){
 );
 const currentDocumentationId =
   currentTrip?.documentation_id || null;
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('dokumentationen')
     .select(`
       id,
@@ -3344,11 +3349,11 @@ async function init(){
 }
 
 async function loadClients(){
-  const {data,error}=await sb.from('clients').select('*').order('name');
+  const {data,error}=await Daten.from('clients').select('*').order('name');
   if(error){toast(error.message);return}
   clients=data||[];
 
-  const {data:approvalData}=await sb
+  const {data:approvalData}=await Daten
     .from('bewilligungen')
     .select('id,client_id,beginn,ende,verlaufsbericht_faellig_am,verlaufsbericht_am,abschlussbericht_am,abschlussbericht_erinnerung_am')
     .order('beginn',{ascending:false});
@@ -3780,7 +3785,7 @@ async function tachoVorschlagLaden(datum){
   const feld=$('tripTachoHinweis');
   feld.dataset.vorschlag='';
   try{
-    const {data,error}=await sb
+    const {data,error}=await Daten
       .from('trip_entries')
       .select('trip_date,tacho_ende')
       .not('tacho_ende','is',null)
@@ -3921,7 +3926,7 @@ async function loadAllTrips(){
   const year=$('allTripsYear').value;
   const month=$('allTripsMonth').value;
 
-  let query=sb
+  let query=Daten
     .from('trip_entries')
     .select('*');
 
@@ -4232,7 +4237,7 @@ async function loadTrips(){
   if(!activeTripsClient && !tripsAllgemein)return;
   $('tripsList').innerHTML='<p class="muted">Fahrten werden geladen …</p>';
 
-  let tripQuery=sb
+  let tripQuery=Daten
     .from('trip_entries')
     .select('*');
 
@@ -4316,7 +4321,7 @@ async function loadTrips(){
 
 
 async function loadTripStopSuggestions(){
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('trip_stop_suggestions')
     .select('name')
     .order('name',{ascending:true});
@@ -4387,7 +4392,7 @@ async function deleteStopover(name){
 
   if(!confirm('Stopp "'+name+'" wirklich löschen?'))return;
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('trip_stop_suggestions')
     .delete()
     .eq('user_id',user.id)
@@ -4681,7 +4686,7 @@ async function lookupRouteDistance(startAddress,stopovers,destinationAddress){
   if(!startKey||!destinationKey)return null;
 
   try{
-    const {data,error}=await sb
+    const {data,error}=await Daten
       .from('route_distances')
       .select('kilometers')
       .eq('user_id',user.id)
@@ -4711,7 +4716,7 @@ async function learnRouteDistance(startAddress,stopovers,destinationAddress,kilo
   if(!Number.isFinite(value)||value<=0)return;
 
   try{
-    await sb
+    await Daten
       .from('route_distances')
       .upsert(
         {
@@ -4740,7 +4745,7 @@ async function fahrtAenderungPruefen(id,row){
   const alt=tripGeoeffnet&&tripGeoeffnet.id===String(id)?tripGeoeffnet:null;
   if(!alt)return true;
 
-  const {data:aktuell,error}=await sb
+  const {data:aktuell,error}=await Daten
     .from('trip_entries')
     .select('*')
     .eq('id',id)
@@ -4815,7 +4820,7 @@ async function learnStopovers(value){
     );
     if(exists)continue;
 
-    const {error}=await sb
+    const {error}=await Daten
       .from('trip_stop_suggestions')
       .insert({user_id:user.id,name});
 
@@ -4840,17 +4845,17 @@ async function loadDocs(){
   $('docsList').innerHTML='<p class="muted">Dokumentationen werden geladen …</p>';
 
   const [docResult,tripResult,terminResult]=await Promise.all([
-    sb.from('dokumentationen')
+    Daten.from('dokumentationen')
       .select('*')
       .eq('client_id',activeDocsClient.id)
       .order('datum',{ascending:false})
       .order('beginn',{ascending:false}),
 
-    sb.from('trip_entries')
+    Daten.from('trip_entries')
       .select('id,documentation_id,trip_date,kilometers,purpose')
       .eq('client_id',activeDocsClient.id),
 
-    sb.from('termine')
+    Daten.from('termine')
       .select('*')
       .eq('client_id',activeDocsClient.id)
       .is('documentation_id',null)
@@ -5402,7 +5407,7 @@ function applyDocFls(){
 
 async function findMatchingApprovalId(clientId,datum){
   if(!clientId||!datum)return null;
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('bewilligungen')
     .select('id,beginn,ende')
     .eq('client_id',clientId)
@@ -5676,7 +5681,7 @@ if(!isOtherLeistungstraeger(approval)){
   $('allApprovalsList').innerHTML=
     '<p class="muted">Bewilligungen werden geladen …</p>';
 
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('bewilligungen')
     .select('*')
     .order('beginn',{ascending:false});
@@ -5763,7 +5768,7 @@ async function loadApprovals(clientId=activeClient?.id){
 
   $('approvalsList').innerHTML='<p class="muted">Bewilligungen werden geladen …</p>';
 
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('bewilligungen')
     .select('*')
     .eq('client_id',requestedClientId)
@@ -5783,7 +5788,7 @@ approvals.sort((a,b)=>
   )
 );
 
-  const {data:docData,error:docError}=await sb
+  const {data:docData,error:docError}=await Daten
     .from('dokumentationen')
     .select('bewilligung_id,datum,dauer_minuten,fls')
     .eq('client_id',requestedClientId);
@@ -5936,7 +5941,7 @@ async function abschlussberichtErledigt(approvalId){
     formatDate(heute)+')?'
   ))return;
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('bewilligungen')
     .update({
       abschlussbericht_am:heute,
@@ -5965,7 +5970,7 @@ async function abschlussberichtSpaeter(approvalId){
     String(ziel.getDate()).padStart(2,'0')
   ].join('-');
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('bewilligungen')
     .update({abschlussbericht_erinnerung_am:zielIso})
     .eq('id',approvalId);
@@ -6052,7 +6057,7 @@ async function bescheidSpeichern(datei){
   const id=$('approvalId').value;
 
   if(id){
-    const {error}=await sb
+    const {error}=await Daten
       .from('bewilligungen')
       .update({
         bescheid_datei_id:datei?datei.fileid:null,
@@ -6274,7 +6279,7 @@ $('clientForm').onsubmit=async e=>{
     row['kontakt'+n+'_adresse']=$('kontakt'+n+'Adresse').value.trim()||null;
     row['kontakt'+n+'_email']=$('kontakt'+n+'Email').value.trim()||null;
   });
-  const speichern=z=>id?sb.from('clients').update(z).eq('id',id):sb.from('clients').insert(z);
+  const speichern=z=>id?Daten.from('clients').update(z).eq('id',id):Daten.from('clients').insert(z);
   let {error}=await speichern(row);
   // Falls die neuen Kontaktspalten noch fehlen: ohne sie speichern
   if(error&&/kontakt[12]_/.test(error.message)){
@@ -6303,15 +6308,15 @@ $('deleteClient').onclick=async()=>{
 
   try{
     const [docResult,tripResult,approvalResult]=await Promise.all([
-      sb.from('dokumentationen')
+      Daten.from('dokumentationen')
         .select('id',{count:'exact',head:true})
         .eq('client_id',id),
 
-      sb.from('trip_entries')
+      Daten.from('trip_entries')
         .select('id',{count:'exact',head:true})
         .eq('client_id',id),
 
-      sb.from('bewilligungen')
+      Daten.from('bewilligungen')
         .select('id',{count:'exact',head:true})
         .eq('client_id',id)
     ]);
@@ -6353,7 +6358,7 @@ $('deleteClient').onclick=async()=>{
       }
     }
 
-    const {error}=await sb.from('clients').delete().eq('id',id);
+    const {error}=await Daten.from('clients').delete().eq('id',id);
 
     if(error){
       toast(
@@ -6616,8 +6621,8 @@ $('docForm').onsubmit=async e=>{
     const id=$('docId').value;
 
     const query=id
-      ? sb.from('dokumentationen').update(row).eq('id',id).select('id').single()
-      : sb.from('dokumentationen').insert(row).select('id').single();
+      ? Daten.from('dokumentationen').update(row).eq('id',id).select('id').single()
+      : Daten.from('dokumentationen').insert(row).select('id').single();
 
     const {data:saved,error}=await query;
 
@@ -6628,7 +6633,7 @@ $('docForm').onsubmit=async e=>{
 
     // Aus einem geplanten Termin angelegt: Termin mit der Dokumentation verknüpfen
     if(!id && pendingTerminForDoc && saved && saved.id){
-      const {error:terminFehler}=await sb
+      const {error:terminFehler}=await Daten
         .from('termine')
         .update({documentation_id:saved.id})
         .eq('id',pendingTerminForDoc);
@@ -6645,7 +6650,7 @@ $('docForm').onsubmit=async e=>{
     }
 
     if(!id && pendingTripForDoc && saved && saved.id){
-      const {error:linkError}=await sb
+      const {error:linkError}=await Daten
         .from('trip_entries')
         .update({documentation_id:saved.id})
         .eq('id',pendingTripForDoc);
@@ -6736,7 +6741,7 @@ function frageDokuLoeschen(fahrt,belegAnzahl){
 // Löst Belege von einer Fahrt bzw. Dokumentation, damit sie beim
 // Löschen sicher erhalten bleiben.
 async function belegeLoesen(spalte,wert){
-  const {error}=await sb
+  const {error}=await Daten
     .from('ausgaben')
     .update({[spalte]:null})
     .eq(spalte,wert);
@@ -6747,7 +6752,7 @@ $('deleteDoc').onclick=async()=>{
   const id=$('docId').value;
   if(!id)return;
 
-  const {data:fahrten,error:fahrtFehler}=await sb
+  const {data:fahrten,error:fahrtFehler}=await Daten
     .from('trip_entries')
     .select('id,trip_date,kilometers,purpose')
     .eq('documentation_id',id);
@@ -6761,7 +6766,7 @@ $('deleteDoc').onclick=async()=>{
   let auchFahrt=false;
 
   if(fahrt){
-    const {count}=await sb
+    const {count}=await Daten
       .from('ausgaben')
       .select('id',{count:'exact',head:true})
       .or('documentation_id.eq.'+id+',trip_id.eq.'+fahrt.id);
@@ -6779,7 +6784,7 @@ $('deleteDoc').onclick=async()=>{
     fehler=await belegeLoesen('trip_id',fahrt.id);
 
     if(!fehler){
-      const {error}=await sb
+      const {error}=await Daten
         .from('trip_entries')
         .delete()
         .eq('id',fahrt.id);
@@ -6792,7 +6797,7 @@ $('deleteDoc').onclick=async()=>{
     return;
   }
 
-  const {error}=await sb.from('dokumentationen').delete().eq('id',id);
+  const {error}=await Daten.from('dokumentationen').delete().eq('id',id);
   if(error){toast(error.message);return}
 
   $('docFormDialog').close();
@@ -7167,13 +7172,13 @@ $('tripForm').onsubmit=async e=>{
     if(id && !(await fahrtAenderungPruefen(id,row)))return;
 
     const query=id
-      ? sb
+      ? Daten
           .from('trip_entries')
           .update(row)
           .eq('id',id)
           .select('id,documentation_id')
           .single()
-      : sb
+      : Daten
           .from('trip_entries')
           .insert(row)
           .select('id,documentation_id')
@@ -7244,7 +7249,7 @@ $('deleteTrip').onclick=async()=>{
     return;
   }
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('trip_entries')
     .delete()
     .eq('id',id);
@@ -7591,7 +7596,7 @@ $('monthlyMonth').onchange=async()=>{
     tripResult,
     expenseResult
   ]=await mitSchritten('Monatsnachweis',[
-    sb
+    Daten
       .from('dokumentationen')
       .select('*')
       .eq('client_id',activeMonthlyClient.id)
@@ -7600,7 +7605,7 @@ $('monthlyMonth').onchange=async()=>{
       .order('datum',{ascending:true})
       .order('beginn',{ascending:true}),
 
-    sb
+    Daten
       .from('bewilligungen')
       .select('*')
       .eq('client_id',activeMonthlyClient.id)
@@ -7609,7 +7614,7 @@ $('monthlyMonth').onchange=async()=>{
       .order('beginn',{ascending:false})
       .limit(1),
 
-    sb
+    Daten
       .from('trip_entries')
       .select('*')
       .eq('client_id',activeMonthlyClient.id)
@@ -7617,7 +7622,7 @@ $('monthlyMonth').onchange=async()=>{
       .lt('trip_date',endDate)
       .order('trip_date',{ascending:true}),
 
-    sb
+    Daten
       .from('ausgaben')
       .select('*')
       .eq('client_id',activeMonthlyClient.id)
@@ -7884,8 +7889,8 @@ $('approvalForm').onsubmit=async e=>{
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
   const speichern=z=>id
-    ? sb.from('bewilligungen').update(z).eq('id',id).select('id,client_id').single()
-    : sb.from('bewilligungen').insert(z).select('id,client_id').single();
+    ? Daten.from('bewilligungen').update(z).eq('id',id).select('id,client_id').single()
+    : Daten.from('bewilligungen').insert(z).select('id,client_id').single();
 
   let {data:savedApproval,error}=await speichern(row);
 
@@ -7914,7 +7919,7 @@ $('approvalForm').onsubmit=async e=>{
 $('deleteApproval').onclick=async()=>{
   const id=$('approvalId').value;
   if(!id||!confirm('Diese Bewilligung wirklich löschen?'))return;
-  const {error}=await sb.from('bewilligungen').delete().eq('id',id);
+  const {error}=await Daten.from('bewilligungen').delete().eq('id',id);
   if(error){toast(error.message);return}
   $('approvalFormDialog').close();toast('Bewilligung gelöscht');await loadApprovals();
 };
@@ -8308,7 +8313,7 @@ function cloudOrdnerAnlegenVerknuepfen(name){
 }
 
 async function cloudOrdnerVerknuepfen(folderId,name){
-  const {error}=await sb
+  const {error}=await Daten
     .from('clients')
     .update({
       pcloud_folder_id:Number(folderId),
@@ -8915,7 +8920,7 @@ function cloudSetupZeichnen(){
 async function loadEinstellungen(){
   meineEinstellungen={};
 
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('einstellungen')
     .select('auftragnehmer_name,auftragnehmer_adresse')
     .eq('user_id',user.id)
@@ -8960,7 +8965,7 @@ $('settingsForm').onsubmit=async e=>{
   knopf.textContent='Wird gespeichert …';
 
   try{
-    const {error}=await sb
+    const {error}=await Daten
       .from('einstellungen')
       .upsert({
         user_id:user.id,
@@ -9025,7 +9030,7 @@ $('cloudFileInput').onchange=()=>
 $('cloudUnlink').onclick=async()=>{
   if(!confirm('Verknüpfung zu diesem Ordner lösen? Die Dateien bleiben in pCloud.'))return;
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('clients')
     .update({pcloud_folder_id:null,pcloud_folder_name:null})
     .eq('id',activeCloudClient.id);
@@ -9178,7 +9183,7 @@ function fillExpenseClients(){
 }
 
 async function naechsteBelegNummer(jahr){
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('ausgaben')
     .select('beleg_nr')
     .eq('user_id',user.id)
@@ -9204,13 +9209,13 @@ async function loadExpenseLinkOptions(clientId){
   }
 
   const [docResult,tripResult]=await Promise.all([
-    sb.from('dokumentationen')
+    Daten.from('dokumentationen')
       .select('id,datum,beginn,leistungsart,ort_der_leistung')
       .eq('client_id',clientId)
       .order('datum',{ascending:false})
       .limit(60),
 
-    sb.from('trip_entries')
+    Daten.from('trip_entries')
       .select('id,trip_date,purpose,destination_address')
       .eq('client_id',clientId)
       .order('trip_date',{ascending:false})
@@ -9280,7 +9285,7 @@ async function loadExpenses(){
   const jahr=$('expensesYear').value;
   const kategorie=$('expensesCategory').value;
 
-  let query=sb
+  let query=Daten
     .from('ausgaben')
     .select('*')
     .eq('beleg_jahr',Number(jahr));
@@ -9815,7 +9820,7 @@ $('expenseBelegRemove').onclick=async()=>{
     toast('Hinweis: '+problem.message);
   }
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('ausgaben')
     .update({beleg_datei_id:null,beleg_datei_name:null})
     .eq('id',belegAusgabe.id);
@@ -9859,7 +9864,7 @@ function hatWegepauschale(doc){
 }
 
 async function loadVerguetungssaetze(){
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('verguetungssaetze')
     .select('*')
     .order('gueltig_ab',{ascending:false});
@@ -9930,7 +9935,7 @@ function renderRates(){
 async function deleteRate(id){
   if(!confirm('Diesen Satz wirklich löschen?'))return;
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('verguetungssaetze')
     .delete()
     .eq('id',id);
@@ -9974,7 +9979,7 @@ $('rateForm').onsubmit=async e=>{
     return;
   }
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('verguetungssaetze')
     .upsert(
       {
@@ -10031,7 +10036,7 @@ async function loadIncome(){
 
   const jahr=$('incomeYear').value;
 
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('dokumentationen')
     .select('id,client_id,datum,dauer_minuten,fls,leistungsart,ort_der_leistung')
     .gte('datum',jahr+'-01-01')
@@ -10232,7 +10237,7 @@ async function ladeLetzteSicherung(){
     lokal=wert?new Date(wert):null;
   }catch(e){}
 
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('einstellungen')
     .select('letzte_sicherung')
     .eq('user_id',user.id)
@@ -10252,7 +10257,7 @@ async function speichereLetzteSicherung(){
   letzteSicherungDatum=new Date(jetzt);
   try{localStorage.setItem(sicherungMerker(),jetzt);}catch(e){}
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('einstellungen')
     .upsert({user_id:user.id,letzte_sicherung:jetzt},{onConflict:'user_id'});
 
@@ -10329,7 +10334,7 @@ async function erstelleSicherung(){
         'Datensicherung'
       );
 
-      const {data,error}=await sb.from(tabelle).select('*');
+      const {data,error}=await Daten.from(tabelle).select('*');
 
       if(error){
         fehler.push(tabelle);
@@ -10402,7 +10407,7 @@ async function erstelleSicherung(){
 let textbausteine=[];
 
 async function loadTextbausteine(){
-  const {data,error}=await sb
+  const {data,error}=await Daten
     .from('textbausteine')
     .select('*')
     .order('sortierung',{ascending:true})
@@ -10705,7 +10710,7 @@ async function startlisteEinfuegen(automatisch=false){
 
   if(!automatisch&&!confirm(neu.length+' vorgefertigte Bausteine wiederherstellen?'))return false;
 
-  const {error}=await sb.from('textbausteine').insert(neu);
+  const {error}=await Daten.from('textbausteine').insert(neu);
 
   if(error){
     if(automatisch)return false;
@@ -10790,7 +10795,7 @@ function resetSnippetForm(){
 async function loescheBaustein(id){
   if(!confirm('Diesen Baustein wirklich löschen?'))return;
 
-  const {error}=await sb
+  const {error}=await Daten
     .from('textbausteine')
     .delete()
     .eq('id',id);
@@ -10880,8 +10885,8 @@ $('snippetForm').onsubmit=async e=>{
   }
 
   const speichern=z=>id
-    ? sb.from('textbausteine').update(z).eq('id',id)
-    : sb.from('textbausteine').insert(z).select('id').single();
+    ? Daten.from('textbausteine').update(z).eq('id',id)
+    : Daten.from('textbausteine').insert(z).select('id').single();
 
   let {data,error}=await speichern(zeile);
 
@@ -11057,7 +11062,7 @@ async function klientenbogenOeffnen(id){
 
   let bewilligung=null;
   if(auswahl){
-    const {data}=await sb.from('bewilligungen').select('*').eq('id',auswahl.id).maybeSingle();
+    const {data}=await Daten.from('bewilligungen').select('*').eq('id',auswahl.id).maybeSingle();
     bewilligung=data?{...data,_laufend:Boolean(laufend)}:null;
   }
 
@@ -11225,12 +11230,12 @@ async function kalLaden(){
   $('kalInhalt').innerHTML='<p class="muted">Termine werden geladen …</p>';
 
   const [docErgebnis,terminErgebnis]=await Promise.all([
-    sb.from('dokumentationen')
+    Daten.from('dokumentationen')
       .select('id,client_id,datum,beginn,ende,leistungsart,ort_der_leistung,fls')
       .gte('datum',von)
       .lte('datum',bis),
 
-    sb.from('termine')
+    Daten.from('termine')
       .select('*')
       .gte('datum',von)
       .lte('datum',bis)
@@ -11677,7 +11682,7 @@ async function kalTerminAbsagen(t){
     return false;
   }
 
-  let abfrage=sb.from('termine').delete();
+  let abfrage=Daten.from('termine').delete();
 
   abfrage=umfang==='alle'
     ? abfrage.eq('serie_id',t.serie_id).gte('datum',t.datum).is('documentation_id',null)
@@ -11810,13 +11815,13 @@ $('terminForm').onsubmit=async ev=>{
         if(!umfang)return;
       }
 
-      ({error:fehler}=await sb
+      ({error:fehler}=await Daten
         .from('termine')
         .update({...felder,datum})
         .eq('id',t.id));
 
       if(!fehler&&umfang==='alle'){
-        ({error:fehler}=await sb
+        ({error:fehler}=await Daten
           .from('termine')
           .update(felder)
           .eq('serie_id',t.serie_id)
@@ -11853,7 +11858,7 @@ $('terminForm').onsubmit=async ev=>{
         zeilen.push({...felder,user_id:user.id,datum});
       }
 
-      ({error:fehler}=await sb.from('termine').insert(zeilen));
+      ({error:fehler}=await Daten.from('termine').insert(zeilen));
 
       meldung=zeilen.length>1
         ? zeilen.length+' Termine geplant'
@@ -12007,7 +12012,7 @@ $('expenseForm').onsubmit=async e=>{
     let query;
 
     if(id){
-      query=sb.from('ausgaben')
+      query=Daten.from('ausgaben')
         .update(row)
         .eq('id',id)
         .select('*')
@@ -12016,7 +12021,7 @@ $('expenseForm').onsubmit=async e=>{
       row.beleg_jahr=jahr;
       row.beleg_nr=await naechsteBelegNummer(jahr);
 
-      query=sb.from('ausgaben')
+      query=Daten.from('ausgaben')
         .insert(row)
         .select('*')
         .single();
@@ -12038,7 +12043,7 @@ $('expenseForm').onsubmit=async e=>{
         const altId=saved.beleg_datei_id;
         const datei=await belegHochladen(saved,belegNeu);
 
-        const {error:verknuepfFehler}=await sb
+        const {error:verknuepfFehler}=await Daten
           .from('ausgaben')
           .update({
             beleg_datei_id:datei.id,
@@ -12100,7 +12105,7 @@ $('deleteExpense').onclick=async()=>{
     }
   }
 
-  const {error}=await sb.from('ausgaben').delete().eq('id',id);
+  const {error}=await Daten.from('ausgaben').delete().eq('id',id);
 
   if(error){
     toast('Ausgabe konnte nicht gelöscht werden: '+error.message);

@@ -18,6 +18,6 @@
 
 # App-eigene Bausteine ebenfalls immer frisch prüfen
 [[headers]]
-  for = "/tresor.js"
+  for = "/*.js"
   [headers.values]
     Cache-Control = "no-cache, must-revalidate"
