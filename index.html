@@ -2856,7 +2856,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.13.1 Verkaufsversion';
+const APP_VERSION='0.13.2 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -10584,8 +10584,10 @@ async function loadTextbausteine(){
 
   textbausteine=data||[];
 
-  // Startliste einmalig automatisch anlegen, wenn noch keine Bausteine da sind
-  const merker='tbStartliste_'+(user&&user.id);
+  // Startliste einmalig automatisch anlegen, wenn noch keine Bausteine da sind.
+  // Seit 0.13 (Gerätespeicher) neuer Merker: der alte stammt aus der Zeit
+  // der Servertabellen und würde das Anlegen sonst verhindern.
+  const merker='tbStartliste_geraet_'+(user&&user.id);
   let schonAngelegt=false;
   try{schonAngelegt=localStorage.getItem(merker)==='1';}catch(e){}
   if(textbausteine.length){
