@@ -9,9 +9,9 @@
    1. Jede Anfrage wird zuerst als neutrale Beschreibung festgehalten
       (Tabelle, Aktion, Spalten, Filter, Sortierung, Grenze …).
    2. Diese Beschreibung geht an den eingestellten „Speicher“.
-      Im Moment ist das Supabase (supabaseSpeicher).
-      Ab Bauabschnitt 4 kommt die verschlüsselte Datenbank auf dem
-      Gerät dazu – die Stellen in der App bleiben dabei unverändert.
+      Seit Version 0.13 ist das die verschlüsselte Datenbank auf dem
+      Gerät (geraet.js). supabaseSpeicher bleibt für Tests und für die
+      spätere Übernahme alter Daten (Bauabschnitt 7) erhalten.
 
    Antwort immer im gewohnten Format: { data, error, count }.
    ===================================================================== */
@@ -199,7 +199,7 @@
 
   window.Daten = {
     from: (tabelle) => new Abfrage(tabelle),
-    // Speicher festlegen (jetzt Supabase, ab Abschnitt 4 zusätzlich das Gerät)
+    // Speicher festlegen (seit 0.13: Geraet.speicher)
     speicherSetzen: (neu) => { speicher = neu; },
     verbinden: (sb) => { speicher = supabaseSpeicher(sb); },
     supabaseSpeicher,

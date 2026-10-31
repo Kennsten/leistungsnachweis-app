@@ -18,6 +18,7 @@
 <script src="lib/qrcode.js"></script>
 <script src="tresor.js"></script>
 <script src="daten.js"></script>
+<script src="geraet.js"></script>
 <style>
 :root{
   --ink:#2f3a34;
@@ -1423,6 +1424,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .fs-fahrt{--fs-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 17H3.5a1 1 0 0 1-1-1v-3.2a2 2 0 0 1 .6-1.4L5 9.5l1.6-3.3A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.8 1.2L19 9.5l1.9 1.9a2 2 0 0 1 .6 1.4V16a1 1 0 0 1-1 1H19'/%3E%3Cpath d='M5 9.5h14M9 17h6'/%3E%3Ccircle cx='7' cy='17' r='2'/%3E%3Ccircle cx='17' cy='17' r='2'/%3E%3C/svg%3E")}
 @media (max-width:520px){.fenster-symbol{width:34px;height:34px}.fenster-titel{gap:10px}}
 .kn.kn-einstellungen{--kn-ico:var(--kn-ico-zahnrad);background:var(--accent);color:var(--ink)}
+.abgleich{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:6px;font-size:.78rem;color:var(--muted)}
+.abgleich-punkt{width:.6rem;height:.6rem;border-radius:50%;background:var(--muted);flex:0 0 auto}
+.abgleich[data-zustand="ok"] .abgleich-punkt{background:var(--ok)}
+.abgleich[data-zustand="wartet"] .abgleich-punkt,.abgleich[data-zustand="abgleich"] .abgleich-punkt{background:var(--warn-soft)}
+.abgleich[data-zustand="fehler"] .abgleich-punkt{background:var(--danger)}
+.abgleich[data-zustand="fehler"]{color:var(--danger)}
+.abgleich-knopf{font:inherit;font-size:.78rem;padding:2px 8px;min-height:0;border-radius:999px;background:transparent;color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.abgleich-knopf:disabled{opacity:.5;cursor:default}
 .kopf-knoepfe{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex:0 0 auto}
 .kopf-knoepfe button{white-space:nowrap}
 .kn.kn-schliessen{--kn-ico:var(--kn-ico-x);background:var(--track);border-color:transparent;
@@ -1517,6 +1526,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Mobile Verwaltung</div>
       <h1>Klienten</h1>
       <div class="version" id="appVersionAnzeige">Version 1.1 · 23.10.2026</div>
+      <div class="abgleich" id="abgleichAnzeige" data-zustand="offline">
+        <span class="abgleich-punkt" aria-hidden="true"></span>
+        <span id="abgleichText">Abgleich wird vorbereitet …</span>
+        <button type="button" id="abgleichJetzt" class="abgleich-knopf">Jetzt abgleichen</button>
+      </div>
 
       <label class="theme-switch">
         Design
@@ -2291,6 +2305,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="tresorNotfallblattDrucken" class="secondary">Notfallblatt neu drucken</button>
     <button type="button" id="tresorNotfallblatt" class="secondary">Neuer Wiederherstellungsschlüssel</button>
   </div>
+
+  <h3 style="margin-top:22px">Dieses Gerät</h3>
+  <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
+  <div class="actions">
+    <button type="button" id="geraetLeeren" class="kn kn-loeschen">Daten von diesem Gerät entfernen</button>
+  </div>
 </dialog>
 
 <dialog id="cloudSetupDialog">
@@ -2836,7 +2856,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.12 Verkaufsversion';
+const APP_VERSION='0.13 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -2953,8 +2973,9 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
 });
 
 // Alle Datenzugriffe laufen über die Datenzugriff-Schicht (daten.js).
-// Speicher ist vorerst Supabase; ab Bauabschnitt 4 die Datenbank auf dem Gerät.
-Daten.verbinden(sb);
+// Speicher ist die verschlüsselte Datenbank auf dem Gerät (geraet.js).
+// Sie wird erst nach dem Entsperren des Tresors verbunden.
+Daten.speicherSetzen(null);
 const $=id=>document.getElementById(id);
 
 let user=null;
@@ -3331,12 +3352,84 @@ function fillTimeOptions(){
   $('docEnde').innerHTML=html;
 }
 
+/* ---------- Gerätespeicher und Abgleich (Bauabschnitt 4 und 5) ---------- */
+
+let appBereit=false;
+let fremdTimer=null;
+
+async function geraetOeffnen(){
+  await Geraet.oeffnen({
+    sb,
+    user,
+    schluessel:()=>Tresor.datenschluessel(),
+    status:abgleichAnzeigen,
+    fremdGeaendert:nachFremdAenderung
+  });
+  Daten.speicherSetzen(Geraet.speicher);
+}
+
+function geraetSchliessen(){
+  appBereit=false;
+  clearTimeout(fremdTimer);
+  Geraet.schliessen();
+  Daten.speicherSetzen(null);
+  abgleichAnzeigen({zustand:'offline',wartend:0});
+}
+
+function abgleichAnzeigen(s){
+  const box=$('abgleichAnzeige');
+  if(!box)return;
+  const wartend=s.wartend||0;
+  const warten=wartend===1?'1 Änderung wartet':wartend+' Änderungen warten';
+  let zustand=s.zustand;
+  let text;
+  if(zustand==='abgleich'){
+    text='Abgleich läuft …';
+  }else if(zustand==='offline'){
+    text='Offline'+(wartend?' · '+warten:'');
+  }else if(zustand==='fehler'){
+    text='Abgleich fehlgeschlagen'+(wartend?' · '+warten:'');
+  }else if(wartend){
+    zustand='wartet';
+    text=warten;
+  }else{
+    const zeit=s.zuletzt
+      ? new Date(s.zuletzt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})
+      : '';
+    text='Abgeglichen'+(zeit?' · '+zeit:'');
+  }
+  box.dataset.zustand=zustand;
+  box.title=s.meldung||'';
+  $('abgleichText').textContent=text;
+  $('abgleichJetzt').disabled=zustand==='abgleich';
+}
+
+// Ein anderes Gerät hat etwas geändert: Listen neu laden
+function nachFremdAenderung(tabellen){
+  if(!appBereit||!user)return;
+  clearTimeout(fremdTimer);
+  fremdTimer=setTimeout(async()=>{
+    if(!appBereit)return;
+    if(tabellen.includes('clients')||tabellen.includes('bewilligungen'))await loadClients();
+    if(tabellen.includes('textbausteine'))await loadTextbausteine();
+    if(tabellen.includes('einstellungen'))await loadEinstellungen();
+    toast('Änderungen von einem anderen Gerät übernommen.');
+  },300);
+}
+
+$('abgleichJetzt').onclick=async()=>{
+  if(!Geraet.istOffen())return;
+  if(navigator.onLine===false){toast('Kein Internet. Der Abgleich startet automatisch, sobald du wieder online bist.');return}
+  await Geraet.abgleichen();
+  const s=Geraet.status();
+  if(s.zustand==='fehler')toast('Abgleich fehlgeschlagen: '+s.meldung);
+};
+
 async function init(){
   const {data:{session},error}=await sb.auth.getSession();
   if(error){toast(error.message);showApp(false);return}
   if(session){
     user=session.user;
-    await loadEinstellungen();
 
     // Tresor: erst nach Eingabe des Tresor-Passworts geht es weiter
     await Tresor.oeffnen({
@@ -3347,10 +3440,21 @@ async function init(){
       abmelden:()=>$('logout').click()
     });
 
+    // Verschlüsselte Daten auf dem Gerät öffnen und abgleichen
+    try{
+      await geraetOeffnen();
+    }catch(e){
+      toast('Die Daten auf diesem Gerät konnten nicht geöffnet werden: '+(e&&e.message?e.message:e));
+      return;
+    }
+    await loadEinstellungen();
+
     showApp(true);
     await loadClients();
     await loadTextbausteine();
     await aktualisiereSicherungsKnopf();
+
+    appBereit=true;
 
     // Erste Anmeldung: Einstellungen ausfüllen lassen
     if(!auftragnehmerName()||!startAdresse()){
@@ -6186,9 +6290,22 @@ $('signup').onclick=async()=>{
 $('logout').onclick=async()=>{
   const button=$('logout');
   button.disabled=true;
+  try{
+    // Vorher noch abgleichen und vor nicht übertragenen Änderungen warnen
+    if(user&&Geraet.istOffen()){
+      await Geraet.abgleichen();
+      const wartend=await Geraet.wartendFuer(user.id);
+      if(wartend>0&&!confirm(
+        (wartend===1?'1 Änderung wurde':wartend+' Änderungen wurden')+
+        ' noch nicht mit dem Server abgeglichen. Sie bleiben verschlüsselt auf diesem Gerät '+
+        'und werden beim nächsten Anmelden übertragen.\n\nTrotzdem abmelden?'
+      )){button.disabled=false;return}
+    }
+  }catch(e){/* Abmelden trotzdem möglich */}
   const {error}=await sb.auth.signOut({scope:'local'});
   if(error){toast('Abmelden fehlgeschlagen: '+error.message);button.disabled=false;return}
   Tresor.vergessen();
+  geraetSchliessen();
   user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;
   $('list').innerHTML='';
   showApp(false);
@@ -8958,6 +9075,38 @@ function einstellungenOeffnen(ersterStart=false){
 $('openSettings').onclick=()=>einstellungenOeffnen();
 $('closeSettings').onclick=()=>$('settingsDialog').close();
 
+$('geraetLeeren').onclick=async()=>{
+  if(!user)return;
+  const id=user.id;
+  let wartend=0;
+  try{
+    if(Geraet.istOffen())await Geraet.abgleichen();
+    wartend=await Geraet.wartendFuer(id);
+  }catch(e){/* weiter mit Rückfrage */}
+  let frage='Alle Daten dieses Kontos werden von diesem Gerät entfernt und du wirst abgemeldet. '+
+    'Auf deinen anderen Geräten und auf dem Server bleiben sie erhalten.';
+  if(wartend>0){
+    frage='Achtung: '+(wartend===1?'1 Änderung ist':wartend+' Änderungen sind')+
+      ' noch nicht abgeglichen und gehen dabei verloren!\n\n'+frage;
+  }
+  if(!confirm(frage+'\n\nFortfahren?'))return;
+  $('settingsDialog').close();
+  geraetSchliessen();
+  try{
+    await Geraet.entfernen(id);
+    try{localStorage.removeItem('qa-tresor-'+id)}catch(e){/* nicht schlimm */}
+  }catch(e){
+    toast('Entfernen fehlgeschlagen: '+(e&&e.message?e.message:e));
+    return;
+  }
+  await sb.auth.signOut({scope:'local'});
+  Tresor.vergessen();
+  user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;
+  $('list').innerHTML='';
+  showApp(false);
+  toast('Die Daten wurden von diesem Gerät entfernt. Du bist abgemeldet.');
+};
+
 $('tresorSperren').onclick=()=>{$('settingsDialog').close();Tresor.sperren()};
 $('tresorPasswortAendern').onclick=()=>{$('settingsDialog').close();Tresor.passwortAendern()};
 $('tresorNotfallblatt').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattErneuern()};
@@ -9113,7 +9262,7 @@ $('saveNewPassword').onclick=async()=>{
 
 sb.auth.onAuthStateChange((event,session)=>{
   if(session){user=session.user}
-  else{user=null;Tresor.vergessen();showApp(false)}
+  else{user=null;Tresor.vergessen();geraetSchliessen();showApp(false)}
 
   if(event==='PASSWORD_RECOVERY'||(session&&istWiederherstellung())){
     openNewPasswordDialog();
