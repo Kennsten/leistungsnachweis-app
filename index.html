@@ -2309,7 +2309,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <h3 style="margin-top:22px">Dieses Gerät</h3>
   <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
   <div class="actions">
-    <button type="button" id="geraetLeeren" class="kn kn-loeschen">Daten von diesem Gerät entfernen</button>
+    <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
   </div>
 </dialog>
 
@@ -2856,7 +2856,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.13 Verkaufsversion';
+const APP_VERSION='0.13.1 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
