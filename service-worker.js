@@ -4,7 +4,7 @@
 // ohne Internet öffnet (Bauabschnitt 1 „Offline-Hülle“).
 //
 // Regeln:
-// - Seiten (.html) und manifest.json: zuerst das Netz fragen (max. 4 Sekunden),
+// - Seiten (.html), manifest.json und App-Bausteine (.js außerhalb lib/): zuerst das Netz fragen (max. 4 Sekunden),
 //   damit neue Versionen sofort ankommen. Ohne Netz: gespeicherte Fassung.
 // - Bibliotheken, Symbole, Bilder, Schriften: aus dem Speicher, im Hintergrund
 //   auffrischen (schnell und offline verfügbar).
@@ -13,7 +13,7 @@
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.9';
+const CACHE_NAME = 'qa-produkt-0.10';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [
@@ -91,7 +91,11 @@ function istSeite(request, url) {
     request.mode === 'navigate' ||
     url.pathname.endsWith('.html') ||
     url.pathname.endsWith('/') ||
-    url.pathname.endsWith('manifest.json')
+    url.pathname.endsWith('manifest.json') ||
+    // App-eigene Bausteine (z. B. tresor.js) ändern sich mit jeder Lieferung:
+    // immer frisch holen, damit Seite und Baustein zusammenpassen.
+    // Nur die festen Bibliotheken in lib/ kommen direkt aus dem Speicher.
+    (url.pathname.endsWith('.js') && !url.pathname.includes('/lib/'))
   );
 }
 
