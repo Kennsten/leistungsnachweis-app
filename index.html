@@ -1424,6 +1424,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .fs-fahrt{--fs-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 17H3.5a1 1 0 0 1-1-1v-3.2a2 2 0 0 1 .6-1.4L5 9.5l1.6-3.3A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.8 1.2L19 9.5l1.9 1.9a2 2 0 0 1 .6 1.4V16a1 1 0 0 1-1 1H19'/%3E%3Cpath d='M5 9.5h14M9 17h6'/%3E%3Ccircle cx='7' cy='17' r='2'/%3E%3Ccircle cx='17' cy='17' r='2'/%3E%3C/svg%3E")}
 @media (max-width:520px){.fenster-symbol{width:34px;height:34px}.fenster-titel{gap:10px}}
 .kn.kn-einstellungen{--kn-ico:var(--kn-ico-zahnrad);background:var(--accent);color:var(--ink)}
+.anmelde-bereiche{margin:4px 0 2px;font-weight:600;font-size:.9rem;color:var(--ink)}
+.anmelde-bereiche span{white-space:nowrap}
+.anmelde-sicher{margin:0 0 14px;font-size:.88rem;color:var(--ok)}
 .abgleich{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:6px;font-size:.78rem;color:var(--muted)}
 .abgleich-punkt{width:.6rem;height:.6rem;border-radius:50%;background:var(--muted);flex:0 0 auto}
 .abgleich[data-zustand="ok"] .abgleich-punkt{background:var(--ok)}
@@ -1508,7 +1511,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 <section id="auth" class="wrap center">
   <div class="card">
-    <h1>Leistungsnachweis</h1>
+    <h1>QA – Qualifizierte Assistenz</h1>
+    <p class="anmelde-bereiche"><span>Dokumentation · Fahrten ·</span> <span>Abrechnung · Steuer</span></p>
+    <p class="anmelde-sicher">Ende-zu-Ende-verschlüsselt – nur du kannst deine Daten lesen.</p>
     <p class="muted">Melde dich mit deinem App-Konto an.</p>
     <label>E-Mail<input id="email" type="email" autocomplete="email"></label>
     <label>Passwort<input id="password" type="password" autocomplete="current-password"></label>
@@ -2898,7 +2903,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.14 Verkaufsversion';
+const APP_VERSION='0.14.1 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
