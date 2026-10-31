@@ -628,7 +628,7 @@
       qr.addData(codeFormatieren(code));
       qr.make();
       const n = qr.getModuleCount();
-      const groesse = 46;
+      const groesse = 40;
       const zelle = groesse / n;
       pdf.setFillColor(0, 0, 0);
       for (let r = 0; r < n; r++) {
@@ -638,38 +638,101 @@
       }
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
-      pdf.text(pdf.splitTextToSize(
+      let ry = y + 4;
+      const rechts = (zeilen) => { pdf.text(zeilen, 68, ry); ry += zeilen.length * 4.6; };
+      pdf.setFontSize(10.5);
+      rechts(pdf.splitTextToSize(
         'Diesen QR-Code kann die App beim Wiederherstellen mit der Kamera einlesen. ' +
-        'Dann muss nichts abgetippt werden.', 110), 74, y + 6);
-      y += groesse + 10;
+        'Dann muss nichts abgetippt werden.', 122));
+      ry += 3;
+      pdf.setFont('helvetica', 'bold');
+      rechts(['Aufbewahrung']);
+      pdf.setFont('helvetica', 'normal');
+      rechts(pdf.splitTextToSize(
+        'Sicher zu Hause aufbewahren, z. B. bei wichtigen Unterlagen. Gern zusätzlich im ' +
+        'Passwort-Manager. Nicht als Foto auf dem Tablet oder Handy und nicht in derselben ' +
+        'Cloud wie deine Sicherungen.', 122));
+      y = Math.max(y + groesse, ry) + 8;
     }
 
     const abschnitte = [
-      ['Wenn du dein Tresor-Passwort vergessen hast',
-        '1. App öffnen und wie gewohnt anmelden.  ' +
-        '2. Auf "Tresor-Passwort vergessen?" tippen.  ' +
-        '3. Den Schlüssel oben eintippen oder den QR-Code mit der Kamera einlesen.  ' +
-        '4. Ein neues Tresor-Passwort festlegen. Alle Daten bleiben erhalten.'],
-      ['Aufbewahrung',
-        'Sicher zu Hause aufbewahren, z. B. bei wichtigen Unterlagen. Gern zusätzlich im Passwort-Manager. ' +
-        'Nicht als Foto auf dem Tablet oder Handy und nicht in derselben Cloud wie deine Sicherungen.'],
-      ['Gut zu wissen',
-        'Mit diesem Schlüssel allein kommt niemand an deine Daten: Man braucht zusätzlich dein Konto ' +
-        'oder eine Sicherungsdatei. Er ersetzt nur das Tresor-Passwort. Ohne Tresor-Passwort und ohne ' +
-        'diesen Schlüssel sind die Daten unwiederbringlich verloren - auch der Anbieter der App kann sie nicht öffnen. ' +
-        'Erzeugst du in der App ein neues Notfallblatt, wird dieses hier ungültig.']
+      {
+        titel: 'Die drei Zugangsdaten deiner App',
+        punkte: [
+          ['1. Anmelde-Passwort', 'Für dein Konto (E-Mail und Passwort). Vergessen? Auf dem Anmeldebildschirm ' +
+            'ein neues per E-Mail anfordern. Steht NICHT auf diesem Blatt.'],
+          ['2. Tresor-Passwort', 'Öffnet deine Klientendaten. Du gibst es bei jedem Öffnen der App ein und nach ' +
+            '30 Minuten Pause. Du hast es dir selbst ausgedacht, es verlässt dein Gerät nie und steht NICHT auf diesem Blatt.'],
+          ['3. Wiederherstellungsschlüssel', 'Der Ersatzschlüssel für das Tresor-Passwort, nur für den Notfall. ' +
+            'Das ist der Code oben auf diesem Blatt.']
+        ],
+        text: 'Bitte für Anmeldung und Tresor nicht dasselbe Passwort verwenden.'
+      },
+      {
+        titel: 'Wenn du dein Tresor-Passwort vergessen hast',
+        punkte: [
+          ['1.', 'App öffnen und wie gewohnt anmelden (mit dem Anmelde-Passwort).'],
+          ['2.', 'Auf "Tresor-Passwort vergessen?" tippen.'],
+          ['3.', 'Den Wiederherstellungsschlüssel oben eintippen oder den QR-Code mit der Kamera einlesen.'],
+          ['4.', 'Ein neues Tresor-Passwort festlegen. Alle Daten bleiben erhalten.']
+        ]
+      },
+      {
+        titel: 'Gut zu wissen',
+        text: 'Mit diesem Schlüssel allein kommt niemand an deine Daten: Man braucht zusätzlich dein Konto. ' +
+          'Ohne Tresor-Passwort und ohne diesen Schlüssel sind die Daten unwiederbringlich verloren - ' +
+          'auch der Anbieter der App kann sie nicht öffnen. Erzeugst du in der App ein neues Notfallblatt, ' +
+          'wird dieses hier ungültig.'
+      }
     ];
 
-    for (const [titel, text] of abschnitte) {
+    const ZEILE = 4.6;
+    const platz = (hoehe) => {
+      if (y + hoehe > 282) {
+        pdf.addPage();
+        y = 22;
+      }
+    };
+
+    for (const a of abschnitte) {
+      platz(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(12);
-      pdf.text(titel, 20, y);
+      pdf.text(a.titel, 20, y);
       y += 6;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      const zeilen = pdf.splitTextToSize(text, 170);
-      pdf.text(zeilen, 20, y);
-      y += zeilen.length * 5.2 + 6;
+      for (const [marke, inhalt] of a.punkte || []) {
+        const fett = marke.length > 3;
+        const einzug = fett ? 0 : 7;
+        let zeilen;
+        if (fett) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(10.5);
+          platz(ZEILE * 3);
+          pdf.text(marke, 20, y);
+          y += ZEILE;
+          pdf.setFont('helvetica', 'normal');
+          zeilen = pdf.splitTextToSize(inhalt, 164);
+          platz(zeilen.length * ZEILE);
+          pdf.text(zeilen, 26, y);
+        } else {
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(10.5);
+          zeilen = pdf.splitTextToSize(inhalt, 170 - einzug);
+          platz(zeilen.length * ZEILE);
+          pdf.text(marke, 20, y);
+          pdf.text(zeilen, 20 + einzug, y);
+        }
+        y += zeilen.length * ZEILE + 1.2;
+      }
+      if (a.text) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10.5);
+        const zeilen = pdf.splitTextToSize(a.text, 170);
+        platz(zeilen.length * ZEILE);
+        pdf.text(zeilen, 20, y);
+        y += zeilen.length * ZEILE;
+      }
+      y += 4;
     }
     return pdf;
   }
@@ -1118,6 +1181,6 @@
     // Für Bauabschnitt 4: Zugriff auf den Datenschlüssel (nicht auslesbar)
     datenschluessel: () => schluessel,
     // Nur für Tests
-    _intern: { codeErzeugen, codeNormalisieren, codeGueltig, codeFormatieren, passwortHuelleBauen, notfallHuelleBauen, mitPasswortOeffnen, mitCodeOeffnen }
+    _intern: { notfallblattPdf, codeErzeugen, codeNormalisieren, codeGueltig, codeFormatieren, passwortHuelleBauen, notfallHuelleBauen, mitPasswortOeffnen, mitCodeOeffnen }
   };
 })();
