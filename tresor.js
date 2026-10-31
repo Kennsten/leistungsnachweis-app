@@ -308,6 +308,11 @@
 #tresorDialog .t-hinweis{background:var(--accent);border-radius:var(--radius-control,14px);padding:12px 14px;margin:12px 0;line-height:1.45}
 #tresorDialog .t-warnung{background:var(--danger-bg,#f6e4e1);color:var(--ink);border-radius:var(--radius-control,14px);padding:12px 14px;margin:12px 0;line-height:1.45}
 #tresorDialog .t-fehler{color:var(--danger);min-height:1.3em;margin:8px 0 0;font-weight:600}
+#tresorDialog .t-drei{border:1px solid var(--line);border-radius:var(--radius-control,14px);padding:12px 14px;margin:12px 0;background:var(--field,#fff);line-height:1.45}
+#tresorDialog .t-drei-titel{font-weight:700;margin-bottom:4px}
+#tresorDialog .t-drei ol{margin:6px 0 6px;padding-left:22px}
+#tresorDialog .t-drei li{margin:6px 0}
+#tresorDialog .t-drei-fuss{font-size:.92em;color:var(--muted)}
 #tresorDialog .t-zaehler{font-size:.85em;color:var(--muted);margin-top:4px}
 #tresorDialog .t-check{display:flex;flex-direction:row;gap:10px;align-items:flex-start;margin:14px 0;font-weight:400}
 #tresorDialog .t-check input{width:22px;height:22px;flex:0 0 auto;margin-top:2px}
@@ -412,8 +417,21 @@
   function ansichtEinrichten() {
     zeigen(`
       <h2>Tresor einrichten</h2>
-      <p>Deine Klientendaten werden künftig mit einem eigenen <b>Tresor-Passwort</b> geschützt.
-      Es ist getrennt von deinem Anmelde-Passwort und verlässt dieses Gerät nie.</p>
+      <p>Deine Klientendaten liegen künftig in einem <b>Tresor</b>. Das ist ein verschlüsselter Speicher,
+      den nur du öffnen kannst – nicht der Server und nicht der Anbieter der App.</p>
+      <div class="t-drei">
+        <div class="t-drei-titel">Drei Dinge, die du kennen solltest</div>
+        <ol>
+          <li><b>Anmelde-Passwort</b> – für dein Konto (E-Mail und Passwort). Kennst du schon.
+            Vergessen? Neues per E-Mail anfordern.</li>
+          <li><b>Tresor-Passwort</b> – öffnet deine Klientendaten. Du gibst es bei jedem Öffnen der App ein
+            und nach 30 Minuten Pause. Es verlässt dein Gerät nie. <i>Legst du jetzt fest.</i></li>
+          <li><b>Wiederherstellungsschlüssel</b> – der Ersatzschlüssel für das Tresor-Passwort,
+            nur für den Notfall. 32 Zeichen auf einem Notfallblatt zum Ausdrucken.
+            <i>Bekommst du im nächsten Schritt.</i></li>
+        </ol>
+        <div class="t-drei-fuss">Bitte wähle für das Tresor-Passwort <b>nicht</b> dasselbe wie für die Anmeldung.</div>
+      </div>
       <div class="t-hinweis">Tipp: Ein Satz aus mehreren Wörtern ist sicher und gut zu merken,
       zum Beispiel „Kaffee am Morgen mit Hund“. Mindestens ${MIN_PASSWORT} Zeichen.</div>
       <form id="tEinrichten" autocomplete="on">
