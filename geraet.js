@@ -19,7 +19,8 @@
       Pakete – nicht einmal, ob es ein Klient oder eine Fahrt ist.
    5. Konflikte (derselbe Eintrag auf zwei Geräten geändert): Die
       spätere Änderung gilt. Die andere Fassung wird verschlüsselt
-      aufbewahrt (Liste „Abgleich prüfen“ folgt in Version 0.14).
+      aufbewahrt und in der Liste „Abgleich prüfen“ angezeigt
+      (seit Version 0.14), wo man sie übernehmen oder verwerfen kann.
    ===================================================================== */
 
 (function () {
@@ -995,8 +996,9 @@
   let sb = null;
   let melden = () => {};
   let fremdGeaendert = () => {};
-  let status = { zustand: 'offline', wartend: 0, zuletzt: null, meldung: '' };
+  let status = { zustand: 'offline', wartend: 0, konflikte: 0, zuletzt: null, meldung: '' };
   let wartendZahl = 0;
+  let konflikteZahl = 0;
   let abgleichLaeuft = null;
   let abgleichNochmal = false;
   let baldTimer = null;
@@ -1004,7 +1006,7 @@
   const PAKET_GRUPPE = 100;
 
   function statusMelden(teil) {
-    status = Object.assign({}, status, teil || {}, { wartend: wartendZahl });
+    status = Object.assign({}, status, teil || {}, { wartend: wartendZahl, konflikte: konflikteZahl });
     try { melden(Object.assign({}, status)); } catch (f) { console.error(f); }
   }
 
@@ -1031,11 +1033,27 @@
     return true;
   }
 
+  // Zeitstempel zählen beim Vergleich nicht als Unterschied
+  const NUR_TECHNISCH = ['updated_at', 'created_at'];
+  function inhaltGleich(a, b) {
+    if (!a || !b || a.t !== b.t) return false;
+    if (a.z === null || b.z === null) return a.z === b.z;
+    const namen = new Set([...Object.keys(a.z), ...Object.keys(b.z)]);
+    for (const n of namen) {
+      if (NUR_TECHNISCH.includes(n)) continue;
+      if (JSON.stringify(a.z[n] ?? null) !== JSON.stringify(b.z[n] ?? null)) return false;
+    }
+    return true;
+  }
+
   async function konfliktAblegen(id, inhalt, seite) {
     await vorgang(['konflikte'], 'readwrite', (tx) => {
       tx.objectStore('konflikte').add({ id, inhalt, seite, zeit: Date.now() });
     });
+    konflikteZahl = await konflikteZaehlen();
   }
+
+  const konflikteZaehlen = () => vorgang(['konflikte'], 'readonly', (tx) => anfrage(tx.objectStore('konflikte').count()));
 
   async function senden() {
     const ausgang = await alleLesen('ausgang');
@@ -1069,8 +1087,9 @@
           try { fremd = await entschluesseln(r.id, r.inhalt); } catch (f) { fremd = null; }
           try { eigen = await entschluesseln(a.id, a.inhalt); } catch (f) { eigen = null; }
           const fremdGilt = fremd && (!eigen || fremd.g > eigen.g);
+          const gleich = inhaltGleich(fremd, eigen);
           if (fremdGilt) {
-            await konfliktAblegen(a.id, a.inhalt, 'eigene');
+            if (!gleich) await konfliktAblegen(a.id, a.inhalt, 'eigene');
             await vorgang(['pakete', 'ausgang'], 'readwrite', async (tx) => {
               tx.objectStore('pakete').put({ id: r.id, version: r.version, inhalt: r.inhalt, geloescht: r.geloescht });
               const jetzt = await anfrage(tx.objectStore('ausgang').get(r.id));
@@ -1079,7 +1098,7 @@
             });
             if (fremdesPaketUebernehmen(fremd.t, r.id, fremd.z)) geaenderteTabellen.add(fremd.t);
           } else {
-            if (r.inhalt) await konfliktAblegen(r.id, r.inhalt, 'fremde');
+            if (r.inhalt && !gleich) await konfliktAblegen(r.id, r.inhalt, 'fremde');
             await vorgang(['ausgang', 'pakete'], 'readwrite', async (tx) => {
               const jetzt = await anfrage(tx.objectStore('ausgang').get(r.id));
               if (jetzt) tx.objectStore('ausgang').put(Object.assign(jetzt, { basis: r.version }));
@@ -1238,6 +1257,7 @@
     } catch (f) { /* nicht unterstützt */ }
 
     wartendZahl = await ausgangZahl();
+    konflikteZahl = await konflikteZaehlen();
     statusMelden({ zustand: navigator.onLine === false ? 'offline' : 'abgleich', meldung: fehlerhaft ? fehlerhaft + ' Pakete konnten nicht geöffnet werden.' : '' });
 
     // Erster Abgleich: auf einem neuen Gerät abwarten, damit die Daten da sind
@@ -1259,7 +1279,8 @@
     nutzerId = null;
     schluesselHolen = null;
     wartendZahl = 0;
-    status = { zustand: 'offline', wartend: 0, zuletzt: null, meldung: '' };
+    konflikteZahl = 0;
+    status = { zustand: 'offline', wartend: 0, konflikte: 0, zuletzt: null, meldung: '' };
   }
 
   // Löscht die Gerätedatenbank eines Kontos (z. B. bei abgegebenen Geräten)
@@ -1290,6 +1311,76 @@
     }
   }
 
+  /* =================================================================
+     I. Liste „Abgleich prüfen“ (Konflikt-Kopien)
+     ================================================================= */
+
+  function leereBeschreibung(tabelle, aktion) {
+    return {
+      tabelle, aktion, spalten: '*', leseOptionen: undefined, werte: null,
+      schreibOptionen: undefined, rueckgabe: null, filter: [], sortierung: [],
+      grenze: null, einzeln: null
+    };
+  }
+
+  // Alle Kopien, entschlüsselt, mit der aktuellen Fassung zum Vergleich
+  async function konflikte() {
+    if (!db || !daten) return [];
+    const liste = await alleLesen('konflikte');
+    const aus = [];
+    for (const k of liste) {
+      const eintrag = { nr: k.nr, id: k.id, seite: k.seite, zeit: k.zeit };
+      try {
+        const inhalt = await entschluesseln(k.id, k.inhalt);
+        eintrag.tabelle = inhalt.t;
+        eintrag.kopie = kopie(inhalt.z);
+        eintrag.kopieGeaendert = inhalt.g || null;
+        const jetzt = daten[inhalt.t] ? daten[inhalt.t].get(k.id) : null;
+        eintrag.aktuell = jetzt ? kopie(jetzt) : null;
+      } catch (f) {
+        eintrag.fehler = 'Diese Kopie konnte nicht geöffnet werden.';
+      }
+      aus.push(eintrag);
+    }
+    return aus.sort((a, b) => b.zeit - a.zeit);
+  }
+
+  async function konfliktLoeschen(nr) {
+    await vorgang(['konflikte'], 'readwrite', (tx) => { tx.objectStore('konflikte').delete(nr); });
+    konflikteZahl = await konflikteZaehlen();
+    statusMelden();
+  }
+
+  // Kopie übernehmen: wird wie eine normale Änderung gespeichert und abgeglichen
+  async function konfliktUebernehmen(nr) {
+    const k = await vorgang(['konflikte'], 'readonly', (tx) => anfrage(tx.objectStore('konflikte').get(nr)));
+    if (!k) return { error: { message: 'Diese Kopie gibt es nicht mehr.' } };
+    const inhalt = await entschluesseln(k.id, k.inhalt);
+    const t = inhalt.t;
+    const pk = schluesselSpalte(t);
+    const vorhanden = daten[t] && daten[t].has(k.id);
+    let b;
+    if (inhalt.z === null) {
+      if (!vorhanden) {
+        await konfliktLoeschen(nr);
+        return { error: null };
+      }
+      b = leereBeschreibung(t, 'delete');
+      b.filter.push({ art: 'eq', spalte: pk, wert: k.id });
+    } else if (vorhanden) {
+      b = leereBeschreibung(t, 'update');
+      b.werte = Object.assign({}, inhalt.z);
+      delete b.werte[pk];
+      b.filter.push({ art: 'eq', spalte: pk, wert: k.id });
+    } else {
+      b = leereBeschreibung(t, 'insert');
+      b.werte = Object.assign({}, inhalt.z);
+    }
+    const antwort = await speicher.ausfuehren(b);
+    if (!antwort.error) await konfliktLoeschen(nr);
+    return antwort;
+  }
+
   if (typeof window !== 'undefined') {
     window.addEventListener('online', () => { if (db) abgleichen(); });
     window.addEventListener('offline', () => { if (db) statusMelden({ zustand: 'offline' }); });
@@ -1306,6 +1397,9 @@
     wartendFuer,
     speicher,
     status: () => Object.assign({}, status),
+    konflikte,
+    konfliktUebernehmen,
+    konfliktVerwerfen: konfliktLoeschen,
     istOffen: () => Boolean(daten),
     // Nur für Tests
     _intern: { SPALTEN, umwandeln, zeitstempelText, verschluesseln, entschluesseln }

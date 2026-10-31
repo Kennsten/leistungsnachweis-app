@@ -1431,6 +1431,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .abgleich[data-zustand="fehler"] .abgleich-punkt{background:var(--danger)}
 .abgleich[data-zustand="fehler"]{color:var(--danger)}
 .abgleich-knopf{font:inherit;font-size:.78rem;padding:2px 8px;min-height:0;border-radius:999px;background:transparent;color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.abgleich-knopf.abgleich-pruefen{border-color:var(--warn-soft);color:var(--warn-soft);font-weight:600}
+.konflikt{border:1px solid var(--line);border-radius:var(--radius-item);padding:12px 14px;margin:12px 0;background:var(--card)}
+.konflikt h3{margin:0 0 2px;font-size:1rem}
+.konflikt-tabelle{width:100%;border-collapse:collapse;margin:10px 0;font-size:.88rem;table-layout:fixed}
+.konflikt-tabelle th,.konflikt-tabelle td{border-top:1px solid var(--line);padding:6px 6px;text-align:left;vertical-align:top;overflow-wrap:anywhere;white-space:pre-wrap}
+.konflikt-tabelle th{width:24%;color:var(--muted);font-weight:600}
+.konflikt-tabelle thead th{border-top:0;color:var(--ink)}
+.konflikt-tabelle td.kopie{background:color-mix(in srgb,var(--warn-soft) 10%,transparent)}
+.hinweis{border-left:4px solid var(--warn-soft);padding:8px 12px;margin:10px 0;background:var(--card);border-radius:6px}
 .abgleich-knopf:disabled{opacity:.5;cursor:default}
 .kopf-knoepfe{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex:0 0 auto}
 .kopf-knoepfe button{white-space:nowrap}
@@ -1530,6 +1539,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <span class="abgleich-punkt" aria-hidden="true"></span>
         <span id="abgleichText">Abgleich wird vorbereitet …</span>
         <button type="button" id="abgleichJetzt" class="abgleich-knopf">Jetzt abgleichen</button>
+        <button type="button" id="abgleichKonflikte" class="abgleich-knopf abgleich-pruefen hidden">Abgleich prüfen</button>
+        <button type="button" id="abgleichHinweise" class="abgleich-knopf abgleich-pruefen hidden">Hinweise</button>
       </div>
 
       <label class="theme-switch">
@@ -2267,6 +2278,36 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <input id="cloudFileInput" type="file" class="hidden">
 </dialog>
 
+<dialog id="konfliktDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Abgleich</div>
+      <h2>Abgleich prüfen</h2>
+    </div>
+    <button type="button" id="konfliktSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <p class="muted small">
+    Diese Einträge wurden auf zwei Geräten unterschiedlich geändert. Gespeichert ist jeweils die
+    spätere Fassung („Aktuell“). Die andere Fassung („Kopie“) wurde aufbewahrt. Du kannst sie
+    übernehmen oder verwerfen. Gezeigt werden nur die Felder, die sich unterscheiden.
+  </p>
+  <div id="konfliktListe"></div>
+</dialog>
+
+<dialog id="hinweisDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Abgleich</div>
+      <h2>Hinweise</h2>
+    </div>
+    <button type="button" id="hinweisSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="hinweisListe"></div>
+  <div class="actions">
+    <button type="button" id="hinweiseBestaetigen" class="kn kn-speichern primary">Verstanden</button>
+  </div>
+</dialog>
+
 <dialog id="settingsDialog">
   <div class="top">
     <div>
@@ -2309,6 +2350,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <h3 style="margin-top:22px">Dieses Gerät</h3>
   <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
   <div class="actions">
+    <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
     <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
   </div>
 </dialog>
@@ -2856,7 +2898,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.13.2 Verkaufsversion';
+const APP_VERSION='0.14 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3402,20 +3444,248 @@ function abgleichAnzeigen(s){
   box.title=s.meldung||'';
   $('abgleichText').textContent=text;
   $('abgleichJetzt').disabled=zustand==='abgleich';
+
+  const anzahl=s.konflikte||0;
+  for(const k of ['abgleichKonflikte','abgleichPruefenEinst']){
+    $(k).classList.toggle('hidden',!anzahl);
+    $(k).textContent='Abgleich prüfen ('+anzahl+')';
+  }
 }
 
-// Ein anderes Gerät hat etwas geändert: Listen neu laden
+// Ein anderes Gerät hat etwas geändert: prüfen und Listen neu laden
 function nachFremdAenderung(tabellen){
   if(!appBereit||!user)return;
   clearTimeout(fremdTimer);
   fremdTimer=setTimeout(async()=>{
     if(!appBereit)return;
+    if(tabellen.includes('ausgaben'))await belegnummernPruefen();
+    if(['dokumentationen','termine','trip_entries'].some(t=>tabellen.includes(t))){
+      await verknuepfungenPruefen();
+    }
     if(tabellen.includes('clients')||tabellen.includes('bewilligungen'))await loadClients();
     if(tabellen.includes('textbausteine'))await loadTextbausteine();
     if(tabellen.includes('einstellungen'))await loadEinstellungen();
     toast('Änderungen von einem anderen Gerät übernommen.');
+    hinweiseAnzeigen(true);
   },300);
 }
+
+/* ---------- Hinweise nach dem Abgleich (bleiben bis „Verstanden“) ----------
+   Gespeichert werden nur Nummern und Kennungen, keine Klientendaten. */
+
+function hinweisSchluessel(){return 'qa-abgleich-hinweise-'+(user&&user.id)}
+
+function hinweiseLesen(){
+  try{return JSON.parse(localStorage.getItem(hinweisSchluessel())||'[]')}catch(e){return []}
+}
+
+function hinweiseSchreiben(liste){
+  try{localStorage.setItem(hinweisSchluessel(),JSON.stringify(liste))}catch(e){/* nicht schlimm */}
+  $('abgleichHinweise').classList.toggle('hidden',!liste.length);
+  $('abgleichHinweise').textContent='Hinweise ('+liste.length+')';
+}
+
+function hinweisDazu(neu){
+  const liste=hinweiseLesen();
+  if(!liste.some(h=>h.schluessel===neu.schluessel))liste.push(neu);
+  hinweiseSchreiben(liste);
+}
+
+// Bei doppelten Belegnummern behält der früher angelegte Beleg seine
+// Nummer; der spätere bekommt die nächste freie Nummer des Jahres.
+async function belegnummernPruefen(){
+  const {data,error}=await Daten
+    .from('ausgaben')
+    .select('id,beleg_jahr,beleg_nr,created_at,beleg_datei_id');
+  if(error||!data)return;
+  const gruppen={};
+  for(const a of data){
+    const k=a.beleg_jahr+'|'+a.beleg_nr;
+    (gruppen[k]=gruppen[k]||[]).push(a);
+  }
+  for(const gruppe of Object.values(gruppen)){
+    if(gruppe.length<2)continue;
+    gruppe.sort((a,b)=>
+      String(a.created_at).localeCompare(String(b.created_at))||String(a.id).localeCompare(String(b.id))
+    );
+    for(const spaeter of gruppe.slice(1)){
+      const jahr=spaeter.beleg_jahr;
+      const hoechste=Math.max(0,...data.filter(a=>a.beleg_jahr===jahr).map(a=>Number(a.beleg_nr)||0));
+      const neueNr=hoechste+1;
+      const {error:fehler}=await Daten
+        .from('ausgaben')
+        .update({beleg_nr:neueNr})
+        .eq('id',spaeter.id);
+      if(fehler){toast('Belegnummer konnte nicht korrigiert werden: '+fehler.message);continue}
+      const altText=belegNummer(spaeter);
+      spaeter.beleg_nr=neueNr;
+      hinweisDazu({
+        schluessel:'beleg-'+spaeter.id+'-'+neueNr,
+        art:'beleg',
+        id:spaeter.id,
+        text:'Beleg '+altText+' gab es nach dem Abgleich doppelt. Der später angelegte Beleg hat jetzt die Nummer '+
+          belegNummer(spaeter)+'. Bitte die Nummer auf dem Papierbeleg ändern, falls du sie schon notiert hast.'+
+          (spaeter.beleg_datei_id?' Die Datei in pCloud trägt noch die alte Nummer im Namen.':'')
+      });
+    }
+  }
+}
+
+// Höchstens ein Termin und eine Fahrt je Dokumentation: nur Hinweis, keine Änderung
+async function verknuepfungenPruefen(){
+  const [{data:termine},{data:fahrten},{data:dokus}]=await Promise.all([
+    Daten.from('termine').select('id,documentation_id').not('documentation_id','is',null),
+    Daten.from('trip_entries').select('id,documentation_id').not('documentation_id','is',null),
+    Daten.from('dokumentationen').select('id,client_id,datum,beginn')
+  ]);
+  const dokuNach=new Map((dokus||[]).map(d=>[d.id,d]));
+  const pruefen=(liste,art)=>{
+    const zaehler={};
+    for(const x of liste||[])zaehler[x.documentation_id]=(zaehler[x.documentation_id]||0)+1;
+    for(const [dokuId,anzahl] of Object.entries(zaehler)){
+      if(anzahl<2)continue;
+      const d=dokuNach.get(dokuId);
+      const klient=d?(clients.find(c=>c.id===d.client_id)||{}).name:'';
+      const wann=d?formatDate(d.datum)+(d.beginn?', '+String(d.beginn).slice(0,5)+' Uhr':''):'';
+      hinweisDazu({
+        schluessel:'doppelt-'+art+'-'+dokuId+'-'+anzahl,
+        art:'verknuepfung',
+        id:dokuId,
+        text:'Die Dokumentation'+(klient?' für '+klient:'')+(wann?' vom '+wann:'')+
+          ' ist nach dem Abgleich mit '+anzahl+(art==='termin'?' Terminen':' Fahrten')+
+          ' verknüpft. Bitte prüfen und die überzählige Verknüpfung lösen.'
+      });
+    }
+  };
+  pruefen(termine,'termin');
+  pruefen(fahrten,'fahrt');
+}
+
+function hinweiseAnzeigen(nurWennNeu){
+  const liste=hinweiseLesen();
+  hinweiseSchreiben(liste);
+  if(!liste.length){if(!nurWennNeu)$('hinweisDialog').close();return}
+  if(nurWennNeu&&$('hinweisDialog').open)return;
+  $('hinweisListe').innerHTML=liste.map(h=>'<div class="hinweis">'+esc(h.text)+'</div>').join('');
+  if(!$('hinweisDialog').open)$('hinweisDialog').showModal();
+}
+
+$('abgleichHinweise').onclick=()=>hinweiseAnzeigen(false);
+$('hinweisSchliessen').onclick=()=>$('hinweisDialog').close();
+$('hinweiseBestaetigen').onclick=()=>{
+  hinweiseSchreiben([]);
+  $('hinweisDialog').close();
+};
+
+/* ---------- Liste „Abgleich prüfen“ ---------- */
+
+const KONFLIKT_ARTEN={
+  clients:'Klient',dokumentationen:'Dokumentation',trip_entries:'Fahrt',ausgaben:'Ausgabe',
+  termine:'Termin',bewilligungen:'Bewilligung',textbausteine:'Textbaustein',einstellungen:'Einstellungen',
+  verguetungssaetze:'Vergütungssatz',route_distances:'Gespeicherte Strecke',trip_stop_suggestions:'Zwischenziel'
+};
+const KONFLIKT_FELDER={
+  name:'Name',client_code:'Klienten-ID',anrede:'Anrede',datum:'Datum',beginn:'Beginn',ende:'Ende',
+  dokumentation:'Dokumentation',besonderheiten:'Besonderheiten',leistungsart:'Leistungsart',
+  ort_der_leistung:'Ort',dauer_minuten:'Dauer (Min.)',fls:'FLS',trip_date:'Datum',
+  start_address:'Start',intermediate_stops:'Zwischenstopps',destination_address:'Ziel',
+  kilometers:'Kilometer',purpose:'Zweck',notes:'Notizen',tacho_start:'Tacho Abfahrt',tacho_ende:'Tacho Ankunft',
+  betrag:'Betrag',kategorie:'Kategorie',zweck:'Zweck',notizen:'Notizen',beleg_nr:'Belegnummer',
+  ort:'Ort',notiz:'Notiz',titel:'Titel',text:'Text',bemerkungen:'Bemerkungen',
+  stundenkontingent:'Stundenkontingent',auftragnehmer_name:'Name',auftragnehmer_adresse:'Adresse'
+};
+const KONFLIKT_VERBORGEN=['id','user_id','created_at','updated_at'];
+
+function konfliktWert(v){
+  if(v===null||v===undefined||v==='')return '—';
+  if(v===true)return 'ja';
+  if(v===false)return 'nein';
+  return String(v);
+}
+
+function konfliktTitel(k){
+  const z=k.aktuell||k.kopie||{};
+  const art=KONFLIKT_ARTEN[k.tabelle]||k.tabelle;
+  const klient=k.tabelle==='clients'
+    ? z.name
+    : (clients.find(c=>c.id===z.client_id)||{}).name;
+  const datum=z.datum||z.trip_date;
+  return art+(klient?' · '+klient:'')+(datum?' · '+formatDate(datum):'');
+}
+
+async function konflikteAnzeigen(){
+  const liste=await Geraet.konflikte();
+  if(!liste.length){
+    $('konfliktListe').innerHTML='<p class="muted">Keine Einträge zu prüfen.</p>';
+    return;
+  }
+  $('konfliktListe').innerHTML=liste.map(k=>{
+    if(k.fehler){
+      return '<div class="konflikt"><p>'+esc(k.fehler)+'</p><div class="actions">'+
+        '<button type="button" class="kn kn-loeschen danger" data-verwerfen="'+k.nr+'">Verwerfen</button></div></div>';
+    }
+    const herkunft=k.seite==='eigene'?'von diesem Gerät':'von einem anderen Gerät';
+    const geaendert=k.kopieGeaendert
+      ? new Date(k.kopieGeaendert).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'})
+      : '';
+    let zeilen='';
+    if(!k.kopie||!k.aktuell){
+      zeilen='<tr><th>Eintrag</th><td>'+(k.aktuell?'vorhanden':'gelöscht')+'</td><td class="kopie">'+
+        (k.kopie?'vorhanden':'gelöscht')+'</td></tr>';
+    }
+    const namen=new Set([...Object.keys(k.aktuell||{}),...Object.keys(k.kopie||{})]);
+    for(const n of namen){
+      if(KONFLIKT_VERBORGEN.includes(n))continue;
+      const a=k.aktuell?k.aktuell[n]:undefined;
+      const b=k.kopie?k.kopie[n]:undefined;
+      if(k.aktuell&&k.kopie&&JSON.stringify(a??null)===JSON.stringify(b??null))continue;
+      if(!k.aktuell||!k.kopie){if(!KONFLIKT_FELDER[n])continue}
+      zeilen+='<tr><th>'+esc(KONFLIKT_FELDER[n]||n.replace(/_/g,' '))+'</th><td>'+esc(konfliktWert(a))+
+        '</td><td class="kopie">'+esc(konfliktWert(b))+'</td></tr>';
+    }
+    if(!zeilen)zeilen='<tr><td colspan="3" class="muted">Keine sichtbaren Unterschiede.</td></tr>';
+    return '<div class="konflikt">'+
+      '<h3>'+esc(konfliktTitel(k))+'</h3>'+
+      '<div class="muted small">Kopie '+esc(herkunft)+(geaendert?', geändert am '+esc(geaendert):'')+'</div>'+
+      '<table class="konflikt-tabelle"><thead><tr><th></th><th>Aktuell</th><th>Kopie</th></tr></thead>'+
+      '<tbody>'+zeilen+'</tbody></table>'+
+      '<div class="actions">'+
+        '<button type="button" class="primary" data-uebernehmen="'+k.nr+'">Kopie übernehmen</button>'+
+        '<button type="button" class="kn kn-loeschen danger" data-verwerfen="'+k.nr+'">Kopie verwerfen</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+async function konfliktDialogOeffnen(){
+  if(!Geraet.istOffen())return;
+  if($('settingsDialog').open)$('settingsDialog').close();
+  await konflikteAnzeigen();
+  $('konfliktDialog').showModal();
+}
+
+$('abgleichKonflikte').onclick=konfliktDialogOeffnen;
+$('abgleichPruefenEinst').onclick=konfliktDialogOeffnen;
+$('konfliktSchliessen').onclick=()=>$('konfliktDialog').close();
+$('konfliktListe').onclick=async(e)=>{
+  const uebernehmen=e.target.closest('[data-uebernehmen]');
+  const verwerfen=e.target.closest('[data-verwerfen]');
+  if(uebernehmen){
+    if(!confirm('Die Kopie ersetzt die aktuelle Fassung. Fortfahren?'))return;
+    const {error}=await Geraet.konfliktUebernehmen(Number(uebernehmen.dataset.uebernehmen));
+    if(error){toast('Übernehmen nicht möglich: '+error.message);return}
+    toast('Kopie übernommen.');
+    await loadClients();
+    await loadTextbausteine();
+    await loadEinstellungen();
+  }else if(verwerfen){
+    if(!confirm('Die Kopie wird endgültig gelöscht. Fortfahren?'))return;
+    await Geraet.konfliktVerwerfen(Number(verwerfen.dataset.verwerfen));
+    toast('Kopie verworfen.');
+  }else{
+    return;
+  }
+  await konflikteAnzeigen();
+};
 
 $('abgleichJetzt').onclick=async()=>{
   if(!Geraet.istOffen())return;
@@ -3455,6 +3725,7 @@ async function init(){
     await aktualisiereSicherungsKnopf();
 
     appBereit=true;
+    hinweiseAnzeigen(true);
 
     // Erste Anmeldung: Einstellungen ausfüllen lassen
     if(!auftragnehmerName()||!startAdresse()){
