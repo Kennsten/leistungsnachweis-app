@@ -19,8 +19,21 @@ function supabaseDatei() {
   return join(MODULE, '@supabase/supabase-js', pfad);
 }
 
+// Erste vorhandene Datei aus einer Liste möglicher Orte
+// (Pakete verschieben ihre Dateien manchmal zwischen Versionen).
+function ersteVorhandene(paket, kandidaten) {
+  for (const k of kandidaten) {
+    const pfad = join(MODULE, paket, k);
+    if (existsSync(pfad)) return pfad;
+  }
+  return join(MODULE, paket, kandidaten[0]);
+}
+
 const KOPIEN = [
   { von: supabaseDatei(), nach: 'supabase.js' },
+  { von: ersteVorhandene('hash-wasm', ['dist/argon2.umd.min.js']), nach: 'argon2.umd.min.js' },
+  { von: ersteVorhandene('qrcode-generator', ['qrcode.js', 'dist/qrcode.js']), nach: 'qrcode.js' },
+  { von: ersteVorhandene('jsqr', ['dist/jsQR.js']), nach: 'jsQR.js' },
   { von: join(MODULE, 'html2canvas/dist/html2canvas.min.js'), nach: 'html2canvas.min.js' },
   { von: join(MODULE, 'jspdf/dist/jspdf.umd.min.js'), nach: 'jspdf.umd.min.js' },
   { von: join(MODULE, 'leaflet/dist/leaflet.js'), nach: 'leaflet/leaflet.js' },

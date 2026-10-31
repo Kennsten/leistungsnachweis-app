@@ -14,6 +14,9 @@
 <title>QA – Qualifizierte Assistenz</title>
 
 <script src="lib/supabase.js"></script>
+<script src="lib/argon2.umd.min.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="tresor.js"></script>
 <style>
 :root{
   --ink:#2f3a34;
@@ -2264,6 +2267,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="submit" id="settingsSave" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
+
+  <h3 style="margin-top:22px">Tresor</h3>
+  <p class="muted small">Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
+  <div class="actions">
+    <button type="button" id="tresorSperren" class="kn secondary">Jetzt sperren</button>
+    <button type="button" id="tresorPasswortAendern" class="kn secondary">Tresor-Passwort ändern</button>
+    <button type="button" id="tresorNotfallblatt" class="kn secondary">Neues Notfallblatt</button>
+  </div>
 </dialog>
 
 <dialog id="cloudSetupDialog">
@@ -2809,8 +2820,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.3 Verkaufsversion';
-const APP_STAND='30.10.2026';
+const APP_VERSION='0.4 Verkaufsversion';
+const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -3305,8 +3316,18 @@ async function init(){
   if(error){toast(error.message);showApp(false);return}
   if(session){
     user=session.user;
-    showApp(true);
     await loadEinstellungen();
+
+    // Tresor: erst nach Eingabe des Tresor-Passworts geht es weiter
+    await Tresor.oeffnen({
+      sb,
+      user,
+      toast,
+      name:()=>auftragnehmerName(),
+      abmelden:()=>$('logout').click()
+    });
+
+    showApp(true);
     await loadClients();
     await loadTextbausteine();
     await aktualisiereSicherungsKnopf();
@@ -6147,6 +6168,7 @@ $('logout').onclick=async()=>{
   button.disabled=true;
   const {error}=await sb.auth.signOut({scope:'local'});
   if(error){toast('Abmelden fehlgeschlagen: '+error.message);button.disabled=false;return}
+  Tresor.vergessen();
   user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;
   $('list').innerHTML='';
   showApp(false);
@@ -8916,6 +8938,10 @@ function einstellungenOeffnen(ersterStart=false){
 $('openSettings').onclick=()=>einstellungenOeffnen();
 $('closeSettings').onclick=()=>$('settingsDialog').close();
 
+$('tresorSperren').onclick=()=>{$('settingsDialog').close();Tresor.sperren()};
+$('tresorPasswortAendern').onclick=()=>{$('settingsDialog').close();Tresor.passwortAendern()};
+$('tresorNotfallblatt').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattErneuern()};
+
 $('settingsForm').onsubmit=async e=>{
   e.preventDefault();
 
@@ -9066,7 +9092,7 @@ $('saveNewPassword').onclick=async()=>{
 
 sb.auth.onAuthStateChange((event,session)=>{
   if(session){user=session.user}
-  else{user=null;showApp(false)}
+  else{user=null;Tresor.vergessen();showApp(false)}
 
   if(event==='PASSWORD_RECOVERY'||(session&&istWiederherstellung())){
     openNewPasswordDialog();
