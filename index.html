@@ -2963,7 +2963,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.15.1 Verkaufsversion';
+const APP_VERSION='0.15.2 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3531,6 +3531,11 @@ function nachFremdAenderung(tabellen){
     if(tabellen.includes('clients')||tabellen.includes('bewilligungen')||tabellen.includes('portraits'))await loadClients();
     if(tabellen.includes('textbausteine'))await loadTextbausteine();
     if(tabellen.includes('einstellungen'))await loadEinstellungen();
+    // Offene Listen neu zeichnen, damit Einträge vom anderen Gerät sofort zu sehen sind
+    if(tabellen.includes('ausgaben')&&$('expensesDialog').open)await loadExpenses();
+    if(['dokumentationen','termine','trip_entries'].some(t=>tabellen.includes(t))&&$('docsDialog').open)await loadDocs();
+    if(tabellen.includes('trip_entries')&&$('tripsDialog').open)await loadTrips();
+    if(tabellen.includes('trip_entries')&&$('allTripsDialog').open)await loadAllTrips();
     toast('Änderungen von einem anderen Gerät übernommen.');
     hinweiseAnzeigen(true);
   },300);
