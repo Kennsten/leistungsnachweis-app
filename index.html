@@ -235,6 +235,9 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .portrait-entfernt summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
 .portrait-entfernt .portrait-kachel .wahl{opacity:.75}
 
+dialog label.sicherung-haken{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;font-weight:500;margin-top:6px;text-align:left}
+dialog label.sicherung-haken input[type="checkbox"]{width:22px;min-width:22px;height:22px;min-height:0;margin:0;padding:0;flex:0 0 auto}
+
 .client-avatar img{
   width:100%;
   height:100%;
@@ -2380,6 +2383,23 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
+<dialog id="sicherungGeraetDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Datensicherung</div>
+      <h2 id="sicherungGeraetTitel">Sicherung erstellt</h2>
+    </div>
+  </div>
+  <p id="sicherungGeraetText"></p>
+  <p><strong>Möchtest du die Sicherungsdatei auch auf diesem Gerät speichern?</strong></p>
+  <label class="sicherung-haken"><input type="checkbox" id="sicherungGeraetMerken"> Nicht mehr fragen, meine Antwort merken</label>
+  <p class="muted small">Ändern kannst du das später in den Einstellungen unter „Datensicherung“.</p>
+  <div class="actions" style="margin-top:14px">
+    <button type="button" id="sicherungGeraetNein" class="secondary">Nein</button>
+    <button type="button" id="sicherungGeraetJa" class="kn kn-speichern primary">Ja, auf dem Gerät speichern</button>
+  </div>
+</dialog>
+
 <dialog id="settingsDialog">
   <div class="top">
     <div>
@@ -2418,6 +2438,16 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="tresorNotfallblattDrucken" class="secondary">Notfallblatt neu drucken</button>
     <button type="button" id="tresorNotfallblatt" class="secondary">Neuer Wiederherstellungsschlüssel</button>
   </div>
+
+  <h3 style="margin-top:22px">Datensicherung</h3>
+  <p class="muted small">Sicherungen werden verschlüsselt in pCloud im Ordner „Datensicherung“ abgelegt. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</p>
+  <label>Zusätzlich auf diesem Gerät speichern
+    <select id="sicherungGeraetWahl">
+      <option value="fragen">Jedes Mal fragen</option>
+      <option value="immer">Immer</option>
+      <option value="nie">Nie</option>
+    </select>
+  </label>
 
   <h3 style="margin-top:22px">Dieses Gerät</h3>
   <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
@@ -2972,7 +3002,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.16 Verkaufsversion';
+const APP_VERSION='0.17 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9726,6 +9756,7 @@ async function loadEinstellungen(){
 }
 
 function einstellungenOeffnen(ersterStart=false){
+  $('sicherungGeraetWahl').value=sicherungGeraetWahl();
   $('settingsName').value=auftragnehmerName();
   $('settingsAdresse').value=startAdresse();
   $('settingsHinweis').classList.toggle('hidden',!ersterStart);
@@ -11299,6 +11330,119 @@ document.addEventListener('visibilitychange',()=>{
 });
 setInterval(aktualisiereSicherungsKnopf,24*60*60*1000);
 
+/* ---------- Datensicherung (verschlüsselt) ----------
+   Die Sicherungsdatei enthält alle Daten, verschlüsselt mit dem Datenschlüssel
+   aus dem Tresor, dazu die beiden Tresor-Hüllen. Ohne Tresor-Passwort oder
+   Wiederherstellungsschlüssel ist sie wertlos.
+   Ablage: pCloud, Ordner „Datensicherung“ im Ordner der App. Danach fragt die
+   App, ob die Datei auch auf dem Gerät gespeichert werden soll (merkbar je Gerät). */
+
+const SICHERUNG_ORDNER='Datensicherung';
+const SICHERUNG_FORMAT='qa-sicherung';
+
+function sicherungGeraetSchluessel(){return 'qa-sicherung-geraet-'+(user&&user.id)}
+function sicherungGeraetWahl(){
+  try{
+    const w=localStorage.getItem(sicherungGeraetSchluessel());
+    return ['fragen','immer','nie'].includes(w)?w:'fragen';
+  }catch(e){return 'fragen'}
+}
+function sicherungGeraetWahlSetzen(w){
+  try{localStorage.setItem(sicherungGeraetSchluessel(),w)}catch(e){}
+}
+
+function zuBase64(bytes){
+  let s='';
+  for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+  return btoa(s);
+}
+
+async function sicherungVerschluesseln(inhalt){
+  const schluessel=Tresor.datenschluessel();
+  if(!schluessel)throw new Error('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const geheim=new Uint8Array(await crypto.subtle.encrypt(
+    {name:'AES-GCM',iv,additionalData:new TextEncoder().encode(SICHERUNG_FORMAT+'-v1|'+user.id)},
+    schluessel,
+    new TextEncoder().encode(JSON.stringify(inhalt))
+  ));
+  const alles=new Uint8Array(12+geheim.length);
+  alles.set(iv,0);
+  alles.set(geheim,12);
+  return 'v1.'+zuBase64(alles);
+}
+
+function tresorHuellenLesen(){
+  try{
+    const t=JSON.parse(localStorage.getItem('qa-tresor-'+user.id)||'null');
+    return t&&t.passwort_huelle?{version:t.version,passwort_huelle:t.passwort_huelle,notfall_huelle:t.notfall_huelle}:null;
+  }catch(e){return null}
+}
+
+async function pcloudDateiHochladen(ordnerId,name,blob){
+  const werte=new URLSearchParams({
+    access_token:pcloudToken,
+    folderid:ordnerId,
+    filename:name,
+    nopartial:1,
+    renameifexists:1
+  });
+  const formular=new FormData();
+  formular.append('file',blob,name);
+  const antwort=await busyFetch(
+    'https://'+PCLOUD_HOST+'/uploadfile?'+werte.toString(),
+    {method:'POST',body:formular,referrerPolicy:'no-referrer',referrer:''}
+  );
+  const ergebnis=await antwort.json();
+  if(ergebnis.result!==0||!ergebnis.metadata||!ergebnis.metadata[0]){
+    throw new Error(ergebnis.error||('pCloud-Fehler '+ergebnis.result));
+  }
+  return ergebnis.metadata[0];
+}
+
+function sicherungAufGeraetSpeichern(blob,name){
+  const adresse=URL.createObjectURL(blob);
+  const verweis=document.createElement('a');
+  verweis.href=adresse;
+  verweis.download=name;
+  document.body.appendChild(verweis);
+  verweis.click();
+  document.body.removeChild(verweis);
+  setTimeout(()=>URL.revokeObjectURL(adresse),4000);
+}
+
+/* Fragt nach; liefert true (Ja) oder false (Nein) */
+function sicherungGeraetFragen(text,titel){
+  return new Promise(fertig=>{
+    $('sicherungGeraetTitel').textContent=titel;
+    $('sicherungGeraetText').textContent=text;
+    $('sicherungGeraetMerken').checked=false;
+    const antworten=(ja)=>{
+      if($('sicherungGeraetMerken').checked)sicherungGeraetWahlSetzen(ja?'immer':'nie');
+      $('sicherungGeraetDialog').close();
+      fertig(ja);
+    };
+    $('sicherungGeraetJa').onclick=()=>antworten(true);
+    $('sicherungGeraetNein').onclick=()=>antworten(false);
+    $('sicherungGeraetDialog').oncancel=(e)=>{e.preventDefault();antworten(false)};
+    $('sicherungGeraetDialog').showModal();
+  });
+}
+
+async function sicherungInhaltSammeln(){
+  const inhalt={tabellen:{}};
+  const fehler=[];
+  for(const tabelle of SICHERUNG_TABELLEN){
+    setzeSchritt(SICHERUNG_TABELLEN.indexOf(tabelle),SICHERUNG_TABELLEN.length,'Datensicherung');
+    const {data,error}=await Daten.from(tabelle).select('*');
+    if(error){fehler.push(tabelle);inhalt.tabellen[tabelle]=[];continue}
+    inhalt.tabellen[tabelle]=data||[];
+  }
+  setzeSchritt(SICHERUNG_TABELLEN.length,SICHERUNG_TABELLEN.length,'Datensicherung');
+  const anzahl=Object.values(inhalt.tabellen).reduce((summe,liste)=>summe+liste.length,0);
+  return {inhalt,fehler,anzahl};
+}
+
 async function erstelleSicherung(){
   const knopf=$('backupData');
 
@@ -11306,95 +11450,101 @@ async function erstelleSicherung(){
     toast('Bitte zuerst anmelden.');
     return;
   }
+  if(!Tresor.datenschluessel()){
+    toast('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
+    return;
+  }
 
   knopf.disabled=true;
   knopf.classList.remove('sicherung-faellig');
   knopf.textContent='Sicherung läuft …';
 
+  let blob=null;
+  let name='';
+  let fehler=[];
+  let anzahl=0;
+
   try{
-    const inhalt={
-      erstelltAm:new Date().toISOString(),
-      appVersion:APP_VERSION,
-      konto:user.email||'',
-      tabellen:{}
-    };
-
-    const fehler=[];
-
-    for(const tabelle of SICHERUNG_TABELLEN){
-      setzeSchritt(
-        SICHERUNG_TABELLEN.indexOf(tabelle),
-        SICHERUNG_TABELLEN.length,
-        'Datensicherung'
-      );
-
-      const {data,error}=await Daten.from(tabelle).select('*');
-
-      if(error){
-        fehler.push(tabelle);
-        inhalt.tabellen[tabelle]=[];
-        continue;
-      }
-
-      inhalt.tabellen[tabelle]=data||[];
-    }
-
-    setzeSchritt(
-      SICHERUNG_TABELLEN.length,
-      SICHERUNG_TABELLEN.length,
-      'Datensicherung'
-    );
-
-    const anzahl=Object.keys(inhalt.tabellen).reduce(
-      (summe,t)=>summe+inhalt.tabellen[t].length,
-      0
-    );
+    const gesammelt=await sicherungInhaltSammeln();
+    fehler=gesammelt.fehler;
+    anzahl=gesammelt.anzahl;
 
     if(!anzahl){
       toast('Es wurden keine Daten gefunden.');
       return;
     }
 
-    const text=JSON.stringify(inhalt,null,2);
-
-    const datei=new Blob([text],{
-      type:'application/json;charset=utf-8'
-    });
-
-    // Datum schon vor dem Herunterladen speichern – iPad/iPhone öffnen
-    // dabei eine Vorschau und können die App unterbrechen
-    await speichereLetzteSicherung();
-    zeigeSicherungsKnopf();
-
-    const adresse=URL.createObjectURL(datei);
-    const verweis=document.createElement('a');
-
-    verweis.href=adresse;
-    verweis.download=
-      'Datensicherung '+todayIso()+'.json';
-
-    document.body.appendChild(verweis);
-    verweis.click();
-    document.body.removeChild(verweis);
-
-    setTimeout(()=>URL.revokeObjectURL(adresse),4000);
-
-    if(fehler.length){
-      toast(
-        'Sicherung erstellt, aber diese Bereiche fehlen: '+
-        fehler.join(', ')
-      );
-    }else{
-      toast(anzahl+' Datensätze gesichert');
-    }
+    const jetzt=new Date();
+    const datei={
+      format:SICHERUNG_FORMAT,
+      version:1,
+      erstelltAm:jetzt.toISOString(),
+      appVersion:APP_VERSION,
+      nutzer:user.id,
+      tresor:tresorHuellenLesen(),
+      daten:await sicherungVerschluesseln(gesammelt.inhalt)
+    };
+    const zeit=String(jetzt.getHours()).padStart(2,'0')+'-'+String(jetzt.getMinutes()).padStart(2,'0');
+    name='QA-Sicherung '+todayIso()+' '+zeit+'.json';
+    blob=new Blob([JSON.stringify(datei)],{type:'application/json'});
   }catch(problem){
     toast('Die Sicherung ist fehlgeschlagen: '+problem.message);
-  }finally{
     endeSchritt();
     knopf.disabled=false;
     zeigeSicherungsKnopf();
+    return;
   }
+
+  // 1. In pCloud ablegen
+  let inPcloud=false;
+  let pcloudProblem='';
+  if(!pcloudToken){
+    pcloudProblem='pCloud ist auf diesem Gerät nicht eingerichtet.';
+  }else if(navigator.onLine===false){
+    pcloudProblem='Ohne Internet kann die Sicherung nicht in pCloud abgelegt werden.';
+  }else{
+    try{
+      const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
+      await pcloudDateiHochladen(ordner,name,blob);
+      inPcloud=true;
+    }catch(problem){
+      pcloudProblem='Ablage in pCloud fehlgeschlagen: '+problem.message;
+    }
+  }
+  endeSchritt();
+
+  // 2. Auf dem Gerät speichern? (Ohne pCloud wird immer gefragt.)
+  const wahl=sicherungGeraetWahl();
+  let aufGeraet=false;
+  if(inPcloud&&wahl==='immer'){
+    aufGeraet=true;
+  }else if(!inPcloud||wahl==='fragen'){
+    aufGeraet=await sicherungGeraetFragen(
+      inPcloud
+        ? 'Die Sicherung liegt verschlüsselt in pCloud im Ordner „'+SICHERUNG_ORDNER+'“ ('+name+').'
+        : pcloudProblem+' Speichere die Datei deshalb besser auf diesem Gerät.',
+      inPcloud?'Sicherung in pCloud abgelegt':'Sicherung nicht in pCloud'
+    );
+  }
+  if(aufGeraet)sicherungAufGeraetSpeichern(blob,name);
+
+  if(inPcloud||aufGeraet){
+    await speichereLetzteSicherung();
+    const wo=[inPcloud?'pCloud':'',aufGeraet?'Gerät':''].filter(Boolean).join(' und ');
+    toast(anzahl+' Datensätze verschlüsselt gesichert ('+wo+')'+
+      (fehler.length?'. Es fehlen: '+fehler.join(', '):''));
+  }else{
+    toast('Keine Sicherung gespeichert.');
+  }
+
+  knopf.disabled=false;
+  zeigeSicherungsKnopf();
 }
+
+$('sicherungGeraetWahl').onchange=()=>{
+  sicherungGeraetWahlSetzen($('sicherungGeraetWahl').value);
+  toast('Gespeichert');
+};
 
 /* ---------- Textbausteine ---------- */
 
