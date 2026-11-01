@@ -220,6 +220,13 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
   border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--danger);
   font-size:18px;line-height:1;cursor:pointer;
 }
+.beleg-pruefung{
+  margin:10px 0 12px;padding:12px 14px;border-radius:12px;font-size:.92rem;line-height:1.45;
+  border:1px solid var(--line);border-left:4px solid var(--warn,#b8742a);
+  background:color-mix(in srgb,var(--warn,#b8742a) 8%,var(--card));
+}
+.beleg-pruefung ul{margin:6px 0 8px 18px;padding:0}
+.beleg-pruefung .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .portrait-hinweis{
   margin:6px 0 4px;padding:10px 12px;border-radius:12px;font-size:.9rem;line-height:1.4;
   border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 8%,var(--card));
@@ -2732,6 +2739,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
   </div>
 
+  <div id="belegNummernHinweis"></div>
+
   <div id="expensesList">
     <p class="muted">Ausgaben werden geladen …</p>
   </div>
@@ -2963,7 +2972,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.15.4 Verkaufsversion';
+const APP_VERSION='0.16 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3665,7 +3674,7 @@ const KONFLIKT_FELDER={
   ort:'Ort',notiz:'Notiz',titel:'Titel',text:'Text',bemerkungen:'Bemerkungen',
   stundenkontingent:'Stundenkontingent',auftragnehmer_name:'Name',auftragnehmer_adresse:'Adresse'
 };
-const KONFLIKT_VERBORGEN=['id','user_id','created_at','updated_at','bild','portraits_ausgeblendet'];
+const KONFLIKT_VERBORGEN=['id','user_id','created_at','updated_at','bild','portraits_ausgeblendet','beleg_pruefung_ignoriert'];
 
 function konfliktWert(v){
   if(v===null||v===undefined||v==='')return '—';
@@ -9704,7 +9713,7 @@ async function loadEinstellungen(){
 
   const {data,error}=await Daten
     .from('einstellungen')
-    .select('auftragnehmer_name,auftragnehmer_adresse,portraits_ausgeblendet')
+    .select('auftragnehmer_name,auftragnehmer_adresse,portraits_ausgeblendet,beleg_pruefung_ignoriert')
     .eq('user_id',user.id)
     .maybeSingle();
 
@@ -9976,6 +9985,175 @@ function belegNummer(expense){
     String(expense.beleg_nr).padStart(3,'0');
 }
 
+/* ---------- Belegnummern prüfen und bei Bedarf neu nummerieren ----------
+   Geprüft wird das in der Liste gewählte Jahr: Gibt es Lücken (z. B. nach dem
+   Löschen) oder passt die Nummer nicht zur Reihenfolge der Daten, erscheint
+   über der Liste ein Hinweis mit der Frage, ob neu nummeriert werden soll.
+   „So lassen“ merkt sich genau diesen Stand (geräteübergreifend in den
+   Einstellungen); ändert sich etwas, wird wieder gefragt. */
+
+function belegNr3(n){
+  return String(n).padStart(3,'0');
+}
+
+function belegReihenfolge(a,b){
+  return String(a.datum||'').localeCompare(String(b.datum||''))||
+    String(a.created_at||'').localeCompare(String(b.created_at||''))||
+    String(a.id).localeCompare(String(b.id));
+}
+
+function belegStandKennung(liste){
+  const text=liste.map(a=>a.id+'='+a.beleg_nr+'@'+a.datum).sort().join('|');
+  let h=5381;
+  for(let i=0;i<text.length;i++)h=((h*33)^text.charCodeAt(i))>>>0;
+  return h.toString(36);
+}
+
+function belegPruefungIgnoriert(){
+  try{
+    const w=JSON.parse(meineEinstellungen.beleg_pruefung_ignoriert||'{}');
+    return w&&typeof w==='object'?w:{};
+  }catch(e){return {}}
+}
+
+async function belegPruefungIgnorieren(jahr,kennung){
+  const w=belegPruefungIgnoriert();
+  w[jahr]=kennung;
+  const text=JSON.stringify(w);
+  const {error}=await Daten.from('einstellungen').upsert({
+    user_id:user.id,
+    beleg_pruefung_ignoriert:text,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  if(error){toast('Konnte nicht gespeichert werden: '+error.message);return false}
+  meineEinstellungen.beleg_pruefung_ignoriert=text;
+  return true;
+}
+
+async function belegeDesJahres(jahr){
+  const {data,error}=await Daten
+    .from('ausgaben')
+    .select('id,beleg_jahr,beleg_nr,datum,created_at,zweck,kategorie,betrag,beleg_datei_id')
+    .eq('beleg_jahr',jahr);
+  if(error)throw error;
+  return data||[];
+}
+
+/* Liefert null, wenn alles passt, sonst die Gründe */
+function belegNummernBefund(liste){
+  if(!liste.length)return null;
+  const nummern=new Set(liste.map(a=>Number(a.beleg_nr)));
+  const hoechste=Math.max(...nummern);
+  const luecken=[];
+  for(let n=1;n<=hoechste&&luecken.length<=20;n++)if(!nummern.has(n))luecken.push(n);
+  const sortiert=[...liste].sort(belegReihenfolge);
+  const unpassend=[];
+  for(let i=1;i<sortiert.length;i++){
+    if(Number(sortiert[i].beleg_nr)<Number(sortiert[i-1].beleg_nr))unpassend.push([sortiert[i-1],sortiert[i]]);
+  }
+  if(!luecken.length&&!unpassend.length)return null;
+  return {luecken,unpassend,sortiert};
+}
+
+let belegPruefungLaeuft=false;
+
+async function belegNummernStandPruefen(){
+  const box=$('belegNummernHinweis');
+  if(!box)return;
+  const jahr=Number($('expensesYear').value);
+  let liste;
+  try{liste=await belegeDesJahres(jahr)}catch(e){box.innerHTML='';return}
+  const befund=belegNummernBefund(liste);
+  const kennung=belegStandKennung(liste);
+  if(!befund||belegPruefungIgnoriert()[jahr]===kennung){box.innerHTML='';return}
+
+  const gruende=[];
+  if(befund.luecken.length){
+    const zeige=befund.luecken.slice(0,10).map(belegNr3).join(', ')+(befund.luecken.length>10?' …':'');
+    gruende.push('Es gibt Lücken: '+(befund.luecken.length===1?'Beleg '+zeige+' fehlt.':'Belege '+zeige+' fehlen.'));
+  }
+  if(befund.unpassend.length){
+    const [frueher,spaeter]=befund.unpassend[0];
+    gruende.push('Die Nummern passen nicht zur Reihenfolge der Daten: Beleg '+belegNr3(frueher.beleg_nr)+
+      ' vom '+formatDate(frueher.datum)+' liegt zeitlich vor Beleg '+belegNr3(spaeter.beleg_nr)+
+      ' vom '+formatDate(spaeter.datum)+'.');
+  }
+
+  box.innerHTML=
+    '<div class="beleg-pruefung">'+
+      '<strong>Belegnummern '+jahr+' neu sortieren?</strong>'+
+      '<ul>'+gruende.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul>'+
+      'Beim Neu-Nummerieren bekommen alle Belege des Jahres lückenlose Nummern ab 001 in der Reihenfolge ihres Datums. '+
+      '<strong>Achtung:</strong> Nummern, die du schon auf Papierbelege geschrieben hast, passen danach eventuell nicht mehr. '+
+      'Die App zeigt dir danach eine Liste, welche Nummer sich wie geändert hat.'+
+      '<div class="actions">'+
+        '<button type="button" class="kn kn-bearbeiten secondary" id="belegeNeuNummerieren">Neu nummerieren …</button>'+
+        '<button type="button" class="secondary" id="belegeSoLassen">So lassen</button>'+
+      '</div>'+
+    '</div>';
+
+  $('belegeNeuNummerieren').onclick=()=>belegeNeuNummerieren(jahr);
+  $('belegeSoLassen').onclick=async()=>{
+    if(await belegPruefungIgnorieren(jahr,kennung)){
+      box.innerHTML='';
+      toast('Belegnummern bleiben so. Bei neuen Lücken fragt die App wieder.');
+    }
+  };
+}
+
+async function belegeNeuNummerieren(jahr){
+  if(belegPruefungLaeuft)return;
+  let liste;
+  try{liste=await belegeDesJahres(jahr)}catch(e){toast('Belege konnten nicht geladen werden: '+e.message);return}
+  const sortiert=[...liste].sort(belegReihenfolge);
+  const aenderungen=sortiert
+    .map((a,i)=>({a,alt:Number(a.beleg_nr),neu:i+1}))
+    .filter(x=>x.alt!==x.neu);
+  if(!aenderungen.length){toast('Die Belegnummern passen bereits.');belegNummernStandPruefen();return}
+
+  if(!confirm(
+    'Belege '+jahr+' neu nummerieren?\n\n'+
+    aenderungen.length+(aenderungen.length===1?' Beleg bekommt':' Belege bekommen')+' eine neue Nummer. '+
+    'Danach sind die Nummern lückenlos ab 001 und folgen dem Datum.\n\n'+
+    'ACHTUNG: Nummern, die du schon auf Papierbelege geschrieben hast, passen danach eventuell nicht mehr. '+
+    'Du bekommst danach eine Liste mit allen Änderungen (alt → neu), damit du die Papierbelege anpassen kannst.'+
+    (aenderungen.some(x=>x.a.beleg_datei_id)?'\n\nDateien in pCloud behalten ihren bisherigen Namen mit der alten Nummer.':'')
+  ))return;
+
+  belegPruefungLaeuft=true;
+  try{
+    // Erst vorübergehende Nummern, damit sich keine zwei Belege dieselbe Nummer teilen
+    for(let i=0;i<aenderungen.length;i++){
+      const {error}=await Daten.from('ausgaben').update({beleg_nr:900000+i}).eq('id',aenderungen[i].a.id);
+      if(error)throw error;
+    }
+    for(const x of aenderungen){
+      const {error}=await Daten.from('ausgaben').update({beleg_nr:x.neu}).eq('id',x.a.id);
+      if(error)throw error;
+    }
+  }catch(e){
+    toast('Neu nummerieren fehlgeschlagen: '+(e&&e.message?e.message:e)+'. Bitte noch einmal versuchen.');
+    belegPruefungLaeuft=false;
+    await loadExpenses();
+    return;
+  }
+  belegPruefungLaeuft=false;
+
+  const zeilen=aenderungen
+    .sort((x,y)=>x.neu-y.neu)
+    .map(x=>'Beleg '+belegNr3(x.alt)+' → '+belegNr3(x.neu)+' ('+formatDate(x.a.datum)+', '+
+      (x.a.zweck||x.a.kategorie||'')+', '+Number(x.a.betrag||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'})+')');
+  hinweisDazu({
+    schluessel:'beleg-neu-'+jahr+'-'+Date.now(),
+    art:'beleg',
+    text:'Belege '+jahr+' wurden neu nummeriert. Bitte die Nummern auf den Papierbelegen anpassen: '+zeilen.join('; ')+'.'+
+      (aenderungen.some(x=>x.a.beleg_datei_id)?' Die Dateien in pCloud tragen noch die alte Nummer im Namen.':'')
+  });
+  toast('Belege neu nummeriert');
+  await loadExpenses();
+  hinweiseAnzeigen(false);
+}
+
 function fillExpenseCategories(){
   const optionen=AUSGABEN_KATEGORIEN
     .map(name=>`<option value="${esc(name)}">${esc(name)}</option>`)
@@ -10121,6 +10299,7 @@ async function loadExpenses(){
   expenses=data||[];
 
   renderExpenses();
+  belegNummernStandPruefen();
 }
 
 function renderExpenses(){

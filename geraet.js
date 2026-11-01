@@ -134,6 +134,7 @@
       ["letzte_sicherung", "timestamp with time zone", false, null],
       ["updated_at", "timestamp with time zone", true, "now()"],
       ["portraits_ausgeblendet", "text", false, null],
+      ["beleg_pruefung_ignoriert", "text", false, null],
     ],
     portraits: [
       ["id", "uuid", true, "gen_random_uuid()"],
