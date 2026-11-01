@@ -217,6 +217,15 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .portrait-entfernt summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
 .portrait-entfernt .portrait-kachel .wahl{opacity:.75}
 
+.beleg-pruefung{
+  margin:10px 0 12px;padding:12px 14px;border-radius:12px;font-size:.92rem;line-height:1.45;
+  border:1px solid var(--line);border-left:4px solid var(--warn,#b8742a);
+  background:color-mix(in srgb,var(--warn,#b8742a) 8%,var(--card));
+}
+.beleg-pruefung ul{margin:6px 0 8px 18px;padding:0}
+.beleg-pruefung .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.beleg-aenderungen{margin:6px 0 8px 18px;padding:0;line-height:1.6}
+
 .client-avatar img{
   width:100%;
   height:100%;
@@ -1776,6 +1785,22 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="portraitEntfernt"></div>
 </dialog>
 
+<dialog id="belegAenderungenDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Betriebsausgaben</div>
+      <h2>Belege neu nummeriert</h2>
+    </div>
+    <button type="button" id="belegAenderungenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <p>Bitte die Nummern auf den Papierbelegen anpassen:</p>
+  <ul id="belegAenderungenListe" class="beleg-aenderungen"></ul>
+  <p id="belegAenderungenPcloud" class="muted small hidden">Die Dateien in pCloud tragen noch die alte Nummer im Namen.</p>
+  <div class="actions" style="margin-top:14px">
+    <button type="button" id="belegAenderungenOk" class="kn kn-speichern primary">Verstanden</button>
+  </div>
+</dialog>
+
 <dialog id="docsDialog">
   <div class="top">
     <div>
@@ -2580,6 +2605,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
   </div>
 
+  <div id="belegNummernHinweis"></div>
+
   <div id="expensesList">
     <p class="muted">Ausgaben werden geladen …</p>
   </div>
@@ -2811,7 +2838,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.35';
+const APP_VERSION='1.36';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9168,6 +9195,167 @@ function belegNummer(expense){
     String(expense.beleg_nr).padStart(3,'0');
 }
 
+/* ---------- Belegnummern prüfen und bei Bedarf neu nummerieren ----------
+   Geprüft wird das in der Liste gewählte Jahr: Gibt es Lücken (z. B. nach dem
+   Löschen) oder passt die Nummer nicht zur Reihenfolge der Daten, erscheint
+   über der Liste ein Hinweis mit der Frage, ob neu nummeriert werden soll.
+   „So lassen“ merkt sich genau diesen Stand im Benutzerkonto (auf allen
+   Geräten gleich); ändert sich etwas, wird wieder gefragt. */
+
+function belegNr3(n){
+  return String(n).padStart(3,'0');
+}
+
+function belegReihenfolge(a,b){
+  return String(a.datum||'').localeCompare(String(b.datum||''))||
+    String(a.created_at||'').localeCompare(String(b.created_at||''))||
+    String(a.id).localeCompare(String(b.id));
+}
+
+function belegStandKennung(liste){
+  const text=liste.map(a=>a.id+'='+a.beleg_nr+'@'+a.datum).sort().join('|');
+  let h=5381;
+  for(let i=0;i<text.length;i++)h=((h*33)^text.charCodeAt(i))>>>0;
+  return h.toString(36);
+}
+
+function belegPruefungIgnoriert(){
+  const w=user&&user.user_metadata&&user.user_metadata.beleg_pruefung_ignoriert;
+  return w&&typeof w==='object'?w:{};
+}
+
+async function belegPruefungIgnorieren(jahr,kennung){
+  const w=Object.assign({},belegPruefungIgnoriert(),{[jahr]:kennung});
+  const {data,error}=await sb.auth.updateUser({data:{beleg_pruefung_ignoriert:w}});
+  if(error){toast('Konnte nicht gespeichert werden: '+error.message);return false}
+  if(data&&data.user)user=data.user;
+  return true;
+}
+
+async function belegeDesJahres(jahr){
+  const {data,error}=await sb
+    .from('ausgaben')
+    .select('id,beleg_jahr,beleg_nr,datum,created_at,zweck,kategorie,betrag,beleg_datei_id')
+    .eq('beleg_jahr',jahr);
+  if(error)throw error;
+  return data||[];
+}
+
+/* Liefert null, wenn alles passt, sonst die Gründe */
+function belegNummernBefund(liste){
+  if(!liste.length)return null;
+  const nummern=new Set(liste.map(a=>Number(a.beleg_nr)));
+  const hoechste=Math.max(...nummern);
+  const luecken=[];
+  for(let n=1;n<=hoechste&&luecken.length<=20;n++)if(!nummern.has(n))luecken.push(n);
+  const sortiert=[...liste].sort(belegReihenfolge);
+  const unpassend=[];
+  for(let i=1;i<sortiert.length;i++){
+    if(Number(sortiert[i].beleg_nr)<Number(sortiert[i-1].beleg_nr))unpassend.push([sortiert[i-1],sortiert[i]]);
+  }
+  if(!luecken.length&&!unpassend.length)return null;
+  return {luecken,unpassend,sortiert};
+}
+
+let belegPruefungLaeuft=false;
+
+async function belegNummernStandPruefen(){
+  const box=$('belegNummernHinweis');
+  if(!box)return;
+  const jahr=Number($('expensesYear').value);
+  let liste;
+  try{liste=await belegeDesJahres(jahr)}catch(e){box.innerHTML='';return}
+  const befund=belegNummernBefund(liste);
+  const kennung=belegStandKennung(liste);
+  if(!befund||belegPruefungIgnoriert()[jahr]===kennung){box.innerHTML='';return}
+
+  const gruende=[];
+  if(befund.luecken.length){
+    const zeige=befund.luecken.slice(0,10).map(belegNr3).join(', ')+(befund.luecken.length>10?' …':'');
+    gruende.push('Es gibt Lücken: '+(befund.luecken.length===1?'Beleg '+zeige+' fehlt.':'Belege '+zeige+' fehlen.'));
+  }
+  if(befund.unpassend.length){
+    const [frueher,spaeter]=befund.unpassend[0];
+    gruende.push('Die Nummern passen nicht zur Reihenfolge der Daten: Beleg '+belegNr3(frueher.beleg_nr)+
+      ' vom '+formatDate(frueher.datum)+' liegt zeitlich vor Beleg '+belegNr3(spaeter.beleg_nr)+
+      ' vom '+formatDate(spaeter.datum)+'.');
+  }
+
+  box.innerHTML=
+    '<div class="beleg-pruefung">'+
+      '<strong>Belegnummern '+jahr+' neu sortieren?</strong>'+
+      '<ul>'+gruende.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul>'+
+      'Beim Neu-Nummerieren bekommen alle Belege des Jahres lückenlose Nummern ab 001 in der Reihenfolge ihres Datums. '+
+      '<strong>Achtung:</strong> Nummern, die du schon auf Papierbelege geschrieben hast, passen danach eventuell nicht mehr. '+
+      'Die App zeigt dir danach eine Liste, welche Nummer sich wie geändert hat.'+
+      '<div class="actions">'+
+        '<button type="button" class="kn kn-bearbeiten secondary" id="belegeNeuNummerieren">Neu nummerieren …</button>'+
+        '<button type="button" class="secondary" id="belegeSoLassen">So lassen</button>'+
+      '</div>'+
+    '</div>';
+
+  $('belegeNeuNummerieren').onclick=()=>belegeNeuNummerieren(jahr);
+  $('belegeSoLassen').onclick=async()=>{
+    if(await belegPruefungIgnorieren(jahr,kennung)){
+      box.innerHTML='';
+      toast('Belegnummern bleiben so. Bei neuen Lücken fragt die App wieder.');
+    }
+  };
+}
+
+async function belegeNeuNummerieren(jahr){
+  if(belegPruefungLaeuft)return;
+  let liste;
+  try{liste=await belegeDesJahres(jahr)}catch(e){toast('Belege konnten nicht geladen werden: '+e.message);return}
+  const sortiert=[...liste].sort(belegReihenfolge);
+  const aenderungen=sortiert
+    .map((a,i)=>({a,alt:Number(a.beleg_nr),neu:i+1}))
+    .filter(x=>x.alt!==x.neu);
+  if(!aenderungen.length){toast('Die Belegnummern passen bereits.');belegNummernStandPruefen();return}
+  const mitPcloud=aenderungen.some(x=>x.a.beleg_datei_id);
+
+  if(!confirm(
+    'Belege '+jahr+' neu nummerieren?\n\n'+
+    aenderungen.length+(aenderungen.length===1?' Beleg bekommt':' Belege bekommen')+' eine neue Nummer. '+
+    'Danach sind die Nummern lückenlos ab 001 und folgen dem Datum.\n\n'+
+    'ACHTUNG: Nummern, die du schon auf Papierbelege geschrieben hast, passen danach eventuell nicht mehr. '+
+    'Du bekommst danach eine Liste mit allen Änderungen (alt → neu), damit du die Papierbelege anpassen kannst.'+
+    (mitPcloud?'\n\nDateien in pCloud behalten ihren bisherigen Namen mit der alten Nummer.':'')
+  ))return;
+
+  belegPruefungLaeuft=true;
+  try{
+    // Erst vorübergehende Nummern, damit sich keine zwei Belege dieselbe Nummer teilen
+    for(let i=0;i<aenderungen.length;i++){
+      const {error}=await sb.from('ausgaben').update({beleg_nr:900000+i}).eq('id',aenderungen[i].a.id);
+      if(error)throw error;
+    }
+    for(const x of aenderungen){
+      const {error}=await sb.from('ausgaben').update({beleg_nr:x.neu}).eq('id',x.a.id);
+      if(error)throw error;
+    }
+  }catch(e){
+    toast('Neu nummerieren fehlgeschlagen: '+(e&&e.message?e.message:e)+'. Bitte noch einmal versuchen.');
+    belegPruefungLaeuft=false;
+    await loadExpenses();
+    return;
+  }
+  belegPruefungLaeuft=false;
+
+  $('belegAenderungenListe').innerHTML=aenderungen
+    .sort((x,y)=>x.neu-y.neu)
+    .map(x=>'<li><strong>Beleg '+belegNr3(x.alt)+' → '+belegNr3(x.neu)+'</strong> · '+esc(formatDate(x.a.datum))+' · '+
+      esc(x.a.zweck||x.a.kategorie||'')+' · '+Number(x.a.betrag||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'})+'</li>')
+    .join('');
+  $('belegAenderungenPcloud').classList.toggle('hidden',!mitPcloud);
+  toast('Belege neu nummeriert');
+  await loadExpenses();
+  $('belegAenderungenDialog').showModal();
+}
+
+$('belegAenderungenSchliessen').onclick=()=>$('belegAenderungenDialog').close();
+$('belegAenderungenOk').onclick=()=>$('belegAenderungenDialog').close();
+
 function fillExpenseCategories(){
   const optionen=AUSGABEN_KATEGORIEN
     .map(name=>`<option value="${esc(name)}">${esc(name)}</option>`)
@@ -9313,6 +9501,7 @@ async function loadExpenses(){
   expenses=data||[];
 
   renderExpenses();
+  belegNummernStandPruefen();
 }
 
 function renderExpenses(){
