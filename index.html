@@ -238,6 +238,12 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 dialog label.sicherung-haken{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;font-weight:500;margin-top:6px;text-align:left}
 dialog label.sicherung-haken input[type="checkbox"]{width:22px;min-width:22px;height:22px;min-height:0;margin:0;padding:0;flex:0 0 auto}
 
+.wh-liste{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:40vh;overflow:auto}
+.wh-liste button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left}
+.wh-tabelle{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+.wh-tabelle th,.wh-tabelle td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.wh-tabelle td:nth-child(n+2),.wh-tabelle th:nth-child(n+2){text-align:right}
+
 .client-avatar img{
   width:100%;
   height:100%;
@@ -2383,6 +2389,54 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
+<dialog id="wiederherstellenDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Datensicherung</div>
+      <h2>Aus Sicherung wiederherstellen</h2>
+    </div>
+    <button type="button" id="wiederherstellenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+
+  <div id="whAuswahl">
+    <p class="muted small">Wähle eine Sicherung. Vor dem Wiederherstellen siehst du, was sie enthält, und musst noch einmal bestätigen.</p>
+    <h3>Sicherungen in pCloud</h3>
+    <div id="whListe" class="wh-liste"><p class="muted">Wird geladen …</p></div>
+    <h3 style="margin-top:18px">Datei von diesem Gerät</h3>
+    <input type="file" id="whDatei" accept=".json,application/json" class="hidden">
+    <button type="button" id="whDateiWaehlen" class="kn kn-datei secondary">Sicherungsdatei wählen …</button>
+  </div>
+
+  <div id="whSchluessel" class="hidden">
+    <p id="whSchluesselText"></p>
+    <label>Tresor-Passwort, das bei dieser Sicherung galt
+      <input type="password" id="whPasswort" autocomplete="off">
+    </label>
+    <p class="muted small">Oder stattdessen der Wiederherstellungsschlüssel vom Notfallblatt dieser Zeit:</p>
+    <label>Wiederherstellungsschlüssel
+      <input type="text" id="whCode" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    </label>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" id="whSchluesselZurueck" class="secondary">Zurück</button>
+      <button type="button" id="whSchluesselOk" class="kn kn-speichern primary">Sicherung öffnen</button>
+    </div>
+  </div>
+
+  <div id="whPruefen" class="hidden">
+    <p id="whPruefenTitel"></p>
+    <table class="wh-tabelle"><thead><tr><th>Bereich</th><th>Jetzt</th><th>In der Sicherung</th></tr></thead><tbody id="whZahlen"></tbody></table>
+    <div class="beleg-pruefung" style="margin-top:14px">
+      <strong>Achtung:</strong> Alle jetzigen Daten werden durch den Stand der Sicherung ersetzt, auch auf deinen anderen Geräten.
+      Was nach der Sicherung eingetragen wurde, ist danach nicht mehr da.
+      Vorher legt die App automatisch eine Sicherung des jetzigen Stands an.
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" id="whPruefenZurueck" class="secondary">Zurück</button>
+      <button type="button" id="whStarten" class="kn kn-loeschen danger">Jetzt wiederherstellen</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="sicherungGeraetDialog">
   <div class="top">
     <div>
@@ -2442,6 +2496,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <h3 style="margin-top:22px">Datensicherung</h3>
   <p class="muted small">Sicherungen werden verschlüsselt in pCloud im Ordner „Datensicherung“ abgelegt. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</p>
   <p class="muted small">Automatisch gesichert wird beim Öffnen der App und wenn die App 10 Minuten im Hintergrund war (auf iPad und iPhone beim Zurückkehren), nur wenn sich etwas geändert hat. Sicherungen der letzten 9 Wochen bleiben erhalten, ältere werden gelöscht.</p>
+  <div class="actions">
+    <button type="button" id="wiederherstellenOeffnen" class="secondary">Aus Sicherung wiederherstellen …</button>
+  </div>
   <label>Zusätzlich auf diesem Gerät speichern
     <select id="sicherungGeraetWahl">
       <option value="fragen">Jedes Mal fragen</option>
@@ -3003,7 +3060,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.18 Verkaufsversion';
+const APP_VERSION='0.19 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -11359,19 +11416,62 @@ function zuBase64(bytes){
   return btoa(s);
 }
 
+function ausBase64(text){
+  const s=atob(text);
+  const b=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);
+  return b;
+}
+
+/* Zusammenpacken (gzip) spart bei Text etwa 85 % Platz. Ältere Geräte
+   ohne diese Funktion speichern ungepackt; beim Lesen steht es in der Datei. */
+async function sicherungPacken(bytes){
+  if(typeof CompressionStream==='undefined')return {bytes,gepackt:false};
+  const strom=new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+  return {bytes:new Uint8Array(await new Response(strom).arrayBuffer()),gepackt:true};
+}
+
+async function sicherungEntpacken(bytes){
+  if(typeof DecompressionStream==='undefined'){
+    throw new Error('Dieses Gerät kann gepackte Sicherungen nicht öffnen. Bitte Safari bzw. den Browser aktualisieren.');
+  }
+  const strom=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(strom).arrayBuffer());
+}
+
 async function sicherungVerschluesseln(inhalt){
   const schluessel=Tresor.datenschluessel();
   if(!schluessel)throw new Error('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
+  const gepackt=await sicherungPacken(new TextEncoder().encode(JSON.stringify(inhalt)));
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const geheim=new Uint8Array(await crypto.subtle.encrypt(
     {name:'AES-GCM',iv,additionalData:new TextEncoder().encode(SICHERUNG_FORMAT+'-v1|'+user.id)},
     schluessel,
-    new TextEncoder().encode(JSON.stringify(inhalt))
+    gepackt.bytes
   ));
   const alles=new Uint8Array(12+geheim.length);
   alles.set(iv,0);
   alles.set(geheim,12);
-  return 'v1.'+zuBase64(alles);
+  return {daten:'v1.'+zuBase64(alles),gepackt:gepackt.gepackt};
+}
+
+/* Liefert den Inhalt ({tabellen}) oder null, wenn der Schlüssel nicht passt */
+async function sicherungEntschluesseln(datei,schluessel){
+  const text=String(datei.daten||'');
+  if(!text.startsWith('v1.'))throw new Error('Unbekanntes Format der Sicherungsdatei.');
+  const alles=ausBase64(text.slice(3));
+  let klar;
+  try{
+    klar=new Uint8Array(await crypto.subtle.decrypt(
+      {name:'AES-GCM',iv:alles.subarray(0,12),additionalData:new TextEncoder().encode(SICHERUNG_FORMAT+'-v1|'+datei.nutzer)},
+      schluessel,
+      alles.subarray(12)
+    ));
+  }catch(e){
+    return null;
+  }
+  if(datei.gepackt)klar=await sicherungEntpacken(klar);
+  return JSON.parse(new TextDecoder().decode(klar));
 }
 
 function tresorHuellenLesen(){
@@ -11451,14 +11551,16 @@ async function sicherungDateiBauen(leise=false){
   const gesammelt=await sicherungInhaltSammeln(leise);
   if(!gesammelt.anzahl)return Object.assign({blob:null},gesammelt);
   const jetzt=new Date();
+  const verschluesselt=await sicherungVerschluesseln(gesammelt.inhalt);
   const datei={
     format:SICHERUNG_FORMAT,
-    version:1,
+    version:2,
     erstelltAm:jetzt.toISOString(),
     appVersion:APP_VERSION,
     nutzer:user.id,
     tresor:tresorHuellenLesen(),
-    daten:await sicherungVerschluesseln(gesammelt.inhalt)
+    gepackt:verschluesselt.gepackt,
+    daten:verschluesselt.daten
   };
   const zeit=String(jetzt.getHours()).padStart(2,'0')+'-'+String(jetzt.getMinutes()).padStart(2,'0');
   const fingerabdruck=zuBase64(new Uint8Array(await crypto.subtle.digest(
@@ -11666,6 +11768,244 @@ async function erstelleSicherung(){
   knopf.disabled=false;
   zeigeSicherungsKnopf();
 }
+
+/* ---------- Aus Sicherung wiederherstellen ----------
+   1. Sicherung wählen (pCloud-Liste oder Datei vom Gerät)
+   2. Entschlüsseln: mit dem jetzigen Tresor; passt er nicht (z. B. Sicherung
+      aus einem anderen Konto), mit dem damaligen Tresor-Passwort oder
+      Wiederherstellungsschlüssel aus der Datei
+   3. Inhalt zeigen (Anzahl je Bereich jetzt / in der Sicherung)
+   4. Nach Bestätigung: Sicherung des jetzigen Stands, dann alle Einträge
+      durch die der Sicherung ersetzen
+   Unverschlüsselte Sicherungen älterer Versionen (mit „tabellen“) werden
+   ebenfalls angenommen. */
+
+const WH_BEREICHE={
+  clients:'Klient*innen',bewilligungen:'Bewilligungen',dokumentationen:'Dokumentationen',
+  trip_entries:'Fahrten',termine:'Termine',ausgaben:'Betriebsausgaben',
+  trip_stop_suggestions:'Zwischenziele',route_distances:'Gespeicherte Strecken',
+  verguetungssaetze:'Vergütungssätze',textbausteine:'Textbausteine',portraits:'Eigene Porträts'
+};
+// Eltern vor Kindern einfügen, Kinder vor Eltern löschen
+const WH_EINFUEGEN=['clients','bewilligungen','dokumentationen','trip_entries','termine','ausgaben',
+  'trip_stop_suggestions','route_distances','verguetungssaetze','textbausteine','portraits'];
+
+let whDatei=null;     // gelesene Sicherungsdatei
+let whInhalt=null;    // entschlüsselter Inhalt {tabellen}
+let whLaeuft=false;
+
+function whSchritt(name){
+  for(const id of ['whAuswahl','whSchluessel','whPruefen'])$(id).classList.toggle('hidden',id!==name);
+}
+
+function whZeit(iso){
+  const d=new Date(iso);
+  if(isNaN(d))return 'unbekannt';
+  return d.toLocaleDateString('de-DE')+' um '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' Uhr';
+}
+
+async function wiederherstellenOeffnen(){
+  if(!Tresor.datenschluessel()){toast('Der Tresor ist gesperrt. Bitte zuerst entsperren.');return}
+  whDatei=null;whInhalt=null;
+  whSchritt('whAuswahl');
+  $('settingsDialog').close();
+  $('wiederherstellenDialog').showModal();
+  const liste=$('whListe');
+  if(!pcloudToken){liste.innerHTML='<p class="muted">pCloud ist auf diesem Gerät nicht eingerichtet.</p>';return}
+  liste.innerHTML='<p class="muted">Wird geladen …</p>';
+  try{
+    const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
+    const ergebnis=await pcloudAnfrage('listfolder',{folderid:ordner});
+    const dateien=((ergebnis.metadata&&ergebnis.metadata.contents)||[])
+      .filter(d=>!d.isfolder&&/\.json$/i.test(d.name))
+      .sort((a,b)=>(Date.parse(b.created)||0)-(Date.parse(a.created)||0));
+    if(!dateien.length){liste.innerHTML='<p class="muted">Noch keine Sicherungen in pCloud.</p>';return}
+    liste.innerHTML=dateien.map(d=>
+      '<button type="button" class="secondary" data-fileid="'+esc(String(d.fileid))+'">'+
+        '<span>'+esc(whZeit(d.created))+'</span>'+
+        '<span class="muted small">'+(Math.max(1,Math.round((d.size||0)/1024)))+' KB</span>'+
+      '</button>'
+    ).join('');
+  }catch(e){
+    liste.innerHTML='<p class="muted">Sicherungen konnten nicht geladen werden: '+esc(e.message)+'</p>';
+  }
+}
+
+/* Dateiinhalt aus pCloud holen (wie beim Öffnen von Dokumenten:
+   erst direkt, sonst über das Hilfsprogramm bei Netlify) */
+async function pcloudTextLaden(fileId){
+  const z=n=>String(n).padStart(2,'0');
+  const d=new Date(Date.now()+15*60*1000);
+  const ablauf=d.getUTCFullYear()+'-'+z(d.getUTCMonth()+1)+'-'+z(d.getUTCDate())+'T'+
+    z(d.getUTCHours())+':'+z(d.getUTCMinutes())+':'+z(d.getUTCSeconds())+'+0000';
+  const freigabe=await pcloudLinkAnfrage({fileid:fileId,expire:ablauf});
+  const code=freigabe&&freigabe.code;
+  if(!code)throw new Error('Kein Zugriff auf die Datei.');
+  try{
+    const antwort=await busyFetch('https://'+PCLOUD_HOST+'/getpublinkdownload?'+new URLSearchParams({code}).toString(),
+      {referrerPolicy:'no-referrer',referrer:''});
+    const link=await antwort.json();
+    if(link.result===0&&link.hosts&&link.hosts.length){
+      const datei=await busyFetch('https://'+link.hosts[0]+link.path,{referrerPolicy:'no-referrer',referrer:''});
+      if(datei.ok)return await datei.text();
+    }
+  }catch(e){/* weiter über Netlify */}
+  const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({art:'datei',code,contenttype:'application/octet-stream',host:PCLOUD_HOST})
+  });
+  if(!antwort.ok)throw new Error('Datei nicht abrufbar (Status '+antwort.status+').');
+  return await antwort.text();
+}
+
+async function whDateiPruefen(text){
+  let datei;
+  try{datei=JSON.parse(text)}catch(e){toast('Das ist keine Sicherungsdatei der App.');return}
+  if(datei&&datei.tabellen&&!datei.daten){
+    // Unverschlüsselte Sicherung einer älteren Version
+    whDatei=datei;
+    whInhalt={tabellen:datei.tabellen};
+    whZeigen();
+    return;
+  }
+  if(!datei||datei.format!==SICHERUNG_FORMAT||!datei.daten){toast('Das ist keine Sicherungsdatei der App.');return}
+  whDatei=datei;
+  const inhalt=await sicherungEntschluesseln(datei,Tresor.datenschluessel()).catch(e=>{toast(e.message);return undefined});
+  if(inhalt===undefined)return;
+  if(inhalt){whInhalt=inhalt;whZeigen();return}
+  // Jetziger Tresor passt nicht: damaliges Passwort oder Schlüssel abfragen
+  if(!datei.tresor){toast('Diese Sicherung lässt sich mit deinem Tresor nicht öffnen.');return}
+  $('whSchluesselText').textContent='Diese Sicherung vom '+whZeit(datei.erstelltAm)+
+    ' wurde mit einem anderen Tresor verschlüsselt. Gib das Tresor-Passwort oder den Wiederherstellungsschlüssel ein, die damals galten.';
+  $('whPasswort').value='';$('whCode').value='';
+  whSchritt('whSchluessel');
+}
+
+async function whSchluesselOeffnen(){
+  const t=Tresor._intern;
+  const pw=$('whPasswort').value;
+  const code=t.codeNormalisieren($('whCode').value);
+  if(!pw&&!code){toast('Bitte Tresor-Passwort oder Wiederherstellungsschlüssel eingeben.');return}
+  const knopf=$('whSchluesselOk');
+  knopf.disabled=true;knopf.textContent='Wird geprüft …';
+  try{
+    let roh=null;
+    if(pw)roh=await t.mitPasswortOeffnen(pw,whDatei.tresor.passwort_huelle);
+    if(!roh&&code&&t.codeGueltig(code))roh=await t.mitCodeOeffnen(code,whDatei.tresor.notfall_huelle);
+    if(!roh){toast('Passwort bzw. Schlüssel passt nicht zu dieser Sicherung.');return}
+    const schluessel=await crypto.subtle.importKey('raw',roh,'AES-GCM',false,['decrypt']);
+    roh.fill(0);
+    const inhalt=await sicherungEntschluesseln(whDatei,schluessel);
+    if(!inhalt){toast('Die Sicherung ließ sich nicht öffnen.');return}
+    whInhalt=inhalt;
+    whZeigen();
+  }catch(e){
+    toast('Fehler: '+e.message);
+  }finally{
+    knopf.disabled=false;knopf.textContent='Sicherung öffnen';
+    $('whPasswort').value='';
+  }
+}
+
+async function whZeigen(){
+  $('whPruefenTitel').innerHTML='<strong>Sicherung vom '+esc(whZeit(whDatei.erstelltAm))+'</strong>'+
+    (whDatei.daten?'':' <span class="muted small">(unverschlüsselte Sicherung einer älteren Version)</span>');
+  const zeilen=[];
+  for(const t of WH_EINFUEGEN){
+    const neu=(whInhalt.tabellen&&whInhalt.tabellen[t])||[];
+    const {count}=await Daten.from(t).select('id',{count:'exact',head:true});
+    if(!neu.length&&!count)continue;
+    zeilen.push('<tr><td>'+esc(WH_BEREICHE[t]||t)+'</td><td>'+(count||0)+'</td><td>'+neu.length+'</td></tr>');
+  }
+  $('whZahlen').innerHTML=zeilen.join('')||'<tr><td colspan="3">Keine Einträge</td></tr>';
+  whSchritt('whPruefen');
+}
+
+async function whStarten(){
+  if(whLaeuft||!whInhalt)return;
+  if(!confirm('Wirklich alle jetzigen Daten durch die Sicherung vom '+whZeit(whDatei.erstelltAm)+' ersetzen?'))return;
+  whLaeuft=true;
+  const knopf=$('whStarten');
+  knopf.disabled=true;
+  try{
+    // 1. Jetzigen Stand sichern
+    knopf.textContent='Jetziger Stand wird gesichert …';
+    const vorher=await sicherungDateiBauen(true);
+    if(vorher.blob){
+      const name=vorher.name.replace('.json',' vor Wiederherstellung.json');
+      let gesichert=false;
+      if(pcloudToken&&navigator.onLine!==false){
+        try{await sicherungInPcloudAblegen(vorher.blob,name);gesichert=true}catch(e){}
+      }
+      if(!gesichert)sicherungAufGeraetSpeichern(vorher.blob,name);
+    }
+
+    // 2. Alle Einträge löschen (Kinder zuerst)
+    knopf.textContent='Wird wiederhergestellt …';
+    for(const t of [...WH_EINFUEGEN].reverse()){
+      const {error}=await Daten.from(t).delete().not('id','is',null);
+      if(error)throw new Error(t+': '+error.message);
+    }
+
+    // 3. Einträge der Sicherung einfügen (Eltern zuerst), nur bekannte Spalten
+    const spalten=Geraet._intern.SPALTEN;
+    let anzahl=0;
+    for(const t of WH_EINFUEGEN){
+      const zeilen=(whInhalt.tabellen&&whInhalt.tabellen[t])||[];
+      if(!zeilen.length||!spalten[t])continue;
+      const erlaubt=new Set(spalten[t].map(s=>s[0]));
+      const sauber=zeilen.map(z=>{
+        const neu={};
+        for(const [k,v] of Object.entries(z))if(erlaubt.has(k))neu[k]=v;
+        if(erlaubt.has('user_id'))neu.user_id=user.id;
+        return neu;
+      });
+      for(let i=0;i<sauber.length;i+=200){
+        const {error}=await Daten.from(t).insert(sauber.slice(i,i+200));
+        if(error)throw new Error((WH_BEREICHE[t]||t)+': '+error.message);
+      }
+      anzahl+=sauber.length;
+    }
+
+    // 4. Alles neu laden
+    sicherungFingerabdruckMerken(null);
+    await loadEinstellungen();
+    await loadPortraits();
+    await loadClients();
+    await loadTextbausteine();
+    $('wiederherstellenDialog').close();
+    toast(anzahl+' Einträge wiederhergestellt');
+  }catch(e){
+    toast('Wiederherstellen fehlgeschlagen: '+e.message+'. Die Sicherung des vorherigen Stands liegt im Ordner „'+SICHERUNG_ORDNER+'“.');
+  }finally{
+    whLaeuft=false;
+    knopf.disabled=false;
+    knopf.textContent='Jetzt wiederherstellen';
+  }
+}
+
+$('wiederherstellenOeffnen').onclick=wiederherstellenOeffnen;
+$('wiederherstellenSchliessen').onclick=()=>$('wiederherstellenDialog').close();
+$('whDateiWaehlen').onclick=()=>$('whDatei').click();
+$('whDatei').onchange=async()=>{
+  const datei=$('whDatei').files[0];
+  $('whDatei').value='';
+  if(datei)await whDateiPruefen(await datei.text());
+};
+$('whListe').onclick=async e=>{
+  const b=e.target.closest('[data-fileid]');
+  if(!b)return;
+  const beschriftung=b.innerHTML;
+  b.disabled=true;b.textContent='Wird geladen …';
+  try{await whDateiPruefen(await pcloudTextLaden(b.dataset.fileid))}
+  catch(f){toast('Sicherung konnte nicht geladen werden: '+f.message)}
+  finally{b.disabled=false;b.innerHTML=beschriftung}
+};
+$('whSchluesselOk').onclick=whSchluesselOeffnen;
+$('whSchluesselZurueck').onclick=()=>whSchritt('whAuswahl');
+$('whPruefenZurueck').onclick=()=>whSchritt('whAuswahl');
+$('whStarten').onclick=whStarten;
 
 $('sicherungGeraetWahl').onchange=()=>{
   sicherungGeraetWahlSetzen($('sicherungGeraetWahl').value);
