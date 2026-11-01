@@ -194,9 +194,10 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .portrait-zeile .portrait-preview{margin-top:0;width:84px;height:84px;flex:0 0 auto}
 .portrait-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
 .portrait-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px;margin-top:10px}
-.portrait-kachel{
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  padding:6px;border:2px solid transparent;border-radius:16px;
+.portrait-kachel{position:relative}
+.portrait-kachel .wahl{
+  display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;
+  min-height:0;padding:6px;border:2px solid transparent;border-radius:16px;
   background:transparent;color:var(--ink);font:inherit;cursor:pointer;
 }
 .portrait-kachel .rund{
@@ -206,7 +207,15 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 }
 .portrait-kachel .rund img{width:100%;height:100%;object-fit:cover;display:block}
 .portrait-kachel .nr{font-size:.78rem;color:var(--muted,inherit)}
-.portrait-kachel.aktiv{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+.portrait-kachel .wahl.aktiv{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+.portrait-kachel .weg{
+  position:absolute;top:0;right:2px;width:28px;height:28px;min-height:0;min-width:0;padding:0;
+  border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--danger);
+  font-size:18px;line-height:1;cursor:pointer;
+}
+.portrait-entfernt{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+.portrait-entfernt summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
+.portrait-entfernt .portrait-kachel .wahl{opacity:.75}
 
 .client-avatar img{
   width:100%;
@@ -1763,6 +1772,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
   <p class="muted small">Ein Bild antippen, dann wird es übernommen.</p>
   <div id="portraitGrid" class="portrait-grid"></div>
+  <div id="portraitEntfernt"></div>
 </dialog>
 
 <dialog id="docsDialog">
@@ -2800,7 +2810,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.33';
+const APP_VERSION='1.34';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6229,17 +6239,49 @@ function updatePortraitVorschau(){
   feld.innerHTML='<img src="bilder/'+esc(wert)+'" alt="">';
 }
 
+/* Entfernte Porträts merkt sich die App je Benutzer im Konto (auf allen Geräten gleich). */
+function portraitsAusgeblendet(){
+  const liste=user&&user.user_metadata&&user.user_metadata.portraits_ausgeblendet;
+  return Array.isArray(liste)?liste:[];
+}
+
+async function portraitsAusgeblendetSpeichern(liste){
+  const {data,error}=await sb.auth.updateUser({data:{portraits_ausgeblendet:liste}});
+  if(error){toast('Konnte nicht gespeichert werden: '+error.message);return false;}
+  if(data&&data.user)user=data.user;
+  return true;
+}
+
+function portraitKachelHtml(p,aktiv,entfernt){
+  return '<div class="portrait-kachel">'+
+    '<button type="button" class="wahl'+(aktiv?' aktiv':'')+'" data-aktion="'+(entfernt?'zurueck':'waehlen')+'" data-datei="'+esc(p.datei)+'" aria-label="Porträt '+p.nr+': '+esc(p.name)+(entfernt?' – zurückholen':'')+'">'+
+      '<span class="rund"><img src="bilder/'+esc(p.datei)+'" alt="" loading="lazy"></span>'+
+      '<span class="nr">'+p.nr+'</span></button>'+
+    (entfernt?'':'<button type="button" class="weg" data-aktion="entfernen" data-datei="'+esc(p.datei)+'" aria-label="Porträt '+p.nr+' entfernen">×</button>')+
+  '</div>';
+}
+
 function portraitGridBauen(){
   const aktuell=$('clientPortrait').value;
+  const weg=portraitsAusgeblendet();
+  const sichtbar=PORTRAITS.filter(p=>!weg.includes(p.datei));
+  const entfernt=PORTRAITS.filter(p=>weg.includes(p.datei));
+  const warOffen=!!$('portraitEntfernt').querySelector('details[open]');
+
   $('portraitGrid').innerHTML=
-    '<button type="button" class="portrait-kachel'+(aktuell?'':' aktiv')+'" data-datei="">'+
-      '<span class="rund">'+esc(clientInitialen($('clientName')?$('clientName').value:'')||'AB')+'</span>'+
-      '<span class="nr">Initialen</span></button>'+
-    PORTRAITS.map(p=>
-      '<button type="button" class="portrait-kachel'+(p.datei===aktuell?' aktiv':'')+'" data-datei="'+esc(p.datei)+'" aria-label="Porträt '+p.nr+': '+esc(p.name)+'">'+
-        '<span class="rund"><img src="bilder/'+esc(p.datei)+'" alt="" loading="lazy"></span>'+
-        '<span class="nr">'+p.nr+'</span></button>'
-    ).join('');
+    '<div class="portrait-kachel"><button type="button" class="wahl'+(aktuell?'':' aktiv')+'" data-aktion="waehlen" data-datei="">'+
+      '<span class="rund">'+esc(clientInitialen($('clientName').value)||'AB')+'</span>'+
+      '<span class="nr">Initialen</span></button></div>'+
+    sichtbar.map(p=>portraitKachelHtml(p,p.datei===aktuell,false)).join('');
+
+  $('portraitEntfernt').innerHTML=entfernt.length
+    ? '<details class="portrait-entfernt"'+(warOffen?' open':'')+'>'+
+        '<summary>Entfernte Porträts ('+entfernt.length+')</summary>'+
+        '<p class="muted small">Ein Bild antippen, dann ist es wieder in der Auswahl.</p>'+
+        '<div class="portrait-grid">'+entfernt.map(p=>portraitKachelHtml(p,false,true)).join('')+'</div>'+
+        '<div style="margin-top:10px"><button type="button" class="secondary" data-aktion="alle-zurueck">Alle zurückholen</button></div>'+
+      '</details>'
+    : '';
 }
 
 $('portraitWaehlen').onclick=()=>{
@@ -6251,12 +6293,35 @@ $('portraitEntfernen').onclick=()=>{
   updatePortraitVorschau();
 };
 $('closePortraitPicker').onclick=()=>$('portraitPickerDialog').close();
-$('portraitGrid').onclick=e=>{
-  const k=e.target.closest('.portrait-kachel');
-  if(!k)return;
-  $('clientPortrait').value=k.dataset.datei||'';
-  updatePortraitVorschau();
-  $('portraitPickerDialog').close();
+$('portraitPickerDialog').onclick=async e=>{
+  const b=e.target.closest('[data-aktion]');
+  if(!b)return;
+  const aktion=b.dataset.aktion;
+  const datei=b.dataset.datei||'';
+  const weg=portraitsAusgeblendet();
+
+  if(aktion==='waehlen'){
+    $('clientPortrait').value=datei;
+    updatePortraitVorschau();
+    $('portraitPickerDialog').close();
+    return;
+  }
+
+  if(aktion==='entfernen'){
+    const eintrag=PORTRAITS.find(x=>x.datei===datei);
+    if(!confirm('Porträt '+(eintrag?eintrag.nr:'')+' aus der Auswahl entfernen?\n\nDu kannst es unten unter „Entfernte Porträts“ jederzeit zurückholen. Klient*innen, die dieses Porträt schon haben, behalten es.'))return;
+    if(await portraitsAusgeblendetSpeichern([...weg,datei]))portraitGridBauen();
+    return;
+  }
+
+  if(aktion==='zurueck'){
+    if(await portraitsAusgeblendetSpeichern(weg.filter(x=>x!==datei)))portraitGridBauen();
+    return;
+  }
+
+  if(aktion==='alle-zurueck'){
+    if(await portraitsAusgeblendetSpeichern([]))portraitGridBauen();
+  }
 };
 
 $('newClient').onclick=()=>openClient();
