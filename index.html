@@ -3060,7 +3060,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.20 Verkaufsversion';
+const APP_VERSION='0.20.1 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6743,6 +6743,29 @@ $('resetPassword').onclick=async()=>{
   }
 };
 
+/* Regeln für das Anmelde-Passwort – wie in Supabase eingestellt
+   (Authentication → Email: mindestens 12 Zeichen, Buchstaben und Ziffern). */
+const ANMELDE_PASSWORT_MIN=12;
+
+function anmeldePasswortProblem(pw){
+  if(String(pw).length<ANMELDE_PASSWORT_MIN){
+    return 'Das Passwort muss mindestens '+ANMELDE_PASSWORT_MIN+' Zeichen haben.';
+  }
+  if(!/[A-Za-zÄÖÜäöüß]/.test(pw)||!/[0-9]/.test(pw)){
+    return 'Das Passwort muss Buchstaben und Ziffern enthalten.';
+  }
+  return '';
+}
+
+function anmeldeFehlerDeutsch(fehler){
+  const text=String(fehler&&fehler.message||fehler||'');
+  if(/weak|pwned|leaked|compromised/i.test(text)||(fehler&&fehler.code==='weak_password')){
+    return 'Dieses Passwort ist zu schwach oder taucht in Listen gestohlener Passwörter auf. Bitte ein anderes wählen (mindestens '+ANMELDE_PASSWORT_MIN+' Zeichen, Buchstaben und Ziffern).';
+  }
+  if(/already registered|already exists/i.test(text))return 'Für diese E-Mail-Adresse gibt es schon ein Konto.';
+  return text;
+}
+
 $('signup').onclick=async()=>{
   const mail=$('email').value.trim();
   const pass=$('password').value;
@@ -6752,14 +6775,15 @@ $('signup').onclick=async()=>{
     return;
   }
 
-  if(pass.length<8){
-    toast('Das Passwort muss mindestens 8 Zeichen haben.');
+  const problem=anmeldePasswortProblem(pass);
+  if(problem){
+    toast(problem);
     return;
   }
 
   const {data,error}=await sb.auth.signUp({email:mail,password:pass});
 
-  if(error){toast(error.message);return}
+  if(error){toast(anmeldeFehlerDeutsch(error));return}
   if(data.session){toast('Registrierung erfolgreich.');await init()}
   else toast('Registrierung angelegt. Bitte E-Mail bestätigen.');
 };
@@ -9976,8 +10000,9 @@ $('saveNewPassword').onclick=async()=>{
   const erstes=$('newPassword1').value;
   const zweites=$('newPassword2').value;
 
-  if(erstes.length<8){
-    toast('Das Passwort muss mindestens 8 Zeichen haben.');
+  const problem=anmeldePasswortProblem(erstes);
+  if(problem){
+    toast(problem);
     return;
   }
 
@@ -9993,7 +10018,7 @@ $('saveNewPassword').onclick=async()=>{
     const {error}=await sb.auth.updateUser({password:erstes});
 
     if(error){
-      toast('Passwort konnte nicht geändert werden: '+error.message);
+      toast('Passwort konnte nicht geändert werden: '+anmeldeFehlerDeutsch(error));
       return;
     }
 
