@@ -249,13 +249,30 @@
     return data;
   }
 
+  // Ohne Internet hängt die Anfrage an den Server lange oder für immer
+  // (Supabase versucht vorher, die Anmeldung zu erneuern). Deshalb:
+  // offline sofort die Kopie auf dem Gerät nehmen, sonst höchstens kurz warten.
+  const SERVER_WARTEZEIT_MS = 6000;
+
+  function mitZeitlimit(versprechen, ms) {
+    let uhr;
+    const zeit = new Promise((_, nein) => {
+      uhr = setTimeout(() => nein(new Error('Der Server antwortet nicht.')), ms);
+    });
+    return Promise.race([versprechen, zeit]).finally(() => clearTimeout(uhr));
+  }
+
   async function standLaden() {
+    const lokal = geraetLesen();
+    if (lokal && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return { daten: lokal, online: false };
+    }
     try {
-      const d = await serverLesen();
+      const d = await mitZeitlimit(serverLesen(), lokal ? SERVER_WARTEZEIT_MS : 20000);
       if (d) geraetSchreiben(d);
       return { daten: d, online: true };
     } catch (e) {
-      return { daten: geraetLesen(), online: false, fehler: e };
+      return { daten: lokal, online: false, fehler: e };
     }
   }
 
