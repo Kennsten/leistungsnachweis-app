@@ -190,6 +190,24 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
   display:block;
 }
 
+.portrait-zeile{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
+.portrait-zeile .portrait-preview{margin-top:0;width:84px;height:84px;flex:0 0 auto}
+.portrait-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
+.portrait-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px;margin-top:10px}
+.portrait-kachel{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:6px;border:2px solid transparent;border-radius:16px;
+  background:transparent;color:var(--ink);font:inherit;cursor:pointer;
+}
+.portrait-kachel .rund{
+  width:76px;height:76px;border-radius:50%;overflow:hidden;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  background:var(--accent);color:var(--brand-dark);font-weight:700;font-size:1.1rem;
+}
+.portrait-kachel .rund img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait-kachel .nr{font-size:.78rem;color:var(--muted,inherit)}
+.portrait-kachel.aktiv{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+
 .client-avatar img{
   width:100%;
   height:100%;
@@ -1708,39 +1726,18 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
     <h3 class="kb-abschnitt">🖼 Porträt</h3>
     <div class="grid">
-      <label class="span2">Porträt
-        <select id="clientPortrait">
-          <option value="">Initialen verwenden</option>
-          <option value="portrait-1.jpg">Porträt 1</option>
-          <option value="portrait-2.jpg">Porträt 2</option>
-          <option value="portrait-3.jpg">Porträt 3</option>
-          <option value="portrait-4.jpg">Porträt 4</option>
-          <option value="portrait-5.jpg">Porträt 5</option>
-          <option value="portrait-6.jpg">Porträt 6 · Frau, lange schwarze Haare, Mondkette</option>
-          <option value="portrait-7.jpg">Porträt 7 · Mann, lachend, Vollbart, Pelzkragen</option>
-          <option value="portrait-8.jpg">Porträt 8 · Frau, Hochsteckfrisur, rotes Samtkleid</option>
-          <option value="portrait-9.jpg">Porträt 9 · Mann, Stirnband, lila Tuch</option>
-          <option value="portrait-10.jpg">Porträt 10 · Ältere Frau, Rundbrille, blaues Kleid</option>
-          <option value="portrait-11.jpg">Porträt 11 · Frau, Schutzbrille, grünes Fläschchen</option>
-          <option value="portrait-12.jpg">Porträt 12 · Mann, Elf, Stirnreif</option>
-          <option value="portrait-13.jpg">Porträt 13 · Mann, braune Locken, Fliege</option>
-          <option value="portrait-14.jpg">Porträt 14 · Mann, Ritterrüstung, Narbe</option>
-          <option value="portrait-15.jpg">Porträt 15 · Ältere Dame, Pfauenfeder</option>
-          <option value="portrait-16.jpg">Porträt 16 · Mann, Cowboyhut, Zigarre</option>
-          <option value="portrait-17.jpg">Porträt 17 · Junge, rote Stachelhaare, Brot</option>
-          <option value="portrait-18.jpg">Porträt 18 · Frau, rote Wellen, Sommersprossen</option>
-          <option value="portrait-19.jpg">Porträt 19 · Älterer Mann, weiße Haare</option>
-          <option value="portrait-20.jpg">Porträt 20 · Frau, blonder Bob</option>
-          <option value="portrait-21.jpg">Porträt 21 · Ältere Frau, Dutt, Brille</option>
-          <option value="portrait-22.jpg">Porträt 22 · Mann, braune Locken, Dreitagebart</option>
-          <option value="portrait-23.jpg">Porträt 23 · Frau, lange lila Haare, Ohrring</option>
-          <option value="portrait-24.jpg">Porträt 24 · Mann, grauer Bart, Sakko</option>
-          <option value="portrait-25.jpg">Porträt 25 · Frau, blaue Haare, Rundbrille</option>
-          <option value="portrait-26.jpg">Porträt 26 · Älterer Mann, graue Haare, Uniform</option>
-          <option value="portrait-27.jpg">Porträt 27 · Frau, rote Haare, Schutzbrille, Lederjacke</option>
-        </select>
-        <div id="portraitVorschau" class="portrait-preview hidden"></div>
-      </label>
+      <div class="span2">
+        <input type="hidden" id="clientPortrait">
+        <div class="portrait-zeile">
+          <div id="portraitVorschau" class="portrait-preview hidden"></div>
+          <div class="portrait-knoepfe">
+            <button type="button" id="portraitWaehlen" class="kn kn-bearbeiten secondary">Porträt wählen</button>
+            <button type="button" id="portraitEntfernen" class="secondary hidden">Initialen verwenden</button>
+          </div>
+        </div>
+        <p class="muted small" id="portraitName"></p>
+        <p class="muted small">Das Porträt wird im Design „Comic“ angezeigt, in den anderen Designs die Initialen.</p>
+      </div>
     </div>
 
     <h3 class="kb-abschnitt">📝 Bemerkungen</h3>
@@ -1754,6 +1751,18 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="portraitPickerDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Klient</div>
+      <h2>Porträt wählen</h2>
+    </div>
+    <button type="button" id="closePortraitPicker" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <p class="muted small">Ein Bild antippen, dann wird es übernommen.</p>
+  <div id="portraitGrid" class="portrait-grid"></div>
 </dialog>
 
 <dialog id="docsDialog">
@@ -2791,7 +2800,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.32';
+const APP_VERSION='1.33';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6169,9 +6178,46 @@ $('closeAllApprovals').onclick=()=>{
 $('clientSearch').oninput=renderClients;
 $('docSearch').oninput=renderDocs;
 
+/* ---------- Porträt-Auswahl ----------
+   Neue Bilder: Datei in bilder/ ablegen und hier eine Zeile ergänzen. */
+const PORTRAITS=[
+  {datei:'portrait-1.jpg',nr:1,name:'Mann, schwarze Locken'},
+  {datei:'portrait-2.jpg',nr:2,name:'Frau, schwarze Wellen, Stirnreif'},
+  {datei:'portrait-3.jpg',nr:3,name:'Mann, schwarze Haare, Stehkragen'},
+  {datei:'portrait-4.jpg',nr:4,name:'Frau, schwarze Wellen, Ohrringe'},
+  {datei:'portrait-5.jpg',nr:5,name:'Mann, Schutzbrille, Bart'},
+  {datei:'portrait-6.jpg',nr:6,name:'Frau, lange schwarze Haare, Mondkette'},
+  {datei:'portrait-7.jpg',nr:7,name:'Mann, lachend, Vollbart, Pelzkragen'},
+  {datei:'portrait-8.jpg',nr:8,name:'Frau, Hochsteckfrisur, rotes Samtkleid'},
+  {datei:'portrait-9.jpg',nr:9,name:'Mann, Stirnband, lila Tuch'},
+  {datei:'portrait-10.jpg',nr:10,name:'Ältere Frau, Rundbrille, blaues Kleid'},
+  {datei:'portrait-11.jpg',nr:11,name:'Frau, Schutzbrille, grünes Fläschchen'},
+  {datei:'portrait-12.jpg',nr:12,name:'Mann, Elf, Stirnreif'},
+  {datei:'portrait-13.jpg',nr:13,name:'Mann, braune Locken, Fliege'},
+  {datei:'portrait-14.jpg',nr:14,name:'Mann, Ritterrüstung, Narbe'},
+  {datei:'portrait-15.jpg',nr:15,name:'Ältere Dame, Pfauenfeder'},
+  {datei:'portrait-16.jpg',nr:16,name:'Mann, Cowboyhut, Zigarre'},
+  {datei:'portrait-17.jpg',nr:17,name:'Junge, rote Stachelhaare, Brot'},
+  {datei:'portrait-18.jpg',nr:18,name:'Frau, rote Wellen, Sommersprossen'},
+  {datei:'portrait-19.jpg',nr:19,name:'Älterer Mann, weiße Haare'},
+  {datei:'portrait-20.jpg',nr:20,name:'Frau, blonder Bob'},
+  {datei:'portrait-21.jpg',nr:21,name:'Ältere Frau, Dutt, Brille'},
+  {datei:'portrait-22.jpg',nr:22,name:'Mann, braune Locken, Dreitagebart'},
+  {datei:'portrait-23.jpg',nr:23,name:'Frau, lange lila Haare, Ohrring'},
+  {datei:'portrait-24.jpg',nr:24,name:'Mann, grauer Bart, Sakko'},
+  {datei:'portrait-25.jpg',nr:25,name:'Frau, blaue Haare, Rundbrille'},
+  {datei:'portrait-26.jpg',nr:26,name:'Älterer Mann, graue Haare, Uniform'},
+  {datei:'portrait-27.jpg',nr:27,name:'Frau, rote Haare, Schutzbrille, Lederjacke'}
+];
+
 function updatePortraitVorschau(){
   const feld=$('portraitVorschau');
   const wert=$('clientPortrait').value;
+  const eintrag=PORTRAITS.find(x=>x.datei===wert);
+
+  $('portraitEntfernen').classList.toggle('hidden',!wert);
+  $('portraitWaehlen').textContent=wert?'Anderes Porträt wählen':'Porträt wählen';
+  $('portraitName').textContent=eintrag?('Porträt '+eintrag.nr+' · '+eintrag.name):'';
 
   if(!wert){
     feld.classList.add('hidden');
@@ -6183,7 +6229,35 @@ function updatePortraitVorschau(){
   feld.innerHTML='<img src="bilder/'+esc(wert)+'" alt="">';
 }
 
-$('clientPortrait').onchange=updatePortraitVorschau;
+function portraitGridBauen(){
+  const aktuell=$('clientPortrait').value;
+  $('portraitGrid').innerHTML=
+    '<button type="button" class="portrait-kachel'+(aktuell?'':' aktiv')+'" data-datei="">'+
+      '<span class="rund">'+esc(clientInitialen($('clientName')?$('clientName').value:'')||'AB')+'</span>'+
+      '<span class="nr">Initialen</span></button>'+
+    PORTRAITS.map(p=>
+      '<button type="button" class="portrait-kachel'+(p.datei===aktuell?' aktiv':'')+'" data-datei="'+esc(p.datei)+'" aria-label="Porträt '+p.nr+': '+esc(p.name)+'">'+
+        '<span class="rund"><img src="bilder/'+esc(p.datei)+'" alt="" loading="lazy"></span>'+
+        '<span class="nr">'+p.nr+'</span></button>'
+    ).join('');
+}
+
+$('portraitWaehlen').onclick=()=>{
+  portraitGridBauen();
+  $('portraitPickerDialog').showModal();
+};
+$('portraitEntfernen').onclick=()=>{
+  $('clientPortrait').value='';
+  updatePortraitVorschau();
+};
+$('closePortraitPicker').onclick=()=>$('portraitPickerDialog').close();
+$('portraitGrid').onclick=e=>{
+  const k=e.target.closest('.portrait-kachel');
+  if(!k)return;
+  $('clientPortrait').value=k.dataset.datei||'';
+  updatePortraitVorschau();
+  $('portraitPickerDialog').close();
+};
 
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
