@@ -1,4 +1,4 @@
-// pcloud-link.mjs  (Version 3)
+// pcloud-link.mjs  (Version 4)
 // Dieses Programm läuft auf den Servern von Netlify, nicht im Browser.
 // pCloud lehnt das Erzeugen von Links ab, wenn die Anfrage von einer
 // Webseite kommt (Fehler 7010). Von hier aus kommt sie ohne
@@ -13,6 +13,11 @@
 //    selbst und gibt die Datei an die App weiter. Dafür genügt der
 //    Code des Freigabelinks, das Zugangszeichen wird nicht gebraucht.
 //
+// 3. art = 'inhalt': eine Datei mit Zugangszeichen und Datei-Nummer
+//    holen, OHNE Freigabelink (für Datensicherungen). Dieses Programm
+//    fordert den Datei-Link selbst an und lädt die Datei selbst, damit
+//    pCloud die Internetadresse akzeptiert.
+//
 // Weder Zugangszeichen noch Dateien werden hier gespeichert.
 
 // Nur diese beiden pCloud-Adressen sind erlaubt (Europa und USA).
@@ -22,7 +27,7 @@ const KENNUNG = { 'User-Agent': 'QA-All-Inclusiv/1.0' };
 export default async (request) => {
   // Aufruf im Browser (GET): nur ein Lebenszeichen zum Testen.
   if (request.method === 'GET') {
-    return json(200, { status: 'Hilfsprogramm läuft.', version: 3 });
+    return json(200, { status: 'Hilfsprogramm läuft.', version: 4 });
   }
 
   if (request.method !== 'POST') {
@@ -42,6 +47,10 @@ export default async (request) => {
 
   if (daten.art === 'datei') {
     return dateiDurchreichen(host, daten);
+  }
+
+  if (daten.art === 'inhalt') {
+    return inhaltHolen(host, daten);
   }
 
   return freigabelink(host, daten);
@@ -115,6 +124,49 @@ async function dateiDurchreichen(host, daten) {
           daten.contenttype ||
           datei.headers.get('content-type') ||
           'application/octet-stream',
+        'Cache-Control': 'no-store'
+      }
+    });
+  } catch (problem) {
+    return json(502, { fehler: 'pCloud nicht erreichbar: ' + problem.message });
+  }
+}
+
+async function inhaltHolen(host, daten) {
+  if (!daten.token || !daten.fileid) {
+    return json(400, { fehler: 'Zugangszeichen oder Datei fehlt.' });
+  }
+
+  try {
+    const werte = new URLSearchParams();
+    werte.set('access_token', String(daten.token));
+    werte.set('fileid', String(daten.fileid));
+
+    const linkAntwort = await fetch(
+      'https://' + host + '/getfilelink?' + werte.toString(),
+      { headers: KENNUNG }
+    );
+    const link = await linkAntwort.json();
+
+    if (link.result !== 0 || !Array.isArray(link.hosts) || !link.hosts.length) {
+      return json(502, {
+        fehler: 'Kein Datei-Link: ' + (link.error || 'Fehler') +
+          ' (Code ' + link.result + ')'
+      });
+    }
+
+    const datei = await fetch('https://' + link.hosts[0] + link.path, {
+      headers: KENNUNG
+    });
+
+    if (!datei.ok || !datei.body) {
+      return json(502, { fehler: 'Datei nicht abrufbar (Status ' + datei.status + ').' });
+    }
+
+    return new Response(datei.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/octet-stream',
         'Cache-Control': 'no-store'
       }
     });

@@ -3060,7 +3060,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.19 Verkaufsversion';
+const APP_VERSION='0.19.1 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -11831,31 +11831,22 @@ async function wiederherstellenOeffnen(){
   }
 }
 
-/* Dateiinhalt aus pCloud holen (wie beim Öffnen von Dokumenten:
-   erst direkt, sonst über das Hilfsprogramm bei Netlify) */
+/* Dateiinhalt aus pCloud holen – über das Hilfsprogramm bei Netlify,
+   ohne Freigabelink (pCloud bietet befristete Links nur im Bezahltarif an,
+   und ein dauerhafter Link auf eine Sicherung soll nicht entstehen). */
 async function pcloudTextLaden(fileId){
-  const z=n=>String(n).padStart(2,'0');
-  const d=new Date(Date.now()+15*60*1000);
-  const ablauf=d.getUTCFullYear()+'-'+z(d.getUTCMonth()+1)+'-'+z(d.getUTCDate())+'T'+
-    z(d.getUTCHours())+':'+z(d.getUTCMinutes())+':'+z(d.getUTCSeconds())+'+0000';
-  const freigabe=await pcloudLinkAnfrage({fileid:fileId,expire:ablauf});
-  const code=freigabe&&freigabe.code;
-  if(!code)throw new Error('Kein Zugriff auf die Datei.');
-  try{
-    const antwort=await busyFetch('https://'+PCLOUD_HOST+'/getpublinkdownload?'+new URLSearchParams({code}).toString(),
-      {referrerPolicy:'no-referrer',referrer:''});
-    const link=await antwort.json();
-    if(link.result===0&&link.hosts&&link.hosts.length){
-      const datei=await busyFetch('https://'+link.hosts[0]+link.path,{referrerPolicy:'no-referrer',referrer:''});
-      if(datei.ok)return await datei.text();
-    }
-  }catch(e){/* weiter über Netlify */}
+  if(!pcloudToken)throw new Error('Nicht mit pCloud verbunden.');
   const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({art:'datei',code,contenttype:'application/octet-stream',host:PCLOUD_HOST})
+    body:JSON.stringify({art:'inhalt',token:pcloudToken,fileid:fileId,host:PCLOUD_HOST})
   });
-  if(!antwort.ok)throw new Error('Datei nicht abrufbar (Status '+antwort.status+').');
+  const art=antwort.headers.get('content-type')||'';
+  if(!antwort.ok||art.includes('application/json')){
+    let meldung='Status '+antwort.status;
+    try{meldung=(await antwort.json()).fehler||meldung}catch(e){}
+    throw new Error(meldung);
+  }
   return await antwort.text();
 }
 
