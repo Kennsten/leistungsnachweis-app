@@ -1772,6 +1772,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
   <p class="muted small">Ein Bild antippen, dann wird es übernommen.</p>
   <div id="portraitGrid" class="portrait-grid"></div>
+  <div id="portraitAlleWeg" style="margin-top:10px"></div>
   <div id="portraitEntfernt"></div>
 </dialog>
 
@@ -2810,7 +2811,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='1.34';
+const APP_VERSION='1.35';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6266,6 +6267,9 @@ function portraitGridBauen(){
   const weg=portraitsAusgeblendet();
   const sichtbar=PORTRAITS.filter(p=>!weg.includes(p.datei));
   const entfernt=PORTRAITS.filter(p=>weg.includes(p.datei));
+  $('portraitAlleWeg').innerHTML=sichtbar.length
+    ? '<button type="button" class="kn kn-loeschen secondary" data-aktion="alle-entfernen">Alle Porträts entfernen</button>'
+    : '<p class="muted small">Alle mitgelieferten Porträts sind entfernt. Du findest sie unten unter „Entfernte Porträts“.</p>';
   const warOffen=!!$('portraitEntfernt').querySelector('details[open]');
 
   $('portraitGrid').innerHTML=
@@ -6316,6 +6320,12 @@ $('portraitPickerDialog').onclick=async e=>{
 
   if(aktion==='zurueck'){
     if(await portraitsAusgeblendetSpeichern(weg.filter(x=>x!==datei)))portraitGridBauen();
+    return;
+  }
+
+  if(aktion==='alle-entfernen'){
+    if(!confirm('Alle mitgelieferten Porträts aus der Auswahl entfernen?\n\nDu kannst sie unten unter „Entfernte Porträts“ jederzeit zurückholen. Klient*innen, die schon ein Porträt haben, behalten es.'))return;
+    if(await portraitsAusgeblendetSpeichern(PORTRAITS.map(p=>p.datei)))portraitGridBauen();
     return;
   }
 
