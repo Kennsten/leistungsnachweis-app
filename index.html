@@ -2963,7 +2963,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.15.2 Verkaufsversion';
+const APP_VERSION='0.15.3 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3767,8 +3767,43 @@ $('abgleichJetzt').onclick=async()=>{
   if(s.zustand==='fehler')toast('Abgleich fehlgeschlagen: '+s.meldung);
 };
 
+/* Ohne Internet kann Supabase eine ältere Anmeldung nicht erneuern und meldet
+   dann „keine Anmeldung“. Die Daten liegen aber verschlüsselt auf dem Gerät und
+   der Tresor schützt sie. Deshalb gilt offline die zuletzt gespeicherte Anmeldung.
+   Sobald wieder Internet da ist, erneuert Supabase sie von selbst. */
+function gespeicherteAnmeldung(){
+  try{
+    const ref=new URL(SUPABASE_URL).hostname.split('.')[0];
+    const roh=localStorage.getItem('sb-'+ref+'-auth-token');
+    if(!roh)return null;
+    const daten=JSON.parse(roh);
+    const sitzung=daten&&(daten.currentSession||daten);
+    return sitzung&&sitzung.user&&sitzung.user.id&&sitzung.refresh_token?sitzung:null;
+  }catch(e){
+    return null;
+  }
+}
+
+function istNetzFehler(fehler){
+  if(typeof navigator!=='undefined'&&navigator.onLine===false)return true;
+  if(!fehler)return false;
+  return fehler.name==='AuthRetryableFetchError'||
+    /fetch|network|netzwerk|load failed|internet|offline/i.test(String(fehler.message||fehler));
+}
+
+let offlineAngemeldet=false;
+
 async function init(){
-  const {data:{session},error}=await sb.auth.getSession();
+  let {data:{session},error}=await sb.auth.getSession();
+  offlineAngemeldet=false;
+  if(!session&&istNetzFehler(error)){
+    const gespeichert=gespeicherteAnmeldung();
+    if(gespeichert){
+      session=gespeichert;
+      error=null;
+      offlineAngemeldet=true;
+    }
+  }
   if(error){toast(error.message);showApp(false);return}
   if(session){
     user=session.user;
@@ -9877,8 +9912,8 @@ $('saveNewPassword').onclick=async()=>{
 };
 
 sb.auth.onAuthStateChange((event,session)=>{
-  if(session){user=session.user}
-  else{user=null;Tresor.vergessen();geraetSchliessen();showApp(false)}
+  if(session){user=session.user;offlineAngemeldet=false}
+  else if(event==='SIGNED_OUT'||!offlineAngemeldet){user=null;Tresor.vergessen();geraetSchliessen();showApp(false)}
 
   if(event==='PASSWORD_RECOVERY'||(session&&istWiederherstellung())){
     openNewPasswordDialog();
