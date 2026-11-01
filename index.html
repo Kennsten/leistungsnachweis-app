@@ -2441,6 +2441,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
   <h3 style="margin-top:22px">Datensicherung</h3>
   <p class="muted small">Sicherungen werden verschlüsselt in pCloud im Ordner „Datensicherung“ abgelegt. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</p>
+  <p class="muted small">Automatisch gesichert wird beim Öffnen der App und wenn die App 10 Minuten im Hintergrund war (auf iPad und iPhone beim Zurückkehren), nur wenn sich etwas geändert hat. Sicherungen der letzten 9 Wochen bleiben erhalten, ältere werden gelöscht.</p>
   <label>Zusätzlich auf diesem Gerät speichern
     <select id="sicherungGeraetWahl">
       <option value="fragen">Jedes Mal fragen</option>
@@ -3002,7 +3003,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.17 Verkaufsversion';
+const APP_VERSION='0.18 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3873,6 +3874,7 @@ async function init(){
 
     appBereit=true;
     hinweiseAnzeigen(true);
+    setTimeout(()=>autoSicherung('start'),20*1000);
 
     // Erste Anmeldung: Einstellungen ausfüllen lassen
     if(!auftragnehmerName()||!startAdresse()){
@@ -11429,19 +11431,150 @@ function sicherungGeraetFragen(text,titel){
   });
 }
 
-async function sicherungInhaltSammeln(){
+async function sicherungInhaltSammeln(leise=false){
   const inhalt={tabellen:{}};
   const fehler=[];
   for(const tabelle of SICHERUNG_TABELLEN){
-    setzeSchritt(SICHERUNG_TABELLEN.indexOf(tabelle),SICHERUNG_TABELLEN.length,'Datensicherung');
+    if(!leise)setzeSchritt(SICHERUNG_TABELLEN.indexOf(tabelle),SICHERUNG_TABELLEN.length,'Datensicherung');
     const {data,error}=await Daten.from(tabelle).select('*');
     if(error){fehler.push(tabelle);inhalt.tabellen[tabelle]=[];continue}
     inhalt.tabellen[tabelle]=data||[];
   }
-  setzeSchritt(SICHERUNG_TABELLEN.length,SICHERUNG_TABELLEN.length,'Datensicherung');
+  if(!leise)setzeSchritt(SICHERUNG_TABELLEN.length,SICHERUNG_TABELLEN.length,'Datensicherung');
   const anzahl=Object.values(inhalt.tabellen).reduce((summe,liste)=>summe+liste.length,0);
   return {inhalt,fehler,anzahl};
 }
+
+/* Baut die verschlüsselte Sicherungsdatei; liefert auch einen Fingerabdruck
+   des Inhalts, damit die automatische Sicherung Unverändertes überspringt. */
+async function sicherungDateiBauen(leise=false){
+  const gesammelt=await sicherungInhaltSammeln(leise);
+  if(!gesammelt.anzahl)return Object.assign({blob:null},gesammelt);
+  const jetzt=new Date();
+  const datei={
+    format:SICHERUNG_FORMAT,
+    version:1,
+    erstelltAm:jetzt.toISOString(),
+    appVersion:APP_VERSION,
+    nutzer:user.id,
+    tresor:tresorHuellenLesen(),
+    daten:await sicherungVerschluesseln(gesammelt.inhalt)
+  };
+  const zeit=String(jetzt.getHours()).padStart(2,'0')+'-'+String(jetzt.getMinutes()).padStart(2,'0');
+  const fingerabdruck=zuBase64(new Uint8Array(await crypto.subtle.digest(
+    'SHA-256',new TextEncoder().encode(JSON.stringify(gesammelt.inhalt))
+  )));
+  return {
+    blob:new Blob([JSON.stringify(datei)],{type:'application/json'}),
+    name:'QA-Sicherung '+todayIso()+' '+zeit+'.json',
+    anzahl:gesammelt.anzahl,
+    fehler:gesammelt.fehler,
+    fingerabdruck
+  };
+}
+
+async function sicherungInPcloudAblegen(blob,name){
+  const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
+  await pcloudDateiHochladen(ordner,name,blob);
+  sicherungFingerabdruckMerken(null);
+  sicherungenAufraeumen(ordner).catch(()=>{});
+  return ordner;
+}
+
+/* ---------- Aufräumen: Sicherungen der letzten 9 Wochen bleiben ----------
+   Ältere Dateien im Ordner „Datensicherung“ werden gelöscht. Die drei
+   neuesten bleiben immer erhalten, auch wenn sie älter sind. */
+const SICHERUNG_AUFBEWAHREN_TAGE=9*7;
+const SICHERUNG_MINDESTENS=3;
+
+async function sicherungenAufraeumen(ordnerId){
+  const ergebnis=await pcloudAnfrage('listfolder',{folderid:ordnerId});
+  const dateien=((ergebnis.metadata&&ergebnis.metadata.contents)||[])
+    .filter(d=>!d.isfolder&&/^QA-Sicherung .*\.json$/.test(d.name))
+    .map(d=>({id:d.fileid,name:d.name,zeit:Date.parse(d.created)||0}))
+    .sort((a,b)=>b.zeit-a.zeit);
+  const grenze=Date.now()-SICHERUNG_AUFBEWAHREN_TAGE*24*60*60*1000;
+  const weg=dateien.slice(SICHERUNG_MINDESTENS).filter(d=>d.zeit&&d.zeit<grenze);
+  for(const d of weg){
+    await pcloudAnfrage('deletefile',{fileid:d.id});
+  }
+  return weg.length;
+}
+
+/* ---------- Automatische Sicherung ----------
+   1. einmal beim Öffnen der App (nach dem Entsperren)
+   2. einmal, wenn die App 10 Minuten im Hintergrund war
+      (iPad und iPhone halten Apps im Hintergrund an; dann wird die
+      Sicherung beim Zurückkehren nachgeholt)
+   Nur mit Internet und eingerichtetem pCloud, ohne Rückfrage.
+   Hat sich seit der letzten Sicherung nichts geändert, wird übersprungen. */
+const SICHERUNG_HINTERGRUND_MS=10*60*1000;
+let autoSicherungLaeuft=false;
+let autoSicherungAusstehend=null;
+let hintergrundSeit=0;
+let hintergrundUhr=null;
+let hintergrundGesichert=false;
+
+function sicherungFingerabdruckSchluessel(){return 'qa-sicherung-fingerabdruck-'+(user&&user.id)}
+function sicherungFingerabdruckLesen(){
+  try{return localStorage.getItem(sicherungFingerabdruckSchluessel())}catch(e){return null}
+}
+function sicherungFingerabdruckMerken(wert){
+  try{
+    if(wert)localStorage.setItem(sicherungFingerabdruckSchluessel(),wert);
+    else localStorage.removeItem(sicherungFingerabdruckSchluessel());
+  }catch(e){}
+}
+
+async function autoSicherung(anlass){
+  if(!user||!appBereit||!pcloudToken)return false;
+  if(!Tresor.datenschluessel()||navigator.onLine===false){
+    autoSicherungAusstehend=anlass;   // später nachholen
+    return false;
+  }
+  if(autoSicherungLaeuft)return false;
+  autoSicherungLaeuft=true;
+  autoSicherungAusstehend=null;
+  try{
+    const gebaut=await sicherungDateiBauen(true);
+    if(!gebaut.blob)return false;
+    if(gebaut.fingerabdruck===sicherungFingerabdruckLesen())return false;   // nichts geändert
+    await sicherungInPcloudAblegen(gebaut.blob,gebaut.name);
+    sicherungFingerabdruckMerken(gebaut.fingerabdruck);
+    await speichereLetzteSicherung();
+    zeigeSicherungsKnopf();
+    return true;
+  }catch(e){
+    autoSicherungAusstehend=anlass;
+    return false;
+  }finally{
+    autoSicherungLaeuft=false;
+  }
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    hintergrundSeit=Date.now();
+    hintergrundGesichert=false;
+    clearTimeout(hintergrundUhr);
+    // Auf Geräten, die Apps im Hintergrund weiterlaufen lassen (Mac, Windows)
+    hintergrundUhr=setTimeout(async()=>{
+      if(document.hidden&&await autoSicherung('hintergrund'))hintergrundGesichert=true;
+    },SICHERUNG_HINTERGRUND_MS);
+  }else{
+    clearTimeout(hintergrundUhr);
+    // iPad/iPhone: dort lief die Uhr nicht – nachholen
+    if(hintergrundSeit&&!hintergrundGesichert&&Date.now()-hintergrundSeit>=SICHERUNG_HINTERGRUND_MS){
+      autoSicherung('hintergrund');
+    }
+    hintergrundSeit=0;
+  }
+});
+
+// Ausstehende Sicherung nachholen, sobald entsperrt und online
+setInterval(()=>{
+  if(autoSicherungAusstehend&&!document.hidden)autoSicherung(autoSicherungAusstehend);
+},30*1000);
 
 async function erstelleSicherung(){
   const knopf=$('backupData');
@@ -11464,29 +11597,22 @@ async function erstelleSicherung(){
   let fehler=[];
   let anzahl=0;
 
+  let fingerabdruck=null;
   try{
-    const gesammelt=await sicherungInhaltSammeln();
-    fehler=gesammelt.fehler;
-    anzahl=gesammelt.anzahl;
+    const gebaut=await sicherungDateiBauen();
+    fehler=gebaut.fehler;
+    anzahl=gebaut.anzahl;
 
-    if(!anzahl){
+    if(!gebaut.blob){
       toast('Es wurden keine Daten gefunden.');
+      endeSchritt();
+      knopf.disabled=false;
+      zeigeSicherungsKnopf();
       return;
     }
-
-    const jetzt=new Date();
-    const datei={
-      format:SICHERUNG_FORMAT,
-      version:1,
-      erstelltAm:jetzt.toISOString(),
-      appVersion:APP_VERSION,
-      nutzer:user.id,
-      tresor:tresorHuellenLesen(),
-      daten:await sicherungVerschluesseln(gesammelt.inhalt)
-    };
-    const zeit=String(jetzt.getHours()).padStart(2,'0')+'-'+String(jetzt.getMinutes()).padStart(2,'0');
-    name='QA-Sicherung '+todayIso()+' '+zeit+'.json';
-    blob=new Blob([JSON.stringify(datei)],{type:'application/json'});
+    blob=gebaut.blob;
+    name=gebaut.name;
+    fingerabdruck=gebaut.fingerabdruck;
   }catch(problem){
     toast('Die Sicherung ist fehlgeschlagen: '+problem.message);
     endeSchritt();
@@ -11504,8 +11630,8 @@ async function erstelleSicherung(){
     pcloudProblem='Ohne Internet kann die Sicherung nicht in pCloud abgelegt werden.';
   }else{
     try{
-      const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
-      await pcloudDateiHochladen(ordner,name,blob);
+      await sicherungInPcloudAblegen(blob,name);
+      sicherungFingerabdruckMerken(fingerabdruck);
       inPcloud=true;
     }catch(problem){
       pcloudProblem='Ablage in pCloud fehlgeschlagen: '+problem.message;
