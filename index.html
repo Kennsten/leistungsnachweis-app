@@ -1827,6 +1827,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
   <p class="muted small">Ein Bild antippen, dann wird es übernommen. Mit dem × entfernst du ein Bild aus der Auswahl.</p>
   <div id="portraitGrid" class="portrait-grid"></div>
+  <div id="portraitAlleWeg" style="margin-top:10px"></div>
 
   <h3 class="kb-abschnitt">Eigene Bilder</h3>
   <div class="portrait-hinweis">
@@ -1835,6 +1836,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     Hochgeladene Bilder werden verkleinert und wie alle deine Daten auf deinem Gerät verschlüsselt, bevor sie abgeglichen werden.
   </div>
   <div id="portraitEigen" class="portrait-grid"></div>
+  <div id="portraitEigeneAlle" style="margin-top:10px"></div>
   <div style="margin-top:10px">
     <input type="file" id="portraitDatei" accept="image/*" class="hidden">
     <button type="button" id="portraitHochladen" class="kn kn-neu secondary" style="width:100%">Eigenes Bild hochladen</button>
@@ -2961,7 +2963,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.15 Verkaufsversion';
+const APP_VERSION='0.15.1 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6811,6 +6813,9 @@ function portraitGridBauen(){
   const weg=portraitsAusgeblendet();
   const sichtbar=PORTRAITS.filter(p=>!weg.includes(p.datei));
   const entfernt=PORTRAITS.filter(p=>weg.includes(p.datei));
+  $('portraitAlleWeg').innerHTML=sichtbar.length
+    ? '<button type="button" class="kn kn-loeschen secondary" data-aktion="alle-entfernen">Alle Porträts entfernen</button>'
+    : '<p class="muted small">Alle mitgelieferten Porträts sind entfernt. Du findest sie unten unter „Entfernte Porträts“.</p>';
   const warOffen=!!$('portraitEntfernt').querySelector('details[open]');
 
   $('portraitGrid').innerHTML=
@@ -6822,6 +6827,10 @@ function portraitGridBauen(){
   $('portraitEigen').innerHTML=eigenePortraits.length
     ? eigenePortraits.map((e,i)=>portraitKachelHtml('eigen:'+e.id,e.bild,'Eigenes '+(i+1),'Eigenes Bild '+(i+1),('eigen:'+e.id)===aktuell,'eigen')).join('')
     : '<p class="muted small" style="grid-column:1/-1">Noch keine eigenen Bilder.</p>';
+
+  $('portraitEigeneAlle').innerHTML=eigenePortraits.length>1
+    ? '<button type="button" class="kn kn-loeschen secondary" data-aktion="eigene-loeschen">Alle eigenen Bilder löschen</button>'
+    : '';
 
   $('portraitEntfernt').innerHTML=entfernt.length
     ? '<details class="portrait-entfernt"'+(warOffen?' open':'')+'>'+
@@ -6930,6 +6939,32 @@ $('portraitPickerDialog').onclick=async e=>{
     return;
   }
 
+  if(aktion==='eigene-loeschen'){
+    const dateien=eigenePortraits.map(x=>'eigen:'+x.id);
+    const verwendet=clients.filter(c=>dateien.includes(c.portrait)).length;
+    if(!confirm('Alle '+dateien.length+' eigenen Bilder endgültig löschen?'+(verwendet
+      ?'\n\n'+verwendet+' Klient*in(nen) nutzen eines davon und zeigen danach wieder die Initialen.'
+      :'')+'\n\nDas lässt sich nicht rückgängig machen.'))return;
+    for(const d of dateien){
+      if(!clients.some(c=>c.portrait===d))continue;
+      const {error}=await Daten.from('clients').update({portrait:null}).eq('portrait',d);
+      if(error){toast('Löschen fehlgeschlagen: '+error.message);return;}
+    }
+    for(const e of [...eigenePortraits]){
+      const {error}=await Daten.from('portraits').delete().eq('id',e.id);
+      if(error){toast('Löschen fehlgeschlagen: '+error.message);await loadPortraits();portraitGridBauen();return;}
+      eigenePortraits=eigenePortraits.filter(x=>x.id!==e.id);
+    }
+    if(String($('clientPortrait').value).startsWith('eigen:')){
+      $('clientPortrait').value='';
+      updatePortraitVorschau();
+    }
+    if(verwendet)await loadClients();
+    portraitGridBauen();
+    toast('Eigene Bilder gelöscht');
+    return;
+  }
+
   const weg=portraitsAusgeblendet();
 
   if(aktion==='entfernen'){
@@ -6941,6 +6976,12 @@ $('portraitPickerDialog').onclick=async e=>{
 
   if(aktion==='zurueck'){
     if(await portraitsAusgeblendetSpeichern(weg.filter(x=>x!==datei)))portraitGridBauen();
+    return;
+  }
+
+  if(aktion==='alle-entfernen'){
+    if(!confirm('Alle mitgelieferten Porträts aus der Auswahl entfernen?\n\nDu kannst sie unten unter „Entfernte Porträts“ jederzeit zurückholen. Klient*innen, die schon ein Porträt haben, behalten es.'))return;
+    if(await portraitsAusgeblendetSpeichern(PORTRAITS.map(p=>p.datei)))portraitGridBauen();
     return;
   }
 
