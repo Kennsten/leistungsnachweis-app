@@ -133,6 +133,13 @@
       ["auftragnehmer_adresse", "text", false, null],
       ["letzte_sicherung", "timestamp with time zone", false, null],
       ["updated_at", "timestamp with time zone", true, "now()"],
+      ["portraits_ausgeblendet", "text", false, null],
+    ],
+    portraits: [
+      ["id", "uuid", true, "gen_random_uuid()"],
+      ["user_id", "uuid", true, "auth.uid()"],
+      ["bild", "text", true, null],
+      ["created_at", "timestamp with time zone", true, "now()"],
     ],
     route_distances: [
       ["id", "uuid", true, "gen_random_uuid()"],
@@ -257,6 +264,7 @@
     clients: [['clients_pkey', ['id']]],
     dokumentationen: [['dokumentationen_pkey', ['id']]],
     einstellungen: [['einstellungen_pkey', ['user_id']]],
+    portraits: [['portraits_pkey', ['id']]],
     route_distances: [['route_distances_pkey', ['id']],
       ['route_distances_user_id_start_key_stops_key_destination_key_key', ['user_id', 'start_key', 'stops_key', 'destination_key']]],
     termine: [['termine_pkey', ['id']], ['termine_documentation_id_key', ['documentation_id']]],

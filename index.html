@@ -197,6 +197,37 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
   display:block;
 }
 
+.portrait-zeile{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
+.portrait-zeile .portrait-preview{margin-top:0;width:84px;height:84px;flex:0 0 auto}
+.portrait-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
+.portrait-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px;margin-top:10px}
+.portrait-kachel{position:relative}
+.portrait-kachel .wahl{
+  display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;
+  min-height:0;padding:6px;border:2px solid transparent;border-radius:16px;
+  background:transparent;color:var(--ink);font:inherit;cursor:pointer;
+}
+.portrait-kachel .rund{
+  width:76px;height:76px;border-radius:50%;overflow:hidden;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  background:var(--accent);color:var(--brand-dark);font-weight:700;font-size:1.1rem;
+}
+.portrait-kachel .rund img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait-kachel .nr{font-size:.78rem;color:var(--muted,inherit)}
+.portrait-kachel .wahl.aktiv{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+.portrait-kachel .weg{
+  position:absolute;top:0;right:2px;width:28px;height:28px;min-height:0;min-width:0;padding:0;
+  border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--danger);
+  font-size:18px;line-height:1;cursor:pointer;
+}
+.portrait-hinweis{
+  margin:6px 0 4px;padding:10px 12px;border-radius:12px;font-size:.9rem;line-height:1.4;
+  border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 8%,var(--card));
+}
+.portrait-entfernt{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+.portrait-entfernt summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
+.portrait-entfernt .portrait-kachel .wahl{opacity:.75}
+
 .client-avatar img{
   width:100%;
   height:100%;
@@ -1759,17 +1790,18 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
     <h3 class="kb-abschnitt">🖼 Porträt</h3>
     <div class="grid">
-      <label class="span2">Porträt
-        <select id="clientPortrait">
-          <option value="">Initialen verwenden</option>
-          <option value="portrait-1.jpg">Porträt 1</option>
-          <option value="portrait-2.jpg">Porträt 2</option>
-          <option value="portrait-3.jpg">Porträt 3</option>
-          <option value="portrait-4.jpg">Porträt 4</option>
-          <option value="portrait-5.jpg">Porträt 5</option>
-        </select>
-        <div id="portraitVorschau" class="portrait-preview hidden"></div>
-      </label>
+      <div class="span2">
+        <input type="hidden" id="clientPortrait">
+        <div class="portrait-zeile">
+          <div id="portraitVorschau" class="portrait-preview hidden"></div>
+          <div class="portrait-knoepfe">
+            <button type="button" id="portraitWaehlen" class="kn kn-bearbeiten secondary">Porträt wählen</button>
+            <button type="button" id="portraitEntfernen" class="secondary hidden">Initialen verwenden</button>
+          </div>
+        </div>
+        <p class="muted small" id="portraitName"></p>
+        <p class="muted small">Das Porträt wird im Design „Comic“ angezeigt, in den anderen Designs die Initialen.</p>
+      </div>
     </div>
 
     <h3 class="kb-abschnitt">📝 Bemerkungen</h3>
@@ -1783,6 +1815,32 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <button type="submit" class="kn kn-speichern primary">Speichern</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="portraitPickerDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Klient</div>
+      <h2>Porträt wählen</h2>
+    </div>
+    <button type="button" id="closePortraitPicker" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <p class="muted small">Ein Bild antippen, dann wird es übernommen. Mit dem × entfernst du ein Bild aus der Auswahl.</p>
+  <div id="portraitGrid" class="portrait-grid"></div>
+
+  <h3 class="kb-abschnitt">Eigene Bilder</h3>
+  <div class="portrait-hinweis">
+    <strong>Bitte keine echten Fotos von Klient*innen hochladen.</strong>
+    Das schützt ihre Daten. Nimm lieber Zeichnungen oder Bilder, auf denen niemand zu erkennen ist.
+    Hochgeladene Bilder werden verkleinert und wie alle deine Daten auf deinem Gerät verschlüsselt, bevor sie abgeglichen werden.
+  </div>
+  <div id="portraitEigen" class="portrait-grid"></div>
+  <div style="margin-top:10px">
+    <input type="file" id="portraitDatei" accept="image/*" class="hidden">
+    <button type="button" id="portraitHochladen" class="kn kn-neu secondary" style="width:100%">Eigenes Bild hochladen</button>
+  </div>
+
+  <div id="portraitEntfernt"></div>
 </dialog>
 
 <dialog id="docsDialog">
@@ -2903,7 +2961,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.14.1 Verkaufsversion';
+const APP_VERSION='0.15 Verkaufsversion';
 const APP_STAND='31.10.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3467,7 +3525,8 @@ function nachFremdAenderung(tabellen){
     if(['dokumentationen','termine','trip_entries'].some(t=>tabellen.includes(t))){
       await verknuepfungenPruefen();
     }
-    if(tabellen.includes('clients')||tabellen.includes('bewilligungen'))await loadClients();
+    if(tabellen.includes('portraits'))await loadPortraits();
+    if(tabellen.includes('clients')||tabellen.includes('bewilligungen')||tabellen.includes('portraits'))await loadClients();
     if(tabellen.includes('textbausteine'))await loadTextbausteine();
     if(tabellen.includes('einstellungen'))await loadEinstellungen();
     toast('Änderungen von einem anderen Gerät übernommen.');
@@ -3586,7 +3645,7 @@ $('hinweiseBestaetigen').onclick=()=>{
 
 const KONFLIKT_ARTEN={
   clients:'Klient',dokumentationen:'Dokumentation',trip_entries:'Fahrt',ausgaben:'Ausgabe',
-  termine:'Termin',bewilligungen:'Bewilligung',textbausteine:'Textbaustein',einstellungen:'Einstellungen',
+  termine:'Termin',bewilligungen:'Bewilligung',textbausteine:'Textbaustein',einstellungen:'Einstellungen',portraits:'Eigenes Porträt',
   verguetungssaetze:'Vergütungssatz',route_distances:'Gespeicherte Strecke',trip_stop_suggestions:'Zwischenziel'
 };
 const KONFLIKT_FELDER={
@@ -3599,7 +3658,7 @@ const KONFLIKT_FELDER={
   ort:'Ort',notiz:'Notiz',titel:'Titel',text:'Text',bemerkungen:'Bemerkungen',
   stundenkontingent:'Stundenkontingent',auftragnehmer_name:'Name',auftragnehmer_adresse:'Adresse'
 };
-const KONFLIKT_VERBORGEN=['id','user_id','created_at','updated_at'];
+const KONFLIKT_VERBORGEN=['id','user_id','created_at','updated_at','bild','portraits_ausgeblendet'];
 
 function konfliktWert(v){
   if(v===null||v===undefined||v==='')return '—';
@@ -3679,6 +3738,7 @@ $('konfliktListe').onclick=async(e)=>{
     const {error}=await Geraet.konfliktUebernehmen(Number(uebernehmen.dataset.uebernehmen));
     if(error){toast('Übernehmen nicht möglich: '+error.message);return}
     toast('Kopie übernommen.');
+    await loadPortraits();
     await loadClients();
     await loadTextbausteine();
     await loadEinstellungen();
@@ -3725,6 +3785,7 @@ async function init(){
     await loadEinstellungen();
 
     showApp(true);
+    await loadPortraits();
     await loadClients();
     await loadTextbausteine();
     await aktualisiereSicherungsKnopf();
@@ -3912,9 +3973,9 @@ function renderClients(){
             aria-label="Klientenbogen öffnen"
             style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
             ${
-              c.portrait &&
+              portraitQuelle(c.portrait) &&
               document.documentElement.getAttribute('data-theme')==='moebius'
-                ? '<img src="bilder/'+esc(c.portrait)+'" alt="">'
+                ? '<img src="'+esc(portraitQuelle(c.portrait))+'" alt="">'
                 : esc(clientInitialen(c.name))
             }
           </div>
@@ -6639,21 +6700,254 @@ $('closeAllApprovals').onclick=()=>{
 $('clientSearch').oninput=renderClients;
 $('docSearch').oninput=renderDocs;
 
+/* ---------- Porträt-Auswahl ----------
+   Mitgelieferte Bilder: Datei in bilder/ ablegen und hier eine Zeile ergänzen.
+   Eigene Bilder liegen in der Tabelle „portraits“ (verschlüsselt wie alle Daten);
+   beim Klienten steht dann „eigen:“ plus die Nummer des Bildes.
+   Entfernte mitgelieferte Bilder merkt sich die App in den Einstellungen. */
+const PORTRAITS=[
+  {datei:'portrait-1.jpg',nr:1,name:'Mann, schwarze Locken'},
+  {datei:'portrait-2.jpg',nr:2,name:'Frau, schwarze Wellen, Stirnreif'},
+  {datei:'portrait-3.jpg',nr:3,name:'Mann, schwarze Haare, Stehkragen'},
+  {datei:'portrait-4.jpg',nr:4,name:'Frau, schwarze Wellen, Ohrringe'},
+  {datei:'portrait-5.jpg',nr:5,name:'Mann, Schutzbrille, Bart'},
+  {datei:'portrait-6.jpg',nr:6,name:'Frau, lange schwarze Haare, Mondkette'},
+  {datei:'portrait-7.jpg',nr:7,name:'Mann, lachend, Vollbart, Pelzkragen'},
+  {datei:'portrait-8.jpg',nr:8,name:'Frau, Hochsteckfrisur, rotes Samtkleid'},
+  {datei:'portrait-9.jpg',nr:9,name:'Mann, Stirnband, lila Tuch'},
+  {datei:'portrait-10.jpg',nr:10,name:'Ältere Frau, Rundbrille, blaues Kleid'},
+  {datei:'portrait-11.jpg',nr:11,name:'Frau, Schutzbrille, grünes Fläschchen'},
+  {datei:'portrait-12.jpg',nr:12,name:'Mann, Elf, Stirnreif'},
+  {datei:'portrait-13.jpg',nr:13,name:'Mann, braune Locken, Fliege'},
+  {datei:'portrait-14.jpg',nr:14,name:'Mann, Ritterrüstung, Narbe'},
+  {datei:'portrait-15.jpg',nr:15,name:'Ältere Dame, Pfauenfeder'},
+  {datei:'portrait-16.jpg',nr:16,name:'Mann, Cowboyhut, Zigarre'},
+  {datei:'portrait-17.jpg',nr:17,name:'Junge, rote Stachelhaare, Brot'},
+  {datei:'portrait-18.jpg',nr:18,name:'Frau, rote Wellen, Sommersprossen'},
+  {datei:'portrait-19.jpg',nr:19,name:'Älterer Mann, weiße Haare'},
+  {datei:'portrait-20.jpg',nr:20,name:'Frau, blonder Bob'},
+  {datei:'portrait-21.jpg',nr:21,name:'Ältere Frau, Dutt, Brille'},
+  {datei:'portrait-22.jpg',nr:22,name:'Mann, braune Locken, Dreitagebart'},
+  {datei:'portrait-23.jpg',nr:23,name:'Frau, lange lila Haare, Ohrring'},
+  {datei:'portrait-24.jpg',nr:24,name:'Mann, grauer Bart, Sakko'},
+  {datei:'portrait-25.jpg',nr:25,name:'Frau, blaue Haare, Rundbrille'},
+  {datei:'portrait-26.jpg',nr:26,name:'Älterer Mann, graue Haare, Uniform'},
+  {datei:'portrait-27.jpg',nr:27,name:'Frau, rote Haare, Schutzbrille, Lederjacke'}
+];
+const EIGENE_PORTRAITS_MAX=40;
+const PORTRAIT_KANTE=240;
+let eigenePortraits=[];
+
+async function loadPortraits(){
+  const {data,error}=await Daten.from('portraits').select('id,bild,created_at').order('created_at');
+  eigenePortraits=error?[]:(data||[]);
+}
+
+/* Bildadresse zu dem, was beim Klienten gespeichert ist ('' = Initialen zeigen) */
+function portraitQuelle(wert){
+  if(!wert)return '';
+  const text=String(wert);
+  if(text.startsWith('eigen:')){
+    const e=eigenePortraits.find(x=>String(x.id)===text.slice(6));
+    return e?e.bild:'';
+  }
+  return 'bilder/'+text;
+}
+
+function portraitsAusgeblendet(){
+  try{
+    const liste=JSON.parse(meineEinstellungen.portraits_ausgeblendet||'[]');
+    return Array.isArray(liste)?liste:[];
+  }catch(e){return [];}
+}
+
+async function portraitsAusgeblendetSpeichern(liste){
+  const text=JSON.stringify(liste);
+  const {error}=await Daten.from('einstellungen').upsert({
+    user_id:user.id,
+    portraits_ausgeblendet:text,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  if(error){toast('Konnte nicht gespeichert werden: '+error.message);return false;}
+  meineEinstellungen.portraits_ausgeblendet=text;
+  return true;
+}
+
 function updatePortraitVorschau(){
   const feld=$('portraitVorschau');
   const wert=$('clientPortrait').value;
+  const quelle=portraitQuelle(wert);
+  const eintrag=PORTRAITS.find(x=>x.datei===wert);
 
-  if(!wert){
+  $('portraitEntfernen').classList.toggle('hidden',!wert);
+  $('portraitWaehlen').textContent=wert?'Anderes Porträt wählen':'Porträt wählen';
+  $('portraitName').textContent=eintrag?('Porträt '+eintrag.nr+' · '+eintrag.name):(quelle?'Eigenes Bild':'');
+
+  if(!quelle){
     feld.classList.add('hidden');
     feld.innerHTML='';
     return;
   }
 
   feld.classList.remove('hidden');
-  feld.innerHTML='<img src="bilder/'+esc(wert)+'" alt="">';
+  feld.innerHTML='<img src="'+esc(quelle)+'" alt="">';
 }
 
-$('clientPortrait').onchange=updatePortraitVorschau;
+/* art: 'sichtbar' (mitgeliefert), 'entfernt' (zurückholen) oder 'eigen' (löschen) */
+function portraitKachelHtml(datei,quelle,beschriftung,beschreibung,aktiv,art){
+  const aktion=art==='entfernt'?'zurueck':'waehlen';
+  const knopf=art==='entfernt'?'':
+    '<button type="button" class="weg" data-aktion="'+(art==='eigen'?'loeschen':'entfernen')+'" data-datei="'+esc(datei)+'" aria-label="'+esc(beschreibung)+(art==='eigen'?' löschen':' entfernen')+'">×</button>';
+  return '<div class="portrait-kachel">'+
+    '<button type="button" class="wahl'+(aktiv?' aktiv':'')+'" data-aktion="'+aktion+'" data-datei="'+esc(datei)+'" aria-label="'+esc(beschreibung)+(art==='entfernt'?' – zurückholen':'')+'">'+
+      '<span class="rund"><img src="'+esc(quelle)+'" alt="" loading="lazy"></span>'+
+      '<span class="nr">'+esc(beschriftung)+'</span></button>'+
+    knopf+
+  '</div>';
+}
+
+function portraitGridBauen(){
+  const aktuell=$('clientPortrait').value;
+  const weg=portraitsAusgeblendet();
+  const sichtbar=PORTRAITS.filter(p=>!weg.includes(p.datei));
+  const entfernt=PORTRAITS.filter(p=>weg.includes(p.datei));
+  const warOffen=!!$('portraitEntfernt').querySelector('details[open]');
+
+  $('portraitGrid').innerHTML=
+    '<div class="portrait-kachel"><button type="button" class="wahl'+(aktuell?'':' aktiv')+'" data-aktion="waehlen" data-datei="">'+
+      '<span class="rund">'+esc(clientInitialen($('clientName').value)||'AB')+'</span>'+
+      '<span class="nr">Initialen</span></button></div>'+
+    sichtbar.map(p=>portraitKachelHtml(p.datei,'bilder/'+p.datei,String(p.nr),'Porträt '+p.nr+': '+p.name,p.datei===aktuell,'sichtbar')).join('');
+
+  $('portraitEigen').innerHTML=eigenePortraits.length
+    ? eigenePortraits.map((e,i)=>portraitKachelHtml('eigen:'+e.id,e.bild,'Eigenes '+(i+1),'Eigenes Bild '+(i+1),('eigen:'+e.id)===aktuell,'eigen')).join('')
+    : '<p class="muted small" style="grid-column:1/-1">Noch keine eigenen Bilder.</p>';
+
+  $('portraitEntfernt').innerHTML=entfernt.length
+    ? '<details class="portrait-entfernt"'+(warOffen?' open':'')+'>'+
+        '<summary>Entfernte Porträts ('+entfernt.length+')</summary>'+
+        '<p class="muted small">Ein Bild antippen, dann ist es wieder in der Auswahl.</p>'+
+        '<div class="portrait-grid">'+entfernt.map(p=>portraitKachelHtml(p.datei,'bilder/'+p.datei,String(p.nr),'Porträt '+p.nr+': '+p.name,false,'entfernt')).join('')+'</div>'+
+        '<div style="margin-top:10px"><button type="button" class="secondary" data-aktion="alle-zurueck">Alle zurückholen</button></div>'+
+      '</details>'
+    : '';
+}
+
+/* Hochgeladenes Bild: quadratisch zuschneiden (bei Hochformat etwas oberhalb der Mitte,
+   weil dort meist das Gesicht ist), auf 240 Pixel verkleinern, als JPEG speichern */
+async function portraitVerkleinern(datei){
+  const url=URL.createObjectURL(datei);
+  try{
+    const bild=await new Promise((ok,nein)=>{
+      const i=new Image();
+      i.onload=()=>ok(i);
+      i.onerror=()=>nein(new Error('Bild nicht lesbar'));
+      i.src=url;
+    });
+    const b=bild.naturalWidth,h=bild.naturalHeight,kante=Math.min(b,h);
+    if(!kante)throw new Error('Bild nicht lesbar');
+    const sx=Math.round((b-kante)/2);
+    const sy=h>b?Math.round((h-kante)*0.15):Math.round((h-kante)/2);
+    const feld=document.createElement('canvas');
+    feld.width=feld.height=PORTRAIT_KANTE;
+    const g=feld.getContext('2d');
+    g.imageSmoothingQuality='high';
+    g.fillStyle='#ffffff';
+    g.fillRect(0,0,PORTRAIT_KANTE,PORTRAIT_KANTE);
+    g.drawImage(bild,sx,sy,kante,kante,0,0,PORTRAIT_KANTE,PORTRAIT_KANTE);
+    return feld.toDataURL('image/jpeg',0.82);
+  }finally{
+    URL.revokeObjectURL(url);
+  }
+}
+
+$('portraitWaehlen').onclick=()=>{
+  portraitGridBauen();
+  $('portraitPickerDialog').showModal();
+};
+$('portraitEntfernen').onclick=()=>{
+  $('clientPortrait').value='';
+  updatePortraitVorschau();
+};
+$('closePortraitPicker').onclick=()=>$('portraitPickerDialog').close();
+$('portraitHochladen').onclick=()=>{
+  if(eigenePortraits.length>=EIGENE_PORTRAITS_MAX){
+    toast('Es können höchstens '+EIGENE_PORTRAITS_MAX+' eigene Bilder gespeichert werden. Bitte zuerst eines löschen.');
+    return;
+  }
+  $('portraitDatei').click();
+};
+$('portraitDatei').onchange=async()=>{
+  const datei=$('portraitDatei').files[0];
+  $('portraitDatei').value='';
+  if(!datei)return;
+  if(!/^image\//.test(datei.type)){toast('Bitte ein Bild auswählen.');return;}
+
+  let bild;
+  try{bild=await portraitVerkleinern(datei);}
+  catch(e){toast('Das Bild konnte nicht gelesen werden.');return;}
+
+  const {data,error}=await Daten.from('portraits').insert({bild}).select('id,bild,created_at').single();
+  if(error){toast('Speichern fehlgeschlagen: '+error.message);return;}
+
+  eigenePortraits.push(data);
+  $('clientPortrait').value='eigen:'+data.id;
+  updatePortraitVorschau();
+  $('portraitPickerDialog').close();
+  toast('Bild gespeichert und ausgewählt');
+};
+$('portraitPickerDialog').onclick=async e=>{
+  const b=e.target.closest('[data-aktion]');
+  if(!b)return;
+  const aktion=b.dataset.aktion;
+  const datei=b.dataset.datei||'';
+
+  if(aktion==='waehlen'){
+    $('clientPortrait').value=datei;
+    updatePortraitVorschau();
+    $('portraitPickerDialog').close();
+    return;
+  }
+
+  if(aktion==='loeschen'){
+    const verwendet=clients.filter(c=>c.portrait===datei).length;
+    if(!confirm('Dieses eigene Bild endgültig löschen?'+(verwendet
+      ?'\n\nEs wird bei '+verwendet+' Klient*in(nen) verwendet. Diese zeigen danach wieder die Initialen.'
+      :'')))return;
+    if(verwendet){
+      const {error:f1}=await Daten.from('clients').update({portrait:null}).eq('portrait',datei);
+      if(f1){toast('Löschen fehlgeschlagen: '+f1.message);return;}
+    }
+    const {error}=await Daten.from('portraits').delete().eq('id',datei.slice(6));
+    if(error){toast('Löschen fehlgeschlagen: '+error.message);return;}
+    eigenePortraits=eigenePortraits.filter(x=>'eigen:'+x.id!==datei);
+    if($('clientPortrait').value===datei){
+      $('clientPortrait').value='';
+      updatePortraitVorschau();
+    }
+    if(verwendet)await loadClients();
+    portraitGridBauen();
+    return;
+  }
+
+  const weg=portraitsAusgeblendet();
+
+  if(aktion==='entfernen'){
+    const eintrag=PORTRAITS.find(x=>x.datei===datei);
+    if(!confirm('Porträt '+(eintrag?eintrag.nr:'')+' aus der Auswahl entfernen?\n\nDu kannst es unten unter „Entfernte Porträts“ jederzeit zurückholen. Klient*innen, die dieses Porträt schon haben, behalten es.'))return;
+    if(await portraitsAusgeblendetSpeichern([...weg,datei]))portraitGridBauen();
+    return;
+  }
+
+  if(aktion==='zurueck'){
+    if(await portraitsAusgeblendetSpeichern(weg.filter(x=>x!==datei)))portraitGridBauen();
+    return;
+  }
+
+  if(aktion==='alle-zurueck'){
+    if(await portraitsAusgeblendetSpeichern([]))portraitGridBauen();
+  }
+};
 
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
@@ -9329,7 +9623,7 @@ async function loadEinstellungen(){
 
   const {data,error}=await Daten
     .from('einstellungen')
-    .select('auftragnehmer_name,auftragnehmer_adresse')
+    .select('auftragnehmer_name,auftragnehmer_adresse,portraits_ausgeblendet')
     .eq('user_id',user.id)
     .maybeSingle();
 
@@ -10656,7 +10950,8 @@ const SICHERUNG_TABELLEN=[
   'ausgaben',
   'verguetungssaetze',
   'textbausteine',
-  'termine'
+  'termine',
+  'portraits'
 ];
 
 /* Datum der letzten Sicherung – geräteübergreifend in Supabase (Tabelle „einstellungen") */
@@ -11405,9 +11700,9 @@ function klientenbogenHtml(c,bewilligung){
   const farben=AVATAR_FARBEN[
     String(c.client_code||c.name||'').split('').reduce((s,z)=>s+z.charCodeAt(0),0)%AVATAR_FARBEN.length
   ];
-  const mitBild=c.portrait&&document.documentElement.getAttribute('data-theme')==='moebius';
+  const mitBild=portraitQuelle(c.portrait)&&document.documentElement.getAttribute('data-theme')==='moebius';
   const avatar=mitBild
-    ? '<img src="bilder/'+esc(c.portrait)+'" alt="">'
+    ? '<img src="'+esc(portraitQuelle(c.portrait))+'" alt="">'
     : esc(clientInitialen(c.name));
 
   const alter=kbAlter(c.geburtstag);
