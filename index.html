@@ -1933,7 +1933,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 </label>
       <label>Beginn<select id="docBeginn" required></select></label>
       <label>Ende<select id="docEnde" required></select></label>
-      <label>FLS<input id="docFls" type="number" min="0" step="0.25" inputmode="decimal" placeholder="z. B. 1,25"></label>
+      <label>FLS<input id="docFls" type="text" inputmode="decimal" placeholder="z. B. 1,25" autocomplete="off"></label>
       <div id="docFlsHinweis" class="kennziffer-text span2 hidden"></div>
       <label class="span2">Dauer<input id="docDauer" type="text" placeholder="Wird automatisch berechnet" readonly></label>
       <div class="span2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -2010,8 +2010,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>Fortschreibung des Gesamtplans zum<input id="approvalGesamtplan" type="date"></label>
       <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
       <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
-      <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="number" min="0" step="0.01" inputmode="decimal" required></label>
-      <label>Wochen-FLS<input id="approvalWochenFls" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="text" inputmode="decimal" required autocomplete="off"></label>
+      <label>Wochen-FLS<input id="approvalWochenFls" type="text" inputmode="decimal" autocomplete="off"></label>
       <label>Leistungsträger
         <select id="approvalLeistungstraegerTyp" required>
           <option value="">Bitte auswählen</option>
@@ -2214,7 +2214,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </label>
 
       <label>Kilometer gesamt
-        <input id="tripKilometers" type="number" min="0" step="0.1" inputmode="decimal" required>
+        <input id="tripKilometers" type="text" inputmode="decimal" required autocomplete="off">
         <div class="km-knoepfe">
           <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
           <button type="button" id="tripKarte" class="secondary km-knopf">🗺 Karte</button>
@@ -2711,29 +2711,29 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 
   <form id="rateForm">
+    <p class="muted small">Trage einen oder beide Beträge ein. Ein leeres Feld lässt den bisherigen Satz unverändert.</p>
     <div class="grid">
-      <label>Art
-        <select id="rateType" required>
-          <option value="fls">Betrag je FLS</option>
-          <option value="wegepauschale">Betrag je Wegepauschale</option>
-        </select>
-      </label>
-
       <label>Gültig ab
         <input id="rateFrom" type="date" required>
-      </label>
-
-      <label>Betrag in Euro
-        <input id="rateAmount" type="number" min="0" step="0.01" inputmode="decimal" required>
       </label>
 
       <label>Bemerkung
         <input id="rateNote" placeholder="z. B. Vereinbarung 2026">
       </label>
+
+      <label>Betrag je FLS in Euro
+        <input id="rateFls" type="text" inputmode="decimal" autocomplete="off">
+        <span class="feld-hinweis" id="rateFlsAktuell"></span>
+      </label>
+
+      <label>Betrag je Wegepauschale in Euro
+        <input id="rateWege" type="text" inputmode="decimal" autocomplete="off">
+        <span class="feld-hinweis" id="rateWegeAktuell"></span>
+      </label>
     </div>
 
     <div class="actions">
-      <button type="submit" class="kn kn-speichern primary">Satz speichern</button>
+      <button type="submit" class="kn kn-speichern primary">Sätze speichern</button>
     </div>
   </form>
 
@@ -2856,7 +2856,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       </label>
 
       <label>Betrag in Euro
-        <input id="expenseAmount" type="number" min="0" step="0.01" inputmode="decimal" required>
+        <input id="expenseAmount" type="text" inputmode="decimal" required autocomplete="off">
       </label>
 
       <label class="span2">Kategorie
@@ -3060,7 +3060,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.19.1 Verkaufsversion';
+const APP_VERSION='0.20 Verkaufsversion';
 const APP_STAND='01.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -10961,7 +10961,22 @@ async function loadVerguetungssaetze(){
   verguetungssaetze=data||[];
 }
 
+function aktuellerSatz(art){
+  const heute=todayIso();
+  return verguetungssaetze
+    .filter(s=>s.art===art&&String(s.gueltig_ab)<=heute)
+    .sort((a,b)=>String(b.gueltig_ab).localeCompare(String(a.gueltig_ab)))[0]||null;
+}
+
+function satzHinweiseZeigen(){
+  for(const [art,id] of [['fls','rateFlsAktuell'],['wegepauschale','rateWegeAktuell']]){
+    const s=aktuellerSatz(art);
+    $(id).textContent=s?'Aktuell: '+formatEuro(s.betrag)+' seit '+formatDate(s.gueltig_ab):'Noch kein Satz hinterlegt';
+  }
+}
+
 function renderRates(){
+  satzHinweiseZeigen();
   if(!verguetungssaetze.length){
     $('ratesList').innerHTML=
       '<p class="muted">Noch keine Sätze hinterlegt. '+
@@ -11042,7 +11057,8 @@ $('openRates').onclick=async()=>{
   await loadVerguetungssaetze();
 
   $('rateFrom').value=todayIso().slice(0,8)+'01';
-  $('rateAmount').value='';
+  $('rateFls').value='';
+  $('rateWege').value='';
   $('rateNote').value='';
 
   renderRates();
@@ -11054,35 +11070,48 @@ $('closeRates').onclick=()=>$('ratesDialog').close();
 $('rateForm').onsubmit=async e=>{
   e.preventDefault();
 
-  const betrag=Number(String($('rateAmount').value).replace(',','.'));
   const gueltigAb=$('rateFrom').value;
+  const eintraege=[['fls',$('rateFls').value],['wegepauschale',$('rateWege').value]]
+    .filter(([,wert])=>String(wert).trim()!=='')
+    .map(([art,wert])=>({art,betrag:Number(String(wert).replace(',','.'))}));
 
-  if(!gueltigAb||!Number.isFinite(betrag)||betrag<=0){
-    toast('Bitte Datum und Betrag eintragen.');
+  if(!gueltigAb){
+    toast('Bitte das Datum „Gültig ab“ eintragen.');
+    return;
+  }
+  if(!eintraege.length){
+    toast('Bitte mindestens einen Betrag eintragen.');
+    return;
+  }
+  if(eintraege.some(x=>!Number.isFinite(x.betrag)||x.betrag<=0)){
+    toast('Bitte gültige Beträge eintragen, z. B. 41,50.');
     return;
   }
 
-  const {error}=await Daten
-    .from('verguetungssaetze')
-    .upsert(
-      {
-        user_id:user.id,
-        art:$('rateType').value,
-        gueltig_ab:gueltigAb,
-        betrag:betrag,
-        bemerkung:$('rateNote').value.trim()||null
-      },
-      {onConflict:'user_id,art,gueltig_ab'}
-    );
+  for(const x of eintraege){
+    const {error}=await Daten
+      .from('verguetungssaetze')
+      .upsert(
+        {
+          user_id:user.id,
+          art:x.art,
+          gueltig_ab:gueltigAb,
+          betrag:x.betrag,
+          bemerkung:$('rateNote').value.trim()||null
+        },
+        {onConflict:'user_id,art,gueltig_ab'}
+      );
 
-  if(error){
-    toast('Satz konnte nicht gespeichert werden: '+error.message);
-    return;
+    if(error){
+      toast('Satz konnte nicht gespeichert werden: '+error.message);
+      return;
+    }
   }
 
-  toast('Satz gespeichert');
+  toast(eintraege.length===2?'Beide Sätze gespeichert':'Satz gespeichert');
 
-  $('rateAmount').value='';
+  $('rateFls').value='';
+  $('rateWege').value='';
   $('rateNote').value='';
 
   await loadVerguetungssaetze();
@@ -13779,6 +13808,38 @@ ladeDesign();
 pcloudTokenLaden();
 pcloudRueckkehrPruefen();
 fillTimeOptions();
+/* ---------- Zahlen mit Komma ----------
+   Dezimalfelder sind Textfelder mit Zahlentastatur. Ein getippter Punkt
+   wird sofort zum Komma. Der Rest der App bekommt über .value weiterhin die
+   Zahl mit Punkt (z. B. "1.25") und kann Zahlen mit Punkt hineinschreiben;
+   angezeigt wird immer das Komma. */
+const KOMMA_FELDER=['docFls','approvalStunden','approvalWochenFls','tripKilometers','expenseAmount','rateFls','rateWege'];
+(function(){
+  const nativ=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  for(const id of KOMMA_FELDER){
+    const feld=document.getElementById(id);
+    if(!feld)continue;
+    feld.type='text';
+    feld.inputMode='decimal';
+    Object.defineProperty(feld,'value',{
+      configurable:true,
+      get(){return nativ.get.call(this).replace(/\s/g,'').replace(',','.')},
+      set(wert){nativ.set.call(this,wert===null||wert===undefined?'':String(wert).replace('.',','))}
+    });
+    feld.addEventListener('input',()=>{
+      const roh=nativ.get.call(feld);
+      let neu=roh.replace(/\./g,',').replace(/[^0-9,]/g,'');
+      const komma=neu.indexOf(',');
+      if(komma>=0)neu=neu.slice(0,komma+1)+neu.slice(komma+1).replace(/,/g,'');
+      if(neu!==roh){
+        const stelle=Math.max(0,(feld.selectionStart||neu.length)-(roh.length-neu.length));
+        nativ.set.call(feld,neu);
+        try{feld.setSelectionRange(stelle,stelle)}catch(e){}
+      }
+    },true);
+  }
+})();
+
 init();
 </script>
 
