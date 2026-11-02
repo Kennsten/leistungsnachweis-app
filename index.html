@@ -19,6 +19,7 @@
 <script src="tresor.js"></script>
 <script src="daten.js"></script>
 <script src="geraet.js"></script>
+<script src="installieren.js"></script>
 <style>
 :root{
   --ink:#2f3a34;
@@ -1471,6 +1472,18 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .fs-fahrt{--fs-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 17H3.5a1 1 0 0 1-1-1v-3.2a2 2 0 0 1 .6-1.4L5 9.5l1.6-3.3A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.8 1.2L19 9.5l1.9 1.9a2 2 0 0 1 .6 1.4V16a1 1 0 0 1-1 1H19'/%3E%3Cpath d='M5 9.5h14M9 17h6'/%3E%3Ccircle cx='7' cy='17' r='2'/%3E%3Ccircle cx='17' cy='17' r='2'/%3E%3C/svg%3E")}
 @media (max-width:520px){.fenster-symbol{width:34px;height:34px}.fenster-titel{gap:10px}}
 .kn.kn-einstellungen{--kn-ico:var(--kn-ico-zahnrad);background:var(--accent);color:var(--ink)}
+.install-karte{margin-bottom:16px;border-color:var(--brand)}
+.install-karte h2{margin:0;font-size:1.15rem}
+.install-schritte{margin:10px 0 4px;padding-left:1.4em;line-height:1.5}
+.install-schritte li{margin:6px 0}
+.install-symbol{width:1.25em;height:1.25em;vertical-align:-.25em;color:var(--brand-dark)}
+.install-leiste{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;
+  margin:0 0 12px;padding:8px 12px;border-radius:var(--radius-control);font-size:.85rem;
+  background:color-mix(in srgb,var(--warn-soft) 12%,var(--card));color:var(--ink);border:1px solid color-mix(in srgb,var(--warn-soft) 40%,transparent)}
+.install-leiste-knoepfe{display:flex;gap:6px}
+.einladen-qr{width:min(260px,70vw);margin:12px auto;background:#fff;padding:8px;border-radius:12px}
+.einladen-qr svg{display:block;width:100%;height:auto}
+.einladen-adresse{text-align:center;font-size:.85rem;overflow-wrap:anywhere;user-select:all;color:var(--muted)}
 .anmelde-bereiche{margin:4px 0 2px;font-weight:600;font-size:.9rem;color:var(--ink)}
 .anmelde-bereiche span{white-space:nowrap}
 .anmelde-sicher{margin:0 0 14px;font-size:.88rem;color:var(--ok)}
@@ -1557,6 +1570,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 </div>
 
 <section id="auth" class="wrap center">
+  <div id="installKarte" class="card install-karte hidden"></div>
   <div class="card">
     <h1>QA – Qualifizierte Assistenz</h1>
     <p class="anmelde-bereiche"><span>Dokumentation · Fahrten ·</span> <span>Abrechnung · Steuer</span></p>
@@ -1582,6 +1596,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 </section>
 
 <section id="app" class="wrap hidden">
+  <div id="installLeiste" class="install-leiste hidden"></div>
   <div class="card top">
     <div>
       <div class="muted">Mobile Verwaltung</div>
@@ -2454,6 +2469,31 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
+<dialog id="installDialog">
+  <div class="top">
+    <div><div class="muted">Installieren</div></div>
+    <button type="button" id="installDialogSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="installDialogInhalt"></div>
+</dialog>
+
+<dialog id="einladenDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Für Kolleg*innen</div>
+      <h2>QA einladen</h2>
+    </div>
+    <button type="button" id="einladenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <p class="muted small">Mit der Handy-Kamera scannen. Die App öffnet sich und zeigt, wie man sie auf den Home-Bildschirm legt. Danach registrieren.</p>
+  <div id="einladenQr" class="einladen-qr"></div>
+  <p id="einladenAdresse" class="einladen-adresse"></p>
+  <div class="actions">
+    <button type="button" id="einladenTeilen" class="primary">Link teilen</button>
+    <button type="button" id="einladenKopieren" class="secondary">Link kopieren</button>
+  </div>
+</dialog>
+
 <dialog id="settingsDialog">
   <div class="top">
     <div>
@@ -2506,6 +2546,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <option value="nie">Nie</option>
     </select>
   </label>
+
+  <h3 style="margin-top:22px">Kolleg*innen einladen</h3>
+  <p class="muted small">Zeigt einen QR-Code und den Link zur App. Kolleg*innen scannen ihn mit der Kamera und folgen der Anleitung zum Installieren.</p>
+  <div class="actions">
+    <button type="button" id="einladenKnopf" class="secondary">Kolleg*innen einladen</button>
+  </div>
 
   <h3 style="margin-top:22px">Dieses Gerät</h3>
   <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
@@ -3060,8 +3106,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.20.1 Verkaufsversion';
-const APP_STAND='01.11.2026';
+const APP_VERSION='0.21 Verkaufsversion';
+const APP_STAND='02.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
