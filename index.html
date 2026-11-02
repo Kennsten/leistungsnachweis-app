@@ -1477,6 +1477,30 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .install-schritte{margin:10px 0 4px;padding-left:1.4em;line-height:1.5}
 .install-schritte li{margin:6px 0}
 .install-symbol{width:1.25em;height:1.25em;vertical-align:-.25em;color:var(--brand-dark)}
+/* Einstellungen: Menü-Liste und Unterseiten */
+.einst-liste{display:flex;flex-direction:column;margin-top:6px;border:1px solid var(--line);
+  border-radius:var(--radius-item);overflow:hidden;background:var(--card)}
+.einst-zeile{display:flex;align-items:center;gap:14px;width:100%;margin:0;padding:12px 14px;border:0;
+  border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.einst-zeile:first-child{border-top:0}
+.einst-zeile:hover,.einst-zeile:active{background:var(--accent)}
+.einst-symbol{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:40px;height:40px;
+  border-radius:12px;background:var(--accent);color:var(--brand-dark)}
+.einst-symbol svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.einst-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.einst-text strong{font-weight:650}
+.einst-text small{color:var(--muted);font-size:.82rem;overflow-wrap:anywhere}
+.einst-pfeil{flex:0 0 auto;width:.95em;height:.95em;background:var(--muted);
+  -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
+.einst-zurueck{display:inline-flex;align-items:center;gap:6px;margin:0 0 2px;padding:6px 0;border:0;background:none;
+  color:var(--brand-dark);font:inherit;font-weight:600;cursor:pointer}
+.einst-seite .actions{flex-direction:column;margin:12px 0}
+.einst-seite .actions button{flex:none;width:100%}
+.einst-status{margin:6px 0 0;font-weight:600}
+#settingsDialog .top > div{min-width:0}
+#settingsDialog .top .kn-schliessen{flex:0 0 auto}
+#settingsTitel{font-size:1.3rem;overflow-wrap:break-word}
+.kopf-knoepfe #backupData{white-space:normal;line-height:1.2}
 .klapp-titel{margin:0}
 .klapp-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
   margin:0;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
@@ -1634,6 +1658,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="kopf-knoepfe">
       <button id="logout" class="secondary">Abmelden</button>
       <button type="button" id="openSettings" class="kn kn-einstellungen secondary">Einstellungen</button>
+      <button type="button" id="backupData" class="secondary">Datensicherung</button>
     </div>
   </div>
 
@@ -1691,20 +1716,6 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       id="allIncome"
       class="kn kn-nav secondary">
       Einnahmen
-    </button>
-
-    <button
-      type="button"
-      id="backupData"
-      class="secondary">
-      Datensicherung
-    </button>
-
-    <button
-      type="button"
-      id="openCloudSetup"
-      class="secondary">
-      pCloud einrichten
     </button>
   </div>
   </div>
@@ -2515,68 +2526,121 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <dialog id="settingsDialog">
   <div class="top">
     <div>
-      <div class="muted">Meine Angaben</div>
-      <h2>Einstellungen</h2>
+      <button type="button" id="settingsZurueck" class="einst-zurueck hidden"><span aria-hidden="true">‹</span> Einstellungen</button>
+      <div class="muted" id="settingsOberzeile">Konto und Gerät</div>
+      <h2 id="settingsTitel">Einstellungen</h2>
     </div>
     <button type="button" id="closeSettings" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
-  <p id="settingsHinweis" class="muted hidden">
-    Willkommen! Bitte trage zuerst deinen Namen und deine Adresse ein.
-    Beides wird für den Leistungsnachweis und das Fahrtenbuch gebraucht.
-  </p>
+  <!-- Menü: eine Zeile je Thema -->
+  <nav id="settingsMenue" class="einst-liste" aria-label="Einstellungen">
+    <button type="button" class="einst-zeile" data-seite="angaben">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></span>
+      <span class="einst-text"><strong>Meine Angaben</strong><small id="einstStatusAngaben"></small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" data-seite="tresor">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      <span class="einst-text"><strong>Tresor und Sicherheit</strong><small id="einstStatusTresor"></small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" data-seite="sicherung">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 4v10M8 10l4 4 4-4"/></svg></span>
+      <span class="einst-text"><strong>Datensicherung</strong><small id="einstStatusSicherung"></small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" data-seite="cloud">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19H7a4 4 0 0 1-.8-7.9 5.5 5.5 0 0 1 10.6-1.4A4.7 4.7 0 0 1 17.5 19z"/></svg></span>
+      <span class="einst-text"><strong>Dokumente und Cloud</strong><small id="einstStatusCloud"></small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" data-seite="geraet">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span>
+      <span class="einst-text"><strong>Dieses Gerät</strong><small id="einstStatusGeraet"></small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" id="einladenKnopf">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
+      <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+  </nav>
 
-  <form id="settingsForm">
-    <label>Name (Nachname, Vorname)
-      <input id="settingsName" required placeholder="z. B. Muster, Maria" autocomplete="name">
-    </label>
-    <p class="muted small">Erscheint im Leistungsnachweis als Auftragnehmer*in.</p>
+  <!-- Seite: Meine Angaben -->
+  <section class="einst-seite hidden" data-seite="angaben" data-titel="Meine Angaben">
+    <p id="settingsHinweis" class="muted hidden">
+      Willkommen! Bitte trage zuerst deinen Namen und deine Adresse ein.
+      Beides wird für den Leistungsnachweis und das Fahrtenbuch gebraucht.
+    </p>
 
-    <label>Meine Adresse (Start und Ziel der Fahrten)
-      <input id="settingsAdresse" required placeholder="z. B. Musterstraße 1, 30159 Hannover" autocomplete="street-address">
-    </label>
-    <p class="muted small">Wird bei neuen Fahrten automatisch als Start und Ziel eingetragen.</p>
+    <form id="settingsForm">
+      <label>Name (Nachname, Vorname)
+        <input id="settingsName" required placeholder="z. B. Muster, Maria" autocomplete="name">
+      </label>
+      <p class="muted small">Erscheint im Leistungsnachweis als Auftragnehmer*in.</p>
 
+      <label>Meine Adresse (Start und Ziel der Fahrten)
+        <input id="settingsAdresse" required placeholder="z. B. Musterstraße 1, 30159 Hannover" autocomplete="street-address">
+      </label>
+      <p class="muted small">Wird bei neuen Fahrten automatisch als Start und Ziel eingetragen.</p>
+
+      <div class="actions">
+        <button type="submit" id="settingsSave" class="kn kn-speichern primary">Speichern</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Seite: Tresor und Sicherheit -->
+  <section class="einst-seite hidden" data-seite="tresor" data-titel="Tresor und Sicherheit">
+    <p class="muted small">Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
     <div class="actions">
-      <button type="submit" id="settingsSave" class="kn kn-speichern primary">Speichern</button>
+      <button type="button" id="tresorSperren" class="secondary">Jetzt sperren</button>
+      <button type="button" id="tresorPasswortAendern" class="secondary">Tresor-Passwort ändern</button>
+      <button type="button" id="tresorNotfallblattDrucken" class="secondary">Notfallblatt neu drucken</button>
+      <button type="button" id="tresorNotfallblatt" class="secondary">Neuer Wiederherstellungsschlüssel</button>
     </div>
-  </form>
+  </section>
 
-  <h3 style="margin-top:22px">Tresor</h3>
-  <p class="muted small">Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
-  <div class="actions">
-    <button type="button" id="tresorSperren" class="secondary">Jetzt sperren</button>
-    <button type="button" id="tresorPasswortAendern" class="secondary">Tresor-Passwort ändern</button>
-    <button type="button" id="tresorNotfallblattDrucken" class="secondary">Notfallblatt neu drucken</button>
-    <button type="button" id="tresorNotfallblatt" class="secondary">Neuer Wiederherstellungsschlüssel</button>
-  </div>
+  <!-- Seite: Datensicherung -->
+  <section class="einst-seite hidden" data-seite="sicherung" data-titel="Datensicherung">
+    <p id="einstSicherungStatus" class="einst-status"></p>
+    <div class="actions">
+      <button type="button" id="sicherungJetzt" class="primary">Jetzt sichern</button>
+      <button type="button" id="wiederherstellenOeffnen" class="secondary">Aus Sicherung wiederherstellen …</button>
+    </div>
+    <label>Zusätzlich auf diesem Gerät speichern
+      <select id="sicherungGeraetWahl">
+        <option value="fragen">Jedes Mal fragen</option>
+        <option value="immer">Immer</option>
+        <option value="nie">Nie</option>
+      </select>
+    </label>
+    <details class="install-hilfe">
+      <summary>So funktioniert die Sicherung</summary>
+      <ul>
+        <li>Sicherungen werden verschlüsselt in pCloud im Ordner „Datensicherung“ abgelegt. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</li>
+        <li>Automatisch gesichert wird beim Öffnen der App und wenn die App 10 Minuten im Hintergrund war (auf iPad und iPhone beim Zurückkehren), nur wenn sich etwas geändert hat. Sicherungen der letzten 9 Wochen bleiben erhalten, ältere werden gelöscht.</li>
+      </ul>
+    </details>
+  </section>
 
-  <h3 style="margin-top:22px">Datensicherung</h3>
-  <p class="muted small">Sicherungen werden verschlüsselt in pCloud im Ordner „Datensicherung“ abgelegt. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</p>
-  <p class="muted small">Automatisch gesichert wird beim Öffnen der App und wenn die App 10 Minuten im Hintergrund war (auf iPad und iPhone beim Zurückkehren), nur wenn sich etwas geändert hat. Sicherungen der letzten 9 Wochen bleiben erhalten, ältere werden gelöscht.</p>
-  <div class="actions">
-    <button type="button" id="wiederherstellenOeffnen" class="secondary">Aus Sicherung wiederherstellen …</button>
-  </div>
-  <label>Zusätzlich auf diesem Gerät speichern
-    <select id="sicherungGeraetWahl">
-      <option value="fragen">Jedes Mal fragen</option>
-      <option value="immer">Immer</option>
-      <option value="nie">Nie</option>
-    </select>
-  </label>
+  <!-- Seite: Dokumente und Cloud -->
+  <section class="einst-seite hidden" data-seite="cloud" data-titel="Dokumente und Cloud">
+    <p class="muted small">Klientendokumente, Belege und Sicherungen liegen in deinem eigenen pCloud-Speicher. Die Verbindung gilt für dieses Gerät.</p>
+    <div class="actions">
+      <button type="button" id="openCloudSetup" class="secondary">pCloud einrichten</button>
+    </div>
+  </section>
 
-  <h3 style="margin-top:22px">Kolleg*innen einladen</h3>
-  <p class="muted small">Zeigt einen QR-Code und den Link zur App. Kolleg*innen scannen ihn mit der Kamera und folgen der Anleitung zum Installieren.</p>
-  <div class="actions">
-    <button type="button" id="einladenKnopf" class="secondary">Kolleg*innen einladen</button>
-  </div>
-
-  <h3 style="margin-top:22px">Dieses Gerät</h3>
-  <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
-  <div class="actions">
-    <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
-    <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
-  </div>
+  <!-- Seite: Dieses Gerät -->
+  <section class="einst-seite hidden" data-seite="geraet" data-titel="Dieses Gerät">
+    <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
+    <div class="actions">
+      <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
+      <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
+    </div>
+  </section>
 </dialog>
 
 <dialog id="cloudSetupDialog">
@@ -3124,7 +3188,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.22 Verkaufsversion';
+const APP_VERSION='0.23 Verkaufsversion';
 const APP_STAND='02.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9922,16 +9986,70 @@ async function loadEinstellungen(){
   meineEinstellungen=data||{};
 }
 
-function einstellungenOeffnen(ersterStart=false){
+/* Menü mit Unterseiten: zuerst eine Liste, ein Tipp öffnet das Thema */
+function einstellungenSeite(name){
+  const menue=name==='menue';
+  $('settingsMenue').classList.toggle('hidden',!menue);
+  let titel='Einstellungen';
+  document.querySelectorAll('#settingsDialog .einst-seite').forEach(seite=>{
+    const aktiv=seite.dataset.seite===name;
+    seite.classList.toggle('hidden',!aktiv);
+    if(aktiv)titel=seite.dataset.titel;
+  });
+  $('settingsZurueck').classList.toggle('hidden',menue);
+  $('settingsOberzeile').classList.toggle('hidden',!menue);
+  $('settingsTitel').textContent=titel;
+  $('settingsDialog').scrollTop=0;
+}
+
+function einstellungenStatusZeigen(){
+  const name=auftragnehmerName();
+  $('einstStatusAngaben').textContent=name||'Bitte ausfüllen';
+  $('einstStatusTresor').textContent='Sperrt nach 30 Minuten';
+
+  let sicherung='noch keine Sicherung';
+  let sicherungLang='Noch keine Sicherung vorhanden.';
+  if(letzteSicherungDatum){
+    sicherung='zuletzt '+letzteSicherungDatum.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+    sicherungLang='Zuletzt gesichert: '+letzteSicherungDatum.toLocaleString('de-DE',
+      {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' Uhr';
+  }
+  $('einstStatusSicherung').textContent=sicherung;
+  $('einstSicherungStatus').textContent=sicherungLang;
+
+  $('einstStatusCloud').textContent=pcloudToken
+    ? '✓ '+CLOUD_ANBIETER_NAME+' verbunden'
+    : CLOUD_ANBIETER_NAME+' nicht verbunden';
+
+  const abgleich=$('abgleichText');
+  $('einstStatusGeraet').textContent=(abgleich&&abgleich.textContent.trim())||'Daten auf diesem Gerät';
+}
+
+function einstellungenOeffnen(ersterStart=false,seite){
   $('sicherungGeraetWahl').value=sicherungGeraetWahl();
   $('settingsName').value=auftragnehmerName();
   $('settingsAdresse').value=startAdresse();
   $('settingsHinweis').classList.toggle('hidden',!ersterStart);
-  $('settingsDialog').showModal();
+  einstellungenStatusZeigen();
+  einstellungenSeite(seite||(ersterStart?'angaben':'menue'));
+  if(!$('settingsDialog').open)$('settingsDialog').showModal();
 }
 
 $('openSettings').onclick=()=>einstellungenOeffnen();
 $('closeSettings').onclick=()=>$('settingsDialog').close();
+$('settingsZurueck').onclick=()=>{einstellungenStatusZeigen();einstellungenSeite('menue')};
+$('settingsMenue').addEventListener('click',e=>{
+  const zeile=e.target.closest('[data-seite]');
+  if(zeile)einstellungenSeite(zeile.dataset.seite);
+});
+// Esc / Zurück-Geste: auf einer Unterseite erst zur Liste, dann schließen
+$('settingsDialog').addEventListener('cancel',e=>{
+  if(!$('settingsMenue').classList.contains('hidden'))return;
+  e.preventDefault();
+  einstellungenStatusZeigen();
+  einstellungenSeite('menue');
+});
+$('sicherungJetzt').onclick=()=>{$('settingsDialog').close();erstelleSicherung()};
 
 $('geraetLeeren').onclick=async()=>{
   if(!user)return;
@@ -12862,7 +12980,7 @@ $('clientSheetPrint').onclick=()=>{
   window.open('klientenbogen.html','_blank');
 };
 
-$('backupData').onclick=erstelleSicherung;
+$('backupData').onclick=()=>einstellungenOeffnen(false,'sicherung');
 
 /* ---------- Kalender: dokumentierte und geplante Termine ---------- */
 
