@@ -1477,6 +1477,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .install-schritte{margin:10px 0 4px;padding-left:1.4em;line-height:1.5}
 .install-schritte li{margin:6px 0}
 .install-symbol{width:1.25em;height:1.25em;vertical-align:-.25em;color:var(--brand-dark)}
+.klapp-titel{margin:0}
+.klapp-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  margin:0;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.klapp-pfeil{flex:0 0 auto;width:.8em;height:.8em;background:var(--brand-dark);transform:rotate(90deg);transition:transform .2s;
+  -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
+.klapp-kopf[aria-expanded="false"] .klapp-pfeil{transform:rotate(0deg)}
+#uebersichtenInhalt{margin-top:6px}
 .install-hilfe{margin:12px 0 2px;font-size:.9rem}
 .install-hilfe summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
 .install-hilfe ul{margin:8px 0 0;padding-left:1.2em;line-height:1.5}
@@ -1515,7 +1522,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 .kn.kn-loeschen{--kn-ico:var(--kn-ico-muell);background:var(--card);color:var(--danger);border-color:var(--danger)}
 
-.kn.kn-nav{background:var(--card);color:var(--ink);border-color:var(--track);justify-content:space-between;text-align:left}
+.kn.kn-nav{background:var(--accent);color:var(--ink);border-color:transparent;justify-content:space-between;text-align:left}
 .kn.kn-nav::before{display:none}
 .kn.kn-nav::after{content:"";flex:0 0 auto;width:.95em;height:.95em;background:var(--muted);
   -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
@@ -1630,17 +1637,20 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
   </div>
 
-<div class="card">
-  <div class="top">
-    <div>
-      <h2>Übersichten</h2>
-      <p class="muted">
-        Alle Bewilligungen und Fahrten zentral anzeigen.
-      </p>
-    </div>
-  </div>
+<div class="card" id="uebersichtenKarte">
+  <h2 class="klapp-titel">
+    <button type="button" id="uebersichtenKopf" class="klapp-kopf" aria-expanded="true" aria-controls="uebersichtenInhalt">
+      <span>Übersichten</span>
+      <span class="klapp-pfeil" aria-hidden="true"></span>
+    </button>
+  </h2>
 
-  <div class="actions" style="margin-bottom:18px">
+  <div id="uebersichtenInhalt">
+  <p class="muted">
+    Alle Bewilligungen und Fahrten zentral anzeigen.
+  </p>
+
+  <div class="actions">
     <button
       type="button"
       id="openCalendar"
@@ -1697,7 +1707,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       pCloud einrichten
     </button>
   </div>
+  </div>
+</div>
 
+<div class="card">
   <div class="top">
     <div>
       <h2>Klientenliste</h2>
@@ -3111,7 +3124,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.21.1 Verkaufsversion';
+const APP_VERSION='0.22 Verkaufsversion';
 const APP_STAND='02.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6913,6 +6926,26 @@ $('closeAllApprovals').onclick=()=>{
   $('allApprovalsDialog').close();
 };
 $('clientSearch').oninput=renderClients;
+
+// Bereich „Übersichten“ ein- und ausklappen (Zustand wird je Gerät gemerkt)
+(function(){
+  const kopf=$('uebersichtenKopf');
+  const inhalt=$('uebersichtenInhalt');
+  if(!kopf||!inhalt)return;
+  const SCHLUESSEL='qa-uebersichten-zu';
+  const setzen=(zu)=>{
+    inhalt.classList.toggle('hidden',zu);
+    kopf.setAttribute('aria-expanded',zu?'false':'true');
+  };
+  let zu=false;
+  try{zu=localStorage.getItem(SCHLUESSEL)==='1';}catch(e){/* Speicher nicht verfügbar */}
+  setzen(zu);
+  kopf.onclick=()=>{
+    zu=!zu;
+    setzen(zu);
+    try{localStorage.setItem(SCHLUESSEL,zu?'1':'0');}catch(e){/* egal */}
+  };
+})();
 $('docSearch').oninput=renderDocs;
 
 /* ---------- Porträt-Auswahl ----------
