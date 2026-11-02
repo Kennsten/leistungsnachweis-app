@@ -70,11 +70,11 @@
   }
 
   function warum() {
-    const p = plattform();
-    let text = 'Nur als installierte App bleiben deine Daten dauerhaft auf dem Gerät gespeichert, und die App funktioniert auch ohne Internet.';
-    if (p === 'ios') text += ' Safari und die App haben getrennte Speicher – bitte immer über das Symbol öffnen.';
-    return '<p class="muted small">' + text + '</p>';
+    return '<p class="muted small">Nur über das QA-Symbol sind deine Daten sicher auf dem Gerät gespeichert und ohne Internet verfügbar.</p>';
   }
+
+  const hilfe = (punkte) => '<details class="install-hilfe"><summary>Klappt etwas nicht?</summary><ul>' +
+    punkte.map((s) => '<li>' + s + '</li>').join('') + '</ul></details>';
 
   function anleitung() {
     if (installiertJetzt) {
@@ -83,39 +83,50 @@
     const p = plattform();
     if (p === 'ios') {
       return schritte([
-        'Diese Seite in <strong>Safari</strong> öffnen. Hast du den Link in WhatsApp, Mail o. Ä. angetippt: zuerst „In Safari öffnen“ wählen.',
-        'Auf das Teilen-Symbol ' + TEILEN + ' tippen – beim iPhone unten, beim iPad oben rechts. Siehst du es nicht, zuerst auf <strong>•••</strong> tippen.',
-        '<strong>„Zum Home-Bildschirm“</strong> wählen (eventuell etwas nach unten wischen).',
-        '„Als Web-App öffnen“ eingeschaltet lassen und auf <strong>„Hinzufügen“</strong> tippen.',
-        'Safari schließen und die App über das neue Symbol <strong>„QA“</strong> öffnen.'
+        'Öffne diese Seite in <strong>Safari</strong> (blaues Kompass-Symbol).',
+        'Tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN + ' (Quadrat mit Pfeil nach oben).',
+        'Wische im Menü nach oben und tippe auf <strong>„Zum Home-Bildschirm“</strong>.',
+        'Tippe oben rechts auf <strong>„Hinzufügen“</strong>.',
+        'Schließe Safari. Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> auf deinem Home-Bildschirm.'
+      ]) + hilfe([
+        'Du hast den Link in WhatsApp, Mail o. Ä. angetippt: Tippe dort auf <strong>„In Safari öffnen“</strong>.',
+        'Das Teilen-Symbol ist nicht zu sehen: Tippe auf die drei Punkte <strong>•••</strong>, dann erscheint es.',
+        'Vor „Hinzufügen“ muss der Schalter <strong>„Als Web-App öffnen“</strong> eingeschaltet bleiben.'
       ]);
     }
     if (p === 'mac-safari') {
       return schritte([
-        'Oben in der Menüleiste auf <strong>„Ablage“</strong> klicken.',
-        '<strong>„Zum Dock hinzufügen …“</strong> wählen und mit „Hinzufügen“ bestätigen.',
-        'Die App ab jetzt über das Symbol <strong>„QA“</strong> im Dock öffnen.'
+        'Klicke oben in der Menüleiste auf <strong>„Ablage“</strong>.',
+        'Klicke auf <strong>„Zum Dock hinzufügen …“</strong>.',
+        'Klicke im Fenster auf <strong>„Hinzufügen“</strong>.',
+        'Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> im Dock.'
       ]);
     }
     if (abfrage) {
       return '<div class="actions"><button type="button" class="primary install-knopf" data-installieren>App installieren</button></div>' +
-        '<p class="muted small">Danach die Abfrage bestätigen und die App über das neue Symbol „QA“ öffnen.</p>';
+        '<p class="muted small">Tippe auf den Knopf und bestätige die Abfrage. Öffne die App danach über das Symbol „QA“.</p>';
     }
     if (p === 'android') {
       return schritte([
-        'Diese Seite in <strong>Chrome</strong> öffnen.',
-        'Oben rechts auf <strong>⋮</strong> tippen.',
-        '<strong>„App installieren“</strong> oder <strong>„Zum Startbildschirm hinzufügen“</strong> wählen und bestätigen.',
-        'Die App über das neue Symbol <strong>„QA“</strong> öffnen.'
+        'Öffne diese Seite in <strong>Chrome</strong>.',
+        'Tippe oben rechts auf die drei Punkte <strong>⋮</strong>.',
+        'Tippe auf <strong>„App installieren“</strong> und bestätige.',
+        'Öffne die App ab jetzt über das Symbol <strong>„QA“</strong>.'
+      ]) + hilfe([
+        'Du hast den Link in WhatsApp, Mail o. Ä. angetippt: Öffne ihn stattdessen in <strong>Chrome</strong>.',
+        'Es steht nur <strong>„Zum Startbildschirm hinzufügen“</strong> im Menü: Wähle diesen Eintrag und bestätige.'
       ]);
     }
     if (p === 'firefox') {
       return '<p>Firefox kann diese App auf dem Computer nicht installieren. Bitte die Seite in <strong>Chrome</strong>, <strong>Edge</strong> oder auf dem Mac in <strong>Safari</strong> öffnen.</p>';
     }
     return schritte([
-      'Diese Seite in <strong>Chrome</strong> oder <strong>Edge</strong> öffnen.',
-      'Rechts in der Adresszeile auf das Symbol <strong>„Installieren“</strong> klicken – oder im Menü <strong>⋮</strong> bzw. <strong>…</strong> „Apps“ / „Streamen, speichern und teilen“ → <strong>„Als App installieren“</strong> wählen.',
-      'Die App über das neue Symbol <strong>„QA“</strong> öffnen.'
+      'Öffne diese Seite in <strong>Chrome</strong> oder <strong>Edge</strong>.',
+      'Klicke rechts in der Adresszeile auf das Symbol <strong>„Installieren“</strong> (kleiner Bildschirm mit Pfeil).',
+      'Bestätige mit <strong>„Installieren“</strong>.',
+      'Öffne die App ab jetzt über das Symbol <strong>„QA“</strong>.'
+    ]) + hilfe([
+      'Kein Symbol in der Adresszeile: Klicke oben rechts auf die drei Punkte <strong>⋮</strong> bzw. <strong>…</strong> und wähle „Apps“ oder „Streamen, speichern und teilen“ → <strong>„Als App installieren“</strong>.'
     ]);
   }
 

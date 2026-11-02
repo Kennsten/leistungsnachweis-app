@@ -1477,6 +1477,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .install-schritte{margin:10px 0 4px;padding-left:1.4em;line-height:1.5}
 .install-schritte li{margin:6px 0}
 .install-symbol{width:1.25em;height:1.25em;vertical-align:-.25em;color:var(--brand-dark)}
+.install-hilfe{margin:12px 0 2px;font-size:.9rem}
+.install-hilfe summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
+.install-hilfe ul{margin:8px 0 0;padding-left:1.2em;line-height:1.5}
+.install-hilfe li{margin:6px 0}
 .install-leiste{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;
   margin:0 0 12px;padding:8px 12px;border-radius:var(--radius-control);font-size:.85rem;
   background:color-mix(in srgb,var(--warn-soft) 12%,var(--card));color:var(--ink);border:1px solid color-mix(in srgb,var(--warn-soft) 40%,transparent)}
@@ -2492,6 +2496,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="einladenTeilen" class="primary">Link teilen</button>
     <button type="button" id="einladenKopieren" class="secondary">Link kopieren</button>
   </div>
+  <p class="muted small">Tipp beim Verschicken: Der Link sollte in Safari (iPhone/iPad) oder Chrome (Android) geöffnet werden, nicht direkt in WhatsApp oder Mail.</p>
 </dialog>
 
 <dialog id="settingsDialog">
@@ -3106,7 +3111,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.21 Verkaufsversion';
+const APP_VERSION='0.21.1 Verkaufsversion';
 const APP_STAND='02.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
