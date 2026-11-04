@@ -1,0 +1,31 @@
+# Internetseite qualifizierte-assistenz.de
+# Eigenes Netlify-Projekt mit „Base directory" = website
+# Reine statische Seite: kein Build nötig, alles wird so ausgeliefert, wie es hier liegt.
+
+[build]
+  publish = "."
+
+# Sicherheits-Kopfzeilen (Schutz gegen Einbettung in fremde Seiten, Sniffing usw.)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/style.css"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

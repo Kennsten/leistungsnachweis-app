@@ -1,0 +1,211 @@
+/* QA – Qualifizierte Assistenz · Internetseite
+   Bewusst ohne fremde Schriften, Skripte oder Tracker (Datenschutz, Ladezeit). */
+
+:root {
+  --ink: #2f3a34;
+  --muted: #5f6d63;
+  --line: #e2e0d6;
+  --bg: #f7f5ef;
+  --card: #fffdf8;
+  --soft: #eaefe6;
+  --brand: #b04a30;        /* Terrakotta, dunkel genug für weißen Text */
+  --brand-dark: #963d26;
+  --green: #556b58;
+  --green-soft: #eaefe6;
+  --radius: 22px;
+  --radius-sm: 14px;
+  --shadow: 0 4px 18px rgba(47, 58, 52, .06);
+  --max: 1080px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ecebe4;
+    --muted: #b3bcb5;
+    --line: #3a443e;
+    --bg: #1d2420;
+    --card: #252d28;
+    --soft: #2b362f;
+    --brand: #d96d4f;
+    --brand-dark: #e5876c;
+    --green: #a9c2ab;
+    --green-soft: #2b362f;
+    --shadow: 0 4px 18px rgba(0, 0, 0, .35);
+  }
+  .btn { color: #1d2420; }
+  .btn-hell { color: var(--ink); }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+img, svg { max-width: 100%; }
+a { color: var(--brand); text-underline-offset: 3px; }
+a:hover { color: var(--brand-dark); }
+:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; border-radius: 6px; }
+
+.skip {
+  position: absolute; left: -999px; top: 0;
+  background: var(--brand); color: #fff; padding: .6rem 1rem; z-index: 100;
+}
+.skip:focus { left: 8px; top: 8px; }
+
+.wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 20px; }
+
+/* ---------- Kopfzeile ---------- */
+.kopf {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.kopf .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; }
+.marke { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); font-weight: 700; }
+.marke img { width: 38px; height: 38px; border-radius: 10px; display: block; }
+.marke span small { display: block; font-weight: 400; font-size: .8rem; color: var(--muted); line-height: 1.1; }
+.nav { display: flex; align-items: center; gap: 22px; }
+.nav a { color: var(--ink); text-decoration: none; font-weight: 500; }
+.nav a:hover { color: var(--brand); }
+.nav .btn { color: #fff; }
+@media (max-width: 760px) { .nav a:not(.btn) { display: none; } }
+
+/* ---------- Knöpfe ---------- */
+.btn {
+  display: inline-block; background: var(--brand); color: #fff;
+  padding: .8rem 1.4rem; border-radius: var(--radius-sm);
+  text-decoration: none; font-weight: 700; border: 2px solid var(--brand);
+  min-height: 48px; line-height: 1.4;
+}
+.btn:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+.btn-hell { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-hell:hover { background: var(--soft); color: var(--ink); border-color: var(--green); }
+.btn-reihe { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1.6rem; }
+
+/* ---------- Abschnitte ---------- */
+section { padding: 64px 0; }
+section.getoent { background: var(--soft); }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .6em; letter-spacing: -.01em; }
+h1 { font-size: clamp(2rem, 5.2vw, 3.3rem); }
+h2 { font-size: clamp(1.6rem, 3.6vw, 2.2rem); }
+h3 { font-size: 1.2rem; }
+.kicker { text-transform: uppercase; letter-spacing: .09em; font-size: .8rem; font-weight: 700; color: var(--brand); margin: 0 0 .8rem; }
+.lead { font-size: 1.2rem; color: var(--muted); max-width: 40em; }
+.mitte { text-align: center; }
+.mitte .lead { margin-left: auto; margin-right: auto; }
+
+/* ---------- Einstieg ---------- */
+.einstieg { padding: 64px 0 56px; }
+.einstieg .wrap { display: grid; grid-template-columns: 1.25fr 1fr; gap: 40px; align-items: center; }
+@media (max-width: 860px) { .einstieg .wrap { grid-template-columns: 1fr; } }
+.einstieg h1 em { font-style: normal; color: var(--brand); }
+.hinweis-klein { color: var(--muted); font-size: .95rem; margin-top: 1.2rem; }
+
+/* Telefon-Bild (reine Gestaltung, erfundene Beispielwerte) */
+.geraet {
+  background: var(--card); border: 1px solid var(--line); border-radius: 34px;
+  padding: 14px; box-shadow: 0 18px 40px rgba(47, 58, 52, .14);
+  max-width: 320px; margin: 0 auto; width: 100%;
+}
+.geraet-innen { background: var(--bg); border-radius: 24px; padding: 18px 16px 20px; border: 1px solid var(--line); }
+.g-titel { display: flex; align-items: center; justify-content: space-between; font-weight: 700; margin-bottom: 14px; }
+.g-titel small { font-weight: 500; color: var(--muted); }
+.g-karte { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; }
+.g-karte b { display: block; }
+.g-karte span { color: var(--muted); font-size: .9rem; }
+.g-balken { height: 8px; background: var(--line); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+.g-balken i { display: block; height: 100%; background: var(--green); border-radius: 99px; }
+.g-chip { display: inline-block; font-size: .78rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; background: var(--green-soft); color: var(--green); margin-top: 6px; }
+.g-knopf { text-align: center; background: var(--brand); color: #fff; font-weight: 700; padding: 11px; border-radius: 12px; margin-top: 12px; }
+@media (prefers-color-scheme: dark) { .g-knopf { color: #1d2420; } }
+.g-hinweis { text-align: center; color: var(--muted); font-size: .8rem; margin: 10px 0 0; }
+
+/* ---------- Karten ---------- */
+.raster { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 2.2rem; }
+.karte {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 24px; box-shadow: var(--shadow);
+}
+.karte p { margin: 0; color: var(--muted); }
+.karte h3 { margin-bottom: .4em; }
+.symbol {
+  width: 46px; height: 46px; border-radius: 14px; background: var(--green-soft);
+  display: grid; place-items: center; margin-bottom: 14px; color: var(--green);
+}
+.symbol svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Schritte ---------- */
+.schritte { counter-reset: s; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 2.2rem; padding: 0; list-style: none; }
+.schritte li { counter-increment: s; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; position: relative; }
+.schritte li::before {
+  content: counter(s); display: grid; place-items: center; width: 38px; height: 38px;
+  border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; margin-bottom: 12px;
+}
+@media (prefers-color-scheme: dark) { .schritte li::before { color: #1d2420; } }
+.schritte p { margin: 0; color: var(--muted); }
+
+/* ---------- Zweispaltig ---------- */
+.zwei { display: grid; gap: 36px; grid-template-columns: 1fr 1fr; align-items: start; }
+@media (max-width: 860px) { .zwei { grid-template-columns: 1fr; } }
+.haken { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid; gap: .9rem; }
+.haken li { padding-left: 34px; position: relative; }
+.haken li::before {
+  content: ""; position: absolute; left: 0; top: .25em; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+.haken b { display: block; }
+.haken span { color: var(--muted); }
+
+/* ---------- Fragen ---------- */
+details { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 20px; margin-bottom: 12px; }
+summary { cursor: pointer; font-weight: 700; padding: 14px 0; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-size: 1.4rem; line-height: 1; color: var(--brand); }
+details[open] summary::after { content: "–"; }
+details p { margin: 0 0 16px; color: var(--muted); }
+
+/* ---------- Kontakt ---------- */
+.kontakt-box {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 32px; box-shadow: var(--shadow); max-width: 640px; margin: 2rem auto 0;
+}
+.kontakt-zeilen { display: grid; gap: 14px; margin-top: 1.2rem; }
+.kontakt-zeilen a { font-size: 1.15rem; font-weight: 700; }
+.kontakt-zeilen small { display: block; color: var(--muted); font-weight: 400; font-size: .85rem; }
+
+/* ---------- Fuß ---------- */
+.fuss { border-top: 1px solid var(--line); padding: 28px 0 36px; color: var(--muted); font-size: .95rem; }
+.fuss .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
+.fuss a { color: var(--muted); }
+.fuss a:hover { color: var(--brand); }
+.fuss nav { display: flex; gap: 18px; }
+
+/* ---------- Rechtstexte ---------- */
+.text { max-width: 760px; padding: 48px 0 64px; }
+.text h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); }
+.text h2 { font-size: 1.35rem; margin-top: 2em; }
+.text h3 { font-size: 1.1rem; margin-top: 1.4em; }
+.text p, .text li { color: var(--ink); }
+.text ul { padding-left: 1.2em; }
+.entwurf {
+  background: #fff4d6; color: #5a4300; border: 1px solid #e0b84a;
+  border-radius: var(--radius-sm); padding: 14px 18px; margin: 0 0 1.6rem;
+}
+.platz { background: #ffe9a8; color: #5a4300; padding: 0 .25em; border-radius: 4px; }
+
+/* ---------- Kleinigkeiten (statt Inline-Stilen, wegen Sicherheitsregel der Seite) ---------- */
+.b62 { width: 62%; }
+.klein { font-size: .8rem; }
+.schmal { max-width: 780px; }
+.fragenliste { margin-top: 2rem; }
+.kontakt-box { text-align: left; }
