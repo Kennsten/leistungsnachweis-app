@@ -3156,6 +3156,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <select id="terminArt">
           <option value="Face-to-Face">Face-to-Face</option>
           <option value="Telefonkontakt">Telefonkontakt</option>
+          <option value="Ausfall mit Fahrt">Ausfall mit Fahrt</option>
+          <option value="Ausfall ohne Fahrt">Ausfall ohne Fahrt</option>
         </select>
       </label>
 
@@ -3229,7 +3231,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.2 Verkaufsversion';
+const APP_VERSION='0.23.3 Verkaufsversion';
 const APP_STAND='04.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5857,6 +5859,7 @@ function renderDocs(){
 function openDocForm(id=''){
   if(!activeDocsClient){toast('Kein Klient ausgewählt.');return}
   const d=docs.find(x=>x.id===id)||{};
+  docEndeManuell=false;
   $('docId').value=d.id||'';
   $('docDatum').value=d.datum||todayLocal();
   $('docLeistungsart').value=d.leistungsart||'Face-to-Face';
@@ -6114,6 +6117,43 @@ async function openTripFromDoc(docId){
       'Bitte die Fahrt manuell eintragen.'
     );
   }
+}
+
+/* Ausfallstunde neuerer Art = 1 FLS = 50 Minuten (Vorgabe, änderbar) */
+const AUSFALL_MINUTEN=50;
+let docEndeManuell=false;
+let terminEndeManuell=false;
+
+function istNeueAusfallArt(art){
+  return art==='Ausfall mit Fahrt'||art==='Ausfall ohne Fahrt';
+}
+
+function docAusfallVorgabe(){
+  if(!istNeueAusfallArt($('docLeistungsart').value))return;
+  if(docEndeManuell)return;
+  if(!$('docBeginn').value)return;
+
+  if(viertelRasterGilt($('docDatum').value)){
+    $('docFls').value='1';
+    applyDocFls();
+    return;
+  }
+
+  const ende=addMinutes($('docBeginn').value,AUSFALL_MINUTEN);
+  if(!ende)return;
+
+  ensureTimeOption($('docEnde'),ende);
+  $('docEnde').value=ende;
+  updateDocDauer();
+}
+
+function terminAusfallVorgabe(){
+  if(!istNeueAusfallArt($('terminArt').value))return;
+  if(terminEndeManuell)return;
+  if(!$('terminBeginn').value)return;
+
+  const ende=addMinutes($('terminBeginn').value,AUSFALL_MINUTEN);
+  if(ende)$('terminEnde').value=ende;
 }
 
 function updateDocDauer(){
@@ -7646,9 +7686,10 @@ $('saveDocAndTrip').onclick=()=>{
   $('docForm').requestSubmit();
 };
 
-$('docBeginn').onchange=updateDocDauer;
-$('docEnde').onchange=updateDocDauer;
-$('docFls').onchange=applyDocFls;
+$('docBeginn').onchange=()=>{updateDocDauer();docAusfallVorgabe()};
+$('docEnde').onchange=()=>{docEndeManuell=true;updateDocDauer()};
+$('docFls').onchange=()=>{docEndeManuell=true;applyDocFls()};
+$('docLeistungsart').onchange=docAusfallVorgabe;
 $('docKennziffer').onchange=updateKennzifferText;
 $('docDatum').onchange=updateDocDauer;
 
@@ -13513,6 +13554,7 @@ async function kalDokuAusTermin(t){
   $('docOrt').value=t.ort||'Wohnung Klient';
 
   updateDocDauer();
+  docEndeManuell=true;
 
   pendingTerminForDoc=t.id;
   toast('Daten aus dem geplanten Termin übernommen');
@@ -13532,6 +13574,7 @@ function kalKlientenOptionen(ausgewaehlt){
 
 function kalTerminFormular(vorgabe={},termin=null){
   kalTerminAktuell=termin;
+  terminEndeManuell=false;
   const t=termin||{};
 
   kalKlientenOptionen(t.client_id||vorgabe.clientId||'');
@@ -13658,6 +13701,10 @@ $('terminDelete').onclick=async()=>{
 
   if(erledigt)$('terminFormDialog').close();
 };
+
+$('terminArt').onchange=terminAusfallVorgabe;
+$('terminBeginn').onchange=terminAusfallVorgabe;
+$('terminEnde').onchange=()=>{terminEndeManuell=true};
 
 $('terminForm').onsubmit=async ev=>{
   ev.preventDefault();
