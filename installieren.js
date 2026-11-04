@@ -83,8 +83,7 @@
     const p = plattform();
     if (p === 'ios') {
       return schritte([
-        'Öffne diese Seite in <strong>Safari</strong> (blaues Kompass-Symbol).',
-        'Tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN + ' (Quadrat mit Pfeil nach oben).',
+        'Wenn sich das Anmeldefenster in <strong>Safari</strong> (blaues Kompass-Symbol) geöffnet hat, tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN + ' (Quadrat mit Pfeil nach oben).',
         'Wische im Menü nach oben und tippe auf <strong>„Zum Home-Bildschirm“</strong>.',
         'Tippe oben rechts auf <strong>„Hinzufügen“</strong>.',
         'Schließe Safari. Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> auf deinem Home-Bildschirm.'
@@ -265,7 +264,7 @@
   function inhaltSafari() {
     return geraet('ios', 'iPhone und iPad',
       '<ol class="install-schritte">' +
-      bildSchritt('Öffne diese Seite in <strong>Safari</strong> und tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN +
+      bildSchritt('Wenn sich das Anmeldefenster in <strong>Safari</strong> geöffnet hat, tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN +
         ' (beim iPad oben rechts). Siehst du es nicht, tippe zuerst auf <strong>•••</strong>.', 'teilen') +
       bildSchritt('Wische im Menü nach oben und tippe auf <strong>„Zum Home-Bildschirm“</strong>.', 'menue') +
       bildSchritt('Lass <strong>„Als Web-App öffnen“</strong> eingeschaltet und tippe oben rechts auf <strong>„Hinzufügen“</strong>.', 'hinzufuegen') +
@@ -296,7 +295,12 @@
 
   function inhaltFirefox() {
     return geraet('ios', 'iPhone und iPad',
-      hinweis('Firefox auf dem iPhone und iPad kann die App ebenfalls über das Teilen-Menü auf den Home-Bildschirm legen. Am einfachsten geht es mit <strong>Safari</strong>, siehe Reiter „Safari“.')) +
+      '<ol class="install-schritte">' +
+      bildSchritt('Wenn sich das Anmeldefenster in <strong>Firefox</strong> geöffnet hat, tippe in der Adresszeile links auf das <strong>Teilen-Symbol</strong> ' + TEILEN + '. Siehst du es nicht, tippe oben rechts auf <strong>•••</strong> und im Menü ganz unten auf <strong>„Teilen“</strong>.') +
+      bildSchritt('Tippe auf <strong>„Mehr anzeigen“</strong> (Pfeil nach unten) und dann in der Liste auf <strong>„Zum Home-Bildschirm“</strong>.') +
+      bildSchritt('Tippe oben rechts auf <strong>„Hinzufügen“</strong>.') +
+      bildSchritt('Schließe Firefox. Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> auf deinem Home-Bildschirm.', 'symbol') +
+      '</ol>' + hinweis('Nicht verwechseln: <strong>„Zu Verknüpfungen hinzufügen“</strong> im Firefox-Menü legt die Seite nur in Firefox ab, nicht auf den Home-Bildschirm.', true)) +
       geraet('android', 'Android',
         hinweis('Firefox legt auf Android nur eine Verknüpfung an. Die App öffnet sich dann im Browser, nicht als eigene App. Bitte nimm <strong>Chrome</strong>, siehe Reiter „Chrome“.', true)) +
       geraet('computer', 'Windows und Mac (Computer)',
