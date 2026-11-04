@@ -1,6 +1,6 @@
 # Internetseite qualifizierte-assistenz.de
 
-Statische Werbeseite für die App „QA – Qualifizierte Assistenz“. Liegt im Ordner `website/` auf dem GitHub-Zweig `webseite`. Der Zweig ist bewusst **getrennt** von `dev` und `produkt`, damit die App-Adresse die Seite nicht mit ausliefert und App-Lieferungen die Seite nicht neu bauen.
+Statische Werbeseite für die „QA-App – Qualifizierte Assistenz“. Liegt im Ordner `website/` auf dem GitHub-Zweig `webseite`. Der Zweig ist bewusst **getrennt** von `dev` und `produkt`, damit die App-Adresse die Seite nicht mit ausliefert und App-Lieferungen die Seite nicht neu bauen.
 
 ## Dateien
 - `index.html` – Startseite
