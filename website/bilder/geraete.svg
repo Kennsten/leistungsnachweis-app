@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img">
+<defs>
+<radialGradient id="hg" cx=".5" cy=".38" r=".85"><stop offset="0" stop-color="#4a6355"/><stop offset="1" stop-color="#26352c"/></radialGradient>
+<linearGradient id="g-blau" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9db6d3"/><stop offset="1" stop-color="#6384ab"/></linearGradient><linearGradient id="g-gruen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3b9a9"/><stop offset="1" stop-color="#6b8573"/></linearGradient><linearGradient id="g-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eba27c"/><stop offset="1" stop-color="#c85a3e"/></linearGradient><linearGradient id="g-creme" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6efdf"/><stop offset="1" stop-color="#ddd2b9"/></linearGradient>
+<linearGradient id="glanz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<filter id="schatten" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#0c1410" flood-opacity=".5"/></filter>
+</defs>
+<rect width="800" height="600" fill="url(#hg)"/><g transform="translate(190 120) rotate(-2 200.0 155.0)" filter="url(#schatten)">
+  <rect width="400" height="310" rx="36" fill="#17221c"/>
+  <rect x="10" y="10" width="380" height="290" rx="28" fill="#f7f5ef"/>
+  <rect x="30" y="34" width="160" height="16" rx="8" fill="#2f3a34"/><rect x="30" y="64" width="150" height="40" rx="14" fill="#eaefe6"/><rect x="195" y="64" width="150" height="40" rx="14" fill="#eaefe6"/><rect x="30" y="128" width="264.0" height="34" rx="14.166666666666668" fill="#e3e8de"/><rect x="30" y="174" width="330" height="34" rx="14.166666666666668" fill="#e3e8de"/><rect x="30" y="220" width="330" height="34" rx="14.166666666666668" fill="#e3e8de"/><rect x="30" y="266" width="264.0" height="34" rx="14.166666666666668" fill="#e3e8de"/>
+</g><g transform="translate(40 230) rotate(8 106.0 190.0)" filter="url(#schatten)">
+  <rect width="212" height="380" rx="34" fill="#17221c"/>
+  <rect x="10" y="10" width="192" height="360" rx="26" fill="#f7f5ef"/>
+  <rect x="26" y="34" width="100" height="16" rx="8" fill="#2f3a34"/><rect x="26" y="66" width="128.0" height="30" rx="12.5" fill="#e3e8de"/><rect x="26" y="110" width="160" height="30" rx="12.5" fill="#e3e8de"/><rect x="26" y="154" width="160" height="30" rx="12.5" fill="#e3e8de"/><rect x="26" y="198" width="128.0" height="30" rx="12.5" fill="#e3e8de"/><rect x="26" y="242" width="160" height="30" rx="12.5" fill="#e3e8de"/><rect x="26" y="300" width="160" height="38" rx="13" fill="#6f8571"/>
+</g><g transform="translate(560 60) rotate(8 70.0 70.0)" filter="url(#schatten)">
+  <rect width="140" height="140" rx="40.599999999999994" fill="url(#g-blau)"/>
+  <rect width="140" height="140" rx="40.599999999999994" fill="url(#glanz)"/>
+  <g transform="translate(37.800000000000004 37.800000000000004) scale(2.6833333333333336)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g>
+</g><g transform="translate(580 440) rotate(-7 65.0 65.0)" filter="url(#schatten)">
+  <rect width="130" height="130" rx="37.699999999999996" fill="url(#g-gruen)"/>
+  <rect width="130" height="130" rx="37.699999999999996" fill="url(#glanz)"/>
+  <g transform="translate(35.1 35.1) scale(2.4916666666666667)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></g>
+</g><g transform="translate(440 430) rotate(6 60.0 60.0)" filter="url(#schatten)">
+  <rect width="120" height="120" rx="34.8" fill="url(#g-creme)"/>
+  <rect width="120" height="120" rx="34.8" fill="url(#glanz)"/>
+  <g transform="translate(32.400000000000006 32.400000000000006) scale(2.3000000000000003)" fill="none" stroke="#3f5a48" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.5-9A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5z"/><path d="M12 11v6M9.5 14.5L12 17l2.5-2.5"/></g>
+</g>
+</svg>

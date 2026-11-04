@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 260" width="1200" height="260" role="img">
+<defs>
+<radialGradient id="hg" cx=".5" cy=".38" r=".85"><stop offset="0" stop-color="#4a6355"/><stop offset="1" stop-color="#26352c"/></radialGradient>
+<linearGradient id="g-blau" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9db6d3"/><stop offset="1" stop-color="#6384ab"/></linearGradient><linearGradient id="g-gruen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3b9a9"/><stop offset="1" stop-color="#6b8573"/></linearGradient><linearGradient id="g-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eba27c"/><stop offset="1" stop-color="#c85a3e"/></linearGradient><linearGradient id="g-creme" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6efdf"/><stop offset="1" stop-color="#ddd2b9"/></linearGradient>
+<linearGradient id="glanz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<filter id="schatten" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#0c1410" flood-opacity=".5"/></filter>
+</defs>
+<rect width="1200" height="260" fill="url(#hg)"/><circle cx="130" cy="60" r="6" fill="#fff" opacity=".12"/><circle cx="1080" cy="200" r="8" fill="#fff" opacity=".12"/><circle cx="330" cy="215" r="4" fill="#fff" opacity=".12"/><circle cx="900" cy="45" r="5" fill="#fff" opacity=".12"/><g transform="translate(250 60) rotate(-8 55.0 55.0)" filter="url(#schatten)">
+  <rect width="110" height="110" rx="31.9" fill="url(#g-blau)"/>
+  <rect width="110" height="110" rx="31.9" fill="url(#glanz)"/>
+  <g transform="translate(29.700000000000003 29.700000000000003) scale(2.1083333333333334)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></g>
+</g><g transform="translate(545 35) rotate(-4 85.0 85.0)" filter="url(#schatten)">
+  <rect width="170" height="170" rx="49.3" fill="url(#g-creme)"/>
+  <rect width="170" height="170" rx="49.3" fill="url(#glanz)"/>
+  <g transform="translate(45.900000000000006 45.900000000000006) scale(3.2583333333333333)" fill="none" stroke="#3f5a48" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></g>
+</g><g transform="translate(800 70) rotate(8 55.0 55.0)" filter="url(#schatten)">
+  <rect width="110" height="110" rx="31.9" fill="url(#g-orange)"/>
+  <rect width="110" height="110" rx="31.9" fill="url(#glanz)"/>
+  <g transform="translate(29.700000000000003 29.700000000000003) scale(2.1083333333333334)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></g>
+</g>
+</svg>

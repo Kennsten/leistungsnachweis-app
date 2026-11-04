@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#B04A30">
 <!-- VOR DEM START ENTFERNEN: hält die Seite aus Suchmaschinen heraus, bis alles geprüft ist. -->
 <meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="QA – Qualifizierte Assistenz">
+<meta property="og:description" content="Dokumentation, Leistungsnachweis, Fahrtenbuch und Betriebsausgaben in einer App – ende-zu-ende-verschlüsselt.">
+<meta property="og:image" content="bilder/titelbild.jpg">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="stylesheet" href="style.css">
@@ -35,7 +38,7 @@
   <!-- Einstieg -->
   <section class="einstieg">
     <div class="wrap">
-      <div>
+      <div class="einstieg-text">
         <p class="kicker">Die App für Qualifizierte Assistenz</p>
         <h1>Weniger Papierkram. <em>Mehr Zeit</em> für deine Klient*innen.</h1>
         <p class="lead">QA bündelt Dokumentation, Leistungsnachweis, Fahrtenbuch und Betriebsausgaben an einem Ort – entwickelt von einer Qualifizierten Assistenz, die den Monatsabschluss selbst leid war.</p>
@@ -45,30 +48,10 @@
         </div>
         <p class="hinweis-klein">Läuft auf iPhone, iPad, Mac, Android und Windows – ohne Download aus einem App-Store.</p>
       </div>
-
-      <!-- Reine Gestaltung: erfundene Beispielwerte, keine echten Daten -->
-      <div class="geraet" role="img" aria-label="Schematische Darstellung der App mit einer Beispiel-Dokumentation">
-        <div class="geraet-innen" aria-hidden="true">
-          <div class="g-titel">Dokumentation <small>Beispiel</small></div>
-          <div class="g-karte">
-            <b>T. Mustermann</b>
-            <span>Face-to-Face · 14:00–15:40</span><br>
-            <span class="g-chip">2 FLS</span>
-            <div class="g-balken"><i class="b62"></i></div>
-            <span class="klein">Kontingent: 62 % genutzt</span>
-          </div>
-          <div class="g-karte">
-            <b>Fahrt eingetragen</b>
-            <span>Kilometer automatisch berechnet</span>
-          </div>
-          <div class="g-karte">
-            <b>Beleg: Parkticket</b>
-            <span>Beleg 014 · für die Steuer</span>
-          </div>
-          <div class="g-knopf">Leistungsnachweis erstellen</div>
-          <p class="g-hinweis">Alle Namen und Werte sind erfunden.</p>
-        </div>
-      </div>
+      <picture>
+        <source srcset="bilder/titelbild.webp" type="image/webp">
+        <img class="bild bild-titel" src="bilder/titelbild.jpg" width="1600" height="1200" alt="Die App QA auf Handy und Tablet: Anmeldefenster, Klientenliste mit Übersichten und das Einstellungsmenü; darüber Symbole für Kalender, Tresor, Fahrtenbuch und Dokumentation.">
+      </picture>
     </div>
   </section>
 
@@ -174,6 +157,7 @@
         <h2>Deine Klient*innendaten bleiben deine.</h2>
         <p class="lead">In der Assistenz arbeitest du mit Sozial- und Gesundheitsdaten. Deshalb ist QA von Anfang an so gebaut, dass niemand außer dir die Inhalte lesen kann.</p>
         <p><a href="datenschutz.html">Zur Datenschutzerklärung</a></p>
+        <img class="bild" src="bilder/datenschutz.svg" width="800" height="600" alt="Symbole für Schloss, Schutzschild, Cloud-Sicherung und Dokument">
       </div>
       <ul class="haken">
         <li><b>Ende-zu-Ende-verschlüsselt</b><span>Deine Daten werden auf deinem Gerät mit deinem eigenen Tresor-Passwort verschlüsselt. Auf dem Server liegen nur verschlüsselte Pakete.</span></li>
@@ -191,6 +175,7 @@
         <p class="kicker">Auf allen Geräten</p>
         <h2>Einmal installieren, überall nutzen</h2>
         <p class="lead">QA ist eine sogenannte Web-App: Du öffnest sie im Browser und legst sie mit einem Fingertipp auf deinen Startbildschirm – wie eine normale App, aber ohne App-Store.</p>
+        <img class="bild" src="bilder/geraete.svg" width="800" height="600" alt="Schematische Darstellung der App auf Tablet und Handy">
       </div>
       <ul class="haken">
         <li><b>iPhone und iPad</b><span>Über Safari zum Home-Bildschirm hinzufügen. Die App führt dich Schritt für Schritt mit Bildern durch die Einrichtung.</span></li>
@@ -261,7 +246,7 @@
 
 <footer class="fuss">
   <div class="wrap">
-    <span>© 2026 QA – Qualifizierte Assistenz</span>
+    <span class="fuss-marke"><img src="icons/icon-192.png" alt="" width="28" height="28"> © 2026 QA – Qualifizierte Assistenz</span>
     <nav aria-label="Rechtliches">
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
