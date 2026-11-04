@@ -290,7 +290,12 @@
         bildSchritt('Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> (Startmenü, Desktop oder Dock).') +
         '</ol>' + hinweis('Fehlt das Symbol in der Adresszeile: Klicke oben rechts auf <strong>⋮</strong> bzw. <strong>…</strong> und such nach <strong>„Als App installieren“</strong> (in Chrome unter „Streamen, speichern und teilen“, in Edge unter „Apps“).')) +
       geraet('ios', 'iPhone und iPad',
-        hinweis('Auch Chrome auf dem iPhone und iPad kann die App über das Teilen-Menü auf den Home-Bildschirm legen. Am einfachsten geht es aber mit <strong>Safari</strong>, siehe Reiter „Safari“.'));
+        '<ol class="install-schritte">' +
+        bildSchritt('Wenn sich das Anmeldefenster in <strong>Chrome</strong> geöffnet hat, tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN + ' (beim iPad rechts neben der Adresszeile, beim iPhone oben rechts im Menü <strong>•••</strong>).') +
+        bildSchritt('Wische in der Liste nach oben (oder tippe auf <strong>„Mehr anzeigen“</strong>) und tippe auf <strong>„Zum Home-Bildschirm“</strong>.') +
+        bildSchritt('Tippe oben rechts auf <strong>„Hinzufügen“</strong>.') +
+        bildSchritt('Schließe Chrome. Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> auf deinem Home-Bildschirm.', 'symbol') +
+        '</ol>');
   }
 
   function inhaltFirefox() {
