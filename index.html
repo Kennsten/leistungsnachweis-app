@@ -2708,8 +2708,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <p><strong>Datensicherung:</strong> Sie wird auf deinem Gerät verschlüsselt, bevor sie in die Cloud geht.
     Dein Cloud-Anbieter kann sie nicht lesen.</p>
 
-  <p><strong>Belege und Dokumente:</strong> Sie liegen in der Cloud so, wie du sie hochlädst.
-    Sie sind nicht zusätzlich verschlüsselt.</p>
+  <p><strong>Belege und Dokumente:</strong> Auch sie werden auf deinem Gerät verschlüsselt, bevor sie in die Cloud gehen,
+    und haben dort neutrale, unlesbare Namen. In der Cloud selbst kannst du sie nicht ansehen, nur in der App.
+    Dateien, die du schon früher hochgeladen hast, bleiben unverändert, bis sie umgewandelt werden.</p>
 
   <p><strong>Deine Verantwortung:</strong> Die Cloud ist dein eigenes Konto und dein eigener Vertrag mit dem Anbieter.
     Du bist selbst dafür verantwortlich, dass du dort Klientendaten ablegen darfst. Dazu gehören in der Regel
@@ -3271,7 +3272,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.7 Verkaufsversion';
+const APP_VERSION='0.23.8 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9430,14 +9431,23 @@ async function cloudOrdnerAnbieten(){
       .filter(e=>e.isfolder&&e.name!=='Belege')
       .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
 
-    const neuName=cloudOrdnerName(activeCloudClient.name);
-    const anlegenHtml=`
+    const kennung=String(activeCloudClient.client_code||'').trim();
+    const neuName=cloudOrdnerName(kennung);
+    const anlegenHtml=!kennung?`
+      <div class="summary-box">
+        <p style="margin:0"><strong>Bitte zuerst eine Kennung vergeben.</strong></p>
+        <p class="muted small" style="margin:8px 0 0">
+          Der Ordner in der Cloud heißt wie die Kennung (z. B. K001), damit kein Klientenname dort steht.
+          Trage die Kennung im Klientenbogen ein und öffne dann „Dokumente“ noch einmal.
+        </p>
+      </div>
+    `:`
       <div class="summary-box">
         <button type="button" id="cloudOrdnerAnlegen" class="primary" style="width:100%">
           📁 Ordner „${esc(neuName)}" anlegen
         </button>
         <p class="muted small" style="margin:8px 0 0">
-          Erstellt einen neuen Ordner im App-Ordner und verknüpft ihn mit diesem Klienten.
+          Erstellt einen neuen Ordner mit der Kennung als Namen (ohne Klientennamen) und verknüpft ihn mit diesem Klienten.
         </p>
       </div>
     `;
@@ -9749,9 +9759,9 @@ async function cloudDateienLaden(){
       .filter(e=>e.isfolder)
       .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
 
-    cloudFiles=inhalt
+    cloudFiles=await dateiNamenLesbar(inhalt
       .filter(e=>!e.isfolder)
-      .sort(cloudNachZeit);
+      .sort(cloudNachZeit));
 
     $('cloudActions').classList.remove('hidden');
     $('cloudUnlink').classList.toggle('hidden',cloudPfad.length>1||Boolean(cloudAuswahl));
@@ -9804,6 +9814,7 @@ async function cloudAlleDateienLaden(){
   };
 
   durchlaufen(ergebnis.metadata||{},[]);
+  await dateiNamenLesbar(sammlung.map(t=>t.datei));
   cloudAlleDateien=sammlung;
 
   return sammlung;
@@ -9899,11 +9910,30 @@ async function cloudDateiOeffnen(knopf,fileId){
     // das ganze Dokument anzeigt.
     zeige(knopf,'Datei wird geladen …');
 
-    let adresse=await cloudDateiDirekt(ergebnis);
+    // Verschlüsselte Datei? (Name "q1-….qa") Sonst wie bisher.
+    let verpackt=false;
+    try{
+      const info=await pcloudAnfrage('stat',{fileid:fileId});
+      verpackt=dateiNameIstVerpackt(info&&info.metadata&&info.metadata.name);
+    }catch(problem){
+      verpackt=false;
+    }
 
-    if(!adresse){
-      adresse=ergebnis.link||'';
-      if(adresse)toast('Hinweis: Es wird nur die pCloud-Vorschau geöffnet.');
+    let adresse;
+
+    if(verpackt){
+      const bytes=await dateiBytesHolen(ergebnis);
+      zeige(knopf,'Wird entschlüsselt …');
+      const klar=await dateiAuspacken(bytes);
+      adresse=URL.createObjectURL(klar.blob);
+      setTimeout(()=>URL.revokeObjectURL(adresse),10*60*1000);
+    }else{
+      adresse=await cloudDateiDirekt(ergebnis);
+
+      if(!adresse){
+        adresse=ergebnis.link||'';
+        if(adresse)toast('Hinweis: Es wird nur die pCloud-Vorschau geöffnet.');
+      }
     }
 
     if(!adresse){
@@ -10005,6 +10035,157 @@ async function cloudDateiDirekt(freigabe){
   }
 }
 
+/* ---------- Dateien verschlüsseln (Dokumente, Belege, Bescheide) ----------
+   Jede Datei wird auf dem Gerät mit dem Datenschlüssel des Tresors verschlüsselt,
+   bevor sie in die Cloud geht. Aufbau: "QAD1" + Zufallswert + verschlüsselter Inhalt
+   (Kopf mit Originalname, Dateityp, Größe + Dateiinhalt). Der Dateiname in der Cloud
+   ist selbst verschlüsselt ("q1-….qa"), damit die App Namen anzeigen und suchen kann. */
+const DATEI_MAX_BYTES=50*1024*1024;
+const DATEI_MAGIE=[0x51,0x41,0x44,0x31];
+
+function dateiSchluessel(){
+  const k=window.Tresor&&Tresor.datenschluessel();
+  if(!k)throw new Error('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
+  return k;
+}
+
+function dateiAad(art){
+  return new TextEncoder().encode('qa-datei-'+art+'-v1|'+(user&&user.id));
+}
+
+function zuBase64Url(bytes){
+  return zuBase64(bytes).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function ausBase64Url(text){
+  let t=String(text).replace(/-/g,'+').replace(/_/g,'/');
+  while(t.length%4)t+='=';
+  return ausBase64(t);
+}
+
+async function dateiVerpacken(datei,anzeigeName){
+  if(datei.size>DATEI_MAX_BYTES){
+    throw new Error('Die Datei ist größer als 50 MB. Bitte eine kleinere Datei wählen.');
+  }
+  const schluessel=dateiSchluessel();
+  const klar=new Uint8Array(await datei.arrayBuffer());
+  const kopf=new TextEncoder().encode(JSON.stringify({n:anzeigeName,t:datei.type||'',s:klar.length}));
+  const inhalt=new Uint8Array(4+kopf.length+klar.length);
+  new DataView(inhalt.buffer).setUint32(0,kopf.length);
+  inhalt.set(kopf,4);
+  inhalt.set(klar,4+kopf.length);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt(
+    {name:'AES-GCM',iv,additionalData:dateiAad('inhalt')},schluessel,inhalt
+  ));
+  const aus=new Uint8Array(16+ct.length);
+  aus.set(DATEI_MAGIE,0);
+  aus.set(iv,4);
+  aus.set(ct,16);
+  return new Blob([aus],{type:'application/octet-stream'});
+}
+
+function dateiIstVerpackt(bytes){
+  return bytes.length>16&&DATEI_MAGIE.every((z,i)=>bytes[i]===z);
+}
+
+// Liefert {name, typ, blob} oder wirft einen Fehler
+async function dateiAuspacken(bytes){
+  if(!dateiIstVerpackt(bytes))throw new Error('Das ist keine verschlüsselte Datei der App.');
+  const schluessel=dateiSchluessel();
+  let klar;
+  try{
+    klar=new Uint8Array(await crypto.subtle.decrypt(
+      {name:'AES-GCM',iv:bytes.subarray(4,16),additionalData:dateiAad('inhalt')},
+      schluessel,bytes.subarray(16)
+    ));
+  }catch(e){
+    throw new Error('Die Datei lässt sich mit deinem Tresor-Schlüssel nicht öffnen.');
+  }
+  const laenge=new DataView(klar.buffer,klar.byteOffset).getUint32(0);
+  const kopf=JSON.parse(new TextDecoder().decode(klar.subarray(4,4+laenge)));
+  const inhalt=klar.subarray(4+laenge);
+  return {name:kopf.n||'Datei',typ:kopf.t||'application/octet-stream',blob:new Blob([inhalt],{type:kopf.t||'application/octet-stream'})};
+}
+
+// Dateiname in der Cloud: "q1-<verschlüsselter Name>.qa"
+async function dateiNameVerschluesseln(name){
+  let text=String(name||'Datei');
+  if(text.length>100){
+    const punkt=text.lastIndexOf('.');
+    const endung=punkt>0&&text.length-punkt<=8?text.slice(punkt):'';
+    text=text.slice(0,100-endung.length)+endung;
+  }
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt(
+    {name:'AES-GCM',iv,additionalData:dateiAad('name')},dateiSchluessel(),new TextEncoder().encode(text)
+  ));
+  const alles=new Uint8Array(12+ct.length);
+  alles.set(iv,0);
+  alles.set(ct,12);
+  return 'q1-'+zuBase64Url(alles)+'.qa';
+}
+
+function dateiNameIstVerpackt(name){
+  return /^q1-[A-Za-z0-9_-]+\.qa$/.test(String(name||''));
+}
+
+async function dateiNameEntschluesseln(name){
+  if(!dateiNameIstVerpackt(name))return null;
+  try{
+    const alles=ausBase64Url(String(name).slice(3,-3));
+    const klar=await crypto.subtle.decrypt(
+      {name:'AES-GCM',iv:alles.subarray(0,12),additionalData:dateiAad('name')},
+      dateiSchluessel(),alles.subarray(12)
+    );
+    return new TextDecoder().decode(klar);
+  }catch(e){
+    return 'Verschlüsselte Datei';
+  }
+}
+
+// Ersetzt in einer pCloud-Dateiliste die verschlüsselten Namen durch die echten
+async function dateiNamenLesbar(liste){
+  for(const f of liste){
+    const klar=await dateiNameEntschluesseln(f.name);
+    if(klar!==null){
+      f.rohName=f.name;
+      f.name=klar;
+      f.verpackt=true;
+    }
+  }
+  return liste;
+}
+
+// Holt die (verschlüsselten) Bytes einer Datei über einen Freigabe-Code
+async function dateiBytesHolen(freigabe){
+  const code=freigabe&&freigabe.code;
+  if(!code)throw new Error('pCloud hat keinen Link geliefert.');
+  try{
+    const antwort=await busyFetch(
+      'https://'+PCLOUD_HOST+'/getpublinkdownload?'+new URLSearchParams({code}).toString(),
+      {referrerPolicy:'no-referrer',referrer:''}
+    );
+    const link=await antwort.json();
+    if(link.result===0&&Array.isArray(link.hosts)&&link.hosts.length&&link.path){
+      const datei=await busyFetch('https://'+link.hosts[0]+link.path,{referrerPolicy:'no-referrer',referrer:''});
+      if(datei.ok)return new Uint8Array(await datei.arrayBuffer());
+    }
+  }catch(problem){
+    // weiter mit Weg 2
+  }
+  const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({art:'datei',code,contenttype:'application/octet-stream',host:PCLOUD_HOST})
+  });
+  const art=antwort.headers.get('content-type')||'';
+  if(!antwort.ok||art.includes('application/json')){
+    throw new Error('Die verschlüsselte Datei konnte nicht geladen werden (Status '+antwort.status+').');
+  }
+  return new Uint8Array(await antwort.arrayBuffer());
+}
+
 async function cloudDateiLoeschen(fileId,name){
   if(!confirm('Datei "'+name+'" wirklich aus pCloud löschen?'))return;
 
@@ -10028,16 +10209,19 @@ async function cloudDateiHochladen(datei){
   knopf.textContent='Wird hochgeladen …';
 
   try{
+    const cloudName=await dateiNameVerschluesseln(datei.name);
+    const verpackt=await dateiVerpacken(datei,datei.name);
+
     const werte=new URLSearchParams({
       access_token:pcloudToken,
       folderid:cloudAktuellerOrdner(),
-      filename:datei.name,
+      filename:cloudName,
       nopartial:1,
       renameifexists:1
     });
 
     const formular=new FormData();
-    formular.append('file',datei,datei.name);
+    formular.append('file',verpackt,cloudName);
 
     const antwort=await busyFetch(
       'https://'+PCLOUD_HOST+'/uploadfile?'+werte.toString(),
@@ -10055,15 +10239,15 @@ async function cloudDateiHochladen(datei){
       throw new Error(ergebnis.error||('pCloud-Fehler '+ergebnis.result));
     }
 
-    toast('Datei hochgeladen');
+    toast('Datei verschlüsselt hochgeladen');
     cloudAlleDateien=null;
 
     const neu=ergebnis.metadata&&ergebnis.metadata[0];
 
     if(cloudAuswahl&&neu&&confirm(
-      'Die hochgeladene Datei „'+neu.name+'" direkt zuordnen?'
+      'Die hochgeladene Datei „'+datei.name+'" direkt zuordnen?'
     )){
-      await cloudDateiZuordnen({fileid:neu.fileid,name:neu.name});
+      await cloudDateiZuordnen({fileid:neu.fileid,name:datei.name});
       return;
     }
 
@@ -11235,17 +11419,19 @@ async function belegHochladen(ausgabe,datei){
   const ordner=await belegOrdnerFuer(ausgabe.beleg_jahr);
   const fertig=await belegVorbereiten(datei);
   const name=belegDateiname(ausgabe,fertig);
+  const cloudName=await dateiNameVerschluesseln(name);
+  const verpackt=await dateiVerpacken(fertig,name);
 
   const werte=new URLSearchParams({
     access_token:pcloudToken,
     folderid:ordner,
-    filename:name,
+    filename:cloudName,
     nopartial:1,
     renameifexists:1
   });
 
   const formular=new FormData();
-  formular.append('file',fertig,name);
+  formular.append('file',verpackt,cloudName);
 
   const antwort=await busyFetch(
     'https://'+PCLOUD_HOST+'/uploadfile?'+werte.toString(),
@@ -11260,7 +11446,7 @@ async function belegHochladen(ausgabe,datei){
 
   return {
     id:ergebnis.metadata[0].fileid,
-    name:ergebnis.metadata[0].name
+    name:name
   };
 }
 
