@@ -1315,6 +1315,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .kachel-aktionen{display:flex;gap:6px;padding:0 10px 10px}
 .kachel-aktionen button{flex:1;padding:7px 8px;font-size:.8rem;border-radius:10px}
 .kachel-aktionen .deleteCloudFile{flex:0 0 auto}
+.cloud-wahlleiste{position:sticky;bottom:0;z-index:2;margin-top:12px;padding:10px 12px;border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);background:var(--card);box-shadow:var(--frame-inset)}
+.cloud-wahlleiste .actions{margin-top:8px}
+.cloud-kachel.gewaehlt{outline:3px solid var(--accent);outline-offset:-3px}
+.kachel-wahl{display:flex;align-items:center;gap:8px;width:100%;padding:4px 2px;font-size:.85rem}
+.kachel-wahl input{width:22px;height:22px;margin:0;flex:0 0 auto}
+#cloudVerschiebenDialog .cloud-ordner{width:100%;margin:4px 0}
 
 /* ---------- Umschalter für die Ansicht (Kacheln/Liste, Datum/Kategorie) ---------- */
 .ansicht-leiste{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
@@ -2440,12 +2446,25 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="cloudUpload" class="primary">
       Datei in diesen Ordner hochladen
     </button>
+    <button type="button" id="cloudWaehlen" class="secondary">
+      Auswählen
+    </button>
     <button type="button" id="cloudUnlink" class="secondary">
       Ordner wechseln
     </button>
   </div>
 
   <div id="cloudFiles"></div>
+
+  <div id="cloudWahlLeiste" class="cloud-wahlleiste hidden">
+    <strong id="cloudWahlAnzahl">0 Dateien ausgewählt</strong>
+    <div class="actions">
+      <button type="button" id="cloudWahlAlle" class="secondary">Alle</button>
+      <button type="button" id="cloudVerschieben" class="primary" disabled>Verschieben …</button>
+      <button type="button" id="cloudMehrLoeschen" class="danger" disabled>Löschen</button>
+      <button type="button" id="cloudWahlFertig" class="secondary">Fertig</button>
+    </div>
+  </div>
 
   <input id="cloudFileInput" type="file" class="hidden">
 </dialog>
@@ -2691,6 +2710,23 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
     </div>
   </section>
+</dialog>
+
+<dialog id="cloudVerschiebenDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Dokumente verschieben</div>
+      <h2 id="cloudVerschiebenTitel">Zielordner wählen</h2>
+    </div>
+    <button type="button" id="cloudVerschiebenZu" class="kn kn-schliessen secondary">Abbrechen</button>
+  </div>
+  <div id="cloudVerschiebenPfad" class="cloud-pfad"></div>
+  <div id="cloudVerschiebenListe"></div>
+  <p class="muted small">Namen neuer Ordner stehen in pCloud unverschlüsselt. Bitte keine Klientennamen verwenden, besser „Bescheide“ oder „2026“.</p>
+  <div class="actions">
+    <button type="button" id="cloudVerschiebenHierher" class="primary">Hierher verschieben</button>
+    <button type="button" id="cloudVerschiebenNeu" class="secondary">Neuer Unterordner</button>
+  </div>
 </dialog>
 
 <dialog id="cloudStartDialog">
@@ -3272,7 +3308,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.8 Verkaufsversion';
+const APP_VERSION='0.23.9 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9367,6 +9403,8 @@ async function openCloudAuswahl(client,auswahl){
 }
 
 function cloudPfadZuruecksetzen(){
+  cloudWahlModus=false;
+  cloudGewaehlt.clear();
   cloudAlleDateien=null;
   $('cloudSuche').value='';
   cloudPfad=activeCloudClient&&activeCloudClient.pcloud_folder_id
@@ -9640,7 +9678,12 @@ function cloudDateiKachel(f,pfadText){
   const typ=cloudDateiArt(f.name);
   const aktionen=[];
 
-  if(cloudAuswahl){
+  if(cloudWahlModus&&!cloudAuswahl){
+    aktionen.push(
+      '<label class="kachel-wahl"><input type="checkbox" class="cloudWahlBox" '+
+      'data-id="'+esc(f.fileid)+'"> Auswählen</label>'
+    );
+  }else if(cloudAuswahl){
     aktionen.push(
       '<button type="button" class="primary pickCloudFile" '+
       'data-id="'+esc(f.fileid)+'" data-name="'+esc(f.name)+'">Zuordnen</button>'
@@ -9654,7 +9697,7 @@ function cloudDateiKachel(f,pfadText){
   }
 
   return `
-    <div class="cloud-kachel">
+    <div class="cloud-kachel" data-id="${esc(f.fileid)}">
       <button type="button" class="kachel-oeffnen openCloudFile" data-id="${esc(f.fileid)}">
         <span class="kachel-symbol" data-art="${typ.art}">${typ.symbol}</span>
         <span class="kachel-name">${esc(f.name)}</span>
@@ -9702,8 +9745,16 @@ function cloudKachelnNachMonat(eintraege){
 
 function cloudZeilenVerknuepfen(){
   document.querySelectorAll('#cloudFiles .openCloudFile').forEach(
-    b=>b.onclick=()=>cloudDateiOeffnen(b,b.dataset.id)
+    b=>b.onclick=()=>{
+      if(cloudWahlModus&&!cloudAuswahl)cloudWahlUmschalten(b.dataset.id);
+      else cloudDateiOeffnen(b,b.dataset.id);
+    }
   );
+
+  document.querySelectorAll('#cloudFiles .cloudWahlBox').forEach(
+    b=>b.onchange=()=>cloudWahlUmschalten(b.dataset.id,b.checked)
+  );
+  cloudWahlLeisteZeichnen();
 
   document.querySelectorAll('#cloudFiles .deleteCloudFile').forEach(
     b=>b.onclick=()=>cloudDateiLoeschen(b.dataset.id,b.dataset.name)
@@ -9718,6 +9769,7 @@ function cloudZeilenVerknuepfen(){
 
   document.querySelectorAll('#cloudFiles .openCloudFolder').forEach(
     b=>b.onclick=async()=>{
+      cloudGewaehlt.clear();
       cloudPfad.push({id:Number(b.dataset.id),name:b.dataset.name});
       await cloudDateienLaden();
     }
@@ -9739,6 +9791,7 @@ async function cloudDateiZuordnen(datei){
 
 async function cloudDateienLaden(){
   const liste=$('cloudFiles');
+  cloudWahlLeisteZeichnen();
 
   if($('cloudSuche').value.trim()){
     await cloudSuchen();
@@ -10034,6 +10087,147 @@ async function cloudDateiDirekt(freigabe){
     return '';
   }
 }
+
+/* ---------- Mehrere Dateien auswählen, verschieben, löschen ---------- */
+let cloudWahlModus=false;
+const cloudGewaehlt=new Set();
+let cloudVerschiebePfad=[];
+
+function cloudWahlLeisteZeichnen(){
+  $('cloudWahlLeiste').classList.toggle('hidden',!cloudWahlModus);
+  $('cloudWaehlen').classList.toggle('hidden',cloudWahlModus||Boolean(cloudAuswahl));
+  const n=cloudGewaehlt.size;
+  $('cloudWahlAnzahl').textContent=n+(n===1?' Datei':' Dateien')+' ausgewählt';
+  $('cloudVerschieben').disabled=!n;
+  $('cloudMehrLoeschen').disabled=!n;
+  document.querySelectorAll('#cloudFiles .cloud-kachel').forEach(k=>{
+    const an=cloudGewaehlt.has(String(k.dataset.id));
+    k.classList.toggle('gewaehlt',an);
+    const box=k.querySelector('.cloudWahlBox');
+    if(box)box.checked=an;
+  });
+}
+
+function cloudWahlUmschalten(id,an){
+  id=String(id);
+  const neu=typeof an==='boolean'?an:!cloudGewaehlt.has(id);
+  if(neu)cloudGewaehlt.add(id);else cloudGewaehlt.delete(id);
+  cloudWahlLeisteZeichnen();
+}
+
+async function cloudWahlBeenden(){
+  cloudWahlModus=false;
+  cloudGewaehlt.clear();
+  await cloudDateienLaden();
+}
+
+$('cloudWaehlen').onclick=async()=>{
+  cloudWahlModus=true;
+  cloudGewaehlt.clear();
+  await cloudDateienLaden();
+};
+$('cloudWahlFertig').onclick=cloudWahlBeenden;
+$('cloudWahlAlle').onclick=()=>{
+  const alle=[...document.querySelectorAll('#cloudFiles .cloud-kachel')].map(k=>String(k.dataset.id));
+  const alleAn=alle.length&&alle.every(id=>cloudGewaehlt.has(id));
+  alle.forEach(id=>alleAn?cloudGewaehlt.delete(id):cloudGewaehlt.add(id));
+  cloudWahlLeisteZeichnen();
+};
+
+$('cloudMehrLoeschen').onclick=async()=>{
+  const ids=[...cloudGewaehlt];
+  if(!ids.length)return;
+  if(!confirm(ids.length+(ids.length===1?' Datei':' Dateien')+
+    ' wirklich aus pCloud löschen? Das lässt sich nicht rückgängig machen.'))return;
+  const knopf=$('cloudMehrLoeschen');
+  knopf.disabled=true;
+  let ok=0,fehler=0;
+  for(const id of ids){
+    try{await pcloudAnfrage('deletefile',{fileid:Number(id)});ok++}catch(e){fehler++}
+  }
+  toast(ok+(ok===1?' Datei gelöscht':' Dateien gelöscht')+(fehler?' · '+fehler+' nicht möglich':''));
+  cloudAlleDateien=null;
+  await cloudWahlBeenden();
+};
+
+async function cloudVerschiebenListe(){
+  const aktuell=cloudVerschiebePfad[cloudVerschiebePfad.length-1];
+  $('cloudVerschiebenTitel').textContent=
+    'In „'+aktuell.name+'“ ('+cloudGewaehlt.size+(cloudGewaehlt.size===1?' Datei)':' Dateien)');
+  const pfad=$('cloudVerschiebenPfad');
+  pfad.innerHTML=cloudVerschiebePfad.map((t,i)=>{
+    const letzter=i===cloudVerschiebePfad.length-1;
+    return (i?'<span>›</span>':'')+'<button type="button" class="cloudVPfadTeil" data-index="'+i+'"'+
+      (letzter?' disabled':'')+'>'+(i?'':'📁 ')+esc(t.name)+'</button>';
+  }).join('');
+  pfad.querySelectorAll('.cloudVPfadTeil').forEach(b=>b.onclick=async()=>{
+    cloudVerschiebePfad=cloudVerschiebePfad.slice(0,Number(b.dataset.index)+1);
+    await cloudVerschiebenListe();
+  });
+  const liste=$('cloudVerschiebenListe');
+  liste.innerHTML='<p class="muted">Ordner werden geladen …</p>';
+  try{
+    const erg=await pcloudAnfrage('listfolder',{folderid:aktuell.id,nofiles:1});
+    const ordner=((erg.metadata&&erg.metadata.contents)||[])
+      .filter(e=>e.isfolder)
+      .sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
+    liste.innerHTML=ordner.length
+      ? ordner.map(o=>'<button type="button" class="cloud-ordner cloudVOrdner" data-id="'+esc(o.folderid)+
+          '" data-name="'+esc(o.name)+'">📁 '+esc(o.name)+' <span class="meta">›</span></button>').join('')
+      : '<p class="muted">Keine Unterordner.</p>';
+    liste.querySelectorAll('.cloudVOrdner').forEach(b=>b.onclick=async()=>{
+      cloudVerschiebePfad.push({id:Number(b.dataset.id),name:b.dataset.name});
+      await cloudVerschiebenListe();
+    });
+  }catch(fehler){
+    liste.innerHTML='';
+    toast(fehler.message);
+  }
+}
+
+$('cloudVerschieben').onclick=async()=>{
+  if(!cloudGewaehlt.size)return;
+  cloudVerschiebePfad=[{id:0,name:'Alle Ordner'}];
+  $('cloudVerschiebenDialog').showModal();
+  await cloudVerschiebenListe();
+};
+$('cloudVerschiebenZu').onclick=()=>$('cloudVerschiebenDialog').close();
+
+$('cloudVerschiebenNeu').onclick=async()=>{
+  const eltern=cloudVerschiebePfad[cloudVerschiebePfad.length-1];
+  const roh=prompt('Name des neuen Ordners in „'+eltern.name+'“.\nKeine Klientennamen verwenden, z. B. „Bescheide“ oder „2026“:');
+  const name=cloudOrdnerName(roh||'');
+  if(!roh||!roh.trim())return;
+  try{
+    const id=await pcloudOrdner(eltern.id,name);
+    cloudVerschiebePfad.push({id:Number(id),name});
+    await cloudVerschiebenListe();
+  }catch(fehler){
+    toast('Ordner konnte nicht angelegt werden: '+fehler.message);
+  }
+};
+
+$('cloudVerschiebenHierher').onclick=async()=>{
+  const ziel=cloudVerschiebePfad[cloudVerschiebePfad.length-1];
+  if(ziel.id===0){
+    toast('Bitte einen Ordner wählen, nicht die oberste Ebene.');
+    return;
+  }
+  const ids=[...cloudGewaehlt];
+  const knopf=$('cloudVerschiebenHierher');
+  knopf.disabled=true;
+  knopf.textContent='Wird verschoben …';
+  let ok=0,fehler=0;
+  for(const id of ids){
+    try{await pcloudAnfrage('renamefile',{fileid:Number(id),tofolderid:ziel.id});ok++}catch(e){fehler++}
+  }
+  knopf.disabled=false;
+  knopf.textContent='Hierher verschieben';
+  $('cloudVerschiebenDialog').close();
+  toast(ok+(ok===1?' Datei verschoben':' Dateien verschoben')+' nach „'+ziel.name+'“'+(fehler?' · '+fehler+' nicht möglich':''));
+  cloudAlleDateien=null;
+  await cloudWahlBeenden();
+};
 
 /* ---------- Dateien verschlüsseln (Dokumente, Belege, Bescheide) ----------
    Jede Datei wird auf dem Gerät mit dem Datenschlüssel des Tresors verschlüsselt,
