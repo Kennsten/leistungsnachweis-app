@@ -1678,6 +1678,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 <section id="app" class="wrap hidden">
   <div id="installLeiste" class="install-leiste hidden"></div>
+  <div id="cloudBand" class="install-leiste hidden"></div>
   <div class="card top">
     <div>
       <div class="muted hidden" id="kopfName"></div>
@@ -2689,6 +2690,37 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </section>
 </dialog>
 
+<dialog id="cloudStartDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Datensicherung und Dokumente</div>
+      <h2>Cloud verbinden</h2>
+    </div>
+    <button type="button" id="closeCloudStart" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+
+  <p>Mit deiner eigenen Cloud (zurzeit pCloud) sicherst du deine Daten automatisch und legst Belege und Dokumente ab.
+    Deine Einträge sind auch ohne Cloud auf allen deinen Geräten verfügbar.</p>
+
+  <p><strong>Datensicherung:</strong> Sie wird auf deinem Gerät verschlüsselt, bevor sie in die Cloud geht.
+    Dein Cloud-Anbieter kann sie nicht lesen.</p>
+
+  <p><strong>Belege und Dokumente:</strong> Sie liegen in der Cloud so, wie du sie hochlädst.
+    Sie sind nicht zusätzlich verschlüsselt.</p>
+
+  <p><strong>Deine Verantwortung:</strong> Die Cloud ist dein eigenes Konto und dein eigener Vertrag mit dem Anbieter.
+    Du bist selbst dafür verantwortlich, dass du dort Klientendaten ablegen darfst. Dazu gehören in der Regel
+    ein Auftragsverarbeitungsvertrag (AVV) mit dem Anbieter und ein Speicherort in der EU.
+    Kläre das vorher, zum Beispiel mit deinem Auftraggeber oder einer Datenschutzberatung.</p>
+
+  <div class="actions" style="margin-top:12px">
+    <button type="button" id="cloudStartJetzt" class="primary">Jetzt verbinden</button>
+    <button type="button" id="cloudStartSpaeter" class="secondary">Später</button>
+  </div>
+
+  <p class="muted">Du findest das später unter Einstellungen → Dokumente und Cloud.</p>
+</dialog>
+
 <dialog id="cloudSetupDialog">
   <div class="top">
     <div>
@@ -3236,7 +3268,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.4 Verkaufsversion';
+const APP_VERSION='0.23.5 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9118,6 +9150,7 @@ function cloudStartKnopfZeichnen(){
     ? '✓ '+CLOUD_ANBIETER_NAME+' eingerichtet'
     : CLOUD_ANBIETER_NAME+' einrichten';
   knopf.classList.toggle('cloud-verbunden',verbunden);
+  cloudBandZeichnen();
 }
 
 function pcloudTokenLaden(){
@@ -10126,7 +10159,9 @@ function einstellungenStatusZeigen(){
   $('einstStatusGeraet').textContent=(abgleich&&abgleich.textContent.trim())||'Daten auf diesem Gerät';
 }
 
+let cloudStartNachSpeichern=false;
 function einstellungenOeffnen(ersterStart=false,seite){
+  cloudStartNachSpeichern=Boolean(ersterStart);
   $('sicherungGeraetWahl').value=sicherungGeraetWahl();
   $('settingsName').value=auftragnehmerName();
   $('settingsAdresse').value=startAdresse();
@@ -10224,6 +10259,10 @@ $('settingsForm').onsubmit=async e=>{
     kopfNameZeigen();
     $('settingsDialog').close();
     toast('Einstellungen gespeichert');
+    if(cloudStartNachSpeichern){
+      cloudStartNachSpeichern=false;
+      if(!pcloudToken)cloudStartOeffnen();
+    }
   }finally{
     knopf.disabled=false;
     knopf.textContent='Speichern';
@@ -10238,6 +10277,45 @@ function cloudSetupOeffnen(){
 $('openCloudSetup').onclick=cloudSetupOeffnen;
 $('cloudSetupHilfe').onclick=cloudSetupOeffnen;
 $('closeCloudSetup').onclick=()=>$('cloudSetupDialog').close();
+
+/* ---------- Cloud beim ersten Start und Hinweisband ---------- */
+function cloudStartOeffnen(){
+  if(!$('cloudStartDialog').open)$('cloudStartDialog').showModal();
+}
+$('closeCloudStart').onclick=()=>$('cloudStartDialog').close();
+$('cloudStartSpaeter').onclick=()=>$('cloudStartDialog').close();
+$('cloudStartJetzt').onclick=()=>{
+  $('cloudStartDialog').close();
+  cloudSetupOeffnen();
+};
+
+const CLOUD_BAND_SPEICHER='qa-cloudband-zu';
+function cloudBandZeichnen(){
+  const band=$('cloudBand');
+  if(!band)return;
+  let ausgeblendet=false;
+  try{ausgeblendet=sessionStorage.getItem(CLOUD_BAND_SPEICHER)==='1'}catch(fehler){}
+  if(pcloudToken||ausgeblendet){
+    band.classList.add('hidden');
+    return;
+  }
+  band.innerHTML=
+    '<span>'+CLOUD_ANBIETER_NAME+' ist noch nicht verbunden. Ohne Cloud gibt es keine automatische Datensicherung.</span>'+
+    '<span class="install-leiste-knoepfe">'+
+    '<button type="button" class="abgleich-knopf" data-cloud-band="oeffnen">Jetzt verbinden</button>'+
+    '<button type="button" class="abgleich-knopf" data-cloud-band="zu" aria-label="Hinweis ausblenden">✕</button></span>';
+  band.classList.remove('hidden');
+}
+$('cloudBand').addEventListener('click',e=>{
+  const knopf=e.target.closest('[data-cloud-band]');
+  if(!knopf)return;
+  if(knopf.dataset.cloudBand==='oeffnen'){
+    cloudStartOeffnen();
+  }else{
+    try{sessionStorage.setItem(CLOUD_BAND_SPEICHER,'1')}catch(fehler){}
+    cloudBandZeichnen();
+  }
+});
 $('cloudSetupVerbinden').onclick=pcloudAnmelden;
 
 $('cloudSetupTrennen').onclick=()=>{
