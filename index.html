@@ -3319,7 +3319,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.11 Verkaufsversion';
+const APP_VERSION='0.23.12 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5215,7 +5215,7 @@ async function loadTrips(){
                     ? `<button type="button" class="kn kn-nav secondary openDocOfTrip" data-id="${t.id}">Dokumentation öffnen</button>`
                     : `<button type="button" class="kn kn-neu secondary docFromTrip" data-id="${t.id}">Dokumentation anlegen</button>`
               }
-                                <button type="button" class="secondary expenseFromTrip" data-id="${t.id}">Parkticket</button>
+                                <button type="button" class="secondary expenseFromTrip" data-id="${t.id}">${(tripBelege[t.id]||[]).some(a=>a.kategorie==='Parken')?'Parkticket ansehen':'Parkticket'}</button>
 
             </div>
           </div>
@@ -11598,6 +11598,25 @@ async function openExpenseForm(id='',vorgabe={}){
 
   $('expenseFormDialog').showModal();
 }
+// Gibt es zu dieser Fahrt/Dokumentation schon einen Beleg der Kategorie? Dann öffnen statt neu anlegen.
+async function vorhandeneAusgabeOeffnen(feld,wert,kategorie){
+  const {data}=await Daten
+    .from('ausgaben')
+    .select('*')
+    .eq(feld,wert)
+    .eq('kategorie',kategorie)
+    .order('datum',{ascending:true});
+  const liste=data||[];
+  if(!liste.length)return false;
+  const a=liste[0];
+  if(!expenses.some(x=>String(x.id)===String(a.id)))expenses.push(a);
+  await openExpenseForm(a.id);
+  if(liste.length>1){
+    toast('Es gibt '+liste.length+' Belege dazu, hier der erste. Alle stehen in den Betriebsausgaben.');
+  }
+  return true;
+}
+
 async function openExpenseFromTrip(tripId){
   const trip=trips.find(t=>String(t.id)===String(tripId));
 
@@ -11605,6 +11624,8 @@ async function openExpenseFromTrip(tripId){
     toast('Fahrt nicht gefunden.');
     return;
   }
+
+  if(await vorhandeneAusgabeOeffnen('trip_id',trip.id,'Parken'))return;
 
   const ziel=trip.intermediate_stops||
     trip.destination_address||
@@ -11627,6 +11648,8 @@ async function openExpenseFromDoc(docId,kategorie){
     toast('Dokumentation nicht gefunden.');
     return;
   }
+
+  if(await vorhandeneAusgabeOeffnen('documentation_id',doc.id,kategorie))return;
 
   const ort=doc.ort_der_leistung||'';
 
