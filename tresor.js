@@ -775,6 +775,135 @@
     pdf.save(dateiname);
   }
 
+  /* ---------------- Passkey (Fingerabdruck / Gesicht / Gerätecode) ---------------- */
+  // Der Datenschlüssel wird zusätzlich mit einem Schlüssel verschlossen, den das
+  // Gerät nur nach Fingerabdruck / Gesicht / Gerätecode herausgibt (WebAuthn-PRF).
+  // Die Hülle liegt nur auf diesem Gerät. Das Tresor-Passwort bleibt der Rückweg.
+  const AAD_PASSKEY = TEXT.encode('qa-tresor-v1-passkey');
+  const HKDF_PASSKEY = TEXT.encode('qa-tresor-v1-passkey-schluessel');
+
+  function passkeyName() { return 'qa-passkey-' + ctx.user.id; }
+
+  function passkeyLesen() {
+    try {
+      const t = localStorage.getItem(passkeyName());
+      return t ? JSON.parse(t) : null;
+    } catch (e) { return null; }
+  }
+
+  function passkeyUnterstuetzt() {
+    return Boolean(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+  }
+
+  async function passkeyKek(prfWert) {
+    const basis = await crypto.subtle.importKey('raw', prfWert, 'HKDF', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: HKDF_PASSKEY },
+      basis, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+  }
+
+  function prfWertAus(cred) {
+    const r = cred && cred.getClientExtensionResults ? cred.getClientExtensionResults() : null;
+    const f = r && r.prf && r.prf.results && r.prf.results.first;
+    return f ? new Uint8Array(f) : null;
+  }
+
+  async function passkeyAbfragen(credId, salt) {
+    const cred = await navigator.credentials.get({
+      publicKey: {
+        challenge: zufall(32),
+        allowCredentials: [{ type: 'public-key', id: ausB64(credId) }],
+        userVerification: 'required',
+        timeout: 60000,
+        extensions: { prf: { eval: { first: ausB64(salt) } } }
+      }
+    });
+    return prfWertAus(cred);
+  }
+
+  async function passkeyEinrichtenMit(roh) {
+    const salt = b64(zufall(32));
+    const mail = ctx.user.email || 'Nutzer';
+    const neu = await navigator.credentials.create({
+      publicKey: {
+        rp: { name: 'QA – Qualifizierte Assistenz' },
+        user: { id: zufall(16), name: mail, displayName: mail },
+        challenge: zufall(32),
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'required' },
+        timeout: 60000,
+        extensions: { prf: { eval: { first: ausB64(salt) } } }
+      }
+    });
+    const credId = b64(new Uint8Array(neu.rawId));
+    // Manche Geräte liefern den Wert erst bei der Abfrage, nicht beim Anlegen
+    let wert = prfWertAus(neu);
+    if (!wert) wert = await passkeyAbfragen(credId, salt);
+    if (!wert) {
+      throw new Error('Dieses Gerät oder dieser Browser kann den Passkey nicht zum Entsperren nutzen. Bitte weiter mit dem Tresor-Passwort.');
+    }
+    const kek = await passkeyKek(wert);
+    const huelle = await verschliessen(kek, roh, AAD_PASSKEY);
+    localStorage.setItem(passkeyName(), JSON.stringify({ v: 1, id: credId, salt, iv: huelle.iv, ct: huelle.ct }));
+  }
+
+  async function passkeyEntsperren() {
+    const p = passkeyLesen();
+    if (!p) throw new Error('Auf diesem Gerät ist kein Passkey eingerichtet.');
+    const wert = await passkeyAbfragen(p.id, p.salt);
+    if (!wert) throw new Error('Der Passkey hat keinen Schlüssel geliefert. Bitte das Tresor-Passwort verwenden.');
+    const kek = await passkeyKek(wert);
+    let roh;
+    try { roh = await aufschliessen(kek, p, AAD_PASSKEY); }
+    catch (e) { throw new Error('Der Passkey passt nicht mehr zum Tresor. Bitte das Tresor-Passwort verwenden und den Passkey neu einrichten.'); }
+    await schluesselAktivieren(roh);
+  }
+
+  function passkeyEntfernen() {
+    try { localStorage.removeItem(passkeyName()); } catch (e) { /* nichts */ }
+  }
+
+  function ansichtPasskeyEinrichten() {
+    zeigen(`
+      <h2>Entsperren mit Fingerabdruck / Gesicht</h2>
+      <p>Zur Sicherheit gib einmal dein <b>Tresor-Passwort</b> ein. Danach fragt dein Gerät nach Fingerabdruck, Gesicht oder Gerätecode.</p>
+      <p class="muted small">Gilt nur für dieses Gerät. Das Tresor-Passwort bleibt als Rückweg bestehen.</p>
+      <form id="tPasskey">
+        ${benutzerFeld()}
+        <label>Tresor-Passwort
+          <input id="tPw" type="password" autocomplete="current-password" data-fokus required>
+        </label>
+        <p class="t-fehler"></p>
+        <div class="actions">
+          <button type="submit" class="primary">Einrichten</button>
+          <button type="button" id="tZurueck" class="secondary">Abbrechen</button>
+        </div>
+      </form>`);
+    $t('#tZurueck').onclick = schliessen;
+    $t('#tPasskey').onsubmit = async (e) => {
+      e.preventDefault();
+      const knopf = $t('#tPasskey button[type="submit"]');
+      knopf.disabled = true;
+      knopf.textContent = 'Wird geprüft …';
+      try {
+        const frisch = geraetLesen() || stand;
+        const roh = await mitPasswortOeffnen($t('#tPw').value, frisch.passwort_huelle);
+        if (!roh) { fehlerZeigen('Das Tresor-Passwort stimmt nicht.'); $t('#tPw').select(); return; }
+        await passkeyEinrichtenMit(roh);
+        roh.fill(0);
+        schliessen();
+        meldung('Entsperren mit Fingerabdruck / Gesicht ist eingerichtet');
+        if (typeof window.tresorPasskeyGeaendert === 'function') window.tresorPasskeyGeaendert();
+      } catch (fehler) {
+        const abgebrochen = fehler && fehler.name === 'NotAllowedError';
+        fehlerZeigen(abgebrochen ? 'Abgebrochen oder nicht erlaubt. Bitte noch einmal versuchen.' : fehlermeldungText(fehler));
+      } finally {
+        if (knopf.isConnected) { knopf.disabled = false; knopf.textContent = 'Einrichten'; }
+      }
+    };
+  }
+
   /* ---------------- Entsperren ---------------- */
 
   function ansichtEntsperren() {
@@ -783,6 +912,7 @@
       <h2>Tresor gesperrt</h2>
       <p class="muted">${esc(mail)}</p>
       <p>Gib dein <b>Tresor-Passwort</b> ein. Es schützt deine Klientendaten und ist nicht dasselbe wie dein Anmelde-Passwort.</p>
+      ${passkeyUnterstuetzt() && passkeyLesen() ? '<div class="actions"><button type="button" id="tPasskeyKnopf" class="primary">Mit Fingerabdruck / Gesicht entsperren</button></div><p class="muted small">oder mit Passwort:</p>' : ''}
       <form id="tEntsperren">
         ${benutzerFeld()}
         <label>Tresor-Passwort
@@ -798,6 +928,21 @@
 
     $t('#tAbmelden').onclick = abmeldenKlick;
     $t('#tVergessen').onclick = () => ansichtWiederherstellen();
+    const pk = $t('#tPasskeyKnopf');
+    if (pk) {
+      pk.onclick = async () => {
+        pk.disabled = true;
+        try {
+          await passkeyEntsperren();
+          fertig();
+        } catch (fehler) {
+          const abgebrochen = fehler && fehler.name === 'NotAllowedError';
+          fehlerZeigen(abgebrochen ? 'Abgebrochen. Du kannst es erneut versuchen oder das Passwort eingeben.' : fehlermeldungText(fehler));
+        } finally {
+          if (pk.isConnected) pk.disabled = false;
+        }
+      };
+    }
     $t('#tEntsperren').onsubmit = async (e) => {
       e.preventDefault();
       const pw = $t('#tPw').value;
@@ -1277,6 +1422,12 @@
     notfallblattDrucken: () => { if (schluessel) ansichtNotfallblattDrucken(); },
     // Für Bauabschnitt 4: Zugriff auf den Datenschlüssel (nicht auslesbar)
     datenschluessel: () => schluessel,
+    passkey: {
+      unterstuetzt: () => passkeyUnterstuetzt(),
+      eingerichtet: () => Boolean(ctx && ctx.user && passkeyLesen()),
+      einrichten: () => { if (schluessel) ansichtPasskeyEinrichten(); },
+      entfernen: () => { if (ctx && ctx.user) passkeyEntfernen(); }
+    },
     // Nur für Tests
     _intern: { notfallblattPdf, codeErzeugen, codeNormalisieren, codeGueltig, codeFormatieren, passwortHuelleBauen, notfallHuelleBauen, mitPasswortOeffnen, mitCodeOeffnen }
   };

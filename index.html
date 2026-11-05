@@ -2641,9 +2641,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <!-- Seite: Tresor und Sicherheit -->
   <section class="einst-seite hidden" data-seite="tresor" data-titel="Tresor und Sicherheit">
     <p class="muted small">Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
+    <p class="muted small" id="tresorPasskeyHinweis"></p>
     <div class="actions">
       <button type="button" id="tresorSperren" class="secondary">Jetzt sperren</button>
       <button type="button" id="tresorPasswortAendern" class="secondary">Tresor-Passwort ändern</button>
+      <button type="button" id="tresorPasskey" class="secondary">Entsperren mit Fingerabdruck / Gesicht</button>
       <button type="button" id="tresorNotfallblattDrucken" class="secondary">Notfallblatt neu drucken</button>
       <button type="button" id="tresorNotfallblatt" class="secondary">Neuer Wiederherstellungsschlüssel</button>
     </div>
@@ -3268,7 +3270,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.5 Verkaufsversion';
+const APP_VERSION='0.23.6 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -10130,6 +10132,7 @@ function einstellungenSeite(name){
     seite.classList.toggle('hidden',!aktiv);
     if(aktiv)titel=seite.dataset.titel;
   });
+  if(name==='tresor'&&typeof tresorPasskeyZeigen==='function')tresorPasskeyZeigen();
   $('settingsZurueck').classList.toggle('hidden',menue);
   $('settingsOberzeile').classList.toggle('hidden',!menue);
   $('settingsTitel').textContent=titel;
@@ -10221,6 +10224,24 @@ $('geraetLeeren').onclick=async()=>{
 
 $('tresorSperren').onclick=()=>{$('settingsDialog').close();Tresor.sperren()};
 $('tresorPasswortAendern').onclick=()=>{$('settingsDialog').close();Tresor.passwortAendern()};
+function tresorPasskeyZeigen(){
+  const knopf=$('tresorPasskey'),hinweis=$('tresorPasskeyHinweis');
+  if(!knopf||!window.Tresor||!Tresor.passkey)return;
+  if(!Tresor.passkey.unterstuetzt()){
+    knopf.classList.add('hidden');
+    hinweis.textContent='Fingerabdruck / Gesicht: auf diesem Gerät oder in diesem Browser nicht verfügbar.';
+    return;
+  }
+  knopf.classList.remove('hidden');
+  const an=Tresor.passkey.eingerichtet();
+  knopf.textContent=an?'Fingerabdruck / Gesicht entfernen':'Entsperren mit Fingerabdruck / Gesicht';
+  hinweis.textContent=an?'Auf diesem Gerät ist das Entsperren mit Fingerabdruck / Gesicht eingerichtet. Das Tresor-Passwort gilt weiterhin.':'Auf diesem Gerät noch nicht eingerichtet. Jedes Gerät wird einzeln eingerichtet.';
+}
+window.tresorPasskeyGeaendert=tresorPasskeyZeigen;
+$('tresorPasskey').onclick=()=>{
+  if(Tresor.passkey.eingerichtet()){Tresor.passkey.entfernen();toast('Fingerabdruck / Gesicht entfernt');tresorPasskeyZeigen();return}
+  $('settingsDialog').close();Tresor.passkey.einrichten();
+};
 $('tresorNotfallblatt').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattErneuern()};
 $('tresorNotfallblattDrucken').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattDrucken()};
 
