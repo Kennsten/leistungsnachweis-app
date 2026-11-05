@@ -89,6 +89,10 @@ button:disabled{opacity:.55;cursor:default}
 .card{background:var(--card);border:var(--card-border-width) solid var(--line);border-radius:var(--radius-card);padding:20px;box-shadow:var(--card-shadow),var(--frame-inset);margin-bottom:16px}
 .center{max-width:480px;margin:8vh auto}
 h1,h2,h3{margin:.2em 0 .5em}
+/* Titel der Kopfkarte: kleiner, damit er auch auf schmalen Handys in zwei Zeilen passt */
+#app .card.top{flex-wrap:wrap}
+#app .card.top>div:first-child{flex:1 1 220px;min-width:0}
+#app .card.top h1.app-titel{font-size:clamp(1.3rem,6.2vw,1.9rem);line-height:1.15;overflow-wrap:anywhere}
 p{line-height:1.45}
 label{display:flex;flex-direction:column;gap:6px;font-weight:650;margin:12px 0;min-width:0}
 input,textarea,select{
@@ -1676,8 +1680,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="installLeiste" class="install-leiste hidden"></div>
   <div class="card top">
     <div>
-      <div class="muted">Mobile Verwaltung</div>
-      <h1>Klienten</h1>
+      <div class="muted hidden" id="kopfName"></div>
+      <h1 class="app-titel">QA – Qualifizierte Assistenz</h1>
       <div class="version" id="appVersionAnzeige">Version 1.1 · 23.10.2026</div>
       <div class="abgleich" id="abgleichAnzeige" data-zustand="offline">
         <span class="abgleich-punkt" aria-hidden="true"></span>
@@ -3232,8 +3236,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.3 Verkaufsversion';
-const APP_STAND='04.11.2026';
+const APP_VERSION='0.23.4 Verkaufsversion';
+const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -3385,6 +3389,19 @@ function startAdresse(){
 
 function auftragnehmerName(){
   return String(meineEinstellungen.auftragnehmer_name||'').trim();
+}
+
+/* Kopfzeile: Name der angemeldeten Person. Gespeichert wird „Nachname, Vorname“,
+   angezeigt „Vorname Nachname“. Ohne Komma bleibt der Name unverändert. */
+function kopfNameZeigen(){
+  const el=$('kopfName');
+  if(!el)return;
+  const roh=auftragnehmerName();
+  let anzeige=roh;
+  const teile=roh.split(',').map(t=>t.trim()).filter(Boolean);
+  if(teile.length===2)anzeige=teile[1]+' '+teile[0];
+  el.textContent=anzeige;
+  el.classList.toggle('hidden',!anzeige);
 }
 const FLS_VIERTEL_BIS='2026-06-30';
 const SUPA_UMZUG_AB='2026-08-01';
@@ -10067,6 +10084,7 @@ async function loadEinstellungen(){
   }
 
   meineEinstellungen=data||{};
+  kopfNameZeigen();
 }
 
 /* Menü mit Unterseiten: zuerst eine Liste, ein Tipp öffnet das Thema */
@@ -10203,6 +10221,7 @@ $('settingsForm').onsubmit=async e=>{
 
     meineEinstellungen.auftragnehmer_name=name;
     meineEinstellungen.auftragnehmer_adresse=adresse;
+    kopfNameZeigen();
     $('settingsDialog').close();
     toast('Einstellungen gespeichert');
   }finally{
