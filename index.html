@@ -2719,6 +2719,50 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </section>
 </dialog>
 
+<dialog id="steuerpaketDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Steuer</div>
+      <h2>Steuerpaket</h2>
+    </div>
+    <button type="button" id="spZu" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+
+  <p class="muted small">Eine ZIP-Datei für die Steuerberatung: Fahrtenbuch, Betriebsausgaben, Bewirtungen und die Belege als normale Dateien (entschlüsselt). Keine Klientendokumente und Bescheide.</p>
+
+  <div class="grid">
+    <label>Jahr
+      <select id="spJahr"></select>
+    </label>
+    <label>Zeitraum
+      <select id="spZeitraum">
+        <option value="jahr">Ganzes Jahr</option>
+        <option value="q1">1. Quartal (Jan–Mrz)</option>
+        <option value="q2">2. Quartal (Apr–Jun)</option>
+        <option value="q3">3. Quartal (Jul–Sep)</option>
+        <option value="q4">4. Quartal (Okt–Dez)</option>
+        <option value="m01">Januar</option><option value="m02">Februar</option><option value="m03">März</option>
+        <option value="m04">April</option><option value="m05">Mai</option><option value="m06">Juni</option>
+        <option value="m07">Juli</option><option value="m08">August</option><option value="m09">September</option>
+        <option value="m10">Oktober</option><option value="m11">November</option><option value="m12">Dezember</option>
+      </select>
+    </label>
+  </div>
+
+  <label class="sicherung-haken"><input type="checkbox" id="spBelege" checked> Belege als Dateien beilegen</label>
+  <label class="sicherung-haken"><input type="checkbox" id="spKlarnamen"> Bewirtungen mit Klarnamen (sonst werden Klientennamen durch die Kennung ersetzt)</label>
+  <label class="sicherung-haken"><input type="checkbox" id="spVerzeichnis"> Klientenverzeichnis beilegen (Kennung, Name, Adresse)</label>
+  <p class="muted small" id="spVerzeichnisHinweis">Das Finanzamt könnte nach dem Klientenverzeichnis fragen. Es muss sich mit dem Fahrtenbuch zusammenführen lassen. Ob es der Steuerberatung immer mitgegeben werden soll, klärst du am besten mit ihr.</p>
+
+  <div id="spInfo" class="summary-box"><p class="muted" style="margin:0">Wird geprüft …</p></div>
+  <div id="spFortschritt" class="muted small" aria-live="polite"></div>
+
+  <div class="actions">
+    <button type="button" id="spErstellen" class="primary">Erstellen</button>
+    <button type="button" id="spSpeichern" class="primary hidden">Speichern / Teilen</button>
+  </div>
+</dialog>
+
 <dialog id="cloudVerschiebenDialog">
   <div class="top">
     <div>
@@ -3053,6 +3097,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Belege-Ordner
       </button>
 
+      <button type="button" id="openSteuerpaket" class="secondary">
+        Steuerpaket
+      </button>
+
       <button type="button" id="closeExpenses" class="kn kn-schliessen secondary">
         Schließen
       </button>
@@ -3319,7 +3367,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.12 Verkaufsversion';
+const APP_VERSION='0.24.0 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -14697,6 +14745,347 @@ $('deleteExpense').onclick=async()=>{
   await loadExpenses();
   if($('tripsDialog').open)await loadTrips();
 };
+
+/* ---------- Steuerpaket (ZIP für die Steuerberatung) ---------- */
+const SP_CRC=(()=>{
+  const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0}
+  return t;
+})();
+
+function spCrc32(bytes){
+  let c=0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++)c=SP_CRC[(c^bytes[i])&255]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0;
+}
+
+// Einfache ZIP-Datei ohne Komprimierung. dateien: [{name, bytes}]
+function spZipBauen(dateien){
+  const enc=new TextEncoder();
+  const jetzt=new Date();
+  const zeit=(jetzt.getHours()<<11)|(jetzt.getMinutes()<<5)|(jetzt.getSeconds()>>1);
+  const datum=((jetzt.getFullYear()-1980)<<9)|((jetzt.getMonth()+1)<<5)|jetzt.getDate();
+  const teile=[],zentral=[];
+  let offset=0;
+  for(const d of dateien){
+    const name=enc.encode(d.name);
+    const crc=spCrc32(d.bytes);
+    const gr=d.bytes.length;
+    const k=new DataView(new ArrayBuffer(30));
+    k.setUint32(0,0x04034b50,true);k.setUint16(4,20,true);k.setUint16(6,0x0800,true);k.setUint16(8,0,true);
+    k.setUint16(10,zeit,true);k.setUint16(12,datum,true);k.setUint32(14,crc,true);
+    k.setUint32(18,gr,true);k.setUint32(22,gr,true);k.setUint16(26,name.length,true);k.setUint16(28,0,true);
+    teile.push(new Uint8Array(k.buffer),name,d.bytes);
+    const z=new DataView(new ArrayBuffer(46));
+    z.setUint32(0,0x02014b50,true);z.setUint16(4,20,true);z.setUint16(6,20,true);z.setUint16(8,0x0800,true);
+    z.setUint16(10,0,true);z.setUint16(12,zeit,true);z.setUint16(14,datum,true);z.setUint32(16,crc,true);
+    z.setUint32(20,gr,true);z.setUint32(24,gr,true);z.setUint16(28,name.length,true);
+    z.setUint32(42,offset,true);
+    zentral.push(new Uint8Array(z.buffer),name);
+    offset+=30+name.length+gr;
+  }
+  const zl=zentral.reduce((a,x)=>a+x.length,0);
+  const e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,dateien.length,true);e.setUint16(10,dateien.length,true);
+  e.setUint32(12,zl,true);e.setUint32(16,offset,true);
+  return new Blob([...teile,...zentral,new Uint8Array(e.buffer)],{type:'application/zip'});
+}
+
+function spCsv(kopf,zeilen){
+  const feld=v=>{
+    let t=v==null?'':String(v);
+    if(/^[=+\-@]/.test(t)&&!/^-?\d+([.,]\d+)?$/.test(t))t="'"+t;
+    return /[;"\r\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;
+  };
+  const text=[kopf,...zeilen].map(z=>z.map(feld).join(';')).join('\r\n')+'\r\n';
+  return new TextEncoder().encode('﻿'+text);
+}
+
+const spZahl=n=>(n==null||n===''||!Number.isFinite(Number(n)))?'':Number(n).toFixed(2).replace('.',',');
+const spKm=n=>(n==null||n===''||!Number.isFinite(Number(n)))?'':String(Number(n)).replace('.',',');
+
+function spDateiname(t){
+  return String(t||'Datei').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim()||'Datei';
+}
+
+// Klientennamen im Text durch die Kennung ersetzen
+function spNamenErsetzen(text,klient){
+  let t=String(text||'');
+  if(!t||!klient)return t;
+  const kennung=klient.client_code||'Klient';
+  const roh=String(klient.name||'');
+  const paar=roh.split(',').map(x=>x.trim()).filter(Boolean);
+  const varianten=[roh];
+  if(paar.length===2)varianten.push(paar[1]+' '+paar[0],paar[0]+' '+paar[1]);
+  const teile=[...varianten,...roh.split(/[,\s]+/)]
+    .map(x=>x&&x.trim()).filter(x=>x&&x.length>=3)
+    .sort((a,b)=>b.length-a.length);
+  for(const teil of new Set(teile)){
+    t=t.replace(new RegExp(teil.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),kennung);
+  }
+  return t;
+}
+
+function spZeitraum(){
+  const jahr=Number($('spJahr').value);
+  const z=$('spZeitraum').value;
+  const tag=(y,m,d)=>y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  let von=tag(jahr,1,1),bis=tag(jahr,12,31),name=String(jahr);
+  if(z[0]==='q'){
+    const q=Number(z[1]);
+    const m1=(q-1)*3+1,m2=m1+2;
+    von=tag(jahr,m1,1);bis=tag(jahr,m2,new Date(jahr,m2,0).getDate());name=jahr+'_Q'+q;
+  }else if(z[0]==='m'){
+    const m=Number(z.slice(1));
+    von=tag(jahr,m,1);bis=tag(jahr,m,new Date(jahr,m,0).getDate());name=jahr+'-'+String(m).padStart(2,'0');
+  }
+  return {von,bis,name};
+}
+
+async function spDatenLaden(){
+  const {von,bis}=spZeitraum();
+  const [fahrten,ausgaben]=await Promise.all([
+    Daten.from('trip_entries').select('*').gte('trip_date',von).lte('trip_date',bis)
+      .order('trip_date',{ascending:true}),
+    Daten.from('ausgaben').select('*').gte('datum',von).lte('datum',bis)
+      .order('datum',{ascending:true})
+  ]);
+  if(fahrten.error)throw new Error('Fahrten: '+fahrten.error.message);
+  if(ausgaben.error)throw new Error('Ausgaben: '+ausgaben.error.message);
+  return {fahrten:fahrten.data||[],ausgaben:ausgaben.data||[]};
+}
+
+async function spVorschau(){
+  const info=$('spInfo');
+  info.innerHTML='<p class="muted" style="margin:0">Wird geprüft …</p>';
+  try{
+    const {fahrten,ausgaben}=await spDatenLaden();
+    const mitBeleg=ausgaben.filter(a=>a.beleg_datei_id).length;
+    const bew=ausgaben.filter(a=>a.kategorie==='Bewirtung');
+    const mitKlient=bew.filter(a=>a.client_id).length;
+    const freitext=bew.filter(a=>a.bewirtung_teilnehmer).length;
+    info.innerHTML=
+      '<div class="summary-row"><span>Fahrten</span><strong>'+fahrten.length+'</strong></div>'+
+      '<div class="summary-row"><span>Betriebsausgaben</span><strong>'+ausgaben.length+'</strong></div>'+
+      '<div class="summary-row"><span>davon mit Beleg-Datei</span><strong>'+mitBeleg+'</strong></div>'+
+      '<div class="summary-row"><span>Bewirtungen</span><strong>'+bew.length+'</strong></div>'+
+      (bew.length?'<p class="muted small" style="margin:6px 0 0">Bei den Bewirtungen: '+mitKlient+
+        ' mit Klient verknüpft, '+freitext+' mit eingetragenen Teilnehmern. Der Freitext wird übernommen, Klientennamen darin werden ohne Häkchen „Klarnamen“ durch die Kennung ersetzt. Bitte vor dem Weitergeben kurz prüfen.</p>':'');
+    $('spErstellen').disabled=!(fahrten.length||ausgaben.length);
+    if(!(fahrten.length||ausgaben.length)){
+      info.innerHTML+='<p class="muted small" style="margin:6px 0 0">Im gewählten Zeitraum gibt es nichts zu exportieren.</p>';
+    }
+  }catch(fehler){
+    info.innerHTML='<p style="margin:0">Konnte nicht geprüft werden: '+esc(fehler.message)+'</p>';
+    $('spErstellen').disabled=true;
+  }
+}
+
+let spErgebnis=null;
+
+async function spBelegHolen(a){
+  const ablauf=new Date(Date.now()+2*60*60*1000);
+  const z=n=>String(n).padStart(2,'0');
+  const zeit=ablauf.getUTCFullYear()+'-'+z(ablauf.getUTCMonth()+1)+'-'+z(ablauf.getUTCDate())+'T'+
+    z(ablauf.getUTCHours())+':'+z(ablauf.getUTCMinutes())+':'+z(ablauf.getUTCSeconds())+'+0000';
+  let freigabe;
+  try{freigabe=await pcloudLinkAnfrage({fileid:a.beleg_datei_id,expire:zeit})}
+  catch(e){freigabe=await pcloudLinkAnfrage({fileid:a.beleg_datei_id})}
+  const bytes=await dateiBytesHolen(freigabe);
+  if(dateiIstVerpackt(bytes)){
+    const klar=await dateiAuspacken(bytes);
+    return {name:klar.name,bytes:new Uint8Array(await klar.blob.arrayBuffer())};
+  }
+  return {name:a.beleg_datei_name||('beleg-'+a.beleg_nr),bytes};
+}
+
+async function spErstellen(){
+  const knopf=$('spErstellen');
+  const fort=$('spFortschritt');
+  knopf.disabled=true;
+  $('spSpeichern').classList.add('hidden');
+  spErgebnis=null;
+  try{
+    if(!window.Tresor||!Tresor.datenschluessel())throw new Error('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
+    const {von,bis,name}=spZeitraum();
+    const klarnamen=$('spKlarnamen').checked;
+    const mitVerzeichnis=$('spVerzeichnis').checked;
+    const mitBelegen=$('spBelege').checked;
+    fort.textContent='Daten werden gesammelt …';
+    const {fahrten,ausgaben}=await spDatenLaden();
+    const klient=id=>clients.find(c=>String(c.id)===String(id))||null;
+    const kennung=id=>{const c=klient(id);return c?(c.client_code||'ohne Kennung'):''};
+    const dateien=[];
+    const fehlend=[];
+    const enc=new TextEncoder();
+
+    // Fahrtenbuch
+    dateien.push({name:'Fahrtenbuch_'+name+'.csv',bytes:spCsv(
+      ['Datum','Art','Kennung','Reisezweck','Start','Zwischenstopps','Ziel','Kilometer','Tacho Start','Tacho Ende'],
+      fahrten.map(t=>{
+        const c=klient(t.client_id);
+        return [
+          formatDate(t.trip_date),
+          t.allgemein?'Allgemeine Fahrt':'Klientenbesuch',
+          c?(c.client_code||'ohne Kennung'):'',
+          spNamenErsetzen(t.purpose||'',c),
+          t.start_address||'',
+          spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c),
+          t.destination_address||t.destination||'',
+          spKm(t.kilometers),
+          t.tacho_start!=null?spKm(t.tacho_start):'',
+          t.tacho_ende!=null?spKm(t.tacho_ende):''
+        ];
+      })
+    )});
+
+    // Betriebsausgaben nach Kategorie, darin nach Datum
+    const reihenfolge=k=>{const i=AUSGABEN_KATEGORIEN.indexOf(k);return i<0?99:i};
+    const sortiert=[...ausgaben].sort((a,b)=>
+      reihenfolge(a.kategorie)-reihenfolge(b.kategorie)||
+      String(a.datum).localeCompare(String(b.datum))||
+      (Number(a.beleg_nr)||0)-(Number(b.beleg_nr)||0));
+
+    // Belege holen
+    const belegPfade=new Map();
+    if(mitBelegen){
+      const mit=sortiert.filter(a=>a.beleg_datei_id);
+      for(let i=0;i<mit.length;i++){
+        const a=mit[i];
+        fort.textContent='Beleg '+(i+1)+' von '+mit.length+' wird geladen und entschlüsselt …';
+        try{
+          const b=await spBelegHolen(a);
+          const ordner='Belege/'+spDateiname(a.kategorie||'Sonstiges');
+          let pfad=ordner+'/'+spDateiname(b.name);
+          let n=2;
+          while(dateien.some(d=>d.name===pfad)){
+            const p=spDateiname(b.name),punkt=p.lastIndexOf('.');
+            pfad=ordner+'/'+(punkt>0?p.slice(0,punkt)+'_'+n+p.slice(punkt):p+'_'+n);n++;
+          }
+          dateien.push({name:pfad,bytes:b.bytes});
+          belegPfade.set(a.id,pfad);
+        }catch(e){
+          fehlend.push((belegNummer(a)||a.id)+' ('+(a.kategorie||'')+'): '+e.message);
+        }
+      }
+    }
+
+    const zweckText=a=>{
+      const c=klient(a.client_id);
+      return (a.kategorie==='Bewirtung'&&klarnamen)?(a.zweck||''):spNamenErsetzen(a.zweck||'',c);
+    };
+    dateien.push({name:'Betriebsausgaben_'+name+'.csv',bytes:spCsv(
+      ['Beleg-Nr','Datum','Kategorie','Betrag (EUR)','Zweck','Kennung','Beleg-Datei im Paket','Notizen'],
+      sortiert.map(a=>[
+        belegNummer(a),formatDate(a.datum),a.kategorie||'',spZahl(a.betrag),zweckText(a),
+        kennung(a.client_id),belegPfade.get(a.id)||'',
+        (a.kategorie==='Bewirtung'&&klarnamen)?(a.notizen||''):spNamenErsetzen(a.notizen||'',klient(a.client_id))
+      ])
+    )});
+
+    // Summen
+    const summen=new Map();
+    ausgaben.forEach(a=>summen.set(a.kategorie||'Sonstiges',(summen.get(a.kategorie||'Sonstiges')||0)+Number(a.betrag||0)));
+    dateien.push({name:'Summen_nach_Kategorie_'+name+'.csv',bytes:spCsv(
+      ['Kategorie','Summe (EUR)'],
+      [...summen.entries()].sort((a,b)=>reihenfolge(a[0])-reihenfolge(b[0])).map(([k,v])=>[k,spZahl(v)])
+    )});
+
+    // Bewirtungen (voller Betrag, ohne Abzug der 70 %)
+    const bew=sortiert.filter(a=>a.kategorie==='Bewirtung');
+    if(bew.length){
+      dateien.push({name:'Bewirtungen_'+name+'.csv',bytes:spCsv(
+        ['Beleg-Nr','Datum','Anlass','Teilnehmer','Kennung','Betrag brutto (EUR, ohne Abzug der 70 %)','Beleg-Datei im Paket'],
+        bew.map(a=>{
+          const c=klient(a.client_id);
+          const anl=a.bewirtung_anlass||'',tn=a.bewirtung_teilnehmer||'';
+          return [
+            belegNummer(a),formatDate(a.datum),
+            klarnamen?anl:spNamenErsetzen(anl,c),
+            klarnamen?tn:spNamenErsetzen(tn,c),
+            kennung(a.client_id),spZahl(a.betrag),belegPfade.get(a.id)||''
+          ];
+        })
+      )});
+    }
+
+    // Klientenverzeichnis (nur auf Wunsch)
+    if(mitVerzeichnis){
+      const benutzt=new Set([...fahrten,...ausgaben].map(x=>String(x.client_id||'')).filter(Boolean));
+      dateien.push({name:'Klientenverzeichnis_'+name+'.csv',bytes:spCsv(
+        ['Kennung','Name','Adresse'],
+        clients.filter(c=>benutzt.has(String(c.id))).sort((a,b)=>String(a.client_code||'').localeCompare(String(b.client_code||'')))
+          .map(c=>[c.client_code||'ohne Kennung',c.name||'',clientDestination(c)])
+      )});
+    }
+
+    const lies=[
+      'Steuerpaket '+name+' ('+formatDate(von)+' bis '+formatDate(bis)+')',
+      'Erstellt am '+new Date().toLocaleDateString('de-DE')+' mit der QA-App',
+      '',
+      'Inhalt:',
+      '- Fahrtenbuch_*.csv: Fahrten mit Kennung der Klientin / des Klienten, Reisezweck, Start, Ziel, Kilometer.',
+      '- Betriebsausgaben_*.csv: nach Kategorie, darin nach Datum sortiert. Beträge in EUR.',
+      '- Summen_nach_Kategorie_*.csv: Summen je Kategorie.',
+      bew.length?'- Bewirtungen_*.csv: voller Betrag, die 70 % sind NICHT abgezogen (das macht die Steuerberatung bzw. die Steuer-App).':'',
+      '- Belege/<Kategorie>/: die Belege als Dateien, Name beginnt mit der Belegnummer.',
+      mitVerzeichnis?'- Klientenverzeichnis_*.csv: Zuordnung Kennung - Name - Adresse.':'',
+      '',
+      'Datenschutz: Klienten sind nur mit ihrer Kennung (z. B. K001) aufgeführt.'+(klarnamen?' Bei Bewirtungen stehen auf Wunsch die eingetragenen Namen.':' Namen in Freitextfeldern wurden automatisch durch die Kennung ersetzt; bitte trotzdem kurz prüfen.'),
+      'Die Dateien betreffen Klienten und sind vertraulich zu behandeln.',
+      fehlend.length?'':'',
+      fehlend.length?'ACHTUNG: Folgende Belege konnten nicht geladen werden und fehlen im Paket:':'',
+      ...fehlend.map(f=>'- '+f)
+    ].filter(z=>z!=='' || true).join('\r\n');
+    dateien.unshift({name:'Lies-mich.txt',bytes:enc.encode('﻿'+lies)});
+
+    fort.textContent='ZIP-Datei wird erstellt …';
+    const blob=spZipBauen(dateien);
+    spErgebnis={blob,dateiname:'Steuerpaket_'+name+'.zip'};
+    fort.textContent='Fertig: '+dateien.length+' Dateien, '+dateiGroesse(blob.size)+
+      (fehlend.length?' · '+fehlend.length+' Beleg(e) fehlen (siehe Lies-mich.txt)':'')+'.';
+    $('spSpeichern').classList.remove('hidden');
+  }catch(fehler){
+    fort.textContent='Fehler: '+fehler.message;
+  }finally{
+    knopf.disabled=false;
+  }
+}
+
+async function spSpeichern(){
+  if(!spErgebnis)return;
+  const datei=new File([spErgebnis.blob],spErgebnis.dateiname,{type:'application/zip'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[datei]})){
+      await navigator.share({files:[datei],title:spErgebnis.dateiname});
+      return;
+    }
+  }catch(fehler){
+    if(fehler&&fehler.name==='AbortError')return;
+  }
+  const adresse=URL.createObjectURL(spErgebnis.blob);
+  const a=document.createElement('a');
+  a.href=adresse;a.download=spErgebnis.dateiname;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(adresse),60000);
+}
+
+$('openSteuerpaket').onclick=async()=>{
+  const jetzt=new Date().getFullYear();
+  $('spJahr').innerHTML='';
+  for(let j=jetzt;j>=jetzt-6;j--)$('spJahr').insertAdjacentHTML('beforeend','<option value="'+j+'">'+j+'</option>');
+  $('spZeitraum').value='jahr';
+  $('spFortschritt').textContent='';
+  $('spSpeichern').classList.add('hidden');
+  spErgebnis=null;
+  $('steuerpaketDialog').showModal();
+  await spVorschau();
+};
+$('spJahr').onchange=()=>{spErgebnis=null;$('spSpeichern').classList.add('hidden');spVorschau()};
+$('spZeitraum').onchange=$('spJahr').onchange;
+$('spErstellen').onclick=spErstellen;
+$('spSpeichern').onclick=spSpeichern;
+$('spZu').onclick=()=>$('steuerpaketDialog').close();
 
 const DESIGN_SPEICHER='qa_design';
 
