@@ -1858,7 +1858,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         </select>
       </label>
       <label>Geburtstag<input id="geburtstag" type="date"></label>
-      <label>Klienten-ID<input id="clientCode" required placeholder="K0001"></label>
+      <label>Kennung (Klienten-ID)<input id="clientCode" required placeholder="K001"></label>
+      <p class="muted small" style="grid-column:1/-1;margin:-.2em 0 .4em">Bitte immer eine Kennung vergeben (K001, K002, K003 …). Nur damit können Fahrten, Abrechnung und Steuerunterlagen ohne den Namen des Klienten verarbeitet werden. Die Kennung steht auch auf neutralen Ordnern und Dateien.</p>
       <label>Aktenzeichen<input id="aktenzeichen"></label>
     </div>
 
@@ -3270,7 +3271,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.6 Verkaufsversion';
+const APP_VERSION='0.23.7 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4394,10 +4395,17 @@ function renderClients(){
   document.querySelectorAll('.cloud').forEach(b=>b.onclick=()=>openCloud(b.dataset.id));
 }
 
+// Nächste freie Kennung: K001, K002, … (höchste vorhandene Nummer + 1)
+function naechsteKennung(){
+  let hoechste=0;
+  (clients||[]).forEach(c=>{const m=/^K(\d+)$/i.exec(String(c.client_code||'').trim());if(m)hoechste=Math.max(hoechste,parseInt(m[1],10))});
+  return 'K'+String(hoechste+1).padStart(3,'0');
+}
+
 function openClient(id=''){
   const c=clients.find(x=>x.id===id)||{};
   $('clientId').value=c.id||'';
-  $('clientCode').value=c.client_code||'';
+  $('clientCode').value=c.client_code||(c.id?'':naechsteKennung());
   $('clientName').value=c.name||'';
   $('clientAnrede').value=c.anrede||'';
   $('aktenzeichen').value=c.aktenzeichen||'';
