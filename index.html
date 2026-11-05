@@ -3049,6 +3049,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Neue Ausgabe
       </button>
 
+      <button type="button" id="openBelegeOrdner" class="secondary">
+        Belege-Ordner
+      </button>
+
       <button type="button" id="closeExpenses" class="kn kn-schliessen secondary">
         Schließen
       </button>
@@ -3315,7 +3319,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.23.10 Verkaufsversion';
+const APP_VERSION='0.23.11 Verkaufsversion';
 const APP_STAND='05.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9876,7 +9880,9 @@ async function cloudDateienLaden(){
       .sort(cloudNachZeit));
 
     $('cloudActions').classList.remove('hidden');
-    $('cloudUnlink').classList.toggle('hidden',cloudPfad.length>1||Boolean(cloudAuswahl));
+    const belegeModus=Boolean(activeCloudClient&&activeCloudClient.id==='belege');
+    $('cloudUnlink').classList.toggle('hidden',belegeModus||cloudPfad.length>1||Boolean(cloudAuswahl));
+    $('cloudUpload').classList.toggle('hidden',belegeModus);
 
     const ordnerHtml=ordner.length
       ? '<div class="cloud-ordner-raster">'+ordner.map(o=>`
@@ -10197,12 +10203,12 @@ $('cloudMehrLoeschen').onclick=async()=>{
   const ids=[...cloudGewaehlt];
   if(!ids.length)return;
   if(!confirm(ids.length+(ids.length===1?' Datei':' Dateien')+
-    ' wirklich aus pCloud löschen? Das lässt sich nicht rückgängig machen.'))return;
+    ' wirklich aus pCloud löschen? Das lässt sich nicht rückgängig machen. Gehört eine Datei zu einem Beleg oder Bescheid, wird dort die Zuordnung gelöst.'))return;
   const knopf=$('cloudMehrLoeschen');
   knopf.disabled=true;
   let ok=0,fehler=0;
   for(const id of ids){
-    try{await pcloudAnfrage('deletefile',{fileid:Number(id)});ok++}catch(e){fehler++}
+    try{await pcloudAnfrage('deletefile',{fileid:Number(id)});await dateiVerknuepfungenLoesen(id);ok++}catch(e){fehler++}
   }
   toast(ok+(ok===1?' Datei gelöscht':' Dateien gelöscht')+(fehler?' · '+fehler+' nicht möglich':''));
   cloudAlleDateien=null;
@@ -10439,11 +10445,45 @@ async function dateiBytesHolen(freigabe){
   return new Uint8Array(await antwort.arrayBuffer());
 }
 
+// Wird eine Datei in pCloud gelöscht, müssen Belege und Bescheide, die auf sie zeigen,
+// ihre Verknüpfung verlieren (sonst zeigen sie auf eine Datei, die es nicht mehr gibt).
+async function dateiVerknuepfungenLoesen(fileId){
+  const id=Number(fileId);
+  if(!Number.isFinite(id))return;
+  try{
+    await Daten.from('ausgaben').update({beleg_datei_id:null,beleg_datei_name:null}).eq('beleg_datei_id',id);
+  }catch(e){}
+  try{
+    await Daten.from('bewilligungen').update({bescheid_datei_id:null,bescheid_datei_name:null}).eq('bescheid_datei_id',id);
+  }catch(e){}
+}
+
+// Der Ordner „Belege“ (Unterordner je Jahr) im Cloud-Fenster
+async function openBelegeOrdner(){
+  if(!pcloudToken){
+    toast('Bitte zuerst pCloud verbinden (Einstellungen → Dokumente und Cloud).');
+    return;
+  }
+  try{
+    const id=await pcloudOrdner(0,'Belege');
+    activeCloudClient={id:'belege',name:'Belege',client_code:'',pcloud_folder_id:id,pcloud_folder_name:'Belege'};
+    cloudAuswahl=null;
+    cloudPfadZuruecksetzen();
+    $('cloudClientName').textContent='Belege (alle Ausgaben)';
+    $('cloudDialog').showModal();
+    await cloudAnzeigen();
+  }catch(fehler){
+    toast('Belege-Ordner konnte nicht geöffnet werden: '+fehler.message);
+  }
+}
+$('openBelegeOrdner').onclick=openBelegeOrdner;
+
 async function cloudDateiLoeschen(fileId,name){
   if(!confirm('Datei "'+name+'" wirklich aus pCloud löschen?'))return;
 
   try{
     await pcloudAnfrage('deletefile',{fileid:fileId});
+    await dateiVerknuepfungenLoesen(fileId);
     toast('Datei gelöscht');
     cloudAlleDateien=null;
     await cloudDateienLaden();
@@ -10515,6 +10555,7 @@ async function cloudDateiHochladen(datei){
 }
 
 $('closeCloud').onclick=()=>{
+  $('cloudUpload').classList.remove('hidden');
   $('cloudDialog').close();
   activeCloudClient=null;
   cloudAuswahl=null;
