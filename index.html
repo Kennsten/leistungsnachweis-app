@@ -3367,8 +3367,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.0 Verkaufsversion';
-const APP_STAND='05.11.2026';
+const APP_VERSION='0.24.1 Verkaufsversion';
+const APP_STAND='06.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -12993,6 +12993,120 @@ async function whStarten(){
 }
 
 $('wiederherstellenOeffnen').onclick=wiederherstellenOeffnen;
+
+/* ---------- Testdaten ergänzen (versteckt: 7× auf die Versionsnummer tippen) ----------
+   Fügt zwei Testklienten mit Bewilligung, Dokumentationen, Fahrten und Belegen HINZU.
+   Es wird nichts gelöscht oder überschrieben. Die Testklienten haben die Kennungen T901/T902. */
+async function testdatenAnlegen(){
+  const uid=()=>crypto.randomUUID();
+  const fehlerPruefen=(r,was)=>{if(r&&r.error)throw new Error(was+': '+r.error.message)};
+  const {data:vorhanden}=await Daten.from('clients').select('id,client_code').in('client_code',['T901','T902']);
+  if(vorhanden&&vorhanden.length){toast('Die Testklienten gibt es schon (T901/T902).');return}
+
+  const klienten=[
+    {code:'T901',name:'Muster, Anna',anrede:'Frau',strasse:'Teststraße',hausnummer:'12',plz:'30159',ort:'Hannover',
+     telefon:'0511 1234567',arzt:'Praxis Dr. Beispiel, Lister Meile 5, 30161 Hannover',amt:'Bürgeramt, Trammplatz 2, 30159 Hannover'},
+    {code:'T902',name:'Beispiel, Bernd',anrede:'Herr',strasse:'Probeweg',hausnummer:'7',plz:'30451',ort:'Hannover',
+     telefon:'0511 7654321',arzt:'Physiotherapie Muster, Limmerstraße 20, 30451 Hannover',amt:'Jobcenter, Vahrenwalder Str. 245, 30179 Hannover'}
+  ];
+  const buero='Büro, Musterallee 1, 30159 Hannover';
+  const ausgaben=[];
+  const jahr=2026;
+  let belegNr=await naechsteBelegNummer(jahr);
+
+  for(const [i,k] of klienten.entries()){
+    const cid=uid(),bid=uid();
+    const vorname=k.name.split(', ')[1],nachname=k.name.split(', ')[0];
+    let r=await Daten.from('clients').insert({
+      id:cid,user_id:user.id,client_code:k.code,name:k.name,anrede:k.anrede,
+      strasse:k.strasse,hausnummer:k.hausnummer,plz:k.plz,ort:k.ort,telefon:k.telefon,
+      bemerkungen:'TESTKLIENT – darf gelöscht werden.'
+    });
+    fehlerPruefen(r,'Klient');
+    r=await Daten.from('bewilligungen').insert({
+      id:bid,user_id:user.id,client_id:cid,beginn:'2026-01-01',ende:'2026-12-31',
+      stundenkontingent:120,wochen_fls:i?2:3,leistungstraeger_typ:'LH Hannover',kostentraeger:'LH Hannover',
+      bewilligungsjahr_beginn:'2026-01-01',bemerkungen:'Testbewilligung'
+    });
+    fehlerPruefen(r,'Bewilligung');
+
+    const adresse=k.strasse+' '+k.hausnummer+', '+k.plz+' '+k.ort;
+    const termine=[
+      {d:'2026-09-08',b:'10:00',e:'11:40',min:100,ort:'Wohnung Klient',kz:'1',
+       t:'Besuch bei '+vorname+' '+nachname+'. Besprechung der Wochenplanung und Haushaltsorganisation.'},
+      {d:'2026-09-22',b:'14:00',e:'15:40',min:100,ort:'Begleitung außer Haus',kz:'4',
+       t:'Begleitung von '+k.name+' zum Arztbesuch. Fragen vorab gesammelt, Termin gut verlaufen.',fahrt:{ziel:k.arzt,km:8.4,zweck:'Klientenbesuch und Begleitung zum Arzt'},park:3.5},
+      {d:'2026-10-13',b:'09:30',e:'11:10',min:100,ort:'Begleitung außer Haus',kz:'5',
+       t:vorname+' wurde zum Amt begleitet, Unterlagen gemeinsam eingereicht.',fahrt:{ziel:k.amt,km:11.2,zweck:'Klientenbesuch und Behördengang'},park:4},
+      {d:'2026-10-27',b:'13:00',e:'14:40',min:100,ort:'Wohnung Klient',kz:'2',
+       t:'Tagesstruktur mit '+vorname+' besprochen, neuer Wochenplan erstellt.'}
+    ];
+    for(const t of termine){
+      const did=uid();
+      r=await Daten.from('dokumentationen').insert({
+        id:did,user_id:user.id,client_id:cid,bewilligung_id:bid,datum:t.d,beginn:t.b,ende:t.e,
+        dauer_minuten:t.min,fls:2,leistungsart:'Face-to-Face',ort_der_leistung:t.ort,
+        kennziffer:Number(t.kz),dokumentation:t.t,besonderheiten:null
+      });
+      fehlerPruefen(r,'Dokumentation');
+      // Hinfahrt zum Klienten (jede Dokumentation hat eine Fahrt)
+      const tid=uid();
+      const ziel=t.fahrt?t.fahrt.ziel:adresse;
+      r=await Daten.from('trip_entries').insert({
+        id:tid,user_id:user.id,client_id:cid,allgemein:false,documentation_id:did,trip_date:t.d,
+        start_address:t.fahrt?adresse:buero,destination_address:ziel,
+        intermediate_stops:t.fahrt?adresse:null,kilometers:t.fahrt?t.fahrt.km:6.3,
+        purpose:t.fahrt?t.fahrt.zweck:'Klientenbesuch',
+        notes:'Fahrt zu '+vorname+' '+nachname,tacho_start:41000+i*500,tacho_ende:41000+i*500+Math.round(t.fahrt?t.fahrt.km:6.3)
+      });
+      fehlerPruefen(r,'Fahrt');
+      if(t.park){
+        ausgaben.push({id:uid(),user_id:user.id,datum:t.d,betrag:t.park,kategorie:'Parken',
+          zweck:'Parkgebühr bei '+vorname+' '+nachname,client_id:cid,documentation_id:did,trip_id:tid,
+          beleg_vorhanden:false,beleg_jahr:jahr});
+      }
+    }
+    // Bewirtung (nur beim ersten Klienten)
+    if(!i){
+      ausgaben.push({id:uid(),user_id:user.id,datum:'2026-10-13',betrag:42.8,kategorie:'Bewirtung',
+        zweck:'Arbeitsessen',client_id:cid,bewirtung_anlass:'Austausch zur Hilfeplanung',
+        bewirtung_teilnehmer:k.name+' und Sozialdienst',beleg_vorhanden:false,beleg_jahr:jahr});
+    }
+  }
+  // Allgemeine Fahrt (ohne Klient) und allgemeine Ausgaben
+  let r=await Daten.from('trip_entries').insert({
+    id:uid(),user_id:user.id,client_id:null,allgemein:true,trip_date:'2026-10-20',
+    start_address:buero,destination_address:'Fortbildungszentrum, Podbielskistr. 1, 30163 Hannover',
+    kilometers:9.6,purpose:'Fortbildung',notes:'Testfahrt ohne Klient',tacho_start:41600,tacho_ende:41610
+  });
+  fehlerPruefen(r,'Allgemeine Fahrt');
+  ausgaben.push(
+    {id:uid(),user_id:user.id,datum:'2026-10-20',betrag:189,kategorie:'Fortbildung',zweck:'Seminar Gesprächsführung',beleg_vorhanden:false,beleg_jahr:jahr},
+    {id:uid(),user_id:user.id,datum:'2026-09-15',betrag:24.9,kategorie:'Bürobedarf',zweck:'Ordner und Papier',beleg_vorhanden:false,beleg_jahr:jahr},
+    {id:uid(),user_id:user.id,datum:'2026-11-03',betrag:36.5,kategorie:'Fachliteratur',zweck:'Fachbuch Assistenz',beleg_vorhanden:false,beleg_jahr:jahr}
+  );
+  ausgaben.sort((a,b)=>a.datum.localeCompare(b.datum));
+  for(const a of ausgaben){
+    a.beleg_nr=belegNr++;
+    r=await Daten.from('ausgaben').insert(a);
+    fehlerPruefen(r,'Ausgabe');
+  }
+  await loadClients();
+  toast('Testdaten angelegt: 2 Klienten (T901, T902) mit Fahrten und Belegen.');
+}
+(function(){
+  let zaehler=0,zeit=0;
+  document.addEventListener('click',async e=>{
+    if(!e.target.closest('.version'))return;
+    const jetzt=Date.now();
+    zaehler=(jetzt-zeit<1500)?zaehler+1:1;zeit=jetzt;
+    if(zaehler<7)return;
+    zaehler=0;
+    if(!confirm('Testdaten ergänzen? Es werden 2 Testklienten mit Fahrten, Dokumentationen und Belegen hinzugefügt. Vorhandenes bleibt unverändert.'))return;
+    try{await testdatenAnlegen()}catch(f){toast('Testdaten fehlgeschlagen: '+f.message)}
+  });
+})();
+
 $('wiederherstellenSchliessen').onclick=()=>$('wiederherstellenDialog').close();
 $('whDateiWaehlen').onclick=()=>$('whDatei').click();
 $('whDatei').onchange=async()=>{
