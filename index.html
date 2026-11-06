@@ -858,6 +858,34 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   }
 }
 
+/* Änderungsliste der Belegnummern */
+#belegNeuDialog{width:min(900px,96vw);box-sizing:border-box;overflow-x:hidden}
+#belegNeuDialog .top{flex-wrap:wrap;gap:8px}
+.belegneu-tabelle{width:100%;border-collapse:collapse;font-size:.92rem}
+.belegneu-tabelle th,.belegneu-tabelle td{border:1px solid var(--line,#bbb);padding:6px 8px;text-align:left;vertical-align:top}
+.belegneu-tabelle th{background:rgba(128,128,128,.14);font-weight:600}
+.belegneu-tabelle .nr{font-size:1.25rem;font-weight:700;white-space:nowrap;text-align:center}
+.belegneu-tabelle .alt{white-space:nowrap;text-align:center;text-decoration:line-through}
+.belegneu-tabelle .betrag{white-space:nowrap;text-align:right}
+.belegneu-tabelle .haken{width:2.2rem;text-align:center;font-size:1.3rem}
+.belegneu-tabelle tr{break-inside:avoid}
+@media (max-width:640px){
+  #belegNeuDialog{padding:14px}
+  .belegneu-tabelle{font-size:.76rem}
+  .belegneu-tabelle th,.belegneu-tabelle td{padding:3px 3px}
+  .belegneu-tabelle .nr{font-size:1rem}
+  .belegneu-tabelle .haken{width:1.6rem;font-size:1.1rem}
+  .belegneu-tabelle .zweck{display:none}
+}
+@media print{
+  body *{visibility:hidden}
+  #belegNeuDialog,#belegNeuDialog *{visibility:visible}
+  #belegNeuDialog .no-print,#belegNeuDialog .no-print *{display:none!important}
+  #belegNeuDialog{position:absolute;inset:0;width:100%;max-width:none;margin:0;padding:12mm;border:0;box-shadow:none;background:#fff;color:#000;max-height:none;overflow:visible}
+  .belegneu-tabelle th{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .belegneu-tabelle th,.belegneu-tabelle td{border-color:#000}
+}
+
 @media print{
   body{
     background:#fff;
@@ -2719,6 +2747,20 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </section>
 </dialog>
 
+<dialog id="belegNeuDialog">
+  <div class="top no-print">
+    <div>
+      <div class="muted">Betriebsausgaben</div>
+      <h2>Neue Belegnummern</h2>
+    </div>
+    <button type="button" id="belegNeuZu" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="belegNeuInhalt"></div>
+  <div class="actions no-print">
+    <button type="button" id="belegNeuDrucken">Liste drucken</button>
+  </div>
+</dialog>
+
 <dialog id="steuerpaketDialog">
   <div class="top">
     <div>
@@ -3097,6 +3139,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Belege-Ordner
       </button>
 
+      <button type="button" id="belegListeLetzte" class="secondary hidden">
+        Liste der Nummern-Änderungen
+      </button>
+
       <button type="button" id="openSteuerpaket" class="secondary">
         Steuerpaket
       </button>
@@ -3367,7 +3413,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.1 Verkaufsversion';
+const APP_VERSION='0.24.2 Verkaufsversion';
 const APP_STAND='06.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -11191,20 +11237,55 @@ async function belegeNeuNummerieren(jahr){
   }
   belegPruefungLaeuft=false;
 
-  const zeilen=aenderungen
+  const liste2=aenderungen
     .sort((x,y)=>x.neu-y.neu)
-    .map(x=>'Beleg '+belegNr3(x.alt)+' → '+belegNr3(x.neu)+' ('+formatDate(x.a.datum)+', '+
-      (x.a.zweck||x.a.kategorie||'')+', '+Number(x.a.betrag||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'})+')');
+    .map(x=>({alt:x.alt,neu:x.neu,datum:x.a.datum,kategorie:x.a.kategorie||'',zweck:x.a.zweck||'',betrag:Number(x.a.betrag||0)}));
+  belegListeMerken(jahr,liste2);
   hinweisDazu({
     schluessel:'beleg-neu-'+jahr+'-'+Date.now(),
     art:'beleg',
-    text:'Belege '+jahr+' wurden neu nummeriert. Bitte die Nummern auf den Papierbelegen anpassen: '+zeilen.join('; ')+'.'+
+    text:'Belege '+jahr+' wurden neu nummeriert ('+liste2.length+' Änderungen). Bitte die Nummern auf den Papierbelegen anpassen. '+
+      'Die Liste zum Abhaken und Drucken findest du in den Betriebsausgaben unter „Liste der Nummern-Änderungen“.'+
       (aenderungen.some(x=>x.a.beleg_datei_id)?' Die Dateien in pCloud tragen noch die alte Nummer im Namen.':'')
   });
+  belegListeZeigen(jahr);
   toast('Belege neu nummeriert');
   await loadExpenses();
   hinweiseAnzeigen(false);
 }
+
+/* ---------- Änderungsliste nach dem Neu-Nummerieren ---------- */
+function belegListeMerken(jahr,liste){
+  try{localStorage.setItem('qa-beleg-liste-'+(user&&user.id||'')+'-'+jahr,JSON.stringify({am:new Date().toISOString(),liste}))}catch(e){}
+}
+function belegListeLesen(jahr){
+  try{return JSON.parse(localStorage.getItem('qa-beleg-liste-'+(user&&user.id||'')+'-'+jahr)||'null')}catch(e){return null}
+}
+function belegListeKnopfAktualisieren(){
+  const k=$('belegListeLetzte');
+  if(!k)return;
+  const jahr=Number($('expensesYear').value);
+  k.classList.toggle('hidden',!belegListeLesen(jahr));
+}
+function belegListeZeigen(jahr){
+  const d=belegListeLesen(jahr);
+  if(!d||!d.liste||!d.liste.length)return;
+  const euro=n=>n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
+  const zeilen=d.liste.map(x=>
+    '<tr><td class="nr">'+esc(belegNr3(x.neu))+'</td><td class="alt">'+esc(belegNr3(x.alt))+'</td>'+
+    '<td>'+esc(formatDate(x.datum))+'</td><td>'+esc(x.kategorie)+(x.zweck?'<br><span class="muted small zweck">'+esc(x.zweck)+'</span>':'')+'</td>'+
+    '<td class="betrag">'+esc(euro(x.betrag))+'</td><td class="haken">☐</td></tr>').join('');
+  $('belegNeuInhalt').innerHTML=
+    '<p><strong>Belege '+jahr+' – geänderte Nummern</strong><br>'+
+    '<span class="muted small">Stand: '+esc(new Date(d.am).toLocaleString('de-DE',{dateStyle:'medium',timeStyle:'short'}))+
+    ' · '+d.liste.length+(d.liste.length===1?' Änderung':' Änderungen')+'</span></p>'+
+    '<p class="small">Auf dem Papierbeleg die <strong>alte Nummer durchstreichen</strong> und die <strong>neue Nummer</strong> daneben schreiben. Dann das Kästchen abhaken.</p>'+
+    '<table class="belegneu-tabelle"><thead><tr><th>Neue Nr.</th><th>Alte Nr.</th><th>Datum</th><th>Beleg</th><th>Betrag</th><th>✓</th></tr></thead><tbody>'+zeilen+'</tbody></table>';
+  $('belegNeuDialog').showModal();
+}
+$('belegNeuZu').onclick=()=>$('belegNeuDialog').close();
+$('belegNeuDrucken').onclick=()=>window.print();
+$('belegListeLetzte').onclick=()=>belegListeZeigen(Number($('expensesYear').value));
 
 function fillExpenseCategories(){
   const optionen=AUSGABEN_KATEGORIEN
@@ -11323,6 +11404,7 @@ async function openExpenses(){
 }
 
 async function loadExpenses(){
+  belegListeKnopfAktualisieren();
   $('expensesList').innerHTML=
     '<p class="muted">Ausgaben werden geladen …</p>';
 
