@@ -1,4 +1,4 @@
-// pcloud-link.mjs  (Version 4)
+// pcloud-link.mjs  (Version 5)
 // Dieses Programm läuft auf den Servern von Netlify, nicht im Browser.
 // pCloud lehnt das Erzeugen von Links ab, wenn die Anfrage von einer
 // Webseite kommt (Fehler 7010). Von hier aus kommt sie ohne
@@ -19,10 +19,53 @@
 //    pCloud die Internetadresse akzeptiert.
 //
 // Weder Zugangszeichen noch Dateien werden hier gespeichert.
+//
+// Version 5: Alle Aufrufe (außer dem Lebenszeichen per GET) verlangen jetzt
+// eine gültige Anmeldung an der App (Supabase), wie bei route-km.mjs.
+// Sonst könnte jeder im Internet diesen Durchreicher benutzen.
 
 // Nur diese beiden pCloud-Adressen sind erlaubt (Europa und USA).
 const ERLAUBTE_HOSTS = ['eapi.pcloud.com', 'api.pcloud.com'];
 const KENNUNG = { 'User-Agent': 'QA-All-Inclusiv/1.0' };
+
+// Supabase-Projekte der App (öffentliche Schlüssel). Welches gilt, entscheidet
+// die Adresse, unter der die App läuft: Verkaufsversion und Vorschauen nutzen
+// Frankfurt, alle anderen Adressen das bisherige Projekt.
+const PROJEKT_EIGEN = {
+  url: 'https://bhrygputoysiwchzlygn.supabase.co',
+  key: 'sb_publishable_6l1Zi_OcdlxKQgvJWhZWYQ_ZOn6_j1C'
+};
+const PROJEKT_FRANKFURT = {
+  url: 'https://luizzjsxufsezgpjypwx.supabase.co',
+  key: 'sb_publishable_i5miPJA-UhIWaeTGywSmoA_aLLba56l'
+};
+
+function projektFuer(request) {
+  let host = '';
+  try {
+    host = new URL(request.url).hostname;
+  } catch (fehler) {
+    host = '';
+  }
+  return host.startsWith('produkt--') || host.startsWith('vorschau-')
+    ? PROJEKT_FRANKFURT
+    : PROJEKT_EIGEN;
+}
+
+// true, wenn die Anfrage von einer angemeldeten Person der App kommt
+async function angemeldet(request) {
+  const anmeldung = request.headers.get('authorization') || '';
+  if (!anmeldung.startsWith('Bearer ')) return false;
+  try {
+    const projekt = projektFuer(request);
+    const antwort = await fetch(projekt.url + '/auth/v1/user', {
+      headers: { apikey: projekt.key, Authorization: anmeldung }
+    });
+    return antwort.ok;
+  } catch (problem) {
+    return false;
+  }
+}
 
 export default async (request) => {
   // Aufruf im Browser (GET): nur ein Lebenszeichen zum Testen.
@@ -32,6 +75,10 @@ export default async (request) => {
 
   if (request.method !== 'POST') {
     return json(405, { fehler: 'Nur POST erlaubt.' });
+  }
+
+  if (!(await angemeldet(request))) {
+    return json(401, { fehler: 'Bitte in der App anmelden.' });
   }
 
   let daten;

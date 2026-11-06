@@ -135,6 +135,31 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .km-warnung{color:var(--danger);font-weight:650}
 .km-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
 .km-knoepfe .km-knopf{flex:1 1 100px}
+/* Fahrt-Karte: Strecke als eine Karte mit senkrechter Linie */
+.strecke-karte{border:1px solid var(--line);border-radius:var(--radius-item);padding:12px 12px 6px;margin:8px 0 6px;background:var(--card)}
+.strecke-titel{font-weight:650;margin-bottom:2px}
+.strecke-zeile{position:relative;display:flex;align-items:flex-start;gap:10px;padding:4px 0}
+.strecke-zeile::before{content:"";position:absolute;left:10px;top:30px;bottom:-8px;border-left:2px solid var(--line)}
+.strecke-zeile.mit-label::before{top:52px}
+.strecke-zeile.strecke-ziel::before{top:-6px;bottom:auto;height:50px}
+.strecke-zeile .route-nr{margin-top:13px;min-width:22px;min-height:22px;box-sizing:border-box;line-height:1;padding:0}
+.strecke-zeile.mit-label .route-nr{margin-top:41px}
+.strecke-feld{flex:1;min-width:0;margin:0}
+.strecke-zeile input{width:100%}
+.stopp-eingabe{flex:1;min-width:0;margin-top:2px}
+.strecke-stopp .route-loeschen{margin-top:7px}
+.strecke-aktion .route-plus{background:transparent;border:1px dashed var(--line)}
+.strecke-aktion-inhalt{flex:1;min-width:0;display:flex;gap:8px;flex-wrap:wrap}
+.strecke-aktion-inhalt select{flex:1 1 160px;min-width:0}
+.strecke-fuss{display:flex;gap:6px 16px;flex-wrap:wrap;padding:2px 0 8px}
+.link-knopf{border:0;background:transparent;color:var(--brand);padding:8px 2px;font-weight:600;font-size:.88rem;text-decoration:underline}
+.km-block{margin:4px 0 10px}
+.km-block label{margin-bottom:8px}
+.km-quelle{font-weight:600;font-size:.82rem;color:var(--muted)}
+.km-quelle.gemerkt{color:var(--brand)}
+.km-quelle.veraltet{color:var(--danger)}
+.tacho-block{margin:6px 0 10px;border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px;background:var(--card)}
+.tacho-block summary{font-weight:650;cursor:pointer}
 .km-strecke{margin:4px 0 0;padding-left:1.3em}
 .km-strecke li{margin:1px 0}
 #kartenDialog{width:min(900px,96vw);max-width:96vw}
@@ -2340,17 +2365,62 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <input id="tripDate" type="date" required>
   </label>
 
-      <label>Kilometer gesamt
-        <input id="tripKilometers" type="text" inputmode="decimal" required autocomplete="off">
-        <div class="km-knoepfe">
-          <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
-          <button type="button" id="tripKarte" class="secondary km-knopf">🗺 Karte</button>
-          <button type="button" id="tripGoogleMaps" class="secondary km-knopf">Google Maps</button>
-        </div>
-        <span id="tripKmHinweis" class="feld-hinweis"></span>
-        <span class="feld-hinweis">Beim Berechnen, auf der Karte und bei Google Maps werden Adressen an externe Dienste gesendet. Du wirst vorher gefragt.</span>
-      </label>
+  <label>Zweck der Fahrt
+    <input id="tripPurpose" required placeholder="z. B. Hausbesuch oder Begleitung">
+  </label>
 
+  <div class="span2 strecke-karte" role="group" aria-labelledby="streckeTitel">
+    <div class="strecke-titel" id="streckeTitel">Strecke</div>
+
+    <div class="strecke-zeile mit-label">
+      <span class="route-nr" aria-hidden="true">▶</span>
+      <label class="strecke-feld">Start
+        <input id="tripStartAddress" required>
+      </label>
+    </div>
+
+    <div id="stoppZeilen"></div>
+    <textarea id="tripStopovers" class="hidden" tabindex="-1" aria-hidden="true"></textarea>
+
+    <div class="strecke-zeile strecke-aktion">
+      <span class="route-nr route-plus" aria-hidden="true">+</span>
+      <div class="strecke-aktion-inhalt">
+        <button type="button" id="stoppPlus" class="secondary km-knopf">+ Stopp</button>
+        <select id="tripStopPicker" aria-label="Gespeicherten Stopp anhängen">
+          <option value="">Stopp aus Liste …</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="strecke-zeile strecke-ziel mit-label">
+      <span class="route-nr" aria-hidden="true">■</span>
+      <label class="strecke-feld">Ziel <span id="tripZielHinweis" class="feld-hinweis"></span>
+        <input id="tripDestination" required>
+      </label>
+    </div>
+
+    <div class="strecke-fuss">
+      <button type="button" id="zielGleichStart" class="link-knopf">Ziel = Start (Rundfahrt)</button>
+      <button type="button" id="manageStops" class="link-knopf">Gespeicherte Stopps verwalten</button>
+    </div>
+  </div>
+
+  <div class="span2 km-block">
+    <label><span>Kilometer gesamt <span id="tripKmQuelle" class="km-quelle"></span></span>
+      <input id="tripKilometers" type="text" inputmode="decimal" required autocomplete="off">
+    </label>
+    <div class="km-knoepfe" id="tripKmKnoepfe">
+      <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
+      <button type="button" id="tripKarte" class="secondary km-knopf">🗺 Karte</button>
+      <button type="button" id="tripGoogleMaps" class="secondary km-knopf">Google Maps</button>
+    </div>
+    <span id="tripKmHinweis" class="feld-hinweis"></span>
+    <span id="tripKmDatenschutz" class="feld-hinweis"></span>
+  </div>
+
+  <details class="span2 tacho-block" id="tripTachoBox">
+    <summary>Tachostände (optional)</summary>
+    <div class="grid">
       <label>Tachostand Abfahrt
         <input id="tripTachoStart" type="number" min="0" step="1" inputmode="numeric" placeholder="optional">
       </label>
@@ -2358,43 +2428,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <label>Tachostand Ankunft
         <input id="tripTachoEnde" type="number" min="0" step="1" inputmode="numeric" placeholder="optional">
       </label>
+    </div>
+    <div class="feld-hinweis" id="tripTachoHinweis"></div>
+  </details>
 
-      <div class="span2 feld-hinweis" id="tripTachoHinweis"></div>
-
-      <label class="span2">Startadresse
-        <input id="tripStartAddress" required>
-      </label>
-
-      <label class="span2">Zwischenstopps
-        <span class="feld-hinweis">Ein Stopp pro Zeile – mit ⏎ zum nächsten Stopp</span>
-        <textarea id="tripStopovers" rows="2" class="mitwachsen stopp-feld"
-          placeholder="z. B. Apotheke&#10;Sparkasse"></textarea>
-        <ol id="tripRoute" class="route-vorschau" aria-label="Streckenvorschau"></ol>
-      </label>
-
-      <label class="span2">Gespeicherten Stopp anhängen
-        <select id="tripStopPicker">
-          <option value="">Bitte auswählen</option>
-        </select>
-      </label>
-
-      <label class="span2">
-        <button type="button" id="manageStops" class="secondary">
-          Gespeicherte Stopps verwalten
-        </button>
-      </label>
-
-      <label class="span2">Zieladresse
-        <input id="tripDestination" required>
-      </label>
-
-      <label class="span2">Zweck der Fahrt
-        <input id="tripPurpose" required placeholder="z. B. Hausbesuch oder Begleitung">
-      </label>
-
-      <label class="span2">Bemerkungen
-        <textarea id="tripNotes" rows="3" placeholder="Optional"></textarea>
-      </label>
+  <label class="span2">Bemerkungen
+    <textarea id="tripNotes" rows="3" placeholder="Optional"></textarea>
+  </label>
     </div>
 
     <div id="tripBelegeBox" class="hidden" style="margin:8px 0">
@@ -2741,6 +2781,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <!-- Seite: Dieses Gerät -->
   <section class="einst-seite hidden" data-seite="geraet" data-titel="Dieses Gerät">
     <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
+    <h3>Kilometer-Berechnung</h3>
+    <label>Wie sollen Kilometer berechnet werden?
+      <select id="kmModusSelect">
+        <option value="strasse">Automatisch – nur Straße und Ort (empfohlen)</option>
+        <option value="hausnummer">Automatisch – mit Hausnummer</option>
+        <option value="aus">Nicht automatisch – Kilometer von Hand eintragen</option>
+      </select>
+    </label>
+    <p class="muted small">Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen. Im Fahrtenbuch und im Leistungsnachweis bleibt die volle Adresse erhalten, die Kürzung gilt nur für die Weitergabe an externe Dienste.</p>
     <h3>Dienste mit Adressübertragung</h3>
     <p class="muted small">Für diese Funktionen gehen Adressen unverschlüsselt an externe Dienste. Du kannst sie auf diesem Gerät sperren oder dauerhaft erlauben. Standard ist: vorher fragen.</p>
     <label>Kilometer berechnen (openrouteservice)
@@ -3441,8 +3490,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.4 Verkaufsversion';
-const APP_STAND='06.11.2026';
+const APP_VERSION='0.24.5 Vorschau Fahrt-Karte';
+const APP_STAND='07.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -5387,7 +5436,7 @@ function renderStopPicker(){
   if(!picker)return;
 
   picker.innerHTML=[
-    '<option value="">Bitte auswählen</option>'
+    '<option value="">Stopp aus Liste …</option>'
   ]
     .concat(
       tripStopSuggestions.map(
@@ -5486,6 +5535,59 @@ function adresseFuerBerechnung(stopp){
 
   return stopp;
 }
+/* ---------- Genauigkeit der Adressen bei externen Diensten ---------- */
+// Standard: nur Straße und Ort. Die Hausnummer verlässt das Gerät nur,
+// wenn man das unter Einstellungen → Dieses Gerät ausdrücklich wählt.
+function genauigkeitSchluessel(){return 'qa-genauigkeit-'+((typeof user!=='undefined'&&user&&user.id)||'')}
+function adressGenauigkeit(){
+  try{return localStorage.getItem(genauigkeitSchluessel())==='hausnummer'?'hausnummer':'strasse'}
+  catch(e){return 'strasse'}
+}
+function adressGenauigkeitSetzen(wert){
+  try{
+    if(wert==='hausnummer')localStorage.setItem(genauigkeitSchluessel(),'hausnummer');
+    else localStorage.removeItem(genauigkeitSchluessel());
+  }catch(e){/* nicht schlimm */}
+}
+// 'strasse' | 'hausnummer' | 'aus' (= nicht automatisch berechnen)
+function kmModus(){
+  return dienstEinstellung('route')==='gesperrt'?'aus':adressGenauigkeit();
+}
+
+// „Musterstraße 12a, 30159 Hannover“ → „Musterstraße, 30159 Hannover“
+function hausnummerEntfernen(adresse){
+  const text=String(adresse||'').trim();
+  const teile=text.split(',');
+  const erster=teile[0].trim();
+  let m=erster.match(/^(.*[^\d\s].*?)\s+\d+\s*[a-zA-Z]?(?:\s*[-–\/]\s*\d+\s*[a-zA-Z]?)?$/);
+  if(m){
+    teile[0]=m[1].trim();
+    return teile.map((x,i)=>i?x.trim():x).join(', ');
+  }
+  // Ohne Komma: „Musterstraße 12 30159 Hannover“
+  m=text.match(/^(.*[^\d\s].*?)\s+\d{1,4}\s*[a-zA-Z]?(\s+\d{5}\b.*)$/);
+  if(m)return m[1].trim()+m[2];
+  return text;
+}
+function adresseNachGenauigkeit(adresse){
+  return adressGenauigkeit()==='hausnummer'?String(adresse).trim():hausnummerEntfernen(adresse);
+}
+
+// Passt das Fahrt-Formular an den gewählten Modus an
+function kmModusAnwenden(){
+  const modus=kmModus();
+  const knoepfe=$('tripKmKnoepfe');
+  const hinweis=$('tripKmDatenschutz');
+  if(!knoepfe||!hinweis)return;
+  knoepfe.classList.toggle('hidden',modus==='aus');
+  hinweis.textContent=
+    modus==='aus'
+      ? 'Die automatische Berechnung ist auf diesem Gerät ausgeschaltet. Bitte die Kilometer von Hand eintragen.'
+      : (modus==='strasse'
+          ? 'Beim Berechnen, auf der Karte und bei Google Maps gehen Straße und Ort (ohne Hausnummer) an externe Dienste. Du wirst vorher gefragt.'
+          : 'Beim Berechnen, auf der Karte und bei Google Maps gehen die Adressen mit Hausnummer an externe Dienste. Du wirst vorher gefragt.');
+}
+
 // Adressen der Fahrt in der Reihenfolge Start, Stopps, Ziel
 function fahrtAdressen(){
   const start=$('tripStartAddress').value.trim();
@@ -5494,11 +5596,18 @@ function fahrtAdressen(){
     .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
 
   if(!start||!ziel)return null;
-  return [start,...stopps.map(adresseFuerBerechnung),ziel];
+  return [start,...stopps.map(adresseFuerBerechnung),ziel].map(adresseNachGenauigkeit);
 }
 
 // Letzte Berechnung merken, damit die Karte nicht erneut abfragen muss
 let letzteRoute=null;
+
+// Anmeldung für die Hilfsprogramme bei Netlify (pCloud-Funktion prüft sie)
+async function netlifyAnmeldung(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw new Error('Bitte neu anmelden.');
+  return {Authorization:'Bearer '+session.access_token};
+}
 
 async function routeAbfragen(adressen){
   const schluessel=adressen.join('|');
@@ -5552,7 +5661,22 @@ function dienstEinstellungSetzen(art,wert){
 function dienstEinstellungenZeigen(){
   [['route','dienstSetRoute'],['karte','dienstSetKarte'],['google','dienstSetGoogle']]
     .forEach(([art,id])=>{$(id).value=dienstEinstellung(art)});
+  $('kmModusSelect').value=kmModus();
 }
+$('kmModusSelect').onchange=()=>{
+  const wahl=$('kmModusSelect').value;
+  if(wahl==='aus'){
+    ['route','karte','google'].forEach(art=>dienstEinstellungSetzen(art,'gesperrt'));
+  }else{
+    // Sperren aufheben (Rückfrage vor jeder Übertragung bleibt)
+    ['route','karte','google'].forEach(art=>{
+      if(dienstEinstellung(art)==='gesperrt')dienstEinstellungSetzen(art,'');
+    });
+    adressGenauigkeitSetzen(wahl);
+  }
+  dienstEinstellungenZeigen();
+  kmModusAnwenden();
+};
 [['route','dienstSetRoute'],['karte','dienstSetKarte'],['google','dienstSetGoogle']]
   .forEach(([art,id])=>{$(id).onchange=()=>dienstEinstellungSetzen(art,$(id).value)});
 
@@ -5574,7 +5698,12 @@ function dienstErlaubt(art){
       ok(ja);
     };
     $('dienstTitel').textContent=DIENSTE[art].titel;
-    $('dienstText').innerHTML=DIENSTE[art].text;
+    $('dienstText').innerHTML=DIENSTE[art].text+
+      '<p><strong>Hausnummern:</strong> '+
+      (adressGenauigkeit()==='strasse'
+        ? 'werden nicht übertragen (nur Straße und Ort). Das lässt sich unter Einstellungen → Dieses Gerät ändern.'
+        : 'werden mit übertragen. Unter Einstellungen → Dieses Gerät kannst du auf „Nur Straße und Ort“ umstellen.')+
+      '</p>';
     $('dienstMerken').checked=false;
     $('dienstJa').onclick=()=>fertig(true);
     $('dienstNein').onclick=()=>fertig(false);
@@ -5611,6 +5740,7 @@ async function kilometerBerechnen(){
     const warnungen=ergebnis.unsicher||[];
     const uebernehmen=
       !vorher ||
+      kmQuelle!=='hand' ||
       Number(vorher.replace(',','.'))===ergebnis.km ||
       confirm(
         'Berechnet: '+formatKm(ergebnis.km)+' km.\n'+
@@ -5618,7 +5748,11 @@ async function kilometerBerechnen(){
         'Berechneten Wert übernehmen?'
       );
 
-    if(uebernehmen)$('tripKilometers').value=String(ergebnis.km);
+    if(uebernehmen){
+      $('tripKilometers').value=String(ergebnis.km);
+      kmQuelleSetzen('berechnet');
+      tachoHinweisZeigen();
+    }
 
     // Gefundene Orte und Warnungen immer anzeigen, auch wenn nicht übernommen
     hinweis.innerHTML=
@@ -5649,50 +5783,66 @@ function stoppsAlsZeilen(wert){
   return normalizeStopovers(wert).split(/\s+-\s+/).filter(Boolean).join('\n');
 }
 
-// Passt die Höhe des Zwischenstopp-Feldes an und zeichnet die Streckenvorschau
+// Zeichnet die Stopp-Zeilen neu und aktualisiert den Hinweis am Ziel.
+// Das (versteckte) Feld tripStopovers bleibt die Quelle für alles Weitere
+// (Speichern, Kilometer, Karte), die Zeilen sind nur die Eingabe dazu.
 function stoppFeldAnpassen(){
-  const feld=$('tripStopovers');
-  feld.style.height='auto';
-  feld.style.height=(feld.scrollHeight+2)+'px';
+  stoppZeilenZeichnen();
   routeVorschauZeichnen();
 }
 
-// Entfernt einen Zwischenstopp über den ✕-Knopf in der Streckenvorschau
-function stoppEntfernen(index){
-  const feld=$('tripStopovers');
-  const stopps=String(feld.value||'')
+function stoppListe(){
+  return String($('tripStopovers').value||'')
     .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
+}
 
-  stopps.splice(index,1);
-  feld.value=stopps.join('\n');
+function stoppZeileHtml(text,index){
+  return '<div class="strecke-zeile strecke-stopp">'+
+    '<span class="route-nr" aria-hidden="true">'+(index+1)+'</span>'+
+    '<input class="stopp-eingabe" value="'+esc(text)+'" autocomplete="off" '+
+      'placeholder="Zwischenstopp" aria-label="Zwischenstopp '+(index+1)+'">'+
+    '<button type="button" class="route-loeschen" aria-label="Stopp '+(index+1)+' entfernen">✕</button>'+
+    '</div>';
+}
+
+function stoppZeilenZeichnen(){
+  const box=$('stoppZeilen');
+  if(!box)return;
+  box.innerHTML=stoppListe().map(stoppZeileHtml).join('');
+}
+
+// Schreibt die Stopp-Zeilen zurück ins versteckte Feld (ohne neu zu zeichnen)
+function stoppeAusZeilen(){
+  const werte=[...$('stoppZeilen').querySelectorAll('.stopp-eingabe')]
+    .map(i=>i.value.trim());
+  $('tripStopovers').value=werte.filter(Boolean).join('\n');
+  routeVorschauZeichnen();
+}
+
+// Leere Stopp-Zeile am Ende anhängen und hineinspringen
+function stoppZeileHinzufuegen(){
+  const box=$('stoppZeilen');
+  const anzahl=box.querySelectorAll('.stopp-eingabe').length;
+  box.insertAdjacentHTML('beforeend',stoppZeileHtml('',anzahl));
+  const felder=box.querySelectorAll('.stopp-eingabe');
+  felder[felder.length-1].focus();
+}
+
+// Entfernt eine Stopp-Zeile (✕)
+function stoppEntfernen(index){
+  const zeilen=[...$('stoppZeilen').querySelectorAll('.stopp-eingabe')];
+  zeilen.splice(index,1);
+  $('tripStopovers').value=zeilen.map(i=>i.value.trim()).filter(Boolean).join('\n');
   stoppFeldAnpassen();
   suggestTripKilometers();
 }
 
 function routeVorschauZeichnen(){
-  const liste=$('tripRoute');
-  if(!liste)return;
-
-  const stopps=String($('tripStopovers').value||'')
-    .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean);
-
-  if(!stopps.length){liste.innerHTML='';return;}
-
+  const hinweis=$('tripZielHinweis');
+  if(!hinweis)return;
   const start=$('tripStartAddress').value.trim();
   const ziel=$('tripDestination').value.trim();
-  const zeile=(nr,klasse,text,zusatz,index)=>
-    '<li class="'+klasse+'"><span class="route-nr">'+nr+'</span>'+
-    '<span class="route-text">'+esc(text)+(zusatz?' <small>'+zusatz+'</small>':'')+'</span>'+
-    (index!=null
-      ? '<button type="button" class="route-loeschen" data-index="'+index+'" '+
-        'aria-label="Stopp „'+esc(text)+'“ entfernen">✕</button>'
-      : '')+
-    '</li>';
-
-  liste.innerHTML=
-    (start?zeile('▶','route-start',start,'Start'):'')+
-    stopps.map((t,i)=>zeile(i+1,'route-stopp',t,'',i)).join('')+
-    (ziel?zeile('■','route-ziel',ziel,ziel===start?'Ziel · zurück':'Ziel'):'');
+  hinweis.textContent=(ziel&&ziel===start)?'· zurück zum Start':'';
 }
 
 function appendStopover(name){
@@ -5731,9 +5881,12 @@ async function openTripForm(id=''){
     trip.destination||
     $('tripStartAddress').value;
   $('tripKilometers').value=trip.kilometers??'';
+  kmQuelleSetzen(trip.id&&trip.kilometers!=null?'hand':'');
+  kmModusAnwenden();
   $('tripKmHinweis').textContent='';
   $('tripTachoStart').value=trip.tacho_start??'';
   $('tripTachoEnde').value=trip.tacho_ende??'';
+  $('tripTachoBox').open=trip.tacho_start!=null||trip.tacho_ende!=null;
   $('tripTachoHinweis').dataset.vorschlag='';
   tachoHinweisZeigen();
   if(!trip.id)tachoVorschlagLaden($('tripDate').value);
@@ -5893,8 +6046,28 @@ async function fahrtAenderungPruefen(id,row){
   return true;
 }
 
+// Woher der Kilometer-Wert im Formular stammt:
+// '' (leer) · 'gemerkt' (gespeicherte Strecke) · 'berechnet' · 'hand' · 'veraltet'
+let kmQuelle='';
+function kmQuelleSetzen(quelle){
+  kmQuelle=quelle;
+  const feld=$('tripKmQuelle');
+  if(!feld)return;
+  const texte={
+    gemerkt:'✓ aus gemerkter Strecke',
+    berechnet:'· berechnet',
+    veraltet:'⚠ Strecke geändert – bitte neu berechnen'
+  };
+  feld.textContent=texte[quelle]||'';
+  feld.className='km-quelle'+(texte[quelle]?' '+quelle:'');
+}
+
+// Gemerkte Strecke sofort eintragen und markieren. Von Hand getippte Werte
+// bleiben unangetastet; automatisch eingetragene werden ersetzt.
 async function suggestTripKilometers(){
-  if($('tripKilometers').value.trim())return;
+  const feld=$('tripKilometers');
+  const ersetzbar=()=>!feld.value.trim()||['gemerkt','berechnet','veraltet'].includes(kmQuelle);
+  if(!ersetzbar())return;
 
   const kilometers=await lookupRouteDistance(
     $('tripStartAddress').value,
@@ -5902,16 +6075,21 @@ async function suggestTripKilometers(){
     $('tripDestination').value
   );
 
-  if(kilometers==null)return;
-  if($('tripKilometers').value.trim())return;
+  if(!ersetzbar())return;
 
-  $('tripKilometers').value=String(kilometers).replace('.',',');
+  if(kilometers!=null){
+    feld.value=String(kilometers).replace('.',',');
+    kmQuelleSetzen('gemerkt');
+    tachoHinweisZeigen();
+    return;
+  }
 
-  toast(
-    'Kilometer aus einer früheren Fahrt übernommen: '+
-    formatKm(kilometers)+
-    ' km'
-  );
+  if(kmQuelle==='gemerkt'){
+    feld.value='';
+    kmQuelleSetzen('');
+  }else if(kmQuelle==='berechnet'&&feld.value.trim()){
+    kmQuelleSetzen('veraltet');
+  }
 }
 
 async function learnStopovers(value){
@@ -8382,7 +8560,6 @@ $('tripStopovers').onblur=()=>{
   suggestTripKilometers();
 };
 
-$('tripStopovers').oninput=stoppFeldAnpassen;
 
 $('tripKmBerechnen').onclick=kilometerBerechnen;
 $('tripTachoStart').oninput=()=>{
@@ -8390,7 +8567,10 @@ $('tripTachoStart').oninput=()=>{
   tachoHinweisZeigen();
 };
 $('tripTachoEnde').oninput=tachoHinweisZeigen;
-$('tripKilometers').addEventListener('input',tachoHinweisZeigen);
+$('tripKilometers').addEventListener('input',()=>{
+  kmQuelleSetzen($('tripKilometers').value.trim()?'hand':'');
+  tachoHinweisZeigen();
+});
 
 /* ---------- Karte der berechneten Strecke (Leaflet + OpenStreetMap) ---------- */
 let leafletGeladen=null;
@@ -8517,7 +8697,8 @@ $('tripGoogleMaps').onclick=async()=>{
   const ziel=$('tripDestination').value.trim();
   const stopps=String($('tripStopovers').value||'')
     .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean)
-    .map(adresseFuerBerechnung);
+    .map(adresseFuerBerechnung)
+    .map(adresseNachGenauigkeit);
 
   if(!start||!ziel){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
@@ -8527,8 +8708,8 @@ $('tripGoogleMaps').onclick=async()=>{
 
   const werte=new URLSearchParams({
     api:'1',
-    origin:start,
-    destination:ziel,
+    origin:adresseNachGenauigkeit(start),
+    destination:adresseNachGenauigkeit(ziel),
     travelmode:'driving'
   });
   if(stopps.length)werte.set('waypoints',stopps.join('|'));
@@ -8536,11 +8717,33 @@ $('tripGoogleMaps').onclick=async()=>{
   window.open('https://www.google.com/maps/dir/?'+werte.toString(),'_blank','noopener');
 };
 
-$('tripRoute').onclick=e=>{
+$('stoppZeilen').addEventListener('input',e=>{
+  if(e.target.classList.contains('stopp-eingabe'))stoppeAusZeilen();
+});
+$('stoppZeilen').addEventListener('change',e=>{
+  if(!e.target.classList.contains('stopp-eingabe'))return;
+  stoppeAusZeilen();
+  suggestTripKilometers();
+});
+$('stoppZeilen').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.classList.contains('stopp-eingabe')){
+    e.preventDefault();
+    stoppeAusZeilen();
+    if(e.target.value.trim())stoppZeileHinzufuegen();
+  }
+});
+$('stoppZeilen').addEventListener('click',e=>{
   const knopf=e.target.closest('.route-loeschen');
   if(!knopf)return;
   e.preventDefault();
-  stoppEntfernen(Number(knopf.dataset.index));
+  const zeilen=[...$('stoppZeilen').querySelectorAll('.strecke-stopp')];
+  stoppEntfernen(zeilen.indexOf(knopf.closest('.strecke-stopp')));
+});
+$('stoppPlus').onclick=stoppZeileHinzufuegen;
+$('zielGleichStart').onclick=()=>{
+  $('tripDestination').value=$('tripStartAddress').value;
+  routeVorschauZeichnen();
+  suggestTripKilometers();
 };
 
 $('tripStartAddress').onchange=()=>{
@@ -9559,7 +9762,7 @@ async function pcloudLinkAnfrage(parameter={}){
 
   const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
     body:JSON.stringify({
       token:pcloudToken,
       host:PCLOUD_HOST,
@@ -10308,7 +10511,7 @@ async function cloudDateiDirekt(freigabe){
   try{
     const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
       body:JSON.stringify({art:'datei',code,contenttype:typ,host:PCLOUD_HOST})
     });
 
@@ -10617,7 +10820,7 @@ async function dateiBytesHolen(freigabe){
   }
   const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
     body:JSON.stringify({art:'datei',code,contenttype:'application/octet-stream',host:PCLOUD_HOST})
   });
   const art=antwort.headers.get('content-type')||'';
@@ -13045,7 +13248,7 @@ async function pcloudTextLaden(fileId){
   if(!pcloudToken)throw new Error('Nicht mit pCloud verbunden.');
   const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
     body:JSON.stringify({art:'inhalt',token:pcloudToken,fileid:fileId,host:PCLOUD_HOST})
   });
   const art=antwort.headers.get('content-type')||'';

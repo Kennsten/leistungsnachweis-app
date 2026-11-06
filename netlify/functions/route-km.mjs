@@ -25,7 +25,7 @@ const SUCHE_URL = 'https://api.heigit.org/pelias/v1/search';
 
 // Supabase-Projekte der App. Welches gilt, entscheidet die Adresse, unter
 // der die App läuft: Die Verkaufsversion (produkt--…) nutzt Frankfurt,
-// alle anderen Adressen das bisherige Projekt. So funktioniert dieselbe
+// Vorschau-Zweige (vorschau-…) ebenso, alle anderen Adressen das bisherige Projekt. So funktioniert dieselbe
 // Datei in beiden Zweigen.
 const PROJEKT_EIGEN = {
   url: 'https://bhrygputoysiwchzlygn.supabase.co',
@@ -43,7 +43,9 @@ function projektFuer(request) {
   } catch (fehler) {
     host = '';
   }
-  return host.startsWith('produkt--') ? PROJEKT_FRANKFURT : PROJEKT_EIGEN;
+  return host.startsWith('produkt--') || host.startsWith('vorschau-')
+    ? PROJEKT_FRANKFURT
+    : PROJEKT_EIGEN;
 }
 
 const MAX_PUNKTE = 12;
