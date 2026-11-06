@@ -3413,7 +3413,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.2 Verkaufsversion';
+const APP_VERSION='0.24.3 Verkaufsversion';
 const APP_STAND='06.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -11240,7 +11240,7 @@ async function belegeNeuNummerieren(jahr){
   const liste2=aenderungen
     .sort((x,y)=>x.neu-y.neu)
     .map(x=>({alt:x.alt,neu:x.neu,datum:x.a.datum,kategorie:x.a.kategorie||'',zweck:x.a.zweck||'',betrag:Number(x.a.betrag||0)}));
-  belegListeMerken(jahr,liste2);
+  await belegListeMerken(jahr,liste2);
   hinweisDazu({
     schluessel:'beleg-neu-'+jahr+'-'+Date.now(),
     art:'beleg',
@@ -11255,10 +11255,25 @@ async function belegeNeuNummerieren(jahr){
 }
 
 /* ---------- Änderungsliste nach dem Neu-Nummerieren ---------- */
-function belegListeMerken(jahr,liste){
-  try{localStorage.setItem('qa-beleg-liste-'+(user&&user.id||'')+'-'+jahr,JSON.stringify({am:new Date().toISOString(),liste}))}catch(e){}
+/* Die Liste liegt in den Einstellungen (wird zwischen allen Geräten abgeglichen),
+   im selben Feld wie „So lassen“, unter dem Schlüssel „liste-<Jahr>“. */
+async function belegListeMerken(jahr,liste){
+  const eintrag={am:new Date().toISOString(),liste};
+  try{localStorage.setItem('qa-beleg-liste-'+(user&&user.id||'')+'-'+jahr,JSON.stringify(eintrag))}catch(e){}
+  const w=belegPruefungIgnoriert();
+  w['liste-'+jahr]=eintrag;
+  const text=JSON.stringify(w);
+  const {error}=await Daten.from('einstellungen').upsert({
+    user_id:user.id,
+    beleg_pruefung_ignoriert:text,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  if(error){toast('Die Liste konnte nicht für andere Geräte gespeichert werden: '+error.message);return}
+  meineEinstellungen.beleg_pruefung_ignoriert=text;
 }
 function belegListeLesen(jahr){
+  const w=belegPruefungIgnoriert()['liste-'+jahr];
+  if(w&&w.liste)return w;
   try{return JSON.parse(localStorage.getItem('qa-beleg-liste-'+(user&&user.id||'')+'-'+jahr)||'null')}catch(e){return null}
 }
 function belegListeKnopfAktualisieren(){
@@ -11266,6 +11281,10 @@ function belegListeKnopfAktualisieren(){
   if(!k)return;
   const jahr=Number($('expensesYear').value);
   k.classList.toggle('hidden',!belegListeLesen(jahr));
+}
+async function belegListeKnopfNeuLaden(){
+  try{await loadEinstellungen()}catch(e){}
+  belegListeKnopfAktualisieren();
 }
 function belegListeZeigen(jahr){
   const d=belegListeLesen(jahr);
@@ -11405,6 +11424,7 @@ async function openExpenses(){
 
 async function loadExpenses(){
   belegListeKnopfAktualisieren();
+  belegListeKnopfNeuLaden();
   $('expensesList').innerHTML=
     '<p class="muted">Ausgaben werden geladen …</p>';
 
