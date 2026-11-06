@@ -2348,6 +2348,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
           <button type="button" id="tripGoogleMaps" class="secondary km-knopf">Google Maps</button>
         </div>
         <span id="tripKmHinweis" class="feld-hinweis"></span>
+        <span class="feld-hinweis">Beim Berechnen, auf der Karte und bei Google Maps werden Adressen an externe Dienste gesendet. Du wirst vorher gefragt.</span>
       </label>
 
       <label>Tachostand Abfahrt
@@ -2740,11 +2741,38 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <!-- Seite: Dieses Gerät -->
   <section class="einst-seite hidden" data-seite="geraet" data-titel="Dieses Gerät">
     <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
+    <h3>Dienste mit Adressübertragung</h3>
+    <p class="muted small">Für diese Funktionen gehen Adressen unverschlüsselt an externe Dienste. Du kannst sie auf diesem Gerät sperren oder dauerhaft erlauben. Standard ist: vorher fragen.</p>
+    <label>Kilometer berechnen (openrouteservice)
+      <select id="dienstSetRoute"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
+    </label>
+    <label>Karte (OpenStreetMap)
+      <select id="dienstSetKarte"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
+    </label>
+    <label>Google Maps
+      <select id="dienstSetGoogle"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
+    </label>
     <div class="actions">
       <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
       <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
     </div>
   </section>
+</dialog>
+
+<dialog id="dienstDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Hinweis zum Datenschutz</div>
+      <h2 id="dienstTitel"></h2>
+    </div>
+    <button type="button" id="dienstZu" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="dienstText"></div>
+  <label class="sicherung-haken"><input type="checkbox" id="dienstMerken"> Nicht mehr fragen (nur auf diesem Gerät)</label>
+  <div class="actions">
+    <button type="button" id="dienstJa">Ja, fortfahren</button>
+    <button type="button" id="dienstNein" class="secondary">Abbrechen</button>
+  </div>
 </dialog>
 
 <dialog id="belegNeuDialog">
@@ -3413,7 +3441,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.3 Verkaufsversion';
+const APP_VERSION='0.24.4 Verkaufsversion';
 const APP_STAND='06.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5499,6 +5527,63 @@ async function routeAbfragen(adressen){
   return ergebnis;
 }
 
+/* ---------- Hinweis vor Diensten, an die Adressen gehen ---------- */
+const DIENSTE={
+  route:{titel:'Kilometer berechnen',text:
+    '<p>Für die Berechnung werden die <strong>Start-, Zwischen- und Zieladressen</strong> (ohne Namen, ohne Fahrtzweck) über einen Hilfsdienst von QA an den Routendienst <strong>openrouteservice (HeiGIT, Heidelberg)</strong> gesendet. Die Adressen sind dabei <strong>nicht verschlüsselt</strong>.</p>'+
+    '<p>Adressen von Klient*innen sind personenbezogene Daten. Fahre nur fort, wenn das mit deinen Klient*innen und Auftraggebern vereinbar ist. Sonst brich ab und trage die Kilometer selbst ein.</p>'},
+  karte:{titel:'Karte anzeigen',text:
+    '<p>Für die Karte werden zuerst die <strong>Adressen</strong> wie bei der Kilometerberechnung an <strong>openrouteservice (HeiGIT)</strong> gesendet, unverschlüsselt und ohne Namen.</p>'+
+    '<p>Dann lädt dein Gerät Kartenteile von <strong>OpenStreetMap</strong>. Dabei erfährt der Kartendienst deine <strong>IP-Adresse</strong> und den angezeigten <strong>Kartenausschnitt</strong>.</p>'},
+  google:{titel:'Route in Google Maps öffnen',text:
+    '<p>Google Maps öffnet sich in einem neuen Fenster. Dabei gehen die <strong>Start-, Ziel- und Zwischenadressen</strong> unverschlüsselt an <strong>Google</strong>. Es gilt die Datenschutzerklärung von Google.</p>'+
+    '<p>Fahre nur fort, wenn das mit deinen Klient*innen und Auftraggebern vereinbar ist.</p>'}
+};
+function dienstSchluessel(art){return 'qa-dienst-'+art+'-'+((typeof user!=='undefined'&&user&&user.id)||'')}
+function dienstEinstellung(art){
+  try{return localStorage.getItem(dienstSchluessel(art))||''}catch(e){return ''}
+}
+function dienstEinstellungSetzen(art,wert){
+  try{
+    if(wert)localStorage.setItem(dienstSchluessel(art),wert);
+    else localStorage.removeItem(dienstSchluessel(art));
+  }catch(e){/* nicht schlimm */}
+}
+function dienstEinstellungenZeigen(){
+  [['route','dienstSetRoute'],['karte','dienstSetKarte'],['google','dienstSetGoogle']]
+    .forEach(([art,id])=>{$(id).value=dienstEinstellung(art)});
+}
+[['route','dienstSetRoute'],['karte','dienstSetKarte'],['google','dienstSetGoogle']]
+  .forEach(([art,id])=>{$(id).onchange=()=>dienstEinstellungSetzen(art,$(id).value)});
+
+// Gibt true zurück, wenn die Funktion benutzt werden darf (nach Rückfrage oder Voreinstellung).
+function dienstErlaubt(art){
+  const gesperrt='Das ist auf diesem Gerät gesperrt (Einstellungen → Dieses Gerät → Dienste mit Adressübertragung).';
+  if(dienstEinstellung(art)==='gesperrt'||(art==='karte'&&dienstEinstellung('route')==='gesperrt')){
+    toast(gesperrt);
+    return Promise.resolve(false);
+  }
+  if(dienstEinstellung(art)==='immer')return Promise.resolve(true);
+  return new Promise(ok=>{
+    let erledigt=false;
+    const fertig=ja=>{
+      if(erledigt)return;
+      erledigt=true;
+      if(ja&&$('dienstMerken').checked)dienstEinstellungSetzen(art,'immer');
+      if($('dienstDialog').open)$('dienstDialog').close();
+      ok(ja);
+    };
+    $('dienstTitel').textContent=DIENSTE[art].titel;
+    $('dienstText').innerHTML=DIENSTE[art].text;
+    $('dienstMerken').checked=false;
+    $('dienstJa').onclick=()=>fertig(true);
+    $('dienstNein').onclick=()=>fertig(false);
+    $('dienstZu').onclick=()=>fertig(false);
+    $('dienstDialog').onclose=()=>fertig(false);
+    $('dienstDialog').showModal();
+  });
+}
+
 async function kilometerBerechnen(){
   const knopf=$('tripKmBerechnen');
   const hinweis=$('tripKmHinweis');
@@ -5508,6 +5593,7 @@ async function kilometerBerechnen(){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
+  if(!(await dienstErlaubt('route')))return;
 
   const vorher=$('tripKilometers').value.trim();
 
@@ -8360,6 +8446,7 @@ async function karteZeigen(){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
+  if(!(await dienstErlaubt('karte')))return;
 
   knopf.disabled=true;
   knopf.textContent='Lädt …';
@@ -8424,8 +8511,8 @@ $('closeKarte').onclick=()=>$('kartenDialog').close();
 
 
 // Öffnet die Fahrt mit allen Stopps in Google Maps (App oder Webseite).
-// Die Adressen gehen nur an Google, wenn du diesen Knopf antippst.
-$('tripGoogleMaps').onclick=()=>{
+// Die Adressen gehen nur an Google, wenn du diesen Knopf antippst und die Rückfrage bestätigst.
+$('tripGoogleMaps').onclick=async()=>{
   const start=$('tripStartAddress').value.trim();
   const ziel=$('tripDestination').value.trim();
   const stopps=String($('tripStopovers').value||'')
@@ -8436,6 +8523,7 @@ $('tripGoogleMaps').onclick=()=>{
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
+  if(!(await dienstErlaubt('google')))return;
 
   const werte=new URLSearchParams({
     api:'1',
@@ -10713,6 +10801,7 @@ function einstellungenSeite(name){
     if(aktiv)titel=seite.dataset.titel;
   });
   if(name==='tresor'&&typeof tresorPasskeyZeigen==='function')tresorPasskeyZeigen();
+  if(name==='geraet')dienstEinstellungenZeigen();
   $('settingsZurueck').classList.toggle('hidden',menue);
   $('settingsOberzeile').classList.toggle('hidden',!menue);
   $('settingsTitel').textContent=titel;
