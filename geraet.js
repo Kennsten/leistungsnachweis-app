@@ -1410,6 +1410,9 @@
     konfliktUebernehmen,
     konfliktVerwerfen: konfliktLoeschen,
     istOffen: () => Boolean(daten),
+    // Für den Umzug aus London (umzug.js)
+    tabellen: () => Object.keys(SPALTEN),
+    spalten: (t) => (SPALTEN[t] || []).map((x) => x[0]),
     // Nur für Tests
     _intern: { SPALTEN, umwandeln, zeitstempelText, verschluesseln, entschluesseln }
   };

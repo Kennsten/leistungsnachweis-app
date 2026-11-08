@@ -13,7 +13,7 @@
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.24.8';
+const CACHE_NAME = 'qa-produkt-0.24.9';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [
@@ -28,6 +28,7 @@ const APP_DATEIEN = [
   './tresor.js',
   './daten.js',
   './geraet.js',
+  './umzug.js',
   './installieren.js',
   './lib/supabase.js',
   './lib/argon2.umd.min.js',

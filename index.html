@@ -19,6 +19,7 @@
 <script src="tresor.js"></script>
 <script src="daten.js"></script>
 <script src="geraet.js"></script>
+<script src="umzug.js"></script>
 <script src="installieren.js"></script>
 <style>
 :root{
@@ -3503,7 +3504,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.8 Verkaufsversion';
+const APP_VERSION='0.24.9 Verkaufsversion (Vorschau)';
 const APP_STAND='08.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -13531,9 +13532,21 @@ async function testdatenAnlegen(){
     const jetzt=Date.now();
     zaehler=(jetzt-zeit<1500)?zaehler+1:1;zeit=jetzt;
     if(zaehler<7)return;
-    zaehler=0;
     if(!confirm('Testdaten ergänzen? Es werden 2 Testklienten mit Fahrten, Dokumentationen und Belegen hinzugefügt. Vorhandenes bleibt unverändert.'))return;
     try{await testdatenAnlegen()}catch(f){toast('Testdaten fehlgeschlagen: '+f.message)}
+  });
+})();
+
+// Versteckt: 8× schnell auf den Titel in der Kopfkarte tippen = einmaliger Umzug aus London (umzug.js)
+(function(){
+  let zaehler=0,zeit=0;
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.app-titel'))return;
+    const jetzt=Date.now();
+    zaehler=(jetzt-zeit<1500)?zaehler+1:1;zeit=jetzt;
+    if(zaehler<8)return;
+    zaehler=0;
+    if(window.Umzug)window.Umzug.oeffnen();
   });
 })();
 
