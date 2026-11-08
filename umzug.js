@@ -181,7 +181,15 @@
 
   // Klienten ohne Kennung bekommen die nächste freie Nummer (K001, K002 …)
   function kennungenVergeben(zeilen, bereitsVergeben) {
-    const benutzt = new Set(bereitsVergeben);
+    const benutzt = new Set(bereitsVergeben.map((c) => String(c || '').trim().toUpperCase()));
+    // Kennung schon im Zielkonto vergeben (oder doppelt in London): wird neu vergeben
+    const gesehen = new Set();
+    for (const z of zeilen) {
+      const c = String(z.client_code || '').trim().toUpperCase();
+      if (!c) continue;
+      if (benutzt.has(c) || gesehen.has(c)) z.client_code = '';
+      else gesehen.add(c);
+    }
     let hoechste = 0;
     for (const z of zeilen) {
       const m = /^K(\d+)$/i.exec(String(z.client_code || '').trim());
