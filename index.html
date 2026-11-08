@@ -2773,6 +2773,19 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <!-- Seite: Dokumente und Cloud -->
   <section class="einst-seite hidden" data-seite="cloud" data-titel="Dokumente und Cloud">
     <p class="muted small">Klientendokumente, Belege und Sicherungen liegen in deinem eigenen pCloud-Speicher. Die Verbindung gilt für dieses Gerät.</p>
+    <div class="summary-box">
+      <p style="margin:0"><strong>Alles wird verschlüsselt, bevor es dein Gerät verlässt.</strong> Der Anbieter sieht nur unlesbare Dateien.</p>
+    </div>
+    <div class="summary-box">
+      <p style="margin:0 0 8px"><strong>Hinweis zum Vertrag:</strong> Du legst das Konto selbst an und schließt den Vertrag selbst ab.
+        Für Klientendaten empfehlen wir einen Anbieter mit Standort in der EU (bei pCloud: Luxemburg, das wählst du bei der Anmeldung)
+        und, falls verfügbar, einem Auftragsverarbeitungsvertrag (AVV).</p>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
+        <input type="checkbox" id="cloudHinweisGelesen" style="width:auto;margin-top:3px">
+        <span style="font-weight:400">Ich habe den Hinweis gelesen (freiwillig, wird mit Datum nur auf diesem Gerät gespeichert).</span>
+      </label>
+      <p id="cloudHinweisDatum" class="muted small hidden" style="margin:6px 0 0"></p>
+    </div>
     <div class="actions">
       <button type="button" id="openCloudSetup" class="secondary">pCloud einrichten</button>
     </div>
@@ -2918,10 +2931,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     und haben dort neutrale, unlesbare Namen. In der Cloud selbst kannst du sie nicht ansehen, nur in der App.
     Dateien, die du schon früher hochgeladen hast, bleiben unverändert, bis sie umgewandelt werden.</p>
 
-  <p><strong>Deine Verantwortung:</strong> Die Cloud ist dein eigenes Konto und dein eigener Vertrag mit dem Anbieter.
-    Du bist selbst dafür verantwortlich, dass du dort Klientendaten ablegen darfst. Dazu gehören in der Regel
-    ein Auftragsverarbeitungsvertrag (AVV) mit dem Anbieter und ein Speicherort in der EU.
-    Kläre das vorher, zum Beispiel mit deinem Auftraggeber oder einer Datenschutzberatung.</p>
+  <p><strong>Hinweis zum Vertrag:</strong> Die Cloud ist dein eigenes Konto und dein eigener Vertrag mit dem Anbieter.
+    Für Klientendaten empfehlen wir einen Anbieter mit Speicherort in der EU und, falls verfügbar, einem
+    Auftragsverarbeitungsvertrag (AVV). Kläre das bei Bedarf mit deinem Auftraggeber oder einer Datenschutzberatung.
+    Verbinden kannst du auch ohne weitere Bestätigung.</p>
 
   <div class="actions" style="margin-top:12px">
     <button type="button" id="cloudStartJetzt" class="primary">Jetzt verbinden</button>
@@ -3490,8 +3503,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.5 Verkaufsversion';
-const APP_STAND='07.11.2026';
+const APP_VERSION='0.24.6 Verkaufsversion';
+const APP_STAND='08.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -11005,6 +11018,7 @@ function einstellungenSeite(name){
   });
   if(name==='tresor'&&typeof tresorPasskeyZeigen==='function')tresorPasskeyZeigen();
   if(name==='geraet')dienstEinstellungenZeigen();
+  if(name==='cloud')cloudHinweisZeigen();
   $('settingsZurueck').classList.toggle('hidden',menue);
   $('settingsOberzeile').classList.toggle('hidden',!menue);
   $('settingsTitel').textContent=titel;
@@ -11161,6 +11175,25 @@ $('settingsForm').onsubmit=async e=>{
     knopf.textContent='Speichern';
   }
 };
+
+function cloudHinweisSchluessel(){return 'qa-cloudhinweis-'+((typeof user!=='undefined'&&user&&user.id)||'')}
+function cloudHinweisZeigen(){
+  const box=$('cloudHinweisGelesen'),txt=$('cloudHinweisDatum');
+  if(!box||!txt)return;
+  let datum='';
+  try{datum=localStorage.getItem(cloudHinweisSchluessel())||''}catch(e){}
+  box.checked=!!datum;
+  txt.classList.toggle('hidden',!datum);
+  txt.textContent=datum?('Bestätigt am '+new Date(datum).toLocaleDateString('de-DE')+'.'):'';
+}
+document.addEventListener('change',e=>{
+  if(!e.target||e.target.id!=='cloudHinweisGelesen')return;
+  try{
+    if(e.target.checked)localStorage.setItem(cloudHinweisSchluessel(),new Date().toISOString());
+    else localStorage.removeItem(cloudHinweisSchluessel());
+  }catch(err){}
+  cloudHinweisZeigen();
+});
 
 function cloudSetupOeffnen(){
   cloudSetupZeichnen();
