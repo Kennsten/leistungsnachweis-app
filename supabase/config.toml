@@ -1,0 +1,6 @@
+# Supabase-Einstellungen der App (nur für die Edge Functions nötig).
+# Die Anmeldung wird in der Function selbst geprüft (Bearer-Token an
+# /auth/v1/user), weil die neuen "publishable"-Schlüssel nicht vom
+# Standard-JWT-Prüfer des Gateways verstanden werden.
+[functions.route-km]
+verify_jwt = false

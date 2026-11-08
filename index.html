@@ -3503,7 +3503,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.6 Verkaufsversion';
+const APP_VERSION='0.24.7 Verkaufsversion (Vorschau)';
 const APP_STAND='08.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5629,10 +5629,13 @@ async function routeAbfragen(adressen){
   const {data:{session}}=await sb.auth.getSession();
   if(!session)throw new Error('Bitte neu anmelden.');
 
-  const antwort=await busyFetch('/.netlify/functions/route-km',{
+  // Die Berechnung läuft jetzt als Supabase-Function im selben Projekt wie die
+  // Datenbank. forceFunctionRegion erzwingt Frankfurt (Rechenzentrum in der EU).
+  const antwort=await busyFetch(SUPABASE_URL+'/functions/v1/route-km?forceFunctionRegion=eu-central-1',{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
+      apikey:SUPABASE_KEY,
       Authorization:'Bearer '+session.access_token
     },
     body:JSON.stringify({adressen})
