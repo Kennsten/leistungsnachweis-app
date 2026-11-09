@@ -451,6 +451,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .dk-titel{font-size:.78rem;font-weight:700;margin-bottom:5px}
 .dk-zahlen{display:flex;flex-wrap:wrap;gap:4px 16px}
 .dk-zahlen span{white-space:nowrap}
+.dk-rest{padding-left:12px;border-left:2px solid var(--line)}
+.dk-minus strong{color:#b3261e}
 .doc-kurz strong{color:var(--ink)}
 /* Dokumentationen, Ansicht „Liste“: eine Zeile je Eintrag mit Öffnen-Knopf */
 .doc-zeile{display:none}
@@ -3605,7 +3607,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.16 Verkaufsversion';
+const APP_VERSION='0.24.17 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6486,6 +6488,13 @@ function renderDocs(){
   const letzte=docsBewilligungen.find(b=>b.beginn&&b.beginn<=heuteIso)||docsBewilligungen[0]||null;
   const seitDocs=letzte?docs.filter(d=>d.datum>=letzte.beginn):docs;
   const seitMin=seitDocs.reduce((a,d)=>a+Number(d.dauer_minuten||0),0);
+  // Rest des FLS-Kontingents im laufenden Bewilligungsjahr (gleiche Rechnung wie in der Bewilligungsübersicht)
+  let restHtml='';
+  if(letzte&&Number(letzte.stundenkontingent||0)>0){
+    const fenster=approvalWindow(letzte,docsBewilligungen);
+    const budget=calculateApprovalBudget(letzte,docs,fenster.start);
+    restHtml=`<span class="dk-rest${budget.restFls<0?' dk-minus':''}"><strong>${formatFls(budget.restFls)}</strong> FLS Rest von ${formatFls(budget.totalFls)}</span>`;
+  }
   const summary=docs.length?`
     <div class="doc-kurz">
       <div class="dk-titel">${letzte?'Seit der letzten Bewilligung ('+kurzDatum(letzte.beginn)+')':'Alle Dokumentationen'}</div>
@@ -6493,6 +6502,7 @@ function renderDocs(){
         <span><strong>${seitDocs.length}</strong> Termine</span>
         <span><strong>${formatDuration(seitMin)}</strong> Gesamtdauer</span>
         <span><strong>${formatFls(summeDocFls(seitDocs))}</strong> FLS</span>
+        ${restHtml}
       </div>
     </div>`:'';
 
