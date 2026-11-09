@@ -446,6 +446,30 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .summary-box{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);padding:16px;margin:12px 0;background:var(--accent);box-shadow:var(--frame-inset)}
 .summary-row{display:flex;justify-content:space-between;gap:12px;margin:5px 0}
 .summary-row strong{text-align:right}
+/* Dokumentationen: kompakte Zusammenfassung */
+.doc-kurz{display:flex;flex-wrap:wrap;gap:6px 8px;margin:10px 0 0;font-size:.85rem;color:var(--muted)}
+.doc-kurz span{background:var(--accent);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.doc-kurz strong{color:var(--ink)}
+/* Dokumentationen, Ansicht „Liste“: eine Zeile je Eintrag mit Öffnen-Knopf */
+.doc-zeile{display:none}
+.doc-liste .doc-item{padding:0;margin-top:8px}
+.doc-liste .doc-zeile{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:0;padding:11px 14px;
+  background:none;border:0;border-radius:0;box-shadow:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.dz-text{display:flex;flex-direction:column;min-width:0}
+.dz-titel{font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-sub{font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-fls{color:var(--success);font-weight:700}
+.dz-knopf{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.9rem;color:var(--brand-dark);
+  border:var(--kn-rand,1.5px) solid var(--brand);border-radius:var(--radius-control);padding:7px 11px}
+.dz-wort::after{content:"Öffnen"}
+.doc-zeile[aria-expanded="true"] .dz-wort::after{content:"Schließen"}
+.dz-knopf::after{content:"";width:.8em;height:.8em;background:currentColor;transform:rotate(90deg);transition:transform .2s;
+  -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
+.doc-zeile[aria-expanded="true"] .dz-knopf::after{transform:rotate(-90deg)}
+.doc-liste .doc-head{display:none;padding:0 14px 14px;border-top:1px solid var(--line);padding-top:12px}
+.doc-liste .doc-item.offen .doc-head{display:flex}
+.doc-liste .doc-head h3,.doc-liste .doc-head .doc-time,.doc-liste .doc-head .fls-value{display:none}
+@media (max-width:480px){.doc-liste .doc-zeile{padding:10px 12px}.dz-knopf{padding:6px 9px;font-size:.85rem}}
   .approval-progress{
   margin-top:8px;
   height:10px;
@@ -2094,6 +2118,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <input id="docSearch" type="search" placeholder="Datum, Text, Leistungsart oder Kennziffer">
   </label>
 
+  <div class="ansicht-leiste">
+    <div class="umschalter" id="docAnsicht" role="group" aria-label="Darstellung der Dokumentationen">
+      <button type="button" data-wert="liste">☰ Liste</button>
+      <button type="button" data-wert="kacheln">▦ Kacheln</button>
+    </div>
+  </div>
+
   <div id="docsList"><p class="muted">Noch keine Dokumentationen vorhanden.</p></div>
 </dialog>
 
@@ -3569,7 +3600,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.14 Verkaufsversion';
+const APP_VERSION='0.24.15 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3773,6 +3804,13 @@ function formatDate(value){
   if(!value)return '';
   const [y,m,d]=value.split('-');
   return `${d}.${m}.${y}`;
+}
+
+// Kurzes Datum für die Listenzeile: 06.11.26
+function kurzDatum(value){
+  if(!value)return '';
+  const [y,m,d]=value.split('-');
+  return `${d}.${m}.${String(y).slice(2)}`;
 }
 
 function formatDuration(minutes){
@@ -6305,6 +6343,13 @@ function terminZeileHtml(t){
 
   return `
     <div class="doc-item termin-zeile termin-${rel.stufe}">
+      <button type="button" class="doc-zeile" aria-expanded="false">
+        <span class="dz-text">
+          <span class="dz-titel">${kurzDatum(t.datum)} · ${esc(t.leistungsart||'Face-to-Face')}</span>
+          <span class="dz-sub">${esc(kalZeit(t.beginn))}–${esc(kalZeit(t.ende))} · geplant</span>
+        </span>
+        <span class="dz-knopf"><span class="dz-wort"></span></span>
+      </button>
       <div class="doc-head">
         <div>
           <div class="termin-marke">${rel.stufe==='vergangen'?'📝 ':'🗓 '}${esc(rel.text)}</div>
@@ -6367,6 +6412,13 @@ function renderDocs(){
 
   const docZeileHtml=d=>`
     <div class="doc-item">
+      <button type="button" class="doc-zeile" aria-expanded="false">
+        <span class="dz-text">
+          <span class="dz-titel">${kurzDatum(d.datum)} · ${esc(d.leistungsart||'Face-to-Face')}</span>
+          <span class="dz-sub">${esc(String(d.beginn||'').slice(0,5))}–${esc(String(d.ende||'').slice(0,5))} · <span class="dz-fls">${formatFls(docFlsWert(d))} FLS</span></span>
+        </span>
+        <span class="dz-knopf"><span class="dz-wort"></span></span>
+      </button>
       <div class="doc-head">
         <div>
           <h3>${formatDate(d.datum)} · ${esc(d.leistungsart||'Face-to-Face')}</h3>
@@ -6418,13 +6470,13 @@ function renderDocs(){
   );
 
   const summary=gefiltert.length?`
-    <div class="summary-box">
-      <div class="summary-row"><span>Termine</span><strong>${gefiltert.length}</strong></div>
-      <div class="summary-row"><span>Gesamtdauer</span><strong>${formatDuration(totalMinuten)}</strong></div>
-      <div class="summary-row"><span>Gesamt-FLS</span><strong>${formatFls(summeDocFls(gefiltert))} FLS</strong></div>
+    <div class="doc-kurz">
+      <span><strong>${gefiltert.length}</strong> Termine</span>
+      <span><strong>${formatDuration(totalMinuten)}</strong> Gesamtdauer</span>
+      <span><strong>${formatFls(summeDocFls(gefiltert))} FLS</strong> gesamt</span>
     </div>`:'';
 
-  $('docsList').innerHTML=summary+docsHtml;
+  $('docsList').innerHTML=summary+'<div class="doc-eintraege">'+docsHtml+'</div>';
 
     document.querySelectorAll('.docFromTermin').forEach(b=>b.onclick=()=>{
       const t=docsTermine.find(x=>String(x.id)===String(b.dataset.id));
@@ -7692,6 +7744,22 @@ $('clientSearch').oninput=renderClients;
   };
 })();
 $('docSearch').oninput=renderDocs;
+
+// Dokumentationen: Darstellung als Liste oder Kacheln (gleicher Umschalter wie bei Fahrten und Dokumenten)
+const dokuAnsicht=umschalterEinrichten(
+  'docAnsicht','ansichtDokumentationen','kacheln',
+  wert=>$('docsList').classList.toggle('doc-liste',wert==='liste')
+);
+$('docsList').classList.toggle('doc-liste',dokuAnsicht()==='liste');
+// Liste: Zeile klappt den Eintrag auf und zu
+$('docsList').addEventListener('click',e=>{
+  const zeile=e.target.closest('.doc-zeile');
+  if(!zeile)return;
+  const eintrag=zeile.closest('.doc-item');
+  const offen=!eintrag.classList.contains('offen');
+  eintrag.classList.toggle('offen',offen);
+  zeile.setAttribute('aria-expanded',offen?'true':'false');
+});
 
 /* ---------- Porträt-Auswahl ----------
    Mitgelieferte Bilder: Datei in bilder/ ablegen und hier eine Zeile ergänzen.
