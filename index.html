@@ -1667,10 +1667,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .klapp-rechts{font-weight:700}
 .klapp-kreis{background:var(--brand-dark);border-color:var(--brand-dark)}
 .klapp-kreis .klapp-pfeil{background:var(--on-brand)}
-.klapp-kopf[aria-expanded="false"]{background:var(--brand-dark);border-color:var(--brand-dark);color:var(--on-brand);text-shadow:none}
-.klapp-kopf[aria-expanded="false"] .klapp-sub,.klapp-kopf[aria-expanded="false"] .klapp-rechts{color:var(--on-brand);text-shadow:none}
-.klapp-kopf[aria-expanded="false"] .klapp-kreis{background:var(--on-brand);border-color:var(--on-brand)}
-.klapp-kopf[aria-expanded="false"] .klapp-kreis .klapp-pfeil{background:var(--brand-dark)}
+.klapp-kopf[aria-expanded="false"]{background:color-mix(in srgb,var(--brand) 30%,var(--card));border-color:var(--brand);color:var(--ink);text-shadow:none}
+.klapp-kopf[aria-expanded="false"] .klapp-sub{color:color-mix(in srgb,var(--ink) 80%,var(--muted));text-shadow:none}
+.klapp-kopf[aria-expanded="false"] .klapp-rechts{color:var(--brand-dark);text-shadow:none}
+.klapp-kopf[aria-expanded="false"] .klapp-kreis{background:var(--brand-dark);border-color:var(--brand-dark)}
+.klapp-kopf[aria-expanded="false"] .klapp-kreis .klapp-pfeil{background:var(--on-brand)}
 .klapp-kopf:hover{filter:brightness(.97)}
 #uebersichtenInhalt{margin-top:12px}
 /* Übersichten: gleichmäßiges Knopfraster mit Symbolen */
@@ -3607,7 +3608,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.20 Verkaufsversion';
+const APP_VERSION='0.24.21 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
