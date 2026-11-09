@@ -1613,6 +1613,17 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .klapp-pfeil{flex:0 0 auto;width:.8em;height:.8em;background:var(--brand-dark);transform:rotate(90deg);transition:transform .2s;
   -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
 .klapp-kopf[aria-expanded="false"] .klapp-pfeil{transform:rotate(0deg)}
+.klapp-kopf{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:2px}
+.klapp-text{display:contents}
+.klapp-sub{grid-column:1/-1;grid-row:2;font-size:.85rem;font-weight:400;line-height:1.35;color:var(--muted)}
+.klapp-rechts{grid-column:2;grid-row:1;display:flex;align-items:center;gap:8px;flex:0 0 auto;color:var(--brand-dark);font-size:.9rem;font-weight:500}
+.klapp-wort::after{content:"Öffnen"}
+.klapp-kopf[aria-expanded="true"] .klapp-wort::after{content:"Schließen"}
+.klapp-kreis{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--brand)}
+.klapp-kreis .klapp-pfeil{width:16px;height:16px}
+.klapp-kopf:hover .klapp-kreis{background:var(--bg)}
+[data-theme="blumen"] .klapp-rechts{margin-right:48px}
+@media (max-width:420px){[data-theme="blumen"] .klapp-wort{display:none}}
 #uebersichtenInhalt{margin-top:6px}
 .install-hilfe{margin:12px 0 2px;font-size:.9rem}
 .install-hilfe summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
@@ -1773,16 +1784,18 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <div class="card" id="uebersichtenKarte">
   <h2 class="klapp-titel">
     <button type="button" id="uebersichtenKopf" class="klapp-kopf" aria-expanded="true" aria-controls="uebersichtenInhalt">
-      <span>Übersichten</span>
-      <span class="klapp-pfeil" aria-hidden="true"></span>
+      <span class="klapp-text">
+        <span>Übersichten</span>
+        <span class="klapp-sub">Kalender, Bewilligungen, Fahrten, Ausgaben und Einnahmen auf einen Blick.</span>
+      </span>
+      <span class="klapp-rechts" aria-hidden="true">
+        <span class="klapp-wort"></span>
+        <span class="klapp-kreis"><span class="klapp-pfeil"></span></span>
+      </span>
     </button>
   </h2>
 
   <div id="uebersichtenInhalt">
-  <p class="muted">
-    Alle Bewilligungen und Fahrten zentral anzeigen.
-  </p>
-
   <div class="actions">
     <button
       type="button"
@@ -1833,15 +1846,16 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div class="top">
     <div>
       <h2>Klientenliste</h2>
-      <p class="muted">
-        Deine Daten werden in einem Rechenzentrum in Frankfurt gespeichert.
-      </p>
     </div>
 
     <button id="newClient" class="kn kn-neu primary">
       Neuer Klient
     </button>
   </div>
+
+  <p class="muted">
+    Deine Daten sind verschlüsselt. Auf dem Server in Deutschland liegen nur unlesbare Kopien, damit du auf mehreren Geräten arbeiten kannst. Den Schlüssel hast nur du.
+  </p>
 
   <label>Suchen
     <input id="clientSearch" type="search" placeholder="Name, Klienten-ID oder Aktenzeichen">
@@ -3507,7 +3521,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.12 Verkaufsversion';
+const APP_VERSION='0.24.13 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
