@@ -3507,7 +3507,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.11 Verkaufsversion';
+const APP_VERSION='0.24.12 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9769,8 +9769,6 @@ function pcloudAnmelden(){
     'https://my.pcloud.com/oauth2/authorize'+
     '?client_id='+encodeURIComponent(PCLOUD_CLIENT_ID)+
     '&response_type=token'+
-    // pCloud soll jedes Mal die Bestätigungsseite mit dem Konto zeigen
-    '&force_reapprove=1'+
     '&redirect_uri='+encodeURIComponent(pcloudAdresse());
 
   window.location.href=adresse;
@@ -10462,6 +10460,8 @@ async function cloudDateiOeffnen(knopf,fileId){
         ergebnis=await pcloudLinkAnfrage({fileid:fileId});
         toast('Hinweis: Der Freigabelink hat keine Ablaufzeit.');
       }catch(zweiterVersuch){
+        // Verbindung abgelaufen: nur diese eine, verständliche Meldung zeigen
+        if(!pcloudToken)throw problem;
         throw new Error(
           'mit Ablauf: '+problem.message+
           ' | ohne Ablauf: '+zweiterVersuch.message
