@@ -3503,8 +3503,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.8 Verkaufsversion';
-const APP_STAND='08.11.2026';
+const APP_VERSION='0.24.9 Verkaufsversion';
+const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -9624,6 +9624,10 @@ $('deleteApproval').onclick=async()=>{
 const PCLOUD_CLIENT_ID='QD8SPQBuFpL';
 const PCLOUD_SPEICHER='pcloud_token';
 const PCLOUD_HOST_SPEICHER='pcloud_host';
+// E-Mail des verbundenen pCloud-Kontos (nur zur Anzeige)
+const PCLOUD_KONTO_SPEICHER='pcloud_konto';
+let pcloudKonto='';
+try{pcloudKonto=localStorage.getItem(PCLOUD_KONTO_SPEICHER)||''}catch(fehler){}
 // EU-Konten nutzen eapi.pcloud.com, US-Konten api.pcloud.com
 let PCLOUD_HOST='eapi.pcloud.com';
 
@@ -9675,6 +9679,7 @@ function pcloudTokenLaden(){
 
 function pcloudTokenSpeichern(wert){
   pcloudToken=wert||null;
+  if(!pcloudToken)pcloudKontoSpeichern('');
 
   try{
     if(wert){
@@ -9687,6 +9692,32 @@ function pcloudTokenSpeichern(wert){
   }
 
   cloudStartKnopfZeichnen();
+}
+
+function pcloudKontoSpeichern(email){
+  pcloudKonto=email||'';
+  try{
+    if(pcloudKonto)localStorage.setItem(PCLOUD_KONTO_SPEICHER,pcloudKonto);
+    else localStorage.removeItem(PCLOUD_KONTO_SPEICHER);
+  }catch(fehler){
+    // nur für diese Sitzung
+  }
+}
+
+// Fragt bei pCloud nach, mit welchem Konto die App verbunden ist
+async function pcloudKontoLaden(){
+  if(!pcloudToken)return '';
+  try{
+    const info=await pcloudAnfrage('userinfo');
+    pcloudKontoSpeichern(info.email||'');
+  }catch(fehler){
+    // Anzeige ist nur ein Zusatz
+  }
+  if($('cloudSetupDialog')&&$('cloudSetupDialog').open)cloudSetupZeichnen();
+  if($('einstStatusCloud'))$('einstStatusCloud').textContent=pcloudToken
+    ? '✓ '+CLOUD_ANBIETER_NAME+' verbunden'+(pcloudKonto?' ('+pcloudKonto+')':'')
+    : CLOUD_ANBIETER_NAME+' nicht verbunden';
+  return pcloudKonto;
 }
 
 function pcloudRueckkehrPruefen(){
@@ -9723,6 +9754,9 @@ function pcloudRueckkehrPruefen(){
     );
 
     toast('Mit pCloud verbunden');
+    pcloudKontoLaden().then(email=>{
+      if(email)toast('Mit pCloud verbunden: '+email);
+    });
   }
 }
 
@@ -9731,6 +9765,8 @@ function pcloudAnmelden(){
     'https://my.pcloud.com/oauth2/authorize'+
     '?client_id='+encodeURIComponent(PCLOUD_CLIENT_ID)+
     '&response_type=token'+
+    // pCloud soll jedes Mal die Bestätigungsseite mit dem Konto zeigen
+    '&force_reapprove=1'+
     '&redirect_uri='+encodeURIComponent(pcloudAdresse());
 
   window.location.href=adresse;
@@ -10977,8 +11013,9 @@ function cloudSetupZeichnen(){
   const verbunden=Boolean(pcloudToken);
 
   $('cloudSetupStatus').textContent=verbunden
-    ? '✅ Verbunden mit pCloud (Speicherort: '+
-      (PCLOUD_HOST==='api.pcloud.com'?'USA':'EU')+')'
+    ? '✅ Verbunden mit pCloud'+
+      (pcloudKonto?' – Konto: '+pcloudKonto:'')+
+      ' (Speicherort: '+(PCLOUD_HOST==='api.pcloud.com'?'USA':'EU')+')'
     : 'Noch nicht mit pCloud verbunden.';
 
   $('cloudSetupVerbinden').textContent=verbunden
@@ -10987,6 +11024,11 @@ function cloudSetupZeichnen(){
 
   $('cloudSetupTrennen').classList.toggle('hidden',!verbunden);
   cloudStartKnopfZeichnen();
+  // ältere Verbindung ohne gespeichertes Konto: einmal nachfragen
+  if(verbunden&&!pcloudKonto&&!pcloudKontoLaden.laeuft){
+    pcloudKontoLaden.laeuft=true;
+    pcloudKontoLaden().finally(()=>{pcloudKontoLaden.laeuft=false});
+  }
 }
 
 /* ---------- Einstellungen: Name und Adresse ---------- */
@@ -11044,8 +11086,9 @@ function einstellungenStatusZeigen(){
   $('einstSicherungStatus').textContent=sicherungLang;
 
   $('einstStatusCloud').textContent=pcloudToken
-    ? '✓ '+CLOUD_ANBIETER_NAME+' verbunden'
+    ? '✓ '+CLOUD_ANBIETER_NAME+' verbunden'+(pcloudKonto?' ('+pcloudKonto+')':'')
     : CLOUD_ANBIETER_NAME+' nicht verbunden';
+  if(pcloudToken&&!pcloudKonto)pcloudKontoLaden();
 
   const abgleich=$('abgleichText');
   $('einstStatusGeraet').textContent=(abgleich&&abgleich.textContent.trim())||'Daten auf diesem Gerät';
