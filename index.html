@@ -3072,6 +3072,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       Vorgefertigte Bausteine wiederherstellen
     </button>
     <p class="muted small">Holt gelöschte Bausteine aus der mitgelieferten Sammlung zurück. Vorhandene bleiben unverändert.</p>
+    <button type="button" id="snippetDoppelte" class="secondary" style="width:100%;margin-top:8px">
+      Doppelte Bausteine entfernen
+    </button>
+    <p class="muted small">Entfernt Bausteine mit gleicher Art, gleichem Titel und gleichem Text. Der älteste bleibt jeweils erhalten.</p>
   </div>
 
   <div id="snippetList"></div>
@@ -3503,7 +3507,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.9 Verkaufsversion';
+const APP_VERSION='0.24.10 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -14030,7 +14034,39 @@ $('openSnippetPicker').onclick=async()=>{
 $('closeSnippetPicker').onclick=()=>$('snippetPickerDialog').close();
 $('snippetPickerReset').onclick=()=>{tbAuswahl=[];renderSnippetPicker();};
 $('snippetPickerInsert').onclick=fuegeZusammengesetztEin;
-$('snippetStartliste').onclick=startlisteEinfuegen;
+$('snippetStartliste').onclick=()=>startlisteEinfuegen(false);
+$('snippetDoppelte').onclick=doppelteBausteineEntfernen;
+
+// Doppelte Textbausteine finden: gleiche Art, gleicher Titel, gleicher Text
+// (Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle)
+async function doppelteBausteineEntfernen(){
+  const norm=x=>String(x||'').replace(/\s+/g,' ').trim().toLowerCase();
+  const sortiert=[...textbausteine].sort((a,b)=>
+    String(a.created_at||'').localeCompare(String(b.created_at||'')));
+  const gesehen=new Set();
+  const weg=[];
+  for(const b of sortiert){
+    const schluessel=tbArt(b)+'|'+norm(b.titel)+'|'+norm(b.text);
+    if(gesehen.has(schluessel))weg.push(b);
+    else gesehen.add(schluessel);
+  }
+  if(!weg.length){
+    toast('Keine doppelten Bausteine gefunden.');
+    return;
+  }
+  if(!confirm(weg.length+' doppelte Bausteine entfernen? Von jedem bleibt einer erhalten.'))return;
+
+  let fehler=0;
+  for(const b of weg){
+    const {error}=await Daten.from('textbausteine').delete().eq('id',b.id);
+    if(error)fehler++;
+  }
+  await loadTextbausteine();
+  if($('snippetDialog').open)renderSnippetList();
+  toast(fehler
+    ? (weg.length-fehler)+' entfernt, '+fehler+' konnten nicht entfernt werden.'
+    : weg.length+' doppelte Bausteine entfernt.');
+}
 
 // Merkt sich, ob das Formular aus der Auswahl heraus geöffnet wurde
 let tbNeuAusAuswahl=false;
