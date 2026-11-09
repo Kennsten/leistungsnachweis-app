@@ -3507,7 +3507,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.10 Verkaufsversion';
+const APP_VERSION='0.24.11 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9794,9 +9794,9 @@ async function pcloudAnfrage(methode,parameter={}){
   const ergebnis=await antwort.json();
 
   if(ergebnis.result!==0){
-    if(ergebnis.result===1000||ergebnis.result===2000||ergebnis.result===2094){
+    if(ergebnis.result===1000||ergebnis.result===2000||ergebnis.result===2094||ergebnis.result===2095){
       pcloudTokenSpeichern(null);
-      throw new Error('Die Verbindung zu pCloud ist abgelaufen.');
+      throw new Error('Die Verbindung zu pCloud ist abgelaufen. Bitte neu verbinden.');
     }
 
     throw new Error(
@@ -9836,13 +9836,18 @@ async function pcloudLinkAnfrage(parameter={}){
   }
 
   if(ergebnis.fehler){
+    // Zugang bei pCloud widerrufen oder abgelaufen
+    if(/Code (1000|2000|2094|2095)\b|revoked|re-authorize/i.test(String(ergebnis.fehler))){
+      pcloudTokenSpeichern(null);
+      throw new Error('Die Verbindung zu pCloud ist abgelaufen. Bitte neu verbinden.');
+    }
     throw new Error('Über Netlify: '+ergebnis.fehler);
   }
 
   if(ergebnis.result!==0){
-    if(ergebnis.result===1000||ergebnis.result===2000||ergebnis.result===2094){
+    if(ergebnis.result===1000||ergebnis.result===2000||ergebnis.result===2094||ergebnis.result===2095){
       pcloudTokenSpeichern(null);
-      throw new Error('Die Verbindung zu pCloud ist abgelaufen.');
+      throw new Error('Die Verbindung zu pCloud ist abgelaufen. Bitte neu verbinden.');
     }
 
     throw new Error(
