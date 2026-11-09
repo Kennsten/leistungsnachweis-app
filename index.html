@@ -447,8 +447,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .summary-row{display:flex;justify-content:space-between;gap:12px;margin:5px 0}
 .summary-row strong{text-align:right}
 /* Dokumentationen: kompakte Zusammenfassung */
-.doc-kurz{display:flex;flex-wrap:wrap;gap:6px 8px;margin:10px 0 0;font-size:.85rem;color:var(--muted)}
-.doc-kurz span{background:var(--accent);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.doc-kurz{margin:10px 0 0;padding:9px 12px;background:var(--accent);border:1px solid var(--line);border-radius:12px;font-size:.85rem;color:var(--muted)}
+.dk-titel{font-size:.78rem;font-weight:700;margin-bottom:5px}
+.dk-zahlen{display:flex;flex-wrap:wrap;gap:4px 16px}
+.dk-zahlen span{white-space:nowrap}
 .doc-kurz strong{color:var(--ink)}
 /* Dokumentationen, Ansicht „Liste“: eine Zeile je Eintrag mit Öffnen-Knopf */
 .doc-zeile{display:none}
@@ -466,6 +468,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .dz-knopf::after{content:"";width:.8em;height:.8em;background:currentColor;transform:rotate(90deg);transition:transform .2s;
   -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
 .doc-zeile[aria-expanded="true"] .dz-knopf::after{transform:rotate(-90deg)}
+.doc-liste .doc-item.offen{overflow:hidden;border:2px solid var(--brand);border-left-width:6px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin:12px 0}
+.doc-liste .doc-item.offen .doc-zeile{background:var(--accent)}
+.doc-liste .doc-item.offen .dz-knopf{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
 .doc-liste .doc-head{display:none;padding:0 14px 14px;border-top:1px solid var(--line);padding-top:12px}
 .doc-liste .doc-item.offen .doc-head{display:flex}
 .doc-liste .doc-head h3,.doc-liste .doc-head .doc-time,.doc-liste .doc-head .fls-value{display:none}
@@ -3600,7 +3605,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.15 Verkaufsversion';
+const APP_VERSION='0.24.16 Verkaufsversion';
 const APP_STAND='09.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6248,7 +6253,7 @@ async function loadDocs(){
   if(!activeDocsClient)return;
   $('docsList').innerHTML='<p class="muted">Dokumentationen werden geladen …</p>';
 
-  const [docResult,tripResult,terminResult]=await Promise.all([
+  const [docResult,tripResult,terminResult,bewResult]=await Promise.all([
     Daten.from('dokumentationen')
       .select('*')
       .eq('client_id',activeDocsClient.id)
@@ -6264,7 +6269,12 @@ async function loadDocs(){
       .eq('client_id',activeDocsClient.id)
       .is('documentation_id',null)
       .order('datum',{ascending:true})
-      .order('beginn',{ascending:true})
+      .order('beginn',{ascending:true}),
+
+    Daten.from('bewilligungen')
+      .select('*')
+      .eq('client_id',activeDocsClient.id)
+      .order('beginn',{ascending:false})
   ]);
 
   if(docResult.error){
@@ -6275,6 +6285,7 @@ async function loadDocs(){
 
   docs=docResult.data||[];
   docsTrips=(tripResult&&tripResult.data)||[];
+  docsBewilligungen=(bewResult&&bewResult.data)||[];
 
   // Geplante Termine ohne Dokumentation. Gleiche Regel wie im Kalender:
   // Gibt es am selben Tag eine Dokumentation, die höchstens zwei Stunden
@@ -6291,6 +6302,7 @@ async function loadDocs(){
 
 // Geplante, noch nicht dokumentierte Termine des Klienten
 let docsTermine=[];
+let docsBewilligungen=[];
 
 // Uhrzeit sprechend: „9 Uhr" bzw. „9:30 Uhr"
 function terminUhrzeit(zeit){
@@ -6469,11 +6481,19 @@ function renderDocs(){
       : '<p class="muted">Noch keine Dokumentationen vorhanden.</p>'
   );
 
-  const summary=gefiltert.length?`
+  // Zahlen seit der letzten (aktuellsten, bereits begonnenen) Bewilligung
+  const heuteIso=todayIso();
+  const letzte=docsBewilligungen.find(b=>b.beginn&&b.beginn<=heuteIso)||docsBewilligungen[0]||null;
+  const seitDocs=letzte?docs.filter(d=>d.datum>=letzte.beginn):docs;
+  const seitMin=seitDocs.reduce((a,d)=>a+Number(d.dauer_minuten||0),0);
+  const summary=docs.length?`
     <div class="doc-kurz">
-      <span><strong>${gefiltert.length}</strong> Termine</span>
-      <span><strong>${formatDuration(totalMinuten)}</strong> Gesamtdauer</span>
-      <span><strong>${formatFls(summeDocFls(gefiltert))} FLS</strong> gesamt</span>
+      <div class="dk-titel">${letzte?'Seit der letzten Bewilligung ('+kurzDatum(letzte.beginn)+')':'Alle Dokumentationen'}</div>
+      <div class="dk-zahlen">
+        <span><strong>${seitDocs.length}</strong> Termine</span>
+        <span><strong>${formatDuration(seitMin)}</strong> Gesamtdauer</span>
+        <span><strong>${formatFls(summeDocFls(seitDocs))}</strong> FLS</span>
+      </div>
     </div>`:'';
 
   $('docsList').innerHTML=summary+'<div class="doc-eintraege">'+docsHtml+'</div>';
