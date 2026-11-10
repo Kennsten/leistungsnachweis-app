@@ -468,6 +468,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 #docForm .grid{grid-template-columns:1fr}
 #docForm .span2{grid-column:auto}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:99;max-width:min(90vw,700px);text-align:center}
+.toast[popover]{inset:auto auto 24px 50%;margin:0;border:0;overflow:visible}
 .toast.show{opacity:1}
 .approval,.doc-item{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);padding:16px;margin-top:12px;background:var(--card);box-shadow:var(--frame-inset)}
 .approval-head,.doc-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
@@ -2541,6 +2542,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
     <span id="tripKmHinweis" class="feld-hinweis"></span>
     <span id="tripKmDatenschutz" class="feld-hinweis"></span>
+    <div id="tripKmPaketFehlt" class="sich-hinweis hidden">
+      <p><strong>Kartenpaket fehlt:</strong> Damit die Kilometer auf diesem Gerät berechnet werden können – ohne dass Adressen das Gerät verlassen –, muss einmalig das Kartenpaket (ca. 5 MB) geladen werden.</p>
+      <div class="fenster-aktionen"><button type="button" id="tripKmPaketLaden" class="secondary">Kartenpaket laden</button></div>
+    </div>
   </div>
 
   <details class="span2 tacho-block" id="tripTachoBox">
@@ -3644,7 +3649,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.30 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.31 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3826,11 +3831,29 @@ function supaAdresse(datum){
   let tripDocumentations=[];
 let activeMonthlyClient=null;
 
+// Kurze Meldung unten am Rand. Sie muss auch über geöffneten Fenstern
+// (dialog) sichtbar sein: dafür kommt sie in die oberste Ebene (Popover)
+// bzw. in das oberste offene Fenster. Längere Meldungen bleiben länger stehen.
+let toastZeit=null;
 function toast(msg){
   const t=$('toast');
   t.textContent=msg;
+  try{
+    if(t.showPopover){
+      if(!t.hasAttribute('popover'))t.setAttribute('popover','manual');
+      if(t.matches(':popover-open'))t.hidePopover();
+      t.showPopover();
+    }else{
+      const offen=[...document.querySelectorAll('dialog[open]')].pop();
+      (offen||document.body).appendChild(t);
+    }
+  }catch(e){/* Meldung erscheint dann wie bisher */}
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2600);
+  clearTimeout(toastZeit);
+  toastZeit=setTimeout(()=>{
+    t.classList.remove('show');
+    setTimeout(()=>{try{if(t.matches(':popover-open'))t.hidePopover()}catch(e){}},250);
+  },Math.min(8000,Math.max(2600,String(msg).length*55)));
 }
 
 function esc(v=''){
@@ -5758,11 +5781,15 @@ function kmModusAnwenden(){
   const hinweis=$('tripKmDatenschutz');
   if(!knoepfe||!hinweis)return;
   knoepfe.classList.toggle('hidden',modus==='aus');
+  const fehlt=$('tripKmPaketFehlt');
+  if(fehlt)fehlt.classList.toggle('hidden',!(modus==='geraet'&&!kmPaketName()));
   hinweis.textContent=
     modus==='aus'
       ? 'Die automatische Berechnung ist auf diesem Gerät ausgeschaltet. Bitte die Kilometer von Hand eintragen.'
       : modus==='geraet'
-      ? 'Kilometer und Karte werden auf diesem Gerät berechnet. Keine Adresse verlässt das Gerät.'
+      ? (kmPaketName()
+          ? '🔒 Kilometer und Karte werden auf diesem Gerät berechnet. Keine Adresse verlässt das Gerät.'
+          : '')
       : (modus==='strasse'
           ? 'Beim Berechnen und auf der Karte gehen Straße und Ort (ohne Hausnummer) an externe Dienste. Du wirst vorher gefragt.'
           : 'Beim Berechnen und auf der Karte gehen die Adressen mit Hausnummer an externe Dienste. Du wirst vorher gefragt.');
@@ -5868,6 +5895,7 @@ async function kartenpaketeZeigen(){
         await kmHelferAuftrag({typ:'herunterladen',paket:name},f=>{anzeige.textContent=' · wird geladen: '+f+' %'});
         kmPaketNameSetzen(name);
         letzteRoute=null;
+        kmModusAnwenden();
         toast('Kartenpaket gespeichert. Kilometer werden jetzt auf dem Gerät berechnet.');
       }catch(e){
         toast('Herunterladen fehlgeschlagen: '+e.message);
@@ -6131,7 +6159,9 @@ async function kilometerBerechnen(){
       toast('Achtung: Nicht alle Adressen wurden genau gefunden.');
     }
   }catch(fehler){
+    hinweis.innerHTML='<span class="km-warnung">⚠ '+esc(fehler.message)+'</span>';
     toast(fehler.message);
+    kmModusAnwenden();
   }finally{
     knopf.disabled=false;
     knopf.textContent='📍 Kilometer berechnen';
@@ -8975,6 +9005,11 @@ $('tripStopovers').onblur=()=>{
 
 
 $('tripKmBerechnen').onclick=kilometerBerechnen;
+// Aus dem Fahrt-Formular direkt zum Kartenpaket (Einstellungen → Dieses Gerät)
+$('tripKmPaketLaden').onclick=()=>{
+  einstellungenOeffnen(false,'geraet');
+  $('settingsDialog').addEventListener('close',kmModusAnwenden,{once:true});
+};
 $('tripTachoStart').oninput=()=>{
   $('tripTachoHinweis').dataset.vorschlag='';
   tachoHinweisZeigen();
