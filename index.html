@@ -188,6 +188,7 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .fenster-aktionen button{margin:0;min-width:0}
 @media (min-width:640px){.fenster-aktionen{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
 /* Route für Karten-App: Stopps zum Kopieren, Sicherheitshinweis mit Wegklick-Stufen */
+.einnahmen-hinweis{margin:10px 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line,#d8dee4);background:var(--card);font-size:.88rem;line-height:1.45}
 .route-kopie-liste{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .route-kopie-liste li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line,#d8dee4);border-radius:12px;background:var(--card,#fff)}
 .route-kopie-liste .rk-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -3268,6 +3269,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <select id="incomeYear"></select>
   </label>
 
+  <p class="einnahmen-hinweis"><strong>Hinweis:</strong> Die Beträge sind von der App errechnet und nur ungefähre Werte. Die tatsächlich ausgezahlten Beträge können davon abweichen. Maßgeblich sind die Abrechnungen und Zahlungseingänge.</p>
+
   <div id="incomeContent">
     <p class="muted">Auswertung wird geladen …</p>
   </div>
@@ -3629,7 +3632,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.28 Verkaufsversion';
+const APP_VERSION='0.24.29 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
