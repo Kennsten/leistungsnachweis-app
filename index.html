@@ -2995,6 +2995,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 
   <label class="sicherung-haken"><input type="checkbox" id="spBelege" checked> Belege als Dateien beilegen</label>
+  <label class="sicherung-haken"><input type="checkbox" id="spZweckNeutral" checked> Reisezweck neutral („Klientenbesuch“ statt eigenem Text, z. B. ohne Arzt- oder Klinikangaben)</label>
   <label class="sicherung-haken"><input type="checkbox" id="spKlarnamen"> Bewirtungen mit Klarnamen (sonst werden Klientennamen durch die Kennung ersetzt)</label>
   <label class="sicherung-haken"><input type="checkbox" id="spVerzeichnis"> Klientenverzeichnis beilegen (Kennung, Name, Adresse)</label>
   <p class="muted small" id="spVerzeichnisHinweis">Das Finanzamt könnte nach dem Klientenverzeichnis fragen. Es muss sich mit dem Fahrtenbuch zusammenführen lassen. Ob es der Steuerberatung immer mitgegeben werden soll, klärst du am besten mit ihr.</p>
@@ -3620,7 +3621,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.23 Verkaufsversion';
+const APP_VERSION='0.24.24 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -15628,7 +15629,20 @@ function spDateiname(t){
 }
 
 // Klientennamen im Text durch die Kennung ersetzen
+// Ersetzt im Text zuerst die Namen der zugeordneten Klient*in, danach die
+// Namen aller übrigen Klient*innen (auch bei Allgemeinen Fahrten ohne Zuordnung).
 function spNamenErsetzen(text,klient){
+  let t=String(text||'');
+  if(!t)return t;
+  if(klient)t=spNamenEinesKlienten(t,klient);
+  for(const c of clients){
+    if(klient&&String(c.id)===String(klient.id))continue;
+    t=spNamenEinesKlienten(t,c);
+  }
+  return t;
+}
+
+function spNamenEinesKlienten(text,klient){
   let t=String(text||'');
   if(!t||!klient)return t;
   const kennung=klient.client_code||'Klient';
@@ -15640,9 +15654,18 @@ function spNamenErsetzen(text,klient){
     .map(x=>x&&x.trim()).filter(x=>x&&x.length>=3)
     .sort((a,b)=>b.length-a.length);
   for(const teil of new Set(teile)){
-    t=t.replace(new RegExp(teil.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),kennung);
+    const muster=teil.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    t=t.replace(new RegExp('(?<![\\p{L}\\p{N}])'+muster+'(?![\\p{L}\\p{N}])','giu'),kennung);
   }
   return t;
+}
+
+// Zwischenstopps untereinander, nummeriert (1) … 2) …), damit sie auch in
+// Ansichten unterscheidbar bleiben, die Zeilenumbrüche in Zellen nicht zeigen.
+function spStoppsNummeriert(text){
+  const zeilen=stoppsAlsZeilen(text).split('\n').filter(Boolean);
+  if(zeilen.length<2)return zeilen.join('');
+  return zeilen.map((z,i)=>(i+1)+') '+z).join('\n');
 }
 
 function spZeitraum(){
@@ -15728,6 +15751,7 @@ async function spErstellen(){
     if(!window.Tresor||!Tresor.datenschluessel())throw new Error('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
     const {von,bis,name}=spZeitraum();
     const klarnamen=$('spKlarnamen').checked;
+    const zweckNeutral=$('spZweckNeutral').checked;
     const mitVerzeichnis=$('spVerzeichnis').checked;
     const mitBelegen=$('spBelege').checked;
     fort.textContent='Daten werden gesammelt …';
@@ -15747,9 +15771,9 @@ async function spErstellen(){
           formatDate(t.trip_date),
           t.allgemein?'Allgemeine Fahrt':'Klientenbesuch',
           c?(c.client_code||'ohne Kennung'):'',
-          spNamenErsetzen(t.purpose||'',c),
+          (c&&zweckNeutral)?'Klientenbesuch':spNamenErsetzen(t.purpose||'',c),
           t.start_address||'',
-          stoppsAlsZeilen(spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c)),
+          spStoppsNummeriert(spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c)),
           t.destination_address||t.destination||'',
           spKm(t.kilometers),
           t.tacho_start!=null?spKm(t.tacho_start):'',
