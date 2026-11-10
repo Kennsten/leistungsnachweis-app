@@ -13,7 +13,7 @@
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.24.29';
+const CACHE_NAME = 'qa-produkt-0.24.30';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [
@@ -29,6 +29,7 @@ const APP_DATEIEN = [
   './daten.js',
   './geraet.js',
   './installieren.js',
+  './km-geraet.js',
   './lib/supabase.js',
   './lib/argon2.umd.min.js',
   './lib/qrcode.js',
@@ -103,7 +104,8 @@ self.addEventListener('activate', (event) => {
       .then((namen) =>
         Promise.all(
           namen
-            .filter((name) => name !== CACHE_NAME)
+            // Kartenpakete (qa-karten-…) bleiben bei App-Updates erhalten
+            .filter((name) => name !== CACHE_NAME && !name.startsWith('qa-karten-'))
             .map((name) => caches.delete(name))
         )
       )
@@ -199,6 +201,8 @@ self.addEventListener('fetch', (event) => {
   // Fremde Server (Supabase, Karten, Cloud) und Netlify-Funktionen: immer live
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/.netlify/')) return;
+  // Kartenpakete verwaltet der Rechen-Helfer (km-geraet.js) selbst
+  if (url.pathname.startsWith('/karten/')) return;
 
   if (istSeite(request, url)) {
     event.respondWith(netzZuerst(request));

@@ -1,0 +1,70 @@
+# Kartenpaket bauen (für die Kilometer-Berechnung auf dem Gerät)
+#
+# Lädt die aktuellen OpenStreetMap-Daten von Geofabrik, baut daraus das
+# Kartenpaket (Straßennetz und Adressverzeichnis) und speichert es im Ordner
+# karten/ dieses Zweigs. Netlify veröffentlicht es danach automatisch mit.
+#
+# Starten: GitHub → Actions → „Kartenpaket bauen“ → „Run workflow“ → Zweig wählen.
+# Läuft außerdem von selbst, wenn sich das Bauprogramm im Zweig vorschau-km-offline ändert.
+# Empfehlung: alle 3 bis 6 Monate neu bauen, damit neue Straßen und Adressen drin sind.
+
+name: Kartenpaket bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [vorschau-km-offline]
+    paths:
+      - 'werkzeuge/kartenpaket/**'
+      - '.github/workflows/kartenpaket.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kartenpaket-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Werkzeuge installieren
+        run: pip install osmium==4.3.2 numpy==2.5.3
+
+      - name: OpenStreetMap-Daten laden (Niedersachsen und Bremen)
+        run: |
+          mkdir -p /tmp/osm
+          curl -sSfL --retry 5 -o /tmp/osm/niedersachsen.osm.pbf https://download.geofabrik.de/europe/germany/niedersachsen-latest.osm.pbf
+          curl -sSfL --retry 5 -o /tmp/osm/bremen.osm.pbf https://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf
+          ls -la /tmp/osm
+
+      - name: Kartenpaket bauen
+        run: |
+          python3 werkzeuge/kartenpaket/bauen.py \
+            --name niedersachsen --titel "Niedersachsen und Bremen" \
+            /tmp/osm/niedersachsen.osm.pbf /tmp/osm/bremen.osm.pbf
+          ls -la karten
+
+      - name: Prüfen (Probe-Strecken)
+        run: node werkzeuge/kartenpaket/pruefen.js karten niedersachsen
+
+      - name: Im Zweig speichern
+        run: |
+          git config user.name "Kartenpaket-Bau"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add karten/
+          if git diff --cached --quiet; then
+            echo "Keine Änderung am Kartenpaket."
+            exit 0
+          fi
+          git commit -m "Kartenpaket Niedersachsen und Bremen neu gebaut ($(date +%d.%m.%Y))"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
