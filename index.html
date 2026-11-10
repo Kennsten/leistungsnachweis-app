@@ -187,6 +187,19 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .fenster-aktionen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
 .fenster-aktionen button{margin:0;min-width:0}
 @media (min-width:640px){.fenster-aktionen{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
+/* Route für Karten-App: Stopps zum Kopieren, Sicherheitshinweis mit Wegklick-Stufen */
+.route-kopie-liste{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.route-kopie-liste li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line,#d8dee4);border-radius:12px;background:var(--card,#fff)}
+.route-kopie-liste .rk-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.route-kopie-liste .rk-rolle{font-size:.78rem;color:var(--muted);font-weight:600}
+.route-kopie-liste .rk-adresse{overflow-wrap:anywhere}
+.route-kopie-liste button{flex:0 0 auto;margin:0;padding:8px 12px;font-size:.85rem}
+.sich-hinweis{border:1px solid #c98a1b;background:#fff8e8;color:#4a3300;border-radius:12px;padding:12px 14px;margin:8px 0}
+.sich-hinweis p{margin:0 0 6px}
+.sich-hinweis .sich-hinweis-fuss{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
+.sich-hinweis .sich-hinweis-stand{font-size:.8rem;color:#6b4a00}
+.sich-hinweis .link-knopf{color:#6b4200}
+.km-knoepfe-route{margin-top:8px}
 /* Fensterkopf: „Schließen“ immer oben rechts, schrumpft nicht, Titel bricht um */
 dialog .top>.kn-schliessen{flex:0 0 auto;align-self:flex-start;margin-left:auto}
 dialog .top>div:first-child,dialog .top>h2{flex:1 1 0;min-width:0}
@@ -2514,7 +2527,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="km-knoepfe" id="tripKmKnoepfe">
       <button type="button" id="tripKmBerechnen" class="secondary km-knopf">📍 Kilometer berechnen</button>
       <button type="button" id="tripKarte" class="secondary km-knopf">🗺 Karte</button>
-      <button type="button" id="tripGoogleMaps" class="secondary km-knopf">Google Maps</button>
+    </div>
+    <div class="km-knoepfe km-knoepfe-route">
+      <button type="button" id="tripRouteKopie" class="secondary km-knopf">📋 Route für Karten-App</button>
     </div>
     <span id="tripKmHinweis" class="feld-hinweis"></span>
     <span id="tripKmDatenschutz" class="feld-hinweis"></span>
@@ -2914,14 +2929,39 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <label>Karte (OpenStreetMap)
       <select id="dienstSetKarte"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
     </label>
-    <label>Google Maps
-      <select id="dienstSetGoogle"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
-    </label>
+    <h3>Sicherheitshinweise</h3>
+    <p class="muted small">Weggeklickte Hinweise und Rückfragen mit „Nicht mehr fragen“ erscheinen wieder. Gesperrte Dienste bleiben gesperrt.</p>
+    <div class="actions">
+      <button type="button" id="hinweiseZuruecksetzen" class="secondary">Alle Sicherheitshinweise wieder anzeigen</button>
+    </div>
     <div class="actions">
       <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
       <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
     </div>
   </section>
+</dialog>
+
+<dialog id="routeKopieDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Fahrt</div>
+      <h2>Route für Karten-App</h2>
+    </div>
+    <button autofocus type="button" id="routeKopieZu" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="routeKopieHinweis" class="sich-hinweis hidden">
+    <p><strong>Datenschutz:</strong> QA gibt hier nichts weiter. Sobald du eine Adresse in Google Maps oder eine andere Karten-App einfügst, geht sie an deren Anbieter.</p>
+    <p>Tipp: Google Maps im privaten Browser-Fenster ohne Anmeldung nutzen.</p>
+    <div class="sich-hinweis-fuss">
+      <span id="routeKopieHinweisStand" class="sich-hinweis-stand"></span>
+      <button type="button" id="routeKopieHinweisWeg" class="link-knopf">Ausblenden</button>
+    </div>
+  </div>
+  <p class="muted small">Ohne Hausnummern. Kopiere die Stopps nacheinander und füge sie in der Karten-App ein – in Google Maps jeden Stopp in ein eigenes Feld („Stopp hinzufügen“).</p>
+  <ol id="routeKopieListe" class="route-kopie-liste"></ol>
+  <div class="fenster-aktionen">
+    <button type="button" id="routeKopieGoogle" class="secondary">Google Maps leer öffnen</button>
+  </div>
 </dialog>
 
 <dialog id="dienstDialog">
@@ -3589,7 +3629,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.27 Verkaufsversion';
+const APP_VERSION='0.24.28 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5690,8 +5730,8 @@ function kmModusAnwenden(){
     modus==='aus'
       ? 'Die automatische Berechnung ist auf diesem Gerät ausgeschaltet. Bitte die Kilometer von Hand eintragen.'
       : (modus==='strasse'
-          ? 'Beim Berechnen, auf der Karte und bei Google Maps gehen Straße und Ort (ohne Hausnummer) an externe Dienste. Du wirst vorher gefragt.'
-          : 'Beim Berechnen, auf der Karte und bei Google Maps gehen die Adressen mit Hausnummer an externe Dienste. Du wirst vorher gefragt.');
+          ? 'Beim Berechnen und auf der Karte gehen Straße und Ort (ohne Hausnummer) an externe Dienste. Du wirst vorher gefragt.'
+          : 'Beim Berechnen und auf der Karte gehen die Adressen mit Hausnummer an externe Dienste. Du wirst vorher gefragt.');
 }
 
 // Adressen der Fahrt in der Reihenfolge Start, Stopps, Ziel
@@ -5758,10 +5798,7 @@ const DIENSTE={
     '<p>Adressen von Klient*innen sind personenbezogene Daten. Fahre nur fort, wenn das mit deinen Klient*innen und Auftraggebern vereinbar ist. Sonst brich ab und trage die Kilometer selbst ein.</p>'},
   karte:{titel:'Karte anzeigen',text:
     '<p>Für die Karte werden zuerst die <strong>Adressen</strong> wie bei der Kilometerberechnung an <strong>Geoapify</strong> gesendet, unverschlüsselt und ohne Namen.</p>'+
-    '<p>Dann lädt dein Gerät Kartenteile von <strong>OpenStreetMap</strong>. Dabei erfährt der Kartendienst deine <strong>IP-Adresse</strong> und den angezeigten <strong>Kartenausschnitt</strong>.</p>'},
-  google:{titel:'Route in Google Maps öffnen',text:
-    '<p>Google Maps öffnet sich in einem neuen Fenster. Dabei gehen die <strong>Start-, Ziel- und Zwischenadressen</strong> unverschlüsselt an <strong>Google</strong>. Es gilt die Datenschutzerklärung von Google.</p>'+
-    '<p>Fahre nur fort, wenn das mit deinen Klient*innen und Auftraggebern vereinbar ist.</p>'}
+    '<p>Dann lädt dein Gerät Kartenteile von <strong>OpenStreetMap</strong>. Dabei erfährt der Kartendienst deine <strong>IP-Adresse</strong> und den angezeigten <strong>Kartenausschnitt</strong>.</p>'}
 };
 function dienstSchluessel(art){return 'qa-dienst-'+art+'-'+((typeof user!=='undefined'&&user&&user.id)||'')}
 function dienstEinstellung(art){
@@ -5774,17 +5811,17 @@ function dienstEinstellungSetzen(art,wert){
   }catch(e){/* nicht schlimm */}
 }
 function dienstEinstellungenZeigen(){
-  [['route','dienstSetRoute'],['karte','dienstSetKarte'],['google','dienstSetGoogle']]
+  [['route','dienstSetRoute'],['karte','dienstSetKarte']]
     .forEach(([art,id])=>{$(id).value=dienstEinstellung(art)});
   $('kmModusSelect').value=kmModus();
 }
 $('kmModusSelect').onchange=()=>{
   const wahl=$('kmModusSelect').value;
   if(wahl==='aus'){
-    ['route','karte','google'].forEach(art=>dienstEinstellungSetzen(art,'gesperrt'));
+    ['route','karte'].forEach(art=>dienstEinstellungSetzen(art,'gesperrt'));
   }else{
     // Sperren aufheben (Rückfrage vor jeder Übertragung bleibt)
-    ['route','karte','google'].forEach(art=>{
+    ['route','karte'].forEach(art=>{
       if(dienstEinstellung(art)==='gesperrt')dienstEinstellungSetzen(art,'');
     });
     adressGenauigkeitSetzen(wahl);
@@ -5792,8 +5829,59 @@ $('kmModusSelect').onchange=()=>{
   dienstEinstellungenZeigen();
   kmModusAnwenden();
 };
-[['route','dienstSetRoute'],['karte','dienstSetKarte'],['google','dienstSetGoogle']]
+[['route','dienstSetRoute'],['karte','dienstSetKarte']]
   .forEach(([art,id])=>{$(id).onchange=()=>dienstEinstellungSetzen(art,$(id).value)});
+
+/* ---------- Sicherheitshinweise zum Wegklicken (nur auf diesem Gerät) ----------
+   Stufe 0: angezeigt; Wegklicken → beim nächsten Öffnen wieder da (Stufe 1).
+   Stufe 1: angezeigt; Wegklicken → 5 Mal ausgeblendet, dann wieder da (Stufe 2).
+   Stufe 2: angezeigt mit „Nicht mehr anzeigen“; Wegklicken → dauerhaft aus (Stufe 3).
+   Einstellungen → Dieses Gerät → „Alle Sicherheitshinweise wieder anzeigen“ setzt zurück. */
+const SICH_HINWEIS_PRAEFIX='qa-sichhinweis-';
+function sichHinweisSchluessel(name){return SICH_HINWEIS_PRAEFIX+name+'-'+((typeof user!=='undefined'&&user&&user.id)||'')}
+function sichHinweisStand(name){
+  try{
+    const s=JSON.parse(localStorage.getItem(sichHinweisSchluessel(name))||'null');
+    if(s&&Number.isFinite(s.stufe))return {stufe:s.stufe,rest:Number(s.rest)||0};
+  }catch(e){}
+  return {stufe:0,rest:0};
+}
+function sichHinweisSpeichern(name,s){
+  try{localStorage.setItem(sichHinweisSchluessel(name),JSON.stringify(s))}catch(e){}
+}
+// Beim Öffnen aufrufen: true = Hinweis anzeigen (zählt die 5 ausgeblendeten Male herunter)
+function sichHinweisBeimOeffnen(name){
+  const s=sichHinweisStand(name);
+  if(s.stufe>=3)return false;
+  if(s.stufe===2&&s.rest>0){
+    s.rest--;
+    sichHinweisSpeichern(name,s);
+    return false;
+  }
+  return true;
+}
+function sichHinweisWegklicken(name){
+  const s=sichHinweisStand(name);
+  if(s.stufe===0)s.stufe=1;
+  else if(s.stufe===1){s.stufe=2;s.rest=5;}
+  else s.stufe=3;
+  sichHinweisSpeichern(name,s);
+}
+function alleSicherheitshinweiseZuruecksetzen(){
+  const ende='-'+((typeof user!=='undefined'&&user&&user.id)||'');
+  try{
+    Object.keys(localStorage)
+      .filter(k=>k.startsWith(SICH_HINWEIS_PRAEFIX)&&k.endsWith(ende))
+      .forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  // „Nicht mehr fragen“ aufheben; gesperrte Dienste bleiben gesperrt
+  ['route','karte','google'].forEach(art=>{
+    if(dienstEinstellung(art)==='immer')dienstEinstellungSetzen(art,'');
+  });
+  dienstEinstellungenZeigen();
+  toast('Alle Sicherheitshinweise werden wieder angezeigt.');
+}
+$('hinweiseZuruecksetzen').onclick=alleSicherheitshinweiseZuruecksetzen;
 
 // Gibt true zurück, wenn die Funktion benutzt werden darf (nach Rückfrage oder Voreinstellung).
 function dienstErlaubt(art){
@@ -8858,32 +8946,85 @@ $('tripKarte').onclick=karteZeigen;
 $('closeKarte').onclick=()=>$('kartenDialog').close();
 
 
-// Öffnet die Fahrt mit allen Stopps in Google Maps (App oder Webseite).
-// Die Adressen gehen nur an Google, wenn du diesen Knopf antippst und die Rückfrage bestätigst.
-$('tripGoogleMaps').onclick=async()=>{
+/* ---------- Route für Karten-App (nichts wird übertragen) ---------- */
+// Zeigt Start, Stopps und Ziel ohne Hausnummer zum Kopieren. Die App selbst
+// schickt nichts an Google; erst das Einfügen in der Karten-App tut das.
+function routeKopieAdressen(){
   const start=$('tripStartAddress').value.trim();
   const ziel=$('tripDestination').value.trim();
   const stopps=String($('tripStopovers').value||'')
     .split(/\n|\s+-\s+/).map(t=>t.trim()).filter(Boolean)
-    .map(adresseFuerBerechnung)
-    .map(adresseNachGenauigkeit);
+    .map(adresseFuerBerechnung);
+  if(!start||!ziel)return null;
+  const liste=[{rolle:'Start',adresse:start}];
+  stopps.forEach((a,i)=>liste.push({rolle:'Stopp '+(i+1),adresse:a}));
+  liste.push({rolle:'Ziel',adresse:ziel});
+  return liste.map(x=>({rolle:x.rolle,adresse:hausnummerEntfernen(x.adresse)}));
+}
 
-  if(!start||!ziel){
+async function textKopieren(text){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(e){/* Ersatzweg unten */}
+  try{
+    const feld=document.createElement('textarea');
+    feld.value=text;
+    feld.setAttribute('readonly','');
+    feld.style.position='fixed';feld.style.opacity='0';
+    $('routeKopieDialog').appendChild(feld);
+    feld.select();
+    const ok=document.execCommand('copy');
+    feld.remove();
+    return ok;
+  }catch(e){return false}
+}
+
+function routeKopieHinweisZeigen(){
+  const box=$('routeKopieHinweis');
+  const zeigen=sichHinweisBeimOeffnen('kartenapp');
+  box.classList.toggle('hidden',!zeigen);
+  if(!zeigen)return;
+  const s=sichHinweisStand('kartenapp');
+  $('routeKopieHinweisWeg').textContent=s.stufe>=2?'Nicht mehr anzeigen':'Ausblenden';
+  $('routeKopieHinweisStand').textContent=
+    s.stufe===0?'Erscheint beim nächsten Mal wieder.':
+    s.stufe===1?'Danach erst wieder nach 5 Mal.':
+    'Danach dauerhaft ausgeblendet (wieder einschalten: Einstellungen → Dieses Gerät).';
+}
+
+$('tripRouteKopie').onclick=()=>{
+  const liste=routeKopieAdressen();
+  if(!liste){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
-  if(!(await dienstErlaubt('google')))return;
-
-  const werte=new URLSearchParams({
-    api:'1',
-    origin:adresseNachGenauigkeit(start),
-    destination:adresseNachGenauigkeit(ziel),
-    travelmode:'driving'
+  $('routeKopieListe').innerHTML=liste.map((x,i)=>
+    '<li><span class="rk-text"><span class="rk-rolle">'+esc(x.rolle)+'</span>'+
+    '<span class="rk-adresse">'+esc(x.adresse)+'</span></span>'+
+    '<button type="button" class="secondary rk-kopieren" data-nr="'+i+'">Kopieren</button></li>'
+  ).join('');
+  $('routeKopieListe').querySelectorAll('.rk-kopieren').forEach(knopf=>{
+    knopf.onclick=async()=>{
+      const ok=await textKopieren(liste[Number(knopf.dataset.nr)].adresse);
+      knopf.textContent=ok?'Kopiert ✓':'Nicht möglich';
+      setTimeout(()=>{knopf.textContent='Kopieren'},2000);
+    };
   });
-  if(stopps.length)werte.set('waypoints',stopps.join('|'));
-
-  window.open('https://www.google.com/maps/dir/?'+werte.toString(),'_blank','noopener');
+  routeKopieHinweisZeigen();
+  $('routeKopieDialog').showModal();
 };
+$('routeKopieHinweisWeg').onclick=()=>{
+  sichHinweisWegklicken('kartenapp');
+  $('routeKopieHinweis').classList.add('hidden');
+};
+$('routeKopieGoogle').onclick=()=>{
+  // Ohne Adressen: Google erfährt nur, dass Google Maps geöffnet wird.
+  window.open('https://www.google.com/maps','_blank','noopener');
+};
+$('routeKopieZu').onclick=()=>$('routeKopieDialog').close();
 
 $('stoppZeilen').addEventListener('input',e=>{
   if(e.target.classList.contains('stopp-eingabe'))stoppeAusZeilen();
