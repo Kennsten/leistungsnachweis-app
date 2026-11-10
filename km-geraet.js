@@ -434,6 +434,11 @@ function adresseSuchen(verz,text,bezug){
   if(!treffer&&!z.nr){
     const ort=poiSuchen(true);
     if(ort)return ort;
+    // Genau ein Ortsname („Wunstorf“) – vor ähnlichen Straßen („Wunstorfer Straße“)
+    if(verz.ortNorm.includes(name)){
+      const mitte=ortMitte(verz,name);
+      if(mitte)return {lat:mitte[0],lon:mitte[1],name:verz.orte[verz.ortNorm.indexOf(name)],unsicher:true};
+    }
   }
   // 3. Straße beginnt mit dem Eingetippten („Engelbosteler“ → „Engelbosteler Damm“)
   if(!treffer&&name.length>=4){
