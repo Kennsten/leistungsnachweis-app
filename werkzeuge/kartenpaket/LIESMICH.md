@@ -37,13 +37,17 @@ der Karte und in den Einstellungen.
    veröffentlicht es automatisch. Die App zeigt dann in den Einstellungen
    „neuere Fassung verfügbar“ und einen Knopf „Aktualisieren“.
 
-## Weitere Bundesländer
+## Gebiet
 
-Für ein weiteres Bundesland in `.github/workflows/kartenpaket.yml` einen
-zweiten Bau-Schritt ergänzen, z. B. mit
-`https://download.geofabrik.de/europe/germany/nordrhein-westfalen-latest.osm.pbf`
-und `--name nrw --titel "Nordrhein-Westfalen"`. Die App zeigt dann alle Pakete
-aus `karten/pakete.json` zur Auswahl.
+Zurzeit gibt es ein Paket: **Hannover und Region Hannover** mit etwa 5–10 km
+Rand (Ausschnitt `--grenzen 52.10,9.25,52.75,10.35`, aus den Niedersachsen-Daten
+von Geofabrik). Liegt eine Adresse außerhalb, meldet die App das, und man trägt
+die Kilometer von Hand ein.
+
+Weitere Gebiete: in `.github/workflows/kartenpaket.yml` einen zweiten
+Bau-Schritt mit eigenem `--name`, `--titel` und `--grenzen` (oder einer anderen
+Geofabrik-Datei ohne `--grenzen`) ergänzen. Die App zeigt dann alle Pakete aus
+`karten/pakete.json` zur Auswahl.
 
 ## Wie wird gerechnet?
 

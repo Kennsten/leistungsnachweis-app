@@ -39,22 +39,24 @@ jobs:
       - name: Werkzeuge installieren
         run: pip install osmium==4.3.2 numpy==2.5.3
 
-      - name: OpenStreetMap-Daten laden (Niedersachsen und Bremen)
+      - name: OpenStreetMap-Daten laden (Niedersachsen)
         run: |
           mkdir -p /tmp/osm
           curl -sSfL --retry 5 -o /tmp/osm/niedersachsen.osm.pbf https://download.geofabrik.de/europe/germany/niedersachsen-latest.osm.pbf
-          curl -sSfL --retry 5 -o /tmp/osm/bremen.osm.pbf https://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf
           ls -la /tmp/osm
 
-      - name: Kartenpaket bauen
+      # Ausschnitt: Region Hannover mit etwa 5–10 km Rand
+      # (Süd, West, Nord, Ost in Grad)
+      - name: Kartenpaket bauen (Region Hannover)
         run: |
           python3 werkzeuge/kartenpaket/bauen.py \
-            --name niedersachsen --titel "Niedersachsen und Bremen" \
-            /tmp/osm/niedersachsen.osm.pbf /tmp/osm/bremen.osm.pbf
+            --name region-hannover --titel "Hannover und Region Hannover" \
+            --grenzen 52.10,9.25,52.75,10.35 \
+            /tmp/osm/niedersachsen.osm.pbf
           ls -la karten
 
       - name: Prüfen (Probe-Strecken)
-        run: node werkzeuge/kartenpaket/pruefen.js karten niedersachsen
+        run: node werkzeuge/kartenpaket/pruefen.js karten region-hannover
 
       - name: Im Zweig speichern
         run: |
@@ -65,6 +67,6 @@ jobs:
             echo "Keine Änderung am Kartenpaket."
             exit 0
           fi
-          git commit -m "Kartenpaket Niedersachsen und Bremen neu gebaut ($(date +%d.%m.%Y))"
+          git commit -m "Kartenpaket Region Hannover neu gebaut ($(date +%d.%m.%Y))"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"

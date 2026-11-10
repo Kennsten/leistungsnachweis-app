@@ -192,8 +192,10 @@ def vereinfachen(punkte, toleranz_m=4.0):
 
 
 class Leser(osmium.SimpleHandler):
-    def __init__(self):
+    def __init__(self, grenzen=None):
         super().__init__()
+        # Ausschnitt [Süd, West, Nord, Ost] in Grad; None = alles
+        self.grenzen = grenzen
         self.wege = []            # (osm-Knoten-IDs, (Breiten, Längen), klasse, tempo, einbahn)
         self.alle_refs = array('q')  # alle Knoten-IDs der Straßen (Enden doppelt)
         self.gesehen = set()      # schon gelesene Wege/Punkte (Grenzgebiet steckt in zwei Dateien)
@@ -201,12 +203,18 @@ class Leser(osmium.SimpleHandler):
         self.pois = []            # (name, art, lat, lon)
         self.strassen_namen = []  # (name, lat, lon) – Mittelpunkte benannter Straßen
 
+    def drin(self, lat, lon):
+        g = self.grenzen
+        return g is None or (g[0] <= lat <= g[2] and g[1] <= lon <= g[3])
+
     # Adressen und Orte auf einzelnen Punkten
     def node(self, n):
         tags = n.tags
         if not n.location.valid() or not len(tags):
             return
         if ('n', n.id) in self.gesehen:
+            return
+        if not self.drin(n.location.lat, n.location.lon):
             return
         if 'addr:housenumber' in tags or 'name' in tags:
             self.gesehen.add(('n', n.id))
@@ -237,6 +245,10 @@ class Leser(osmium.SimpleHandler):
                 lats.append(nd.location.y)
                 lons.append(nd.location.x)
             if len(ids) < 2:
+                return
+            # Straßen nur, wenn sie den Ausschnitt berühren (dann ganz)
+            if self.grenzen is not None and not any(
+                    self.drin(la / 1e7, lo / 1e7) for la, lo in zip(lats, lons)):
                 return
             punkte = (lats, lons)
             art = tags['highway']
@@ -269,6 +281,8 @@ class Leser(osmium.SimpleHandler):
                 return
             lat /= anzahl
             lon /= anzahl
+            if not self.drin(lat, lon):
+                return
             if hat_adresse:
                 self._adresse(tags, lat, lon)
             if poi_art:
@@ -496,11 +510,13 @@ def main():
     p.add_argument('dateien', nargs='+', help='OpenStreetMap-Dateien (*.osm.pbf)')
     p.add_argument('--name', required=True, help='kurzer Name, z. B. niedersachsen')
     p.add_argument('--titel', required=True, help='Anzeigename, z. B. "Niedersachsen und Bremen"')
+    p.add_argument('--grenzen', help='nur Ausschnitt: Süd,West,Nord,Ost in Grad, z. B. 52.10,9.25,52.75,10.35')
     p.add_argument('--ziel', default=os.path.join(os.path.dirname(__file__), '..', '..', 'karten'))
     a = p.parse_args()
 
     os.makedirs(a.ziel, exist_ok=True)
-    leser = Leser()
+    grenzen = [float(x) for x in a.grenzen.split(',')] if a.grenzen else None
+    leser = Leser(grenzen)
     for datei in a.dateien:
         print('Lese', datei, '…')
         leser.apply_file(datei, locations=True, idx='flex_mem')

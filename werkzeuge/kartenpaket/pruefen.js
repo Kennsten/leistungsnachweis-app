@@ -8,15 +8,15 @@ const path = require('path');
 const K = require(path.join(__dirname, '..', '..', 'km-geraet.js'));
 
 const ordner = process.argv[2] || 'karten';
-const name = process.argv[3] || 'niedersachsen';
+const name = process.argv[3] || 'region-hannover';
 
 // Erwartete Straßen-Kilometer (grob, wie Routenplaner sie ungefähr angeben)
 const PROBEN = {
-  niedersachsen: [
+  'region-hannover': [
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Trammplatz 2, 30159 Hannover'], von: 0.8, bis: 2.5 },
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Flughafenstraße 4, 30855 Langenhagen'], von: 10, bis: 18 },
-    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Markt 1, 31134 Hildesheim'], von: 28, bis: 42 },
-    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Bahnhofsplatz 15, 28195 Bremen'], von: 110, bis: 140 },
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Marktstraße, 31303 Burgdorf'], von: 18, bis: 35 },
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Marktstraße, 31535 Neustadt am Rübenberge'], von: 22, bis: 45 },
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke', 'Ernst-August-Platz 1, 30159 Hannover'], von: 0.1, bis: 6 }
   ]
 };
