@@ -407,10 +407,35 @@ function adresseSuchen(verz,text,bezug){
     return {l,sicher:!z.plz&&!ortN};
   };
 
+  // Bekannter Ort (Geschäft, Apotheke, Amt …): Name oder Art.
+  // streng: nur genauer Name oder Art („Apotheke“); sonst auch Namensanfang/-teil
+  function poiSuchen(streng){
+    const textN=norm(text.split(',')[0]);
+    const arten=ARTEN[textN];
+    if(streng&&!arten&&!verz.pois.some(p=>p[0]===textN))return null;
+    const pois=[];
+    for(const p of verz.pois){
+      if(arten?arten.includes(p[2]):(p[0]===textN||(!streng&&((textN.length>=4&&p[0].startsWith(textN))||(textN.length>=5&&p[0].includes(textN))))))pois.push(p);
+    }
+    if(!pois.length)return null;
+    let nahe=bezug;
+    // Ort angegeben: in dessen Nähe suchen (Mittelpunkt der Adressen des Ortes)
+    if(ortN){const mitte=ortMitte(verz,ortN);if(mitte)nahe=mitte;}
+    const p=naechster(pois,nahe,p=>[p[3]/1e5,p[4]/1e5]);
+    const exakt=p[0]===textN;
+    const weit=nahe?abstandM(p[3]/1e5,p[4]/1e5,nahe[0],nahe[1])>25000:true;
+    return {lat:p[3]/1e5,lon:p[4]/1e5,name:p[1],unsicher:!(exakt||arten)||weit||!nahe};
+  }
+
   // 1. Straße genau gefunden
   let treffer=verz.nachName.get(name);
   let unsicher=false;
-  // 2. Straße beginnt mit dem Eingetippten („Engelbosteler“ → „Engelbosteler Damm“)
+  // 2. Ohne Hausnummer: genauer Name eines bekannten Ortes oder Art („Apotheke“)
+  if(!treffer&&!z.nr){
+    const ort=poiSuchen(true);
+    if(ort)return ort;
+  }
+  // 3. Straße beginnt mit dem Eingetippten („Engelbosteler“ → „Engelbosteler Damm“)
   if(!treffer&&name.length>=4){
     const kandidaten=[];
     let lo=0,hi=verz.namenListe.length;
@@ -461,26 +486,11 @@ function adresseSuchen(verz,text,bezug){
     return {lat:lage.lat,lon:lage.lon,name:anzeige,unsicher};
   }
 
-  // 3. Bekannter Ort (Geschäft, Apotheke, Amt …): Name oder Art
-  const textN=norm(text.split(',')[0]);
-  const arten=ARTEN[textN];
-  let pois=[];
-  for(const p of verz.pois){
-    if(arten?arten.includes(p[2]):(p[0]===textN||(textN.length>=4&&p[0].startsWith(textN))||(textN.length>=5&&p[0].includes(textN))))pois.push(p);
-  }
-  if(ortN&&pois.length){
-    // Ort angegeben: in dessen Nähe suchen (Mittelpunkt der Adressen des Ortes)
-    const mitte=ortMitte(verz,ortN);
-    if(mitte)bezug=mitte;
-  }
-  if(pois.length){
-    const p=naechster(pois,bezug,p=>[p[3]/1e5,p[4]/1e5]);
-    const exakt=p[0]===textN;
-    const weit=bezug?abstandM(p[3]/1e5,p[4]/1e5,bezug[0],bezug[1])>25000:true;
-    return {lat:p[3]/1e5,lon:p[4]/1e5,name:p[1],unsicher:!(exakt||arten)||weit||!bezug};
-  }
+  // 4. Bekannter Ort mit ähnlichem Namen („Marktk“ → „Marktkauf“)
+  const ungefaehr=poiSuchen(false);
+  if(ungefaehr)return ungefaehr;
 
-  // 4. Nur ein Ort („Langenhagen“)
+  // 5. Nur ein Ort („Langenhagen“)
   const mitte=ortMitte(verz,norm(z.ort||z.strasse));
   if(mitte)return {lat:mitte[0],lon:mitte[1],name:z.ort||z.strasse,unsicher:true};
   return null;

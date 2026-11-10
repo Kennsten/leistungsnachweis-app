@@ -234,6 +234,14 @@ class Leser(osmium.SimpleHandler):
         name = tags.get('name')
         poi_art = self._poi_art(tags) if name else None
 
+        if name and 'highway' in tags and not befahrbar(tags):
+            # Plätze, Fußgängerzonen usw.: nur als Lage für den Straßennamen
+            m = len(w.nodes) // 2
+            if len(w.nodes) and w.nodes[m].location.valid():
+                la, lo = w.nodes[m].location.lat, w.nodes[m].location.lon
+                if self.drin(la, lo):
+                    self.strassen_namen.append((name, la, lo))
+
         if befahrbar(tags):
             self.gesehen.add(w.id)
             # Platzsparend: Knoten-IDs und Lage (Grad × 1e7) als Zahlenreihen
@@ -287,6 +295,38 @@ class Leser(osmium.SimpleHandler):
                 self._adresse(tags, lat, lon)
             if poi_art:
                 self.pois.append((name, poi_art, lat, lon))
+
+    def area(self, a):
+        # Nur Flächen aus Relationen; einfache Flächen kommen schon über way()
+        if a.from_way():
+            return
+        tags = a.tags
+        hat_adresse = 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags)
+        name = tags.get('name')
+        poi_art = self._poi_art(tags) if name else None
+        if not (hat_adresse or poi_art):
+            return
+        if ('r', a.orig_id()) in self.gesehen:
+            return
+        lat = lon = 0.0
+        anzahl = 0
+        for ring in a.outer_rings():
+            for nd in ring:
+                if nd.location.valid():
+                    lat += nd.location.lat
+                    lon += nd.location.lon
+                    anzahl += 1
+        if not anzahl:
+            return
+        lat /= anzahl
+        lon /= anzahl
+        if not self.drin(lat, lon):
+            return
+        self.gesehen.add(('r', a.orig_id()))
+        if hat_adresse:
+            self._adresse(tags, lat, lon)
+        if poi_art:
+            self.pois.append((name, poi_art, lat, lon))
 
     def _adresse(self, tags, lat, lon):
         strasse = tags.get('addr:street') or tags.get('addr:place')
