@@ -2423,7 +2423,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="karte"></div>
   <p class="muted small" style="margin:8px 0 0">
     Kartendaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende ·
-    Strecke: openrouteservice (HeiGIT)
+    Strecke: <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Powered by Geoapify</a>
   </p>
 </dialog>
 
@@ -2908,7 +2908,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <p class="muted small">Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen. Im Fahrtenbuch und im Leistungsnachweis bleibt die volle Adresse erhalten, die Kürzung gilt nur für die Weitergabe an externe Dienste.</p>
     <h3>Dienste mit Adressübertragung</h3>
     <p class="muted small">Für diese Funktionen gehen Adressen unverschlüsselt an externe Dienste. Du kannst sie auf diesem Gerät sperren oder dauerhaft erlauben. Standard ist: vorher fragen.</p>
-    <label>Kilometer berechnen (openrouteservice)
+    <label>Kilometer berechnen (Geoapify)
       <select id="dienstSetRoute"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
     </label>
     <label>Karte (OpenStreetMap)
@@ -3589,7 +3589,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.26 Verkaufsversion';
+const APP_VERSION='0.24.27 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5613,7 +5613,7 @@ async function deleteStopover(name){
   toast('Stopp gelöscht');
 }
 
-/* ---------- Kilometer berechnen (OpenRouteService über Netlify-Funktion) ---------- */
+/* ---------- Kilometer berechnen (Geoapify über Supabase-Function route-km-geo) ---------- */
 // Gesendet werden nur die Adressen, keine Namen und kein Fahrtzweck.
 // Hausnummern muss man nicht eintippen. Steht bei einem Stopp nur die
 // Straße des Klienten, wird für die Berechnung seine vollständige Adresse
@@ -5730,7 +5730,7 @@ async function routeAbfragen(adressen){
 
   // Die Berechnung läuft jetzt als Supabase-Function im selben Projekt wie die
   // Datenbank. forceFunctionRegion erzwingt Frankfurt (Rechenzentrum in der EU).
-  const antwort=await busyFetch(SUPABASE_URL+'/functions/v1/route-km?forceFunctionRegion=eu-central-1',{
+  const antwort=await busyFetch(SUPABASE_URL+'/functions/v1/route-km-geo?forceFunctionRegion=eu-central-1',{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
@@ -5754,10 +5754,10 @@ async function routeAbfragen(adressen){
 /* ---------- Hinweis vor Diensten, an die Adressen gehen ---------- */
 const DIENSTE={
   route:{titel:'Kilometer berechnen',text:
-    '<p>Für die Berechnung werden die <strong>Start-, Zwischen- und Zieladressen</strong> (ohne Namen, ohne Fahrtzweck) über einen Hilfsdienst von QA an den Routendienst <strong>openrouteservice (HeiGIT, Heidelberg)</strong> gesendet. Die Adressen sind dabei <strong>nicht verschlüsselt</strong>.</p>'+
+    '<p>Für die Berechnung werden die <strong>Start-, Zwischen- und Zieladressen</strong> (ohne Namen, ohne Fahrtzweck) über einen Hilfsdienst von QA in Frankfurt an den Routendienst <strong>Geoapify</strong> (KEPTAGO Ltd., Zypern; Verarbeitung in der EU) gesendet. Die Adressen sind dabei <strong>nicht verschlüsselt</strong>. Laut Anbieter werden Anfragen in der Regel nach 24 Stunden gelöscht.</p>'+
     '<p>Adressen von Klient*innen sind personenbezogene Daten. Fahre nur fort, wenn das mit deinen Klient*innen und Auftraggebern vereinbar ist. Sonst brich ab und trage die Kilometer selbst ein.</p>'},
   karte:{titel:'Karte anzeigen',text:
-    '<p>Für die Karte werden zuerst die <strong>Adressen</strong> wie bei der Kilometerberechnung an <strong>openrouteservice (HeiGIT)</strong> gesendet, unverschlüsselt und ohne Namen.</p>'+
+    '<p>Für die Karte werden zuerst die <strong>Adressen</strong> wie bei der Kilometerberechnung an <strong>Geoapify</strong> gesendet, unverschlüsselt und ohne Namen.</p>'+
     '<p>Dann lädt dein Gerät Kartenteile von <strong>OpenStreetMap</strong>. Dabei erfährt der Kartendienst deine <strong>IP-Adresse</strong> und den angezeigten <strong>Kartenausschnitt</strong>.</p>'},
   google:{titel:'Route in Google Maps öffnen',text:
     '<p>Google Maps öffnet sich in einem neuen Fenster. Dabei gehen die <strong>Start-, Ziel- und Zwischenadressen</strong> unverschlüsselt an <strong>Google</strong>. Es gilt die Datenschutzerklärung von Google.</p>'+
@@ -8764,7 +8764,7 @@ function leafletLaden(){
   return leafletGeladen;
 }
 
-// Entschlüsselt die Streckenlinie von openrouteservice (Polyline, 5 Stellen)
+// Entschlüsselt die Streckenlinie (Polyline, 5 Stellen; kommt von route-km-geo)
 function linieEntschluesseln(text){
   const punkte=[];
   let i=0,lat=0,lon=0;

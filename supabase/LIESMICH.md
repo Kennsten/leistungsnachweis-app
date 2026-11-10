@@ -32,3 +32,22 @@ bei jedem Aufruf selbst mit, hier wird nichts gespeichert.
 
 Für das London-Projekt (eigene App, Zweig dev) dieselben Schritte wiederholen.
 Die alte Netlify-Datei `netlify/functions/pcloud-link.mjs` bleibt vorerst als Rückfall liegen.
+
+---
+
+# Edge Function „route-km-geo“ – Kilometer über Geoapify (Vorschau, ab 0.24.27)
+
+Ersetzt `route-km` (HeiGIT), sobald die Vorschau freigegeben ist. Gleiche Antwort an die App,
+aber Geoapify über die EU-Adresse `api-eu.geoapify.com`. Geoapify bietet einen AVV an
+(geoapify.com/data-processing-agreement).
+
+1. Bei Geoapify ein Konto anlegen (myprojects.geoapify.com), Projekt „QA“ anlegen, **API-Schlüssel** kopieren.
+2. Supabase → Projekt „leistungsnachweis-eu“ → **Edge Functions** → **Deploy a new function** → **Via Editor**.
+3. Name: `route-km-geo`. Den Inhalt der Datei `supabase/functions/route-km-geo/index.ts` einfügen
+   (bis zur letzten Zeile `}` mitkopieren) → **Deploy**.
+4. In der Function **Details / Settings**: **„Verify JWT with legacy secret“ ausschalten**.
+5. **Edge Functions → Secrets** → neues Secret `GEOAPIFY_API_KEY` mit dem Geoapify-Schlüssel.
+6. Test: `https://luizzjsxufsezgpjypwx.supabase.co/functions/v1/route-km-geo?forceFunctionRegion=eu-central-1`
+   im Browser öffnen → `"dienst":"Geoapify (EU)"`, `"region":"eu-central-1"` und `"schluessel":true`.
+
+Nach der Umstellung: Secret `ORS_API_KEY` und Function `route-km` erst löschen, wenn alles läuft.
