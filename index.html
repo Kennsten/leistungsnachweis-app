@@ -3621,7 +3621,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.24 Verkaufsversion';
+const APP_VERSION='0.24.25 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -15668,6 +15668,94 @@ function spStoppsNummeriert(text){
   return zeilen.map((z,i)=>(i+1)+') '+z).join('\n');
 }
 
+// Reisezweck: nach jedem Komma oder Semikolon eine neue Zeile
+function spTextUmbruch(text){
+  return String(text||'').split(/\s*[,;]\s*/).filter(Boolean).join('\n');
+}
+
+// Nur Zeichen, die die PDF-Standardschrift kennt (Windows-1252)
+function spPdfText(t){
+  const extra='€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+  return String(t==null?'':t).replace(/→/g,'->').replace(/[\u2010-\u2012]/g,'-')
+    .replace(/[^\n\x20-\x7e\xa0-\xff]/g,z=>extra.includes(z)?z:'?');
+}
+
+function spJspdfLaden(){
+  if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();
+  return new Promise((fertig,fehler)=>{
+    const el=document.createElement('script');
+    el.src='lib/jspdf.umd.min.js';
+    el.onload=()=>fertig();
+    el.onerror=()=>fehler(new Error('PDF-Baustein konnte nicht geladen werden.'));
+    document.head.appendChild(el);
+  });
+}
+
+// Baut eine PDF (A4 quer) mit Tabellen. Lange Texte brechen in der Zelle um.
+// abschnitte: [{titel, hinweis, kopf, zeilen, breiten (Anteile), rechts (Spaltennummern rechtsbündig)}]
+async function spPdfUebersicht(titel,abschnitte){
+  await spJspdfLaden();
+  const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const B=297,H=210,R=10,unten=H-12;
+  const schrift=7.5,zeile=3.4,pad=1.4;
+  let y=R;
+  const kopfzeile=()=>{
+    pdf.setFont('helvetica','bold');pdf.setFontSize(11);
+    pdf.text(spPdfText(titel),R,R+4);
+    pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(110);
+    pdf.text(spPdfText('Vertraulich – Klient*innen nur mit Kennung. Erstellt am '+new Date().toLocaleDateString('de-DE')+' mit der QA-App.'),R,R+8);
+    pdf.setTextColor(0);
+    y=R+13;
+  };
+  const neueSeite=()=>{pdf.addPage();kopfzeile();};
+  kopfzeile();
+
+  for(const ab of abschnitte){
+    const summe=ab.breiten.reduce((a,b)=>a+b,0);
+    const voll=ab.breite||(B-2*R);
+    const w=ab.breiten.map(b=>b/summe*voll);
+    const rechts=new Set(ab.rechts||[]);
+    const zellen=z=>z.map((t,i)=>{pdf.setFontSize(schrift);return pdf.splitTextToSize(spPdfText(t),w[i]-2*pad)});
+    const kopfZeichnen=()=>{
+      pdf.setFont('helvetica','bold');pdf.setFontSize(schrift);
+      const teile=zellen(ab.kopf);
+      const h=Math.max(...teile.map(l=>l.length))*zeile+2*pad;
+      pdf.setFillColor(222,232,224);pdf.rect(R,y,voll,h,'F');
+      let x=R;
+      teile.forEach((l,i)=>{pdf.text(l,rechts.has(i)?x+w[i]-pad:x+pad,y+pad+zeile-0.8,{align:rechts.has(i)?'right':'left'});x+=w[i];});
+      y+=h;
+      pdf.setFont('helvetica','normal');
+    };
+    if(y+20>unten)neueSeite();
+    pdf.setFont('helvetica','bold');pdf.setFontSize(10);
+    pdf.text(spPdfText(ab.titel),R,y+4);
+    if(ab.hinweis){pdf.setFont('helvetica','normal');pdf.setFontSize(7.5);pdf.setTextColor(90);
+      pdf.text(spPdfText(ab.hinweis),R+pdf.getTextWidth(spPdfText(ab.titel))*10/7.5+4,y+4);pdf.setTextColor(0);}
+    y+=7;
+    kopfZeichnen();
+    if(!ab.zeilen.length){pdf.setFontSize(schrift);pdf.text('Keine Einträge im Zeitraum.',R+pad,y+zeile+pad);y+=zeile+2*pad;}
+    ab.zeilen.forEach((z,n)=>{
+      pdf.setFont('helvetica','normal');
+      const teile=zellen(z);
+      const h=Math.max(1,...teile.map(l=>l.length))*zeile+2*pad;
+      if(y+h>unten){neueSeite();kopfZeichnen();}
+      if(n%2)pdf.setFillColor(244,246,244),pdf.rect(R,y,voll,h,'F');
+      let x=R;
+      pdf.setFontSize(schrift);
+      teile.forEach((l,i)=>{pdf.text(l,rechts.has(i)?x+w[i]-pad:x+pad,y+pad+zeile-0.8,{align:rechts.has(i)?'right':'left'});x+=w[i];});
+      pdf.setDrawColor(215);pdf.line(R,y+h,R+voll,y+h);
+      y+=h;
+    });
+    y+=8;
+  }
+  const seiten=pdf.getNumberOfPages();
+  for(let i=1;i<=seiten;i++){
+    pdf.setPage(i);pdf.setFontSize(7);pdf.setTextColor(110);
+    pdf.text('Seite '+i+' von '+seiten,B-R,H-6,{align:'right'});
+  }
+  return new Uint8Array(pdf.output('arraybuffer'));
+}
+
 function spZeitraum(){
   const jahr=Number($('spJahr').value);
   const z=$('spZeitraum').value;
@@ -15763,15 +15851,14 @@ async function spErstellen(){
     const enc=new TextEncoder();
 
     // Fahrtenbuch
-    dateien.push({name:'Fahrtenbuch_'+name+'.csv',bytes:spCsv(
-      ['Datum','Art','Kennung','Reisezweck','Start','Zwischenstopps','Ziel','Kilometer','Tacho Start','Tacho Ende'],
-      fahrten.map(t=>{
+    const fbKopf=['Datum','Art','Kennung','Reisezweck','Start','Zwischenstopps','Ziel','Kilometer','Tacho Start','Tacho Ende'];
+    const fbZeilen=fahrten.map(t=>{
         const c=klient(t.client_id);
         return [
           formatDate(t.trip_date),
           t.allgemein?'Allgemeine Fahrt':'Klientenbesuch',
           c?(c.client_code||'ohne Kennung'):'',
-          (c&&zweckNeutral)?'Klientenbesuch':spNamenErsetzen(t.purpose||'',c),
+          (c&&zweckNeutral)?'Klientenbesuch':spTextUmbruch(spNamenErsetzen(t.purpose||'',c)),
           t.start_address||'',
           spStoppsNummeriert(spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c)),
           t.destination_address||t.destination||'',
@@ -15779,8 +15866,8 @@ async function spErstellen(){
           t.tacho_start!=null?spKm(t.tacho_start):'',
           t.tacho_ende!=null?spKm(t.tacho_ende):''
         ];
-      })
-    )});
+      });
+    dateien.push({name:'Fahrtenbuch_'+name+'.csv',bytes:spCsv(fbKopf,fbZeilen)});
 
     // Betriebsausgaben nach Kategorie, darin nach Datum
     const reihenfolge=k=>{const i=AUSGABEN_KATEGORIEN.indexOf(k);return i<0?99:i};
@@ -15817,29 +15904,27 @@ async function spErstellen(){
       const c=klient(a.client_id);
       return (a.kategorie==='Bewirtung'&&klarnamen)?(a.zweck||''):spNamenErsetzen(a.zweck||'',c);
     };
-    dateien.push({name:'Betriebsausgaben_'+name+'.csv',bytes:spCsv(
-      ['Beleg-Nr','Datum','Kategorie','Betrag (EUR)','Zweck','Kennung','Beleg-Datei im Paket','Notizen'],
-      sortiert.map(a=>[
+    const agKopf=['Beleg-Nr','Datum','Kategorie','Betrag (EUR)','Zweck','Kennung','Beleg-Datei im Paket','Notizen'];
+    const agZeilen=sortiert.map(a=>[
         belegNummer(a),formatDate(a.datum),a.kategorie||'',spZahl(a.betrag),zweckText(a),
         kennung(a.client_id),belegPfade.get(a.id)||'',
         (a.kategorie==='Bewirtung'&&klarnamen)?(a.notizen||''):spNamenErsetzen(a.notizen||'',klient(a.client_id))
-      ])
-    )});
+      ]);
+    dateien.push({name:'Betriebsausgaben_'+name+'.csv',bytes:spCsv(agKopf,agZeilen)});
 
     // Summen
     const summen=new Map();
     ausgaben.forEach(a=>summen.set(a.kategorie||'Sonstiges',(summen.get(a.kategorie||'Sonstiges')||0)+Number(a.betrag||0)));
-    dateien.push({name:'Summen_nach_Kategorie_'+name+'.csv',bytes:spCsv(
-      ['Kategorie','Summe (EUR)'],
-      [...summen.entries()].sort((a,b)=>reihenfolge(a[0])-reihenfolge(b[0])).map(([k,v])=>[k,spZahl(v)])
-    )});
+    const smZeilen=[...summen.entries()].sort((a,b)=>reihenfolge(a[0])-reihenfolge(b[0])).map(([k,v])=>[k,spZahl(v)]);
+    const gesamt=ausgaben.reduce((x,a)=>x+Number(a.betrag||0),0);
+    dateien.push({name:'Summen_nach_Kategorie_'+name+'.csv',bytes:spCsv(['Kategorie','Summe (EUR)'],smZeilen)});
 
     // Bewirtungen (voller Betrag, ohne Abzug der 70 %)
     const bew=sortiert.filter(a=>a.kategorie==='Bewirtung');
+    const bwKopf=['Beleg-Nr','Datum','Anlass','Teilnehmer','Kennung','Betrag brutto (EUR, ohne Abzug der 70 %)','Beleg-Datei im Paket'];
+    let bwZeilen=[];
     if(bew.length){
-      dateien.push({name:'Bewirtungen_'+name+'.csv',bytes:spCsv(
-        ['Beleg-Nr','Datum','Anlass','Teilnehmer','Kennung','Betrag brutto (EUR, ohne Abzug der 70 %)','Beleg-Datei im Paket'],
-        bew.map(a=>{
+      bwZeilen=bew.map(a=>{
           const c=klient(a.client_id);
           const anl=a.bewirtung_anlass||'',tn=a.bewirtung_teilnehmer||'';
           return [
@@ -15848,8 +15933,32 @@ async function spErstellen(){
             klarnamen?tn:spNamenErsetzen(tn,c),
             kennung(a.client_id),spZahl(a.betrag),belegPfade.get(a.id)||''
           ];
-        })
-      )});
+        });
+      dateien.push({name:'Bewirtungen_'+name+'.csv',bytes:spCsv(bwKopf,bwZeilen)});
+    }
+
+    // PDF-Übersicht (gut lesbar, mit Zeilenumbrüchen in allen Spalten)
+    let pdfFehler='';
+    try{
+      fort.textContent='PDF-Übersicht wird erstellt …';
+      const ohneTacho=fbZeilen.every(z=>!z[8]&&!z[9]);
+      const fb=ohneTacho?fbZeilen.map(z=>z.slice(0,8)):fbZeilen;
+      const fbk=(ohneTacho?fbKopf.slice(0,8):fbKopf).map(k=>k==='Kilometer'?'km':k);
+      const kmSumme=fahrten.reduce((x,t)=>x+(Number(t.kilometers)||0),0);
+      const abschnitte=[
+        {titel:'Fahrtenbuch',hinweis:fahrten.length+' Fahrten, zusammen '+spKm(Math.round(kmSumme*10)/10)+' km',
+         kopf:fbk,zeilen:fb,breiten:ohneTacho?[18,26,15,48,42,58,42,14]:[17,24,14,42,38,52,38,13,15,15],rechts:ohneTacho?[7]:[7,8,9]},
+        {titel:'Summen nach Kategorie',hinweis:'Gesamt: '+spZahl(gesamt)+' EUR',
+         kopf:['Kategorie','Summe (EUR)'],zeilen:smZeilen,breiten:[80,40],rechts:[1],breite:120},
+        {titel:'Betriebsausgaben',hinweis:'nach Kategorie, darin nach Datum',
+         kopf:agKopf,zeilen:agZeilen,breiten:[22,20,30,22,60,18,55,50],rechts:[3]}
+      ];
+      if(bwZeilen.length)abschnitte.push({titel:'Bewirtungen',hinweis:'voller Betrag, die 70 % sind nicht abgezogen',
+        kopf:bwKopf,zeilen:bwZeilen,breiten:[22,20,55,55,18,40,67],rechts:[5]});
+      const pdfBytes=await spPdfUebersicht('Steuerpaket '+name+' ('+formatDate(von)+' bis '+formatDate(bis)+')',abschnitte);
+      dateien.push({name:'Uebersicht_'+name+'.pdf',bytes:pdfBytes});
+    }catch(e){
+      pdfFehler=e.message;
     }
 
     // Klientenverzeichnis (nur auf Wunsch)
@@ -15867,6 +15976,7 @@ async function spErstellen(){
       'Erstellt am '+new Date().toLocaleDateString('de-DE')+' mit der QA-App',
       '',
       'Inhalt:',
+      pdfFehler?'- PDF-Übersicht konnte nicht erstellt werden: '+pdfFehler:'- Uebersicht_*.pdf: alle Tabellen gut lesbar zum Ansehen und Drucken.',
       '- Fahrtenbuch_*.csv: Fahrten mit Kennung der Klientin / des Klienten, Reisezweck, Start, Ziel, Kilometer.',
       '- Betriebsausgaben_*.csv: nach Kategorie, darin nach Datum sortiert. Beträge in EUR.',
       '- Summen_nach_Kategorie_*.csv: Summen je Kategorie.',
