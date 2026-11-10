@@ -3608,8 +3608,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.21 Verkaufsversion';
-const APP_STAND='09.11.2026';
+const APP_VERSION='0.24.22 Verkaufsversion';
+const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -5727,11 +5727,17 @@ function fahrtAdressen(){
 // Letzte Berechnung merken, damit die Karte nicht erneut abfragen muss
 let letzteRoute=null;
 
-// Anmeldung für die Hilfsprogramme bei Netlify (pCloud-Funktion prüft sie)
-async function netlifyAnmeldung(){
+// Anmeldung für die pCloud-Funktion in Supabase (sie prüft sie selbst)
+async function supabaseAnmeldung(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session)throw new Error('Bitte neu anmelden.');
-  return {Authorization:'Bearer '+session.access_token};
+  return {apikey:SUPABASE_KEY,Authorization:'Bearer '+session.access_token};
+}
+
+// Adresse der pCloud-Funktion: läuft als Supabase-Function im selben Projekt
+// wie die Datenbank (forceFunctionRegion erzwingt Frankfurt).
+function pcloudLinkUrl(){
+  return SUPABASE_URL+'/functions/v1/pcloud-link?forceFunctionRegion=eu-central-1';
 }
 
 async function routeAbfragen(adressen){
@@ -9968,16 +9974,16 @@ async function pcloudAnfrage(methode,parameter={}){
 }
 
 // Freigabelinks werden nicht vom Browser, sondern über das
-// Hilfsprogramm bei Netlify angefordert (netlify/functions/pcloud-link.mjs).
+// Hilfsprogramm in Supabase angefordert (supabase/functions/pcloud-link).
 // pCloud lehnt diesen Aufruf aus einer Webseite heraus ab (Code 7010).
 async function pcloudLinkAnfrage(parameter={}){
   if(!pcloudToken){
     throw new Error('Nicht mit pCloud verbunden.');
   }
 
-  const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+  const antwort=await busyFetch(pcloudLinkUrl(),{
     method:'POST',
-    headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
+    headers:{'Content-Type':'application/json',...(await supabaseAnmeldung())},
     body:JSON.stringify({
       token:pcloudToken,
       host:PCLOUD_HOST,
@@ -10731,9 +10737,9 @@ async function cloudDateiDirekt(freigabe){
   }
 
   try{
-    const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+    const antwort=await busyFetch(pcloudLinkUrl(),{
       method:'POST',
-      headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
+      headers:{'Content-Type':'application/json',...(await supabaseAnmeldung())},
       body:JSON.stringify({art:'datei',code,contenttype:typ,host:PCLOUD_HOST})
     });
 
@@ -11040,9 +11046,9 @@ async function dateiBytesHolen(freigabe){
   }catch(problem){
     // weiter mit Weg 2
   }
-  const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+  const antwort=await busyFetch(pcloudLinkUrl(),{
     method:'POST',
-    headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
+    headers:{'Content-Type':'application/json',...(await supabaseAnmeldung())},
     body:JSON.stringify({art:'datei',code,contenttype:'application/octet-stream',host:PCLOUD_HOST})
   });
   const art=antwort.headers.get('content-type')||'';
@@ -13490,14 +13496,14 @@ async function wiederherstellenOeffnen(){
   }
 }
 
-/* Dateiinhalt aus pCloud holen – über das Hilfsprogramm bei Netlify,
+/* Dateiinhalt aus pCloud holen – über das Hilfsprogramm in Supabase,
    ohne Freigabelink (pCloud bietet befristete Links nur im Bezahltarif an,
    und ein dauerhafter Link auf eine Sicherung soll nicht entstehen). */
 async function pcloudTextLaden(fileId){
   if(!pcloudToken)throw new Error('Nicht mit pCloud verbunden.');
-  const antwort=await busyFetch('/.netlify/functions/pcloud-link',{
+  const antwort=await busyFetch(pcloudLinkUrl(),{
     method:'POST',
-    headers:{'Content-Type':'application/json',...(await netlifyAnmeldung())},
+    headers:{'Content-Type':'application/json',...(await supabaseAnmeldung())},
     body:JSON.stringify({art:'inhalt',token:pcloudToken,fileid:fileId,host:PCLOUD_HOST})
   });
   const art=antwort.headers.get('content-type')||'';
