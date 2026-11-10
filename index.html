@@ -183,6 +183,17 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .danger{background:var(--danger-bg);color:var(--danger)}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 .actions button{flex:1}
+/* Knopfleiste unter dem Fensterkopf: 2 Spalten am Telefon, sonst nebeneinander */
+.fenster-aktionen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.fenster-aktionen button{margin:0;min-width:0}
+@media (min-width:640px){.fenster-aktionen{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
+/* Fensterkopf: „Schließen“ immer oben rechts, schrumpft nicht, Titel bricht um */
+dialog .top>.kn-schliessen{flex:0 0 auto;align-self:flex-start;margin-left:auto}
+dialog .top>div:first-child,dialog .top>h2{flex:1 1 0;min-width:0}
+dialog .top h2{overflow-wrap:anywhere;hyphens:auto}
+@media (max-width:480px){dialog .top h2{font-size:1.1rem;line-height:1.2}dialog .top>.kn-schliessen{padding:10px 12px}}
+/* Der Knopf, der gerade den Fokus hat, bekommt in allen Designs denselben blauen Rand */
+dialog button:focus-visible{outline:3px solid #1f6fd6;outline-offset:2px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .muted{color:var(--muted)}
 .client{padding:14px 0}
@@ -1979,7 +1990,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Klientenbogen</div>
       <h2 id="clientSheetTitel"></h2>
     </div>
-    <button type="button" id="closeClientSheet" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeClientSheet" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions">
     <button type="button" id="clientSheetEdit" class="kn kn-nav secondary">Zur Bearbeitung</button>
@@ -1992,11 +2003,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <form id="clientForm">
     <div class="top kb-kopf">
       <h2 id="dialogTitle">Klient anlegen</h2>
+      <button autofocus type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
       <div class="kb-kopfknoepfe">
         <button type="button" id="deleteClientTop" class="kn kn-loeschen danger kb-klein hidden">Löschen</button>
         <button type="button" id="clientToSheetTop" class="kn kn-nav secondary hidden">Klientenbogen</button>
         <button type="submit" class="kn kn-speichern primary">Speichern</button>
-        <button type="button" id="closeDialog" class="kn kn-schliessen secondary">Schließen</button>
       </div>
     </div>
     <input type="hidden" id="clientId">
@@ -2085,7 +2096,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Klient</div>
       <h2>Porträt wählen</h2>
     </div>
-    <button type="button" id="closePortraitPicker" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closePortraitPicker" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <p class="muted small">Ein Bild antippen, dann wird es übernommen. Mit dem × entfernst du ein Bild aus der Auswahl.</p>
   <div id="portraitGrid" class="portrait-grid"></div>
@@ -2116,7 +2127,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <h2 id="docsClientName"></h2>
       </div>
     </div>
-    <button type="button" id="closeDocs" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeDocs" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions" style="margin:16px 0">
     <button type="button" id="newDoc" class="kn kn-neu primary">Neue Dokumentation</button>
@@ -2143,7 +2154,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Einzeltermin</div>
         <h2 id="docDialogTitle">Dokumentation anlegen</h2>
       </div>
-      <button type="button" id="closeDocForm" class="kn kn-schliessen secondary">Schließen</button>
+      <button autofocus type="button" id="closeDocForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="docId">
     <div class="grid">
@@ -2229,7 +2240,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" id="docDeleteOnly" class="kn kn-loeschen secondary">
       Nur Dokumentation löschen
     </button>
-    <button type="button" id="docDeleteCancel" class="kn kn-schliessen secondary">
+    <button autofocus type="button" id="docDeleteCancel" class="kn kn-schliessen secondary">
       Abbrechen
     </button>
   </div>
@@ -2241,7 +2252,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Klientenakte</div>
       <h2 id="approvalsClientName">Bewilligungen</h2>
     </div>
-    <button type="button" id="closeApprovals" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeApprovals" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions">
     <button type="button" id="newApproval" class="kn kn-neu primary">Neue Bewilligung</button>
@@ -2253,7 +2264,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <form id="approvalForm">
     <div class="top">
       <h2 id="approvalDialogTitle">Bewilligung anlegen</h2>
-      <button type="button" id="closeApprovalForm" class="kn kn-schliessen secondary">Schließen</button>
+      <button autofocus type="button" id="closeApprovalForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="approvalId">
     <div class="grid">
@@ -2305,7 +2316,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <h2>Alle Bewilligungen</h2>
     </div>
 
-    <button
+    <button autofocus
       type="button"
       id="closeAllApprovals"
       class="kn kn-schliessen secondary">
@@ -2325,29 +2336,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Steuerliche Gesamtübersicht</div>
       <h2>Gesamt-Fahrtenliste</h2>
     </div>
+    <button autofocus type="button" id="closeAllTrips" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
 
-    <div class="actions">
-      <button
-        type="button"
-        id="printAllTrips"
-        class="kn kn-nav primary">
-        Fahrtenbuch öffnen
-      </button>
-
-      <button
-        type="button"
-        id="allTripsSteuerpaket"
-        class="secondary">
-        Steuerpaket
-      </button>
-
-      <button
-        type="button"
-        id="closeAllTrips"
-        class="kn kn-schliessen secondary">
-        Schließen
-      </button>
-    </div>
+  <div class="fenster-aktionen">
+    <button type="button" id="printAllTrips" class="kn kn-nav primary">Fahrtenbuch öffnen</button>
+    <button type="button" id="allTripsSteuerpaket" class="secondary">Steuerpaket</button>
   </div>
 
 <div class="grid">
@@ -2402,7 +2396,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <h2 id="tripsClientName">Fahrtenbuch</h2>
       </div>
     </div>
-    <button type="button" id="closeTrips" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeTrips" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div class="actions" style="margin:16px 0">
     <button type="button" id="newTrip" class="kn kn-neu primary">Neue Fahrt</button>
@@ -2424,7 +2418,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Berechnete Strecke</div>
       <h2 id="kartenTitel">Karte</h2>
     </div>
-    <button type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="karte"></div>
   <p class="muted small" style="margin:8px 0 0">
@@ -2440,7 +2434,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Fahrtenbuch</div>
         <h2 id="tripDialogTitle">Fahrt anlegen</h2>
       </div>
-      <button type="button" id="closeTripForm" class="kn kn-schliessen secondary">Schließen</button>
+      <button autofocus type="button" id="closeTripForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
 
     <input type="hidden" id="tripId">
@@ -2563,7 +2557,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Fahrtenbuch</div>
       <h2>Gespeicherte Stopps</h2>
     </div>
-    <button type="button" id="closeStopManager" class="kn kn-schliessen secondary">
+    <button autofocus type="button" id="closeStopManager" class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -2577,15 +2571,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumente in pCloud</div>
       <h2 id="cloudClientName"></h2>
     </div>
+    <button autofocus type="button" id="closeCloud" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
 
-    <div class="actions">
-      <button type="button" id="cloudRefresh" class="secondary">
-        Aktualisieren
-      </button>
-      <button type="button" id="closeCloud" class="kn kn-schliessen secondary">
-        Schließen
-      </button>
-    </div>
+  <div class="fenster-aktionen">
+    <button type="button" id="cloudRefresh" class="secondary">Aktualisieren</button>
   </div>
 
   <div id="cloudConnect" class="summary-box hidden">
@@ -2659,7 +2649,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Abgleich</div>
       <h2>Abgleich prüfen</h2>
     </div>
-    <button type="button" id="konfliktSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="konfliktSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <p class="muted small">
     Diese Einträge wurden auf zwei Geräten unterschiedlich geändert. Gespeichert ist jeweils die
@@ -2675,7 +2665,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Abgleich</div>
       <h2>Hinweise</h2>
     </div>
-    <button type="button" id="hinweisSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="hinweisSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="hinweisListe"></div>
   <div class="actions">
@@ -2689,7 +2679,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Datensicherung</div>
       <h2>Aus Sicherung wiederherstellen</h2>
     </div>
-    <button type="button" id="wiederherstellenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="wiederherstellenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div id="whAuswahl">
@@ -2751,7 +2741,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <dialog id="installDialog">
   <div class="top">
     <div><div class="muted">Installieren</div></div>
-    <button type="button" id="installDialogSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="installDialogSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="installDialogInhalt"></div>
 </dialog>
@@ -2762,7 +2752,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Für Kolleg*innen</div>
       <h2>QA einladen</h2>
     </div>
-    <button type="button" id="einladenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="einladenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <p class="muted small">Mit der Handy-Kamera scannen. Die App öffnet sich und zeigt, wie man sie auf den Home-Bildschirm legt. Danach registrieren.</p>
   <div id="einladenQr" class="einladen-qr"></div>
@@ -2781,7 +2771,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted" id="settingsOberzeile">Konto und Gerät</div>
       <h2 id="settingsTitel">Einstellungen</h2>
     </div>
-    <button type="button" id="closeSettings" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeSettings" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <!-- Menü: eine Zeile je Thema -->
@@ -2940,7 +2930,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Hinweis zum Datenschutz</div>
       <h2 id="dienstTitel"></h2>
     </div>
-    <button type="button" id="dienstZu" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="dienstZu" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="dienstText"></div>
   <label class="sicherung-haken"><input type="checkbox" id="dienstMerken"> Nicht mehr fragen (nur auf diesem Gerät)</label>
@@ -2956,7 +2946,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Betriebsausgaben</div>
       <h2>Neue Belegnummern</h2>
     </div>
-    <button type="button" id="belegNeuZu" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="belegNeuZu" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="belegNeuInhalt"></div>
   <div class="actions no-print">
@@ -2970,7 +2960,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Steuer</div>
       <h2>Steuerpaket</h2>
     </div>
-    <button type="button" id="spZu" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="spZu" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <p class="muted small">Eine ZIP-Datei für die Steuerberatung: Fahrtenbuch, Betriebsausgaben, Bewirtungen und die Belege als normale Dateien (entschlüsselt). Keine Klientendokumente und Bescheide.</p>
@@ -3015,7 +3005,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumente verschieben</div>
       <h2 id="cloudVerschiebenTitel">Zielordner wählen</h2>
     </div>
-    <button type="button" id="cloudVerschiebenZu" class="kn kn-schliessen secondary">Abbrechen</button>
+    <button autofocus type="button" id="cloudVerschiebenZu" class="kn kn-schliessen secondary">Abbrechen</button>
   </div>
   <div id="cloudVerschiebenPfad" class="cloud-pfad"></div>
   <div id="cloudVerschiebenListe"></div>
@@ -3032,7 +3022,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Datensicherung und Dokumente</div>
       <h2>Cloud verbinden</h2>
     </div>
-    <button type="button" id="closeCloudStart" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeCloudStart" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <p>Mit deiner eigenen Cloud (zurzeit pCloud) sicherst du deine Daten automatisch und legst Belege und Dokumente ab.
@@ -3064,7 +3054,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumente und Belege</div>
       <h2>pCloud einrichten</h2>
     </div>
-    <button type="button" id="closeCloudSetup" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeCloudSetup" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="summary-box">
@@ -3148,7 +3138,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentation</div>
       <h2>Textbausteine</h2>
     </div>
-    <button type="button" id="closeSnippets" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeSnippets" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <form id="snippetForm">
@@ -3201,7 +3191,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentation</div>
       <h2>Textbausteine einfügen</h2>
     </div>
-    <button type="button" id="closeSnippetPicker" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeSnippetPicker" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
   <div id="snippetPickerList"></div>
@@ -3226,16 +3216,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Auswertung</div>
       <h2>Einnahmen</h2>
     </div>
+    <button autofocus type="button" id="closeIncome" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
 
-    <div class="actions">
-      <button type="button" id="openRates" class="secondary">
-        Sätze
-      </button>
-
-      <button type="button" id="closeIncome" class="kn kn-schliessen secondary">
-        Schließen
-      </button>
-    </div>
+  <div class="fenster-aktionen">
+    <button type="button" id="openRates" class="secondary">Sätze</button>
   </div>
 
   <label>
@@ -3254,7 +3239,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Einnahmen</div>
       <h2>Vergütungssätze</h2>
     </div>
-    <button type="button" id="closeRates" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeRates" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <form id="rateForm">
@@ -3293,7 +3278,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Dokumentationen drucken</div>
       <h2 id="docRangeClientName">Zeitraum wählen</h2>
     </div>
-    <button type="button" id="closeDocRange" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="closeDocRange" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="actions" style="margin:14px 0">
@@ -3333,32 +3318,15 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Steuer</div>
       <h2>Betriebsausgaben</h2>
     </div>
+    <button autofocus type="button" id="closeExpenses" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
 
-    <div class="actions">
-      <button type="button" id="printExpenses" class="primary">
-        Übersicht öffnen
-      </button>
-
-      <button type="button" id="newExpense" class="kn kn-neu secondary">
-        Neue Ausgabe
-      </button>
-
-      <button type="button" id="openBelegeOrdner" class="secondary">
-        Belege-Ordner
-      </button>
-
-      <button type="button" id="belegListeLetzte" class="secondary hidden">
-        Liste der Nummern-Änderungen
-      </button>
-
-      <button type="button" id="openSteuerpaket" class="secondary">
-        Steuerpaket
-      </button>
-
-      <button type="button" id="closeExpenses" class="kn kn-schliessen secondary">
-        Schließen
-      </button>
-    </div>
+  <div class="fenster-aktionen">
+    <button type="button" id="printExpenses" class="primary">Übersicht öffnen</button>
+    <button type="button" id="newExpense" class="kn kn-neu secondary">Neue Ausgabe</button>
+    <button type="button" id="openBelegeOrdner" class="secondary">Belege-Ordner</button>
+    <button type="button" id="belegListeLetzte" class="secondary hidden">Liste der Nummern-Änderungen</button>
+    <button type="button" id="openSteuerpaket" class="secondary">Steuerpaket</button>
   </div>
 
   <div class="grid">
@@ -3400,7 +3368,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Betriebsausgabe</div>
         <h2 id="expenseDialogTitle">Ausgabe anlegen</h2>
       </div>
-      <button type="button" id="closeExpenseForm" class="kn kn-schliessen secondary">
+      <button autofocus type="button" id="closeExpenseForm" class="kn kn-schliessen secondary">
         Schließen
       </button>
     </div>
@@ -3491,7 +3459,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div class="muted">Kalender</div>
       <h2 id="kalTitel">Termine</h2>
     </div>
-    <button type="button" id="kalClose" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="kalClose" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
   <div class="kal-leiste">
@@ -3530,7 +3498,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <div class="muted">Kalender</div>
         <h2 id="terminTitel">Termin planen</h2>
       </div>
-      <button type="button" id="terminClose" class="kn kn-schliessen secondary">Schließen</button>
+      <button autofocus type="button" id="terminClose" class="kn kn-schliessen secondary">Schließen</button>
     </div>
 
     <div class="grid">
@@ -3603,7 +3571,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <h2 id="monthlyClientName">Monatsnachweis</h2>
     </div>
 
-    <button type="button" id="closeMonthly" class="kn kn-schliessen secondary">
+    <button autofocus type="button" id="closeMonthly" class="kn kn-schliessen secondary">
       Schließen
     </button>
   </div>
@@ -3621,7 +3589,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.25 Verkaufsversion';
+const APP_VERSION='0.24.26 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
