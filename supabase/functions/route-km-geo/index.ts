@@ -1,4 +1,4 @@
-// route-km-geo (Supabase Edge Function, Version 1 – Vorschau Geoapify)
+// route-km-geo (Supabase Edge Function, Version 2)
 // Gleiche Aufgabe und gleiche Antwort wie route-km, aber über Geoapify statt
 // OpenRouteService (HeiGIT). Geoapify bietet einen Vertrag zur
 // Auftragsverarbeitung (AVV) an, der Adressen ausdrücklich abdeckt.
@@ -44,7 +44,8 @@ Deno.serve(async (request: Request) => {
     return json(200, {
       status: 'Hilfsprogramm läuft.',
       dienst: 'Geoapify (EU)',
-      version: 1,
+      version: 2,
+      routentyp: 'less_maneuvers',
       region: Deno.env.get('SB_REGION') ?? null,
       schluessel: Boolean(Deno.env.get('GEOAPIFY_API_KEY'))
     });
@@ -146,6 +147,9 @@ Deno.serve(async (request: Request) => {
     const routeWerte = new URLSearchParams({
       waypoints: punkte.map(p => p.punkt[1] + ',' + p.punkt[0]).join('|'),
       mode: 'drive',
+      // Wie „balanced“ (Zeit, Kosten, Strecke), aber mit Abzügen für Abbiegen:
+      // bevorzugt durchgehende, schnelle Straßen (Wunsch Olli, 10.11.2026)
+      type: 'less_maneuvers',
       lang: 'de',
       apiKey: schluessel
     });
