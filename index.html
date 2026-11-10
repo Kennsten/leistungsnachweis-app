@@ -2336,6 +2336,13 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
       <button
         type="button"
+        id="allTripsSteuerpaket"
+        class="secondary">
+        Steuerpaket
+      </button>
+
+      <button
+        type="button"
         id="closeAllTrips"
         class="kn kn-schliessen secondary">
         Schließen
@@ -2802,6 +2809,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" class="einst-zeile" data-seite="geraet">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span>
       <span class="einst-text"><strong>Dieses Gerät</strong><small id="einstStatusGeraet"></small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" id="einstSteuerpaket">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3M4 13h16M11 13v2h2v-2"/></svg></span>
+      <span class="einst-text"><strong>Steuerpaket</strong><small>Fahrten, Ausgaben und Belege für die Steuerberatung</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
     <button type="button" class="einst-zeile" id="einladenKnopf">
@@ -3608,7 +3620,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.22 Verkaufsversion';
+const APP_VERSION='0.24.23 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -10641,22 +10653,34 @@ async function cloudDateiOeffnen(knopf,fileId){
     // das ganze Dokument anzeigt.
     zeige(knopf,'Datei wird geladen …');
 
-    // Verschlüsselte Datei? (Name "q1-….qa") Sonst wie bisher.
-    let verpackt=false;
-    try{
-      const info=await pcloudAnfrage('stat',{fileid:fileId});
-      verpackt=dateiNameIstVerpackt(info&&info.metadata&&info.metadata.name);
-    }catch(problem){
-      verpackt=false;
+    // Verschlüsselte Datei? Zuerst am Namen ("q1-….qa"), aus der
+    // Freigabe-Antwort oder per Nachfrage. Falls das nicht klappt, wird die
+    // Datei trotzdem geladen und am Inhalt erkannt (wie im Steuerpaket).
+    let verpackt=dateiNameIstVerpackt(ergebnis&&ergebnis.metadata&&ergebnis.metadata.name);
+    let namePruefbar=Boolean(ergebnis&&ergebnis.metadata&&ergebnis.metadata.name);
+    if(!verpackt&&!namePruefbar){
+      try{
+        const info=await pcloudAnfrage('stat',{fileid:fileId});
+        const n=info&&info.metadata&&info.metadata.name;
+        namePruefbar=Boolean(n);
+        verpackt=dateiNameIstVerpackt(n);
+      }catch(problem){
+        namePruefbar=false;
+      }
     }
 
     let adresse;
 
-    if(verpackt){
+    if(verpackt||!namePruefbar){
       const bytes=await dateiBytesHolen(ergebnis);
-      zeige(knopf,'Wird entschlüsselt …');
-      const klar=await dateiAuspacken(bytes);
-      adresse=URL.createObjectURL(klar.blob);
+      if(dateiIstVerpackt(bytes)){
+        zeige(knopf,'Wird entschlüsselt …');
+        const klar=await dateiAuspacken(bytes);
+        adresse=URL.createObjectURL(klar.blob);
+      }else{
+        const typ=ergebnis.metadata&&ergebnis.metadata.contenttype||'application/octet-stream';
+        adresse=URL.createObjectURL(new Blob([bytes],{type:typ}));
+      }
       setTimeout(()=>URL.revokeObjectURL(adresse),10*60*1000);
     }else{
       adresse=await cloudDateiDirekt(ergebnis);
@@ -15725,7 +15749,7 @@ async function spErstellen(){
           c?(c.client_code||'ohne Kennung'):'',
           spNamenErsetzen(t.purpose||'',c),
           t.start_address||'',
-          spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c),
+          stoppsAlsZeilen(spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c)),
           t.destination_address||t.destination||'',
           spKm(t.kilometers),
           t.tacho_start!=null?spKm(t.tacho_start):'',
@@ -15865,7 +15889,7 @@ async function spSpeichern(){
   setTimeout(()=>URL.revokeObjectURL(adresse),60000);
 }
 
-$('openSteuerpaket').onclick=async()=>{
+async function steuerpaketOeffnen(){
   const jetzt=new Date().getFullYear();
   $('spJahr').innerHTML='';
   for(let j=jetzt;j>=jetzt-6;j--)$('spJahr').insertAdjacentHTML('beforeend','<option value="'+j+'">'+j+'</option>');
@@ -15875,7 +15899,11 @@ $('openSteuerpaket').onclick=async()=>{
   spErgebnis=null;
   $('steuerpaketDialog').showModal();
   await spVorschau();
-};
+}
+// Drei Wege zum Steuerpaket: Betriebsausgaben, Gesamt-Fahrtenliste, Einstellungen
+$('openSteuerpaket').onclick=steuerpaketOeffnen;
+$('allTripsSteuerpaket').onclick=steuerpaketOeffnen;
+$('einstSteuerpaket').onclick=steuerpaketOeffnen;
 $('spJahr').onchange=()=>{spErgebnis=null;$('spSpeichern').classList.add('hidden');spVorschau()};
 $('spZeitraum').onchange=$('spJahr').onchange;
 $('spErstellen').onclick=spErstellen;
