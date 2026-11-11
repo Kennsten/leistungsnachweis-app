@@ -73,6 +73,13 @@
       padding:20px;
     }
 
+    /* Testversion: großes Wasserzeichen „MUSTER“ (auch im Druck und im PDF) */
+    .muster-wasserzeichen{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      pointer-events:none;z-index:50;
+      font:800 110px/1 Arial,Helvetica,sans-serif;letter-spacing:6px;
+      color:rgba(200,30,30,.2);transform:rotate(-20deg);white-space:nowrap;
+    }
     .sheet{
       width:1280px;
       margin:0 auto;
@@ -1294,7 +1301,7 @@ const totalWay=entries.reduce(
         ? String(monatNr).padStart(2,'0')+'-'+jahr
         : String(payload.monthLabel||'').replace(/\s+/g,'-');
 
-      return ('LN '+nachname+' '+zeitraum)
+      return ((payload.muster?'MUSTER ':'')+'LN '+nachname+' '+zeitraum)
         .replace(/[^a-zA-Z0-9äöüÄÖÜß .-]/g,'')
         .replace(/\s+/g,' ')
         .trim()+endung;
@@ -1387,6 +1394,20 @@ const totalWay=entries.reduce(
     document.getElementById('closeButton').addEventListener('click',()=>window.close());
 
     render();
+    // Testversion: Wasserzeichen auf jedes Blatt
+    (function(){
+      const p=readPayload();
+      if(!p||!p.muster)return;
+      document.title='MUSTER – '+document.title;
+      document.querySelectorAll('.sheet').forEach(blatt=>{
+        if(getComputedStyle(blatt).position==='static')blatt.style.position='relative';
+        const w=document.createElement('div');
+        w.className='muster-wasserzeichen';
+        w.setAttribute('aria-hidden','true');
+        w.textContent='MUSTER – Testversion';
+        blatt.appendChild(w);
+      });
+    })();
     lnExcelVorbereiten();
   </script>
 </body>

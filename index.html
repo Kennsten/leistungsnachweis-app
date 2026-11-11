@@ -181,6 +181,21 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .karte-via{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--via-farbe,#C85A3E);box-shadow:0 1px 4px rgba(0,0,0,.4);box-sizing:border-box}
 .karte-tipp{margin:8px 0 0}
 .karte-etappen{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
+/* Testversion */
+.test-band{border-color:#1D4E89;background:#E8F0FA;color:#16202E}
+body.testversion #backupData.nur-voll::after,body.testversion .einst-zeile.nur-voll strong::after{content:" 🔒";font-size:.85em}
+.konto-sperre{max-width:min(560px,94vw)}
+.button-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:44px;padding:0 16px;border-radius:var(--radius-btn,10px);font-weight:600}
+.button-link.primary{background:var(--brand);color:var(--on-brand)}
+.button-link.secondary{border:1px solid var(--line);color:var(--ink);background:var(--card)}
+.tour-inhalt{min-height:220px}
+.tour-karte h3{margin:6px 0 8px;font-size:1.15rem}
+.tour-karte p{margin:0 0 10px;line-height:1.5}
+.tour-fuss{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.verwaltung-liste{display:grid;gap:10px;margin-top:10px}
+.verwaltung-konto{border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px;background:var(--card)}
+.verwaltung-konto .knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.verwaltung-konto.abgelaufen{border-color:var(--danger)}
 .karte-etappen-hinweis{flex:1 0 100%;margin:0}
 .karte-etappe{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
 .karte-etappe[aria-pressed="true"]{border-color:var(--ink);font-weight:700}
@@ -1853,6 +1868,9 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <h1>QA – Qualifizierte Assistenz</h1>
     <p class="anmelde-bereiche"><span>Dokumentation · Fahrten ·</span> <span>Abrechnung · Steuer</span></p>
     <p class="anmelde-sicher">Ende-zu-Ende-verschlüsselt – nur du kannst deine Daten lesen.</p>
+    <div id="testenHinweis" class="sich-hinweis hidden">
+      <p><strong>7 Tage kostenlos testen.</strong> Tippe unten auf „Registrieren“ – dein Testkonto ist sofort bereit. In der App kannst du Beispieldaten laden und alles ausprobieren. Nach 7 Tagen endet der Test automatisch; bei Vertragsabschluss wird das Konto zur Vollversion, mit allen Einträgen.</p>
+    </div>
     <p class="muted">Melde dich mit deinem App-Konto an.</p>
     <label>E-Mail<input id="email" type="email" autocomplete="email"></label>
     <label>Passwort<input id="password" type="password" autocomplete="current-password"></label>
@@ -1878,6 +1896,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="installLeiste" class="install-leiste hidden"></div>
   <div id="cloudBand" class="install-leiste hidden"></div>
   <div id="kartenBand" class="install-leiste hidden"></div>
+  <div id="testBand" class="install-leiste test-band hidden"></div>
   <div class="card top">
     <div>
       <div class="muted hidden" id="kopfName"></div>
@@ -1904,7 +1923,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <div class="kopf-knoepfe">
       <button id="logout" class="secondary">Abmelden</button>
       <button type="button" id="openSettings" class="kn kn-einstellungen secondary">Einstellungen</button>
-      <button type="button" id="backupData" class="secondary">Datensicherung</button>
+      <button type="button" id="backupData" class="secondary nur-voll">Datensicherung</button>
     </div>
   </div>
 
@@ -2816,6 +2835,47 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <p class="muted small">Tipp beim Verschicken: Der Link sollte in Safari (iPhone/iPad) oder Chrome (Android) geöffnet werden, nicht direkt in WhatsApp oder Mail.</p>
 </dialog>
 
+<dialog id="kontoSperreDialog" class="konto-sperre">
+  <h2 id="kontoSperreTitel">Testzeitraum beendet</h2>
+  <div id="kontoSperreText"></div>
+  <div class="actions">
+    <a id="kontoSperreMail" class="button-link primary" href="mailto:kontakt@qualifizierte-assistenz.de?subject=QA-App%20Vollversion">Vollversion anfragen</a>
+    <button type="button" id="kontoSperrePruefen" class="secondary">Erneut prüfen</button>
+    <button type="button" id="kontoSperreAbmelden" class="secondary">Abmelden</button>
+  </div>
+</dialog>
+
+<dialog id="vollversionDialog">
+  <div class="top">
+    <div>
+      <div class="muted">Testversion</div>
+      <h2 id="vollversionTitel">In der Vollversion</h2>
+    </div>
+    <button autofocus type="button" id="vollversionZu" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <p id="vollversionText"></p>
+  <p class="muted small">Die Vollversion gibt es nach Vertragsabschluss. Dein Testkonto wird dann freigeschaltet – alle Einträge bleiben erhalten.</p>
+  <div class="fenster-aktionen">
+    <a class="button-link secondary" href="mailto:kontakt@qualifizierte-assistenz.de?subject=QA-App%20Vollversion">Vollversion anfragen</a>
+  </div>
+</dialog>
+
+<dialog id="tourDialog">
+  <div class="top">
+    <div>
+      <div class="muted">QA – Qualifizierte Assistenz</div>
+      <h2>So hilft dir QA</h2>
+    </div>
+    <button autofocus type="button" id="tourZu" class="kn kn-schliessen secondary">Schließen</button>
+  </div>
+  <div id="tourInhalt" class="tour-inhalt"></div>
+  <div class="tour-fuss">
+    <button type="button" id="tourZurueck" class="secondary">Zurück</button>
+    <span id="tourStand" class="muted small"></span>
+    <button type="button" id="tourWeiter" class="primary">Weiter</button>
+  </div>
+</dialog>
+
 <dialog id="settingsDialog">
   <div class="top">
     <div>
@@ -2838,12 +2898,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <span class="einst-text"><strong>Tresor und Sicherheit</strong><small id="einstStatusTresor"></small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
-    <button type="button" class="einst-zeile" data-seite="sicherung">
+    <button type="button" class="einst-zeile nur-voll" data-seite="sicherung">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 4v10M8 10l4 4 4-4"/></svg></span>
       <span class="einst-text"><strong>Datensicherung</strong><small id="einstStatusSicherung"></small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
-    <button type="button" class="einst-zeile" data-seite="cloud">
+    <button type="button" class="einst-zeile nur-voll" data-seite="cloud">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19H7a4 4 0 0 1-.8-7.9 5.5 5.5 0 0 1 10.6-1.4A4.7 4.7 0 0 1 17.5 19z"/></svg></span>
       <span class="einst-text"><strong>Dokumente und Cloud</strong><small id="einstStatusCloud"></small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
@@ -2858,12 +2918,37 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <span class="einst-text"><strong>Steuerpaket</strong><small>Fahrten, Ausgaben und Belege für die Steuerberatung</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
+    <button type="button" class="einst-zeile hidden" data-seite="beispiel" id="einstBeispielZeile">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
+      <span class="einst-text"><strong>Beispieldaten</strong><small>Erfundene Klient*innen zum Ausprobieren laden oder entfernen</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile hidden" data-seite="verwaltung" id="einstVerwaltungZeile">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c2 .8 3.5 2.6 3.5 5.4"/></svg></span>
+      <span class="einst-text"><strong>Testkonten verwalten</strong><small>Testzugänge freischalten, verlängern, sperren</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
     <button type="button" class="einst-zeile" id="einladenKnopf">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
       <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
   </nav>
+
+  <!-- Seite: Beispieldaten (Testversion und Verwaltung) -->
+  <section class="einst-seite hidden" data-seite="beispiel" data-titel="Beispieldaten">
+    <p class="muted small">Drei erfundene Klient*innen (Kennungen B901 bis B903, Namen mit „(Beispiel)“) mit Bewilligungen, Dokumentationen, Fahrten, Terminen und Belegen der letzten Wochen. So siehst du sofort, wie Kalender, Leistungsnachweis, Fahrtenbuch und Steuerpaket aussehen. Deine eigenen Einträge bleiben unverändert.</p>
+    <p id="beispielStand" class="einst-status"></p>
+    <div class="actions">
+      <button type="button" id="beispielLaden" class="primary">Beispieldaten laden</button>
+      <button type="button" id="beispielEntfernen" class="secondary">Beispieldaten vollständig entfernen</button>
+    </div>
+  </section>
+
+  <!-- Seite: Testkonten verwalten (nur Anbieter) -->
+  <section class="einst-seite hidden" data-seite="verwaltung" data-titel="Testkonten verwalten">
+    <div id="verwaltungInhalt"><p class="muted small">Wird geladen …</p></div>
+  </section>
 
   <!-- Seite: Meine Angaben -->
   <section class="einst-seite hidden" data-seite="angaben" data-titel="Meine Angaben">
@@ -3647,7 +3732,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.42 Verkaufsversion';
+const APP_VERSION='0.25.0 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3860,11 +3945,15 @@ function esc(v=''){
   }[m]));
 }
 
+// Kommt jemand über den Test-Link (QR-Code „Kolleg*innen einladen“): Hinweis zeigen
+if(/[?&]testen\b/.test(location.search)){const h=document.getElementById('testenHinweis');if(h)h.classList.remove('hidden')}
 function showApp(on){
   $('auth').classList.toggle('hidden',on);
   $('app').classList.toggle('hidden',!on);
   // Kartenpaket prüfen (fehlt es, gibt es eine neuere Fassung?)
   if(on)setTimeout(()=>{if(typeof kmPaketePruefen==='function')kmPaketePruefen(true)},1500);
+  // Kontostatus (Test, Vollversion, gesperrt)
+  if(on&&typeof kontoLaden==='function')kontoLaden();
 }
 
 function formatDate(value){
@@ -10274,7 +10363,8 @@ $('monthlyMonth').onchange=async()=>{
 
       sessionStorage.setItem(
         'leistungsnachweis_payload',
-        JSON.stringify(payload)
+        // Testversion: Wasserzeichen „MUSTER“ und kein Name, damit nichts eingereicht werden kann
+        JSON.stringify(istTest()?{...payload,muster:true,auftragnehmer:'MUSTER – Testversion'}:payload)
       );
 
       window.open(
@@ -10497,6 +10587,7 @@ function pcloudRueckkehrPruefen(){
 }
 
 function pcloudAnmelden(){
+  if(typeof nurVollversion==='function'&&nurVollversion('Die Verbindung zu deiner eigenen Cloud'))return;
   const adresse=
     'https://my.pcloud.com/oauth2/authorize'+
     '?client_id='+encodeURIComponent(PCLOUD_CLIENT_ID)+
@@ -11806,6 +11897,9 @@ async function loadEinstellungen(){
 
 /* Menü mit Unterseiten: zuerst eine Liste, ein Tipp öffnet das Thema */
 function einstellungenSeite(name){
+  // Testversion: Cloud und Datensicherung sind sichtbar, aber gesperrt
+  if((name==='sicherung'||name==='cloud')&&typeof nurVollversion==='function'&&
+     nurVollversion(name==='cloud'?'Die Verbindung zu deiner eigenen Cloud (Dokumente und Belege)':'Die automatische Datensicherung'))return;
   const menue=name==='menue';
   $('settingsMenue').classList.toggle('hidden',!menue);
   let titel='Einstellungen';
@@ -11816,6 +11910,8 @@ function einstellungenSeite(name){
   });
   if(name==='tresor'&&typeof tresorPasskeyZeigen==='function')tresorPasskeyZeigen();
   if(name==='geraet'){dienstEinstellungenZeigen();kartenpaketeZeigen();}
+  if(name==='beispiel')beispielStandZeigen();
+  if(name==='verwaltung')verwaltungZeigen();
   if(name==='cloud')cloudHinweisZeigen();
   $('settingsZurueck').classList.toggle('hidden',menue);
   $('settingsOberzeile').classList.toggle('hidden',!menue);
@@ -11849,6 +11945,7 @@ function einstellungenStatusZeigen(){
 
 let cloudStartNachSpeichern=false;
 function einstellungenOeffnen(ersterStart=false,seite){
+  if((seite==='sicherung'||seite==='cloud')&&istTest()){einstellungenSeite(seite);return}
   cloudStartNachSpeichern=Boolean(ersterStart);
   $('sicherungGeraetWahl').value=sicherungGeraetWahl();
   $('settingsName').value=auftragnehmerName();
@@ -11995,6 +12092,7 @@ document.addEventListener('change',e=>{
 });
 
 function cloudSetupOeffnen(){
+  if(typeof nurVollversion==='function'&&nurVollversion('Die Verbindung zu deiner eigenen Cloud'))return;
   cloudSetupZeichnen();
   $('cloudSetupDialog').showModal();
 }
@@ -12005,6 +12103,7 @@ $('closeCloudSetup').onclick=()=>$('cloudSetupDialog').close();
 
 /* ---------- Cloud beim ersten Start und Hinweisband ---------- */
 function cloudStartOeffnen(){
+  if(typeof nurVollversion==='function'&&nurVollversion('Die Verbindung zu deiner eigenen Cloud'))return;
   if(!$('cloudStartDialog').open)$('cloudStartDialog').showModal();
 }
 $('closeCloudStart').onclick=()=>$('cloudStartDialog').close();
@@ -12020,7 +12119,7 @@ function cloudBandZeichnen(){
   if(!band)return;
   let ausgeblendet=false;
   try{ausgeblendet=sessionStorage.getItem(CLOUD_BAND_SPEICHER)==='1'}catch(fehler){}
-  if(pcloudToken||ausgeblendet){
+  if(pcloudToken||ausgeblendet||istTest()){
     band.classList.add('hidden');
     return;
   }
@@ -14220,6 +14319,382 @@ async function whStarten(){
 
 $('wiederherstellenOeffnen').onclick=wiederherstellenOeffnen;
 
+/* ---------- Testversion: Kontostatus, Sperren, Beispieldaten, Rundgang, Verwaltung ----------
+   Jedes neue Konto ist 7 Tage Testkonto (Status in Supabase, Tabelle „konten“,
+   siehe sql/0.30-testkonten.sql). Nach Ablauf sperrt der SERVER das Speichern;
+   die App zeigt dann einen Sperrbildschirm. Im Test sind pCloud und Datensicherung
+   gesperrt (mit Schloss sichtbar), Leistungsnachweis und Steuerpaket tragen „MUSTER“.
+   Ist die Datenbank noch nicht erweitert, gilt jedes Konto als Vollversion. */
+var konto=null;   // {status:'test'|'voll'|'gesperrt', test_bis, aktiv, verwaltung, verwaltung_frei, loeschung_am}
+function istTest(){return Boolean(konto&&konto.status==='test')}
+function kontoSpeicherSchluessel(){return 'qa-konto-'+((typeof user!=='undefined'&&user&&user.id)||'')}
+function kontoAktiv(k){
+  if(!k)return true;
+  if(k.status==='voll')return true;
+  if(k.status==='test')return Boolean(k.test_bis)&&new Date(k.test_bis)>new Date();
+  return false;
+}
+async function kontoLaden(){
+  if(typeof user==='undefined'||!user)return;
+  let neu=null;
+  try{
+    const {data,error}=await sb.rpc('mein_konto');
+    if(error)throw error;
+    neu=data||null;
+    try{localStorage.setItem(kontoSpeicherSchluessel(),JSON.stringify(neu))}catch(e){}
+  }catch(e){
+    // Ohne Netz: letzter bekannter Stand. Funktion fehlt (Datenbank noch alt): Vollversion.
+    const fehlt=e&&(e.code==='PGRST202'||/mein_konto/.test(e.message||''));
+    if(!fehlt){try{neu=JSON.parse(localStorage.getItem(kontoSpeicherSchluessel())||'null')}catch(f){}}
+  }
+  konto=neu||{status:'voll',aktiv:true,verwaltung:false,verwaltung_frei:false};
+  konto.aktiv=kontoAktiv(konto);
+  kontoAnwenden();
+}
+function testTageUebrig(){
+  if(!konto||!konto.test_bis)return 0;
+  return Math.max(0,Math.ceil((new Date(konto.test_bis)-new Date())/864e5));
+}
+function datumKurz(wert){
+  if(!wert)return '';
+  return new Date(wert).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function kontoAnwenden(){
+  const test=istTest();
+  document.body.classList.toggle('testversion',test);
+  const bsp=$('einstBeispielZeile'),verw=$('einstVerwaltungZeile');
+  if(bsp)bsp.classList.toggle('hidden',!(test||(konto&&konto.verwaltung)));
+  if(verw)verw.classList.toggle('hidden',!(konto&&(konto.verwaltung||konto.verwaltung_frei)));
+  testBandZeichnen();
+  if(typeof cloudBandZeichnen==='function')cloudBandZeichnen();
+  if(konto&&!konto.aktiv)kontoSperreZeigen();
+  else if($('kontoSperreDialog').open)$('kontoSperreDialog').close();
+  if(test&&konto.aktiv&&!tourGesehen())setTimeout(()=>tourOeffnen(0),900);
+}
+// Regelmäßig nachsehen (Freischaltung oder Ablauf während die App offen ist)
+setInterval(()=>{if(typeof user!=='undefined'&&user)kontoLaden()},60*60e3);
+
+// Hinweisleiste „Testversion“
+function testBandZeichnen(){
+  const band=$('testBand');
+  if(!band)return;
+  let zu=false;
+  try{zu=sessionStorage.getItem('qa-testband-zu')==='1'}catch(e){}
+  if(!istTest()||!konto.aktiv||zu){band.classList.add('hidden');return}
+  const tage=testTageUebrig();
+  band.innerHTML=
+    '<span><strong>Testversion</strong> – noch '+tage+(tage===1?' Tag':' Tage')+' (bis '+esc(datumKurz(konto.test_bis))+'). '+
+    'Bitte nur Beispieldaten verwenden, keine echten Klientendaten.</span>'+
+    '<span class="install-leiste-knoepfe">'+
+    '<button type="button" class="abgleich-knopf" data-test-band="beispiel">Beispieldaten</button>'+
+    '<button type="button" class="abgleich-knopf" data-test-band="tour">So hilft dir QA</button>'+
+    '<button type="button" class="abgleich-knopf" data-test-band="zu" aria-label="Hinweis ausblenden">✕</button></span>';
+  band.classList.remove('hidden');
+}
+$('testBand').addEventListener('click',e=>{
+  const k=e.target.closest('[data-test-band]');
+  if(!k)return;
+  const art=k.dataset.testBand;
+  if(art==='beispiel')einstellungenOeffnen(false,'beispiel');
+  else if(art==='tour')tourOeffnen(0);
+  else{try{sessionStorage.setItem('qa-testband-zu','1')}catch(f){}testBandZeichnen()}
+});
+
+// Sperrbildschirm nach Ablauf oder bei Sperre
+function kontoSperreZeigen(){
+  const d=$('kontoSperreDialog');
+  const abgelaufen=konto.status==='test';
+  $('kontoSperreTitel').textContent=abgelaufen?'Testzeitraum beendet':'Konto gesperrt';
+  $('kontoSperreText').innerHTML=abgelaufen
+    ? '<p>Dein Testzeitraum ist am '+esc(datumKurz(konto.test_bis))+' abgelaufen. Danke, dass du QA ausprobiert hast!</p>'+
+      '<p>Mit einem Vertrag schalte ich dein Konto zur Vollversion frei – alles, was du angelegt hast, bleibt erhalten.</p>'+
+      (konto.loeschung_am?'<p class="muted small">Ohne Vertrag werden das Konto und alle Einträge am '+esc(datumKurz(konto.loeschung_am))+' gelöscht.</p>':'')
+    : '<p>Dieses Konto ist zurzeit gesperrt. Bitte wende dich an den Anbieter.</p>';
+  $('kontoSperreText').innerHTML+='<p class="small">Kontakt: Oliver Stork · <a href="mailto:kontakt@qualifizierte-assistenz.de">kontakt@qualifizierte-assistenz.de</a></p>';
+  // Andere Fenster schließen, damit nur der Sperrbildschirm bleibt
+  document.querySelectorAll('dialog[open]').forEach(x=>{if(x!==d)x.close()});
+  if(!d.open)d.showModal();
+}
+$('kontoSperreDialog').addEventListener('cancel',e=>e.preventDefault());
+$('kontoSperrePruefen').onclick=()=>kontoLaden();
+$('kontoSperreAbmelden').onclick=()=>{$('kontoSperreDialog').close();$('logout').click()};
+
+// Funktionen, die es nur in der Vollversion gibt: true = gesperrt (Hinweis gezeigt)
+function nurVollversion(was){
+  if(!istTest())return false;
+  $('vollversionTitel').textContent='🔒 In der Vollversion';
+  $('vollversionText').textContent=was+' gibt es in der Vollversion. In der Testversion ist diese Funktion zu sehen, aber gesperrt.';
+  if(!$('vollversionDialog').open)$('vollversionDialog').showModal();
+  return true;
+}
+$('vollversionZu').onclick=()=>$('vollversionDialog').close();
+
+/* ----- Rundgang „So hilft dir QA“ (zeigt die Vorzüge) ----- */
+const TOUR=[
+  {t:'Willkommen bei QA',x:'<p>Weniger Papierkram, mehr Zeit für deine Klient*innen: Dokumentation, Fahrten, Abrechnung und Steuer in einer App – für freiberufliche Fachkräfte der Qualifizierten Assistenz.</p><p>In der Testversion kannst du <strong>Beispieldaten</strong> laden: drei erfundene Klient*innen mit Terminen, Dokumentationen, Fahrten und Belegen. So siehst du sofort, wie alles zusammenspielt.</p>',
+   k:'Beispieldaten laden',a:()=>einstellungenOeffnen(false,'beispiel')},
+  {t:'Dokumentieren in Minuten',x:'<p>Tägliche Einträge mit <strong>Textbausteinen</strong>, Kalender und Terminen. Ausfälle mit und ohne Fahrt werden richtig gezählt, die Fachleistungsstunden rechnet die App selbst.</p>'},
+  {t:'Bewilligungen im Blick',x:'<p>Kontingente, verbrauchte Stunden, fällige Verlaufsberichte und die Fortschreibung des Gesamtplans – je Klient*in auf einen Blick. Die App erinnert dich, bevor ein Bericht fällig wird.</p>'},
+  {t:'Fahrtenbuch ohne Rechnen',x:'<p>Bekannte Strecken trägt die App sofort ein, neue berechnet sie <strong>direkt auf deinem Gerät</strong> – keine Adresse verlässt das Gerät. Auf der Karte kannst du die Strecke mit dem Finger auf den tatsächlich gefahrenen Weg ziehen.</p>'},
+  {t:'Leistungsnachweis auf Knopfdruck',x:'<p>Der monatliche Nachweis für den Kostenträger entsteht aus deinen Dokumentationen, in der geforderten Vorlage, als PDF und Excel.</p><p class="muted small">In der Testversion tragen Leistungsnachweis und Steuerpaket das Wasserzeichen „MUSTER“.</p>'},
+  {t:'Ausgaben, Einnahmen, Steuer',x:'<p>Betriebsausgaben mit Beleg-Foto und fortlaufender Belegnummer, Einnahmen nach Vergütungssätzen und ein <strong>Steuerpaket</strong> für die Steuerberatung – mit Kennungen statt Namen.</p>'},
+  {t:'Deine Daten gehören dir',x:'<p><strong>Ende-zu-Ende verschlüsselt:</strong> Alles wird auf deinem Gerät verschlüsselt, den Schlüssel hast nur du. Der Server in Frankfurt sieht nur unlesbare Kopien. Die App läuft auch ohne Internet.</p><p>In der Vollversion liegen Dokumente und automatische Datensicherungen verschlüsselt in <strong>deiner eigenen Cloud</strong>.</p>'},
+  {t:'Neugierig auf die Vollversion?',x:'<p>Nach Vertragsabschluss wird dein Testkonto zur Vollversion – alles, was du angelegt hast, bleibt erhalten. Die Beispieldaten entfernst du mit einem Knopf.</p><p>Kontakt: Oliver Stork · <a href="mailto:kontakt@qualifizierte-assistenz.de?subject=QA-App%20Vollversion">kontakt@qualifizierte-assistenz.de</a></p>'}
+];
+let tourSeite=0;
+function tourGesehen(){try{return localStorage.getItem('qa-tour-'+((user&&user.id)||''))==='1'}catch(e){return true}}
+function tourOeffnen(seite){
+  tourSeite=seite||0;
+  try{localStorage.setItem('qa-tour-'+((user&&user.id)||''),'1')}catch(e){}
+  tourZeichnen();
+  if(!$('tourDialog').open)$('tourDialog').showModal();
+}
+function tourZeichnen(){
+  const k=TOUR[tourSeite];
+  $('tourInhalt').innerHTML='<div class="tour-karte"><h3>'+esc(k.t)+'</h3>'+k.x+
+    (k.k?'<p><button type="button" id="tourAktion" class="secondary">'+esc(k.k)+'</button></p>':'')+'</div>';
+  if(k.k)$('tourAktion').onclick=()=>{$('tourDialog').close();k.a()};
+  $('tourStand').textContent=(tourSeite+1)+' von '+TOUR.length;
+  $('tourZurueck').disabled=tourSeite===0;
+  $('tourWeiter').textContent=tourSeite===TOUR.length-1?'Fertig':'Weiter';
+}
+$('tourZurueck').onclick=()=>{if(tourSeite>0){tourSeite--;tourZeichnen()}};
+$('tourWeiter').onclick=()=>{if(tourSeite<TOUR.length-1){tourSeite++;tourZeichnen()}else $('tourDialog').close()};
+$('tourZu').onclick=()=>$('tourDialog').close();
+
+/* ----- Beispieldaten: laden und vollständig entfernen -----
+   Erkennbar an: Kennung B901–B903 und „(Beispiel)“ im Namen; Ausgaben und
+   allgemeine Fahrten an „(Beispiel)“ im Zweck bzw. in der Notiz. */
+const BEISPIEL_MARKE='(Beispiel)';
+function istBeispielKlient(c){return /^B9\d\d$/.test(String(c.client_code||''))&&String(c.name||'').includes(BEISPIEL_MARKE)}
+async function beispielStand(){
+  const {data}=await Daten.from('clients').select('id,client_code,name');
+  return (data||[]).filter(istBeispielKlient);
+}
+async function beispielStandZeigen(){
+  const ziel=$('beispielStand');
+  if(!ziel)return;
+  ziel.textContent='Wird geprüft …';
+  try{
+    const vorhanden=await beispielStand();
+    ziel.textContent=vorhanden.length
+      ? 'Beispieldaten sind geladen: '+vorhanden.map(c=>c.client_code+' '+c.name).join(', ')+'.'
+      : 'Zurzeit sind keine Beispieldaten geladen.';
+    $('beispielLaden').disabled=vorhanden.length>0;
+    $('beispielEntfernen').disabled=!vorhanden.length;
+  }catch(e){ziel.textContent='Stand nicht lesbar: '+e.message}
+}
+// Werktag „vor n Tagen“ bzw. „in n Tagen“ als JJJJ-MM-TT
+function beispielTag(n){
+  const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);
+  while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+(n<0?-1:1));
+  return d.toISOString().slice(0,10);
+}
+async function beispieldatenLaden(){
+  const vorhanden=await beispielStand();
+  if(vorhanden.length){toast('Die Beispieldaten sind schon geladen.');return}
+  const uid=()=>crypto.randomUUID();
+  const pruefen=(r,was)=>{if(r&&r.error)throw new Error(was+': '+r.error.message)};
+  const jahr=new Date().getFullYear();
+  const start=(typeof startAdresse==='function'&&startAdresse())||'Lister Meile 50, 30161 Hannover';
+  const klienten=[
+    {code:'B901',name:'Muster, Max '+BEISPIEL_MARKE,anrede:'Herr',strasse:'Podbielskistraße',hausnummer:'120',plz:'30177',ort:'Hannover',
+     traeger:'LH Hannover',kontingent:120,woche:3,ziel:'Rewe Vahrenwald',zielKm:4.8,
+     texte:['Wochenplanung besprochen, Einkaufsliste gemeinsam erstellt.','Begleitung zum Einkauf, Umgang mit Geld geübt.','Post sortiert, zwei Schreiben gemeinsam beantwortet.','Haushaltsplan für den Monat erstellt.','Ausflug in den Stadtpark, Orientierung mit Bus und Bahn geübt.']},
+    {code:'B902',name:'Beispiel, Erika '+BEISPIEL_MARKE,anrede:'Frau',strasse:'Limmerstraße',hausnummer:'40',plz:'30451',ort:'Hannover',
+     traeger:'Region Hannover Nord',kontingent:100,woche:2,ziel:'Apotheke Linden',zielKm:3.2,
+     texte:['Tagesstruktur besprochen, neuer Wochenplan.','Begleitung zur Bank, Kontoauszüge gemeinsam durchgesehen.','Freizeitangebote im Stadtteil gesucht und Anmeldung vorbereitet.','Termine der nächsten Woche geplant.','Gespräch über Ziele für den Verlaufsbericht.']},
+    {code:'B903',name:'Probe, Paul '+BEISPIEL_MARKE,anrede:'Herr',strasse:'Hildesheimer Straße',hausnummer:'95',plz:'30169',ort:'Hannover',
+     traeger:'LH Hannover',kontingent:80,woche:2,ziel:'Bürgeramt Hannover',zielKm:3.9,
+     texte:['Antrag beim Amt vorbereitet, Unterlagen zusammengestellt.','Begleitung zum Amt, Antrag abgegeben.','Wohnung gemeinsam aufgeräumt, Putzplan erstellt.','Kochen geübt, Rezept für die Woche ausgesucht.','Telefonat mit der Betreuung vorbereitet.']}
+  ];
+  const ausgaben=[];
+  for(const [i,k] of klienten.entries()){
+    const cid=uid(),bid=uid();
+    const adresse=k.strasse+' '+k.hausnummer+', '+k.plz+' '+k.ort;
+    let r=await Daten.from('clients').insert({
+      id:cid,user_id:user.id,client_code:k.code,name:k.name,anrede:k.anrede,
+      strasse:k.strasse,hausnummer:k.hausnummer,plz:k.plz,ort:k.ort,telefon:'0511 000000'+(i+1),
+      kontaktperson1:'Muster-Betreuung '+BEISPIEL_MARKE,kontakt1_rolle:'Gesetzliche Betreuung',telefon1:'0511 0000009',
+      bemerkungen:'BEISPIELDATEN – erfunden, zum Ausprobieren. Wird mit „Beispieldaten entfernen“ gelöscht.'
+    });
+    pruefen(r,'Klient');
+    r=await Daten.from('bewilligungen').insert({
+      id:bid,user_id:user.id,client_id:cid,beginn:jahr+'-01-01',ende:jahr+'-12-31',
+      stundenkontingent:k.kontingent,wochen_fls:k.woche,leistungstraeger_typ:k.traeger,kostentraeger:k.traeger,
+      bewilligungsjahr_beginn:jahr+'-01-01',verlaufsbericht_faellig_am:beispielTag(14+i*10),
+      bemerkungen:'Beispielbewilligung '+BEISPIEL_MARKE
+    });
+    pruefen(r,'Bewilligung');
+    // Fünf Termine in den letzten Wochen, mit Dokumentation und Fahrt
+    for(let j=0;j<5;j++){
+      const datum=beispielTag(-35+j*7+i);
+      const did=uid(),tid=uid();
+      const beginn=['09:00','10:30','14:00'][i];
+      const ende=['10:40','12:10','15:40'][i];
+      const begleitung=j===1||j===3;
+      r=await Daten.from('dokumentationen').insert({
+        id:did,user_id:user.id,client_id:cid,bewilligung_id:bid,datum,beginn,ende,
+        dauer_minuten:100,fls:2,leistungsart:'Face-to-Face',
+        ort_der_leistung:begleitung?'Begleitung außer Haus':'Wohnung Klient',
+        kennziffer:(j%5)+1,dokumentation:k.texte[j],besonderheiten:null
+      });
+      pruefen(r,'Dokumentation');
+      const km=begleitung?k.zielKm*2+6:6.4+i;
+      r=await Daten.from('trip_entries').insert({
+        id:tid,user_id:user.id,client_id:cid,allgemein:false,documentation_id:did,trip_date:datum,
+        start_address:start,destination_address:start,
+        intermediate_stops:begleitung?adresse+' - '+k.ziel:adresse,
+        kilometers:Math.round(km),purpose:'Klientenbesuch',notes:'Beispielfahrt '+BEISPIEL_MARKE
+      });
+      pruefen(r,'Fahrt');
+      if(begleitung){
+        ausgaben.push({id:uid(),user_id:user.id,datum,betrag:2.5+i,kategorie:'Parken',
+          zweck:'Parkgebühr '+BEISPIEL_MARKE,client_id:cid,documentation_id:did,trip_id:tid,
+          beleg_vorhanden:false,beleg_jahr:jahr});
+      }
+    }
+    // Zwei kommende Termine
+    for(let j=0;j<2;j++){
+      r=await Daten.from('termine').insert({
+        id:uid(),user_id:user.id,client_id:cid,datum:beispielTag(2+i+j*7),
+        beginn:['09:00','10:30','14:00'][i],ende:['10:40','12:10','15:40'][i],
+        leistungsart:'Face-to-Face',ort:'Wohnung Klient',notiz:'Beispieltermin '+BEISPIEL_MARKE
+      });
+      pruefen(r,'Termin');
+    }
+  }
+  // Allgemeine Fahrt und allgemeine Ausgaben
+  let r=await Daten.from('trip_entries').insert({
+    id:uid(),user_id:user.id,client_id:null,allgemein:true,trip_date:beispielTag(-12),
+    start_address:start,destination_address:'Neues Rathaus, Trammplatz 2, 30159 Hannover',
+    kilometers:7,purpose:'Fortbildung',notes:'Beispielfahrt '+BEISPIEL_MARKE
+  });
+  pruefen(r,'Allgemeine Fahrt');
+  ausgaben.push(
+    {id:uid(),user_id:user.id,datum:beispielTag(-12),betrag:189,kategorie:'Fortbildung',zweck:'Seminar Gesprächsführung '+BEISPIEL_MARKE,beleg_vorhanden:false,beleg_jahr:jahr},
+    {id:uid(),user_id:user.id,datum:beispielTag(-30),betrag:24.9,kategorie:'Bürobedarf',zweck:'Ordner und Papier '+BEISPIEL_MARKE,beleg_vorhanden:false,beleg_jahr:jahr},
+    {id:uid(),user_id:user.id,datum:beispielTag(-5),betrag:36.5,kategorie:'Fachliteratur',zweck:'Fachbuch Assistenz '+BEISPIEL_MARKE,beleg_vorhanden:false,beleg_jahr:jahr}
+  );
+  // Belegnummern ab 9001, damit eigene Belege nach dem Entfernen lückenlos bei 1 beginnen
+  ausgaben.sort((a,b)=>a.datum.localeCompare(b.datum));
+  let nr=9001;
+  for(const a of ausgaben){
+    a.beleg_nr=nr++;
+    r=await Daten.from('ausgaben').insert(a);
+    pruefen(r,'Ausgabe');
+  }
+  await loadClients();
+  toast('Beispieldaten geladen: 3 erfundene Klient*innen mit Terminen, Dokumentationen, Fahrten und Belegen.');
+}
+async function beispieldatenEntfernen(){
+  const klienten=await beispielStand();
+  const ids=new Set(klienten.map(c=>String(c.id)));
+  let anzahl=0;
+  const {data:aus}=await Daten.from('ausgaben').select('id,client_id,zweck');
+  for(const a of aus||[]){
+    if(ids.has(String(a.client_id||''))||String(a.zweck||'').includes(BEISPIEL_MARKE)){
+      const {error}=await Daten.from('ausgaben').delete().eq('id',a.id);
+      if(error)throw new Error('Ausgabe: '+error.message);
+      anzahl++;
+    }
+  }
+  const {data:fahrten}=await Daten.from('trip_entries').select('id,client_id,notes');
+  for(const t of fahrten||[]){
+    if(!t.client_id&&String(t.notes||'').includes(BEISPIEL_MARKE)){
+      const {error}=await Daten.from('trip_entries').delete().eq('id',t.id);
+      if(error)throw new Error('Fahrt: '+error.message);
+      anzahl++;
+    }
+  }
+  // Klient*innen zuletzt: Bewilligungen, Dokumentationen, Termine und Fahrten gehen mit
+  for(const c of klienten){
+    const {error}=await Daten.from('clients').delete().eq('id',c.id);
+    if(error)throw new Error('Klient: '+error.message);
+    anzahl++;
+  }
+  await loadClients();
+  toast(klienten.length?'Beispieldaten vollständig entfernt.':'Es waren keine Beispieldaten vorhanden.');
+}
+$('beispielLaden').onclick=async()=>{
+  const k=$('beispielLaden');k.disabled=true;k.textContent='Wird geladen …';
+  try{await beispieldatenLaden()}catch(e){toast('Beispieldaten fehlgeschlagen: '+e.message)}
+  k.textContent='Beispieldaten laden';
+  beispielStandZeigen();
+};
+$('beispielEntfernen').onclick=async()=>{
+  if(!confirm('Alle Beispieldaten entfernen? Gelöscht werden nur die erfundenen Klient*innen B901–B903 mit allem, was dazugehört, und die Beispiel-Ausgaben. Deine eigenen Einträge bleiben.'))return;
+  const k=$('beispielEntfernen');k.disabled=true;k.textContent='Wird entfernt …';
+  try{await beispieldatenEntfernen()}catch(e){toast('Entfernen fehlgeschlagen: '+e.message)}
+  k.textContent='Beispieldaten vollständig entfernen';
+  beispielStandZeigen();
+};
+
+/* ----- Verwaltung der Testkonten (nur Anbieter) ----- */
+const KONTO_STATUS={test:'Test',voll:'Vollversion',gesperrt:'Gesperrt'};
+async function verwaltungZeigen(){
+  const ziel=$('verwaltungInhalt');
+  if(!konto||!konto.verwaltung){
+    if(konto&&konto.verwaltung_frei){
+      ziel.innerHTML='<p>Noch niemand verwaltet die Testkonten. Mit diesem Knopf wirst du (dieses Konto) Verwalter*in. Danach geht das für andere Konten nicht mehr.</p>'+
+        '<div class="actions"><button type="button" id="verwBeanspruchen" class="primary">Ich verwalte die Testkonten</button></div>';
+      $('verwBeanspruchen').onclick=async()=>{
+        const {data,error}=await sb.rpc('verwaltung_beanspruchen');
+        if(error||!data){toast('Nicht möglich'+(error?': '+error.message:'.'));return}
+        await kontoLaden();verwaltungZeigen();
+      };
+    }else ziel.innerHTML='<p class="muted">Keine Berechtigung.</p>';
+    return;
+  }
+  ziel.innerHTML='<p class="muted small">Wird geladen …</p>';
+  const {data,error}=await sb.rpc('konten_liste');
+  if(error){ziel.innerHTML='<p class="muted">Konten konnten nicht geladen werden: '+esc(error.message)+'</p>';return}
+  const jetzt=new Date();
+  const liste=(data||[]);
+  const tests=liste.filter(k=>k.status==='test');
+  ziel.innerHTML=
+    '<p class="muted small">'+liste.length+' Konten, davon '+tests.length+' im Test. Neue Konten starten als 7-Tage-Test. Abgelaufene Testkonten werden 30 Tage nach Ablauf gelöscht.</p>'+
+    '<div class="actions"><button type="button" class="secondary" data-verw="aufraeumen">Abgelaufene Testkonten jetzt löschen (älter als 30 Tage)</button></div>'+
+    '<div class="verwaltung-liste">'+liste.map(k=>{
+      const eigen=k.user_id===user.id;
+      const abgelaufen=k.status==='test'&&k.test_bis&&new Date(k.test_bis)<jetzt;
+      const knoepfe=[];
+      if(k.status!=='voll')knoepfe.push('<button type="button" class="primary" data-verw="voll" data-id="'+k.user_id+'">Vollversion freischalten</button>');
+      if(k.status!=='voll')knoepfe.push('<button type="button" class="secondary" data-verw="plus7" data-id="'+k.user_id+'">Test +7 Tage</button>');
+      if(!eigen&&k.status!=='gesperrt')knoepfe.push('<button type="button" class="secondary" data-verw="sperren" data-id="'+k.user_id+'">Sperren</button>');
+      if(!eigen)knoepfe.push('<button type="button" class="kn kn-loeschen danger" data-verw="loeschen" data-id="'+k.user_id+'" data-mail="'+esc(k.email||'')+'">Löschen</button>');
+      return '<div class="verwaltung-konto'+(abgelaufen?' abgelaufen':'')+'"><strong>'+esc(k.email||'(ohne E-Mail)')+'</strong>'+(eigen?' <span class="muted small">(du)</span>':'')+
+        '<br><span class="small">'+esc(KONTO_STATUS[k.status]||k.status)+
+        (k.status==='test'?(abgelaufen?' · abgelaufen am ':' · bis ')+esc(datumKurz(k.test_bis)):'')+
+        ' · angelegt '+esc(datumKurz(k.angelegt_am))+'</span>'+
+        (knoepfe.length?'<div class="knoepfe">'+knoepfe.join('')+'</div>':'')+'</div>';
+    }).join('')+'</div>';
+}
+$('verwaltungInhalt').addEventListener('click',async e=>{
+  const k=e.target.closest('[data-verw]');
+  if(!k)return;
+  const art=k.dataset.verw,id=k.dataset.id;
+  let r;
+  if(art==='voll'){
+    if(!confirm('Dieses Konto zur Vollversion freischalten?'))return;
+    r=await sb.rpc('konto_setzen',{p_user:id,p_status:'voll',p_tage:null,p_notiz:null});
+  }else if(art==='plus7'){
+    r=await sb.rpc('konto_setzen',{p_user:id,p_status:'test',p_tage:7,p_notiz:null});
+  }else if(art==='sperren'){
+    if(!confirm('Dieses Konto sperren? Es kann dann nichts mehr speichern.'))return;
+    r=await sb.rpc('konto_setzen',{p_user:id,p_status:'gesperrt',p_tage:null,p_notiz:null});
+  }else if(art==='loeschen'){
+    if(!confirm('Konto '+(k.dataset.mail||'')+' mit allen Daten endgültig löschen? Das lässt sich nicht rückgängig machen.'))return;
+    r=await sb.rpc('konto_loeschen',{p_user:id});
+  }else if(art==='aufraeumen'){
+    if(!confirm('Alle Testkonten löschen, die seit mehr als 30 Tagen abgelaufen sind?'))return;
+    r=await sb.rpc('konten_aufraeumen');
+    if(!r.error)toast((r.data||0)+' Konto/Konten gelöscht.');
+  }
+  if(r&&r.error){toast('Nicht möglich: '+r.error.message);return}
+  verwaltungZeigen();
+});
+
 /* ---------- Testdaten ergänzen (versteckt: 7× auf die Versionsnummer tippen) ----------
    Fügt zwei Testklienten mit Bewilligung, Dokumentationen, Fahrten und Belegen HINZU.
    Es wird nichts gelöscht oder überschrieben. Die Testklienten haben die Kennungen T901/T902. */
@@ -16389,7 +16864,8 @@ async function spErstellen(){
   spErgebnis=null;
   try{
     if(!window.Tresor||!Tresor.datenschluessel())throw new Error('Der Tresor ist gesperrt. Bitte zuerst entsperren.');
-    const {von,bis,name}=spZeitraum();
+    const {von,bis,name:spName}=spZeitraum();
+    const name=(istTest()?'MUSTER_':'')+spName;
     const klarnamen=$('spKlarnamen').checked;
     const zweckNeutral=$('spZweckNeutral').checked;
     const mitVerzeichnis=$('spVerzeichnis').checked;
@@ -16524,6 +17000,7 @@ async function spErstellen(){
     }
 
     const lies=[
+      ...(istTest()?['MUSTER – TESTVERSION. Nicht beim Finanzamt oder der Steuerberatung einreichen.','']:[]),
       'Steuerpaket '+name+' ('+formatDate(von)+' bis '+formatDate(bis)+')',
       'Erstellt am '+new Date().toLocaleDateString('de-DE')+' mit der QA-App',
       '',

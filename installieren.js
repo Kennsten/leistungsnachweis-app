@@ -390,8 +390,10 @@
 
   /* ---------------- Kolleg*innen einladen ---------------- */
 
+  // Einladungs-Link führt zur Testversion: Wer sich darüber registriert,
+  // bekommt ein 7-Tage-Testkonto (die App zeigt dazu einen Hinweis).
   function appAdresse() {
-    return new URL('./', location.href).href;
+    return new URL('./?testen', location.href).href;
   }
 
   function einladungZeigen() {
