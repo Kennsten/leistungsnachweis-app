@@ -3,13 +3,14 @@
     {
       "name": "region-hannover",
       "titel": "Hannover und Region Hannover",
-      "stand": "2026-11-10",
+      "stand": "2026-11-11",
       "version": 1,
       "dateien": {
         "strassen": "region-hannover-strassen.bin.gz",
-        "adressen": "region-hannover-adressen.json.gz"
+        "adressen": "region-hannover-adressen.json.gz",
+        "karte": "region-hannover-karte.json.gz"
       },
-      "bytes": 5153903,
+      "bytes": 7660543,
       "grenzen": [
         52.090314,
         9.219064,
