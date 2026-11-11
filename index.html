@@ -181,6 +181,7 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .karte-via{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--via-farbe,#C85A3E);box-shadow:0 1px 4px rgba(0,0,0,.4);box-sizing:border-box}
 .karte-tipp{margin:8px 0 0}
 .karte-etappen{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
+.karte-etappen-hinweis{flex:1 0 100%;margin:0}
 .karte-etappe{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
 .karte-etappe[aria-pressed="true"]{border-color:var(--ink);font-weight:700}
 .karte-etappe-farbe{width:28px;height:6px;border-radius:3px;flex:0 0 auto}
@@ -2456,7 +2457,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
     <button autofocus type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
   </div>
-  <p id="karteTipp" class="muted small karte-tipp">✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die farbige Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen. Laufen Hin- und Rückweg übereinander, zuerst darunter den Abschnitt wählen.</p>
+  <p id="karteTipp" class="muted small karte-tipp">✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die farbige Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen.</p>
   <div id="karteEtappen" class="karte-etappen hidden" role="group" aria-label="Abschnitte der Strecke"></div>
   <div id="karteAnpassung" class="karte-anpassung hidden">
     <span id="karteAnpassungText"></span>
@@ -3643,7 +3644,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.40 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.41 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9164,7 +9165,10 @@ function kartenEtappenLeiste(anzahl,rundfahrt){
       namen.push(von+' → '+nach);
     }
   }
-  box.innerHTML=namen.map((n,k)=>
+  box.innerHTML=
+    '<p class="muted small karte-etappen-hinweis">Die Knöpfe lassen sich antippen: Tippst du einen Abschnitt an, werden die anderen Strecken ausgegraut und lassen sich nicht mehr verschieben. So packst du sicher die richtige Linie, auch wo Hin- und Rückweg übereinanderliegen.'+
+    (kartenEtappeAktiv!=null?' „Alle zeigen“ macht wieder alle Strecken verschiebbar.':'')+'</p>'+
+    namen.map((n,k)=>
     '<button type="button" class="karte-etappe" data-etappe="'+k+'" aria-pressed="'+(kartenEtappeAktiv===k)+'">'+
     '<span class="karte-etappe-farbe" style="background:'+KARTE_ETAPPEN_FARBEN[k%KARTE_ETAPPEN_FARBEN.length]+'"></span>'+esc(n)+'</button>'
   ).join('')+(kartenEtappeAktiv!=null?'<button type="button" class="karte-etappe" data-etappe="alle">Alle zeigen</button>':'');
