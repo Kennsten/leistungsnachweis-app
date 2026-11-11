@@ -1,10 +1,12 @@
 # Kilometer auf dem Gerät – Kartenpaket
 
-Die App kann Kilometer **ohne Weitergabe von Adressen** berechnen. Dafür lädt
+Die App berechnet Kilometer **ohne Weitergabe von Adressen** (einziger Weg ab
+Version 0.24.37). Dafür lädt
 sie einmalig ein Kartenpaket von der eigenen App-Adresse herunter und
 speichert es auf dem Gerät. Danach passiert alles auf dem Gerät: Es wird keine
-Adresse an Geoapify, Google oder einen anderen Dienst geschickt, und es werden
-keine Kartenbilder von fremden Servern geladen.
+Adresse an einen Routendienst oder Google geschickt, und es werden keine
+Kartenbilder von fremden Servern geladen. Das Kartenpaket enthält auch das
+Kartenbild (Wasser, Grün, Wohngebiete, Bahn, Namen) für die Karte.
 
 ## Was ist im Paket?
 
@@ -33,7 +35,7 @@ der Karte und in den Einstellungen.
 
 1. GitHub → Reiter **Actions** → links **„Kartenpaket bauen“**.
 2. Rechts **„Run workflow“** → Zweig wählen → grüner Knopf **„Run workflow“**.
-3. Nach etwa 15–40 Minuten ist das neue Paket im Zweig gespeichert, Netlify
+3. Nach etwa 5–10 Minuten ist das neue Paket im Zweig gespeichert, Netlify
    veröffentlicht es automatisch. Die App zeigt dann in den Einstellungen
    „neuere Fassung verfügbar“ und einen Knopf „Aktualisieren“.
 
@@ -52,7 +54,6 @@ Geofabrik-Datei ohne `--grenzen`) ergänzen. Die App zeigt dann alle Pakete aus
 ## Wie wird gerechnet?
 
 Gesucht wird die Strecke mit der kürzesten Fahrzeit, mit einem kleinen Zuschlag
-für jede Kreuzung (bevorzugt durchgehende Straßen, ähnlich „less_maneuvers“ bei
-Geoapify). Angezeigt werden die Kilometer dieser Strecke. Wie bisher gilt:
+für jede Kreuzung (bevorzugt durchgehende Straßen mit wenig Abbiegen). Angezeigt werden die Kilometer dieser Strecke. Wie bisher gilt:
 gemerkte Strecken und der Tacho bleiben maßgeblich, die Berechnung ist ein
 Vorschlag.

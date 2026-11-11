@@ -2,5 +2,5 @@
 # Die Anmeldung wird in der Function selbst geprüft (Bearer-Token an
 # /auth/v1/user), weil die neuen "publishable"-Schlüssel nicht vom
 # Standard-JWT-Prüfer des Gateways verstanden werden.
-[functions.route-km]
+[functions.pcloud-link]
 verify_jwt = false

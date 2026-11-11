@@ -1,0 +1,2 @@
+Kartenpaket zuletzt angestoßen: 11.11.2026
+(Datum ändern und speichern → GitHub baut das Kartenpaket mit den neuesten OpenStreetMap-Daten neu.)

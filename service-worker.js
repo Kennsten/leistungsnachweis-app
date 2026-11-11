@@ -8,12 +8,12 @@
 //   damit neue Versionen sofort ankommen. Ohne Netz: gespeicherte Fassung.
 // - Bibliotheken, Symbole, Bilder, Schriften: aus dem Speicher, im Hintergrund
 //   auffrischen (schnell und offline verfügbar).
-// - Supabase, Netlify-Funktionen, Kartenkacheln und andere fremde Server:
+// - Supabase, Netlify-Funktionen und andere fremde Server:
 //   nie anfassen, immer live.
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.24.36';
+const CACHE_NAME = 'qa-produkt-0.24.37';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [

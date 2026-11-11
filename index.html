@@ -2450,7 +2450,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <div id="karte"></div>
   <p class="muted small" style="margin:8px 0 0">
     Kartendaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende ·
-    <span id="karteQuelle">Strecke: <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Powered by Geoapify</a></span>
+    <span id="karteQuelle">Strecke und Karte auf diesem Gerät berechnet – nichts wurde übertragen</span>
   </p>
 </dialog>
 
@@ -2933,9 +2933,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <h3>Kilometer-Berechnung</h3>
     <label>Wie sollen Kilometer berechnet werden?
       <select id="kmModusSelect">
-        <option value="geraet">Auf diesem Gerät berechnen – nichts wird übertragen (empfohlen)</option>
-        <option value="strasse">Über Routendienst – nur Straße und Ort</option>
-        <option value="hausnummer">Über Routendienst – mit Hausnummer</option>
+        <option value="geraet">Auf diesem Gerät berechnen – nichts wird übertragen</option>
         <option value="aus">Nicht automatisch – Kilometer von Hand eintragen</option>
       </select>
     </label>
@@ -2944,20 +2942,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <div id="kmPakete" class="km-pakete"><p class="muted small">Kartenpakete werden geprüft …</p></div>
     </div>
     <p class="muted small">Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen.</p>
-    <!-- Nur sichtbar bei „Über Routendienst“: dann gehen Adressen an externe Dienste -->
-    <div id="dienstBereich" class="hidden">
-      <p class="muted small">Im Fahrtenbuch und im Leistungsnachweis bleibt die volle Adresse erhalten, die Kürzung gilt nur für die Weitergabe an externe Dienste.</p>
-      <h3>Dienste mit Adressübertragung</h3>
-      <p class="muted small">Für diese Funktionen gehen Adressen unverschlüsselt an externe Dienste. Du kannst sie auf diesem Gerät sperren oder dauerhaft erlauben. Standard ist: vorher fragen.</p>
-      <label>Kilometer berechnen (Geoapify)
-        <select id="dienstSetRoute"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
-      </label>
-      <label>Karte (OpenStreetMap)
-        <select id="dienstSetKarte"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
-      </label>
-    </div>
     <h3>Sicherheitshinweise</h3>
-    <p class="muted small">Weggeklickte Hinweise und Rückfragen mit „Nicht mehr fragen“ erscheinen wieder. Gesperrte Dienste bleiben gesperrt.</p>
+    <p class="muted small">Weggeklickte Hinweise erscheinen wieder.</p>
     <div class="actions">
       <button type="button" id="hinweiseZuruecksetzen" class="secondary">Alle Sicherheitshinweise wieder anzeigen</button>
     </div>
@@ -2988,22 +2974,6 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <ol id="routeKopieListe" class="route-kopie-liste"></ol>
   <div class="fenster-aktionen">
     <button type="button" id="routeKopieGoogle" class="secondary">Google Maps leer öffnen</button>
-  </div>
-</dialog>
-
-<dialog id="dienstDialog">
-  <div class="top">
-    <div>
-      <div class="muted">Hinweis zum Datenschutz</div>
-      <h2 id="dienstTitel"></h2>
-    </div>
-    <button autofocus type="button" id="dienstZu" class="kn kn-schliessen secondary">Schließen</button>
-  </div>
-  <div id="dienstText"></div>
-  <label class="sicherung-haken"><input type="checkbox" id="dienstMerken"> Nicht mehr fragen (nur auf diesem Gerät)</label>
-  <div class="actions">
-    <button type="button" id="dienstJa">Ja, fortfahren</button>
-    <button type="button" id="dienstNein" class="secondary">Abbrechen</button>
   </div>
 </dialog>
 
@@ -3658,7 +3628,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.36 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.37 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5700,8 +5670,7 @@ async function deleteStopover(name){
   toast('Stopp gelöscht');
 }
 
-/* ---------- Kilometer berechnen (Geoapify über Supabase-Function route-km-geo) ---------- */
-// Gesendet werden nur die Adressen, keine Namen und kein Fahrtzweck.
+/* ---------- Kilometer berechnen (auf dem Gerät, siehe km-geraet.js) ---------- */
 // Hausnummern muss man nicht eintippen. Steht bei einem Stopp nur die
 // Straße des Klienten, wird für die Berechnung seine vollständige Adresse
 // (mit Hausnummer) genommen, damit die Strecke genauer wird.
@@ -5728,38 +5697,21 @@ function adresseFuerBerechnung(stopp){
 
   return stopp;
 }
-/* ---------- Genauigkeit der Adressen bei externen Diensten ---------- */
-// Standard: nur Straße und Ort. Die Hausnummer verlässt das Gerät nur,
-// wenn man das unter Einstellungen → Dieses Gerät ausdrücklich wählt.
-function genauigkeitSchluessel(){return 'qa-genauigkeit-'+((typeof user!=='undefined'&&user&&user.id)||'')}
-function adressGenauigkeit(){
-  try{return localStorage.getItem(genauigkeitSchluessel())==='hausnummer'?'hausnummer':'strasse'}
-  catch(e){return 'strasse'}
-}
-function adressGenauigkeitSetzen(wert){
-  try{
-    if(wert==='hausnummer')localStorage.setItem(genauigkeitSchluessel(),'hausnummer');
-    else localStorage.removeItem(genauigkeitSchluessel());
-  }catch(e){/* nicht schlimm */}
-}
+
 // Weg der Kilometer-Berechnung auf diesem Gerät:
-// 'geraet' (Standard, Kartenpaket – nichts wird übertragen) | 'dienst' (Routendienst) | 'aus'
+// 'geraet' (Standard, Kartenpaket – nichts wird übertragen) | 'aus' (von Hand)
 function kmWegSchluessel(){return 'qa-kmweg-'+((typeof user!=='undefined'&&user&&user.id)||'')}
-function kmWeg(){
+function kmModus(){
   let w='';
   try{w=localStorage.getItem(kmWegSchluessel())||''}catch(e){}
-  if(w==='dienst'||w==='aus'||w==='geraet')return w;
-  // Wer den Routendienst früher gesperrt hat, wollte von Hand eintragen
-  return dienstEinstellung('route')==='gesperrt'?'aus':'geraet';
+  if(w==='aus')return 'aus';
+  if(w)return 'geraet';
+  // Wer früher den Routendienst gesperrt hatte, wollte von Hand eintragen
+  try{if(localStorage.getItem('qa-dienst-route-'+((typeof user!=='undefined'&&user&&user.id)||''))==='gesperrt')return 'aus'}catch(e){}
+  return 'geraet';
 }
 function kmWegSetzen(wert){
   try{localStorage.setItem(kmWegSchluessel(),wert)}catch(e){/* nicht schlimm */}
-}
-// 'geraet' | 'strasse' | 'hausnummer' | 'aus' (= nicht automatisch berechnen)
-function kmModus(){
-  const weg=kmWeg();
-  if(weg==='geraet'||weg==='aus')return weg;
-  return dienstEinstellung('route')==='gesperrt'?'aus':adressGenauigkeit();
 }
 
 // „Musterstraße 12a, 30159 Hannover“ → „Musterstraße, 30159 Hannover“
@@ -5778,9 +5730,8 @@ function hausnummerEntfernen(adresse){
   return text;
 }
 function adresseNachGenauigkeit(adresse){
-  // Auf dem Gerät verlässt nichts die App: dann mit Hausnummer (genauer)
-  if(kmModus()==='geraet')return String(adresse).trim();
-  return adressGenauigkeit()==='hausnummer'?String(adresse).trim():hausnummerEntfernen(adresse);
+  // Auf dem Gerät verlässt nichts die App: immer mit Hausnummer (genauer)
+  return String(adresse).trim();
 }
 
 // Passt das Fahrt-Formular an den gewählten Modus an
@@ -5795,13 +5746,9 @@ function kmModusAnwenden(){
   hinweis.textContent=
     modus==='aus'
       ? 'Die automatische Berechnung ist auf diesem Gerät ausgeschaltet. Bitte die Kilometer von Hand eintragen.'
-      : modus==='geraet'
-      ? (kmPaketName()
+      : (kmPaketName()
           ? '🔒 Kilometer und Karte werden auf diesem Gerät berechnet. Keine Adresse verlässt das Gerät.'
-          : '')
-      : (modus==='strasse'
-          ? 'Beim Berechnen und auf der Karte gehen Straße und Ort (ohne Hausnummer) an externe Dienste. Du wirst vorher gefragt.'
-          : 'Beim Berechnen und auf der Karte gehen die Adressen mit Hausnummer an externe Dienste. Du wirst vorher gefragt.');
+          : '');
 }
 
 // Adressen der Fahrt in der Reihenfolge Start, Stopps, Ziel
@@ -5941,91 +5888,25 @@ function pcloudLinkUrl(){
 }
 
 async function routeAbfragen(adressen){
-  const geraet=kmModus()==='geraet';
-  const schluessel=(geraet?'geraet:':'dienst:')+adressen.join('|');
+  const schluessel=adressen.join('|');
   if(letzteRoute&&letzteRoute.schluessel===schluessel)return letzteRoute.ergebnis;
 
-  // Auf dem Gerät: Kartenpaket, nichts wird übertragen
-  if(geraet){
-    const paket=await kartenpaketFuerBerechnung();
-    const ergebnis=await kmHelferAuftrag({typ:'route',paket,adressen});
-    letzteRoute={schluessel,ergebnis};
-    return ergebnis;
-  }
-
-  const {data:{session}}=await sb.auth.getSession();
-  if(!session)throw new Error('Bitte neu anmelden.');
-
-  // Die Berechnung läuft jetzt als Supabase-Function im selben Projekt wie die
-  // Datenbank. forceFunctionRegion erzwingt Frankfurt (Rechenzentrum in der EU).
-  const antwort=await busyFetch(SUPABASE_URL+'/functions/v1/route-km-geo?forceFunctionRegion=eu-central-1',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      apikey:SUPABASE_KEY,
-      Authorization:'Bearer '+session.access_token
-    },
-    body:JSON.stringify({adressen})
-  });
-
-  let ergebnis={};
-  try{ergebnis=await antwort.json();}catch(e){}
-
-  if(!antwort.ok||!Number.isFinite(ergebnis.km)){
-    throw new Error(ergebnis.fehler||'Kilometer konnten nicht berechnet werden.');
-  }
-
+  // Auf dem Gerät mit dem Kartenpaket – es wird nichts übertragen
+  const paket=await kartenpaketFuerBerechnung();
+  const ergebnis=await kmHelferAuftrag({typ:'route',paket,adressen});
   letzteRoute={schluessel,ergebnis};
   return ergebnis;
 }
 
-/* ---------- Hinweis vor Diensten, an die Adressen gehen ---------- */
-const DIENSTE={
-  route:{titel:'Kilometer berechnen',text:
-    '<p>Für die Berechnung werden die <strong>Start-, Zwischen- und Zieladressen</strong> (ohne Namen, ohne Fahrtzweck) über einen Hilfsdienst von QA in Frankfurt an den Routendienst <strong>Geoapify</strong> (KEPTAGO Ltd., Zypern; Verarbeitung in der EU) gesendet. Die Adressen sind dabei <strong>nicht verschlüsselt</strong>. Laut Anbieter werden Anfragen in der Regel nach 24 Stunden gelöscht.</p>'+
-    '<p>Adressen von Klient*innen sind personenbezogene Daten. Fahre nur fort, wenn das mit deinen Klient*innen und Auftraggebern vereinbar ist. Sonst brich ab und trage die Kilometer selbst ein.</p>'},
-  karte:{titel:'Karte anzeigen',text:
-    '<p>Für die Karte werden zuerst die <strong>Adressen</strong> wie bei der Kilometerberechnung an <strong>Geoapify</strong> gesendet, unverschlüsselt und ohne Namen.</p>'+
-    '<p>Dann lädt dein Gerät Kartenteile von <strong>OpenStreetMap</strong>. Dabei erfährt der Kartendienst deine <strong>IP-Adresse</strong> und den angezeigten <strong>Kartenausschnitt</strong>.</p>'}
-};
-function dienstSchluessel(art){return 'qa-dienst-'+art+'-'+((typeof user!=='undefined'&&user&&user.id)||'')}
-function dienstEinstellung(art){
-  try{return localStorage.getItem(dienstSchluessel(art))||''}catch(e){return ''}
-}
-function dienstEinstellungSetzen(art,wert){
-  try{
-    if(wert)localStorage.setItem(dienstSchluessel(art),wert);
-    else localStorage.removeItem(dienstSchluessel(art));
-  }catch(e){/* nicht schlimm */}
-}
 function dienstEinstellungenZeigen(){
-  [['route','dienstSetRoute'],['karte','dienstSetKarte']]
-    .forEach(([art,id])=>{$(id).value=dienstEinstellung(art)});
   $('kmModusSelect').value=kmModus();
-  // Der Bereich zu externen Diensten nur, wenn sie überhaupt benutzt werden
-  $('dienstBereich').classList.toggle('hidden',!['strasse','hausnummer'].includes(kmModus()));
 }
 $('kmModusSelect').onchange=()=>{
-  const wahl=$('kmModusSelect').value;
-  if(wahl==='geraet'){
-    kmWegSetzen('geraet');
-  }else if(wahl==='aus'){
-    kmWegSetzen('aus');
-    ['route','karte'].forEach(art=>dienstEinstellungSetzen(art,'gesperrt'));
-  }else{
-    kmWegSetzen('dienst');
-    // Sperren aufheben (Rückfrage vor jeder Übertragung bleibt)
-    ['route','karte'].forEach(art=>{
-      if(dienstEinstellung(art)==='gesperrt')dienstEinstellungSetzen(art,'');
-    });
-    adressGenauigkeitSetzen(wahl);
-  }
+  kmWegSetzen($('kmModusSelect').value==='aus'?'aus':'geraet');
   dienstEinstellungenZeigen();
   kmModusAnwenden();
   kartenpaketeZeigen();
 };
-[['route','dienstSetRoute'],['karte','dienstSetKarte']]
-  .forEach(([art,id])=>{$(id).onchange=()=>dienstEinstellungSetzen(art,$(id).value)});
 
 /* ---------- Sicherheitshinweise zum Wegklicken (nur auf diesem Gerät) ----------
    Stufe 0: angezeigt; Wegklicken → beim nächsten Öffnen wieder da (Stufe 1).
@@ -6069,47 +5950,11 @@ function alleSicherheitshinweiseZuruecksetzen(){
       .filter(k=>k.startsWith(SICH_HINWEIS_PRAEFIX)&&k.endsWith(ende))
       .forEach(k=>localStorage.removeItem(k));
   }catch(e){}
-  // „Nicht mehr fragen“ aufheben; gesperrte Dienste bleiben gesperrt
-  ['route','karte','google'].forEach(art=>{
-    if(dienstEinstellung(art)==='immer')dienstEinstellungSetzen(art,'');
-  });
   dienstEinstellungenZeigen();
   toast('Alle Sicherheitshinweise werden wieder angezeigt.');
 }
 $('hinweiseZuruecksetzen').onclick=alleSicherheitshinweiseZuruecksetzen;
 
-// Gibt true zurück, wenn die Funktion benutzt werden darf (nach Rückfrage oder Voreinstellung).
-function dienstErlaubt(art){
-  const gesperrt='Das ist auf diesem Gerät gesperrt (Einstellungen → Dieses Gerät → Dienste mit Adressübertragung).';
-  if(dienstEinstellung(art)==='gesperrt'||(art==='karte'&&dienstEinstellung('route')==='gesperrt')){
-    toast(gesperrt);
-    return Promise.resolve(false);
-  }
-  if(dienstEinstellung(art)==='immer')return Promise.resolve(true);
-  return new Promise(ok=>{
-    let erledigt=false;
-    const fertig=ja=>{
-      if(erledigt)return;
-      erledigt=true;
-      if(ja&&$('dienstMerken').checked)dienstEinstellungSetzen(art,'immer');
-      if($('dienstDialog').open)$('dienstDialog').close();
-      ok(ja);
-    };
-    $('dienstTitel').textContent=DIENSTE[art].titel;
-    $('dienstText').innerHTML=DIENSTE[art].text+
-      '<p><strong>Hausnummern:</strong> '+
-      (adressGenauigkeit()==='strasse'
-        ? 'werden nicht übertragen (nur Straße und Ort). Das lässt sich unter Einstellungen → Dieses Gerät ändern.'
-        : 'werden mit übertragen. Unter Einstellungen → Dieses Gerät kannst du auf „Nur Straße und Ort“ umstellen.')+
-      '</p>';
-    $('dienstMerken').checked=false;
-    $('dienstJa').onclick=()=>fertig(true);
-    $('dienstNein').onclick=()=>fertig(false);
-    $('dienstZu').onclick=()=>fertig(false);
-    $('dienstDialog').onclose=()=>fertig(false);
-    $('dienstDialog').showModal();
-  });
-}
 
 async function kilometerBerechnen(){
   const knopf=$('tripKmBerechnen');
@@ -6120,8 +5965,6 @@ async function kilometerBerechnen(){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
-  // Rückfrage nur, wenn Adressen das Gerät verlassen würden
-  if(kmModus()!=='geraet'&&!(await dienstErlaubt('route')))return;
 
   const vorher=$('tripKilometers').value.trim();
 
@@ -9055,7 +8898,7 @@ function leafletLaden(){
   return leafletGeladen;
 }
 
-// Entschlüsselt die Streckenlinie (Polyline, 5 Stellen; kommt von route-km-geo)
+// Entschlüsselt die Streckenlinie (Polyline, 5 Stellen; kommt von km-geraet.js)
 function linieEntschluesseln(text){
   const punkte=[];
   let i=0,lat=0,lon=0;
@@ -9167,8 +9010,6 @@ async function karteZeigen(){
     toast('Bitte zuerst Start- und Zieladresse eintragen.');
     return;
   }
-  const aufGeraet=kmModus()==='geraet';
-  if(!aufGeraet&&!(await dienstErlaubt('karte')))return;
 
   knopf.disabled=true;
   knopf.textContent='Lädt …';
@@ -9177,24 +9018,14 @@ async function karteZeigen(){
     const [ergebnis]=await Promise.all([routeAbfragen(adressen),leafletLaden()]);
 
     $('kartenTitel').textContent=formatKm(ergebnis.km)+' km';
-    $('karteQuelle').innerHTML=aufGeraet
-      ? 'Strecke und Straßen auf diesem Gerät berechnet – nichts wurde übertragen'
-      : 'Strecke: <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Powered by Geoapify</a>';
-    $('karte').classList.toggle('karte-geraet',aufGeraet);
+    $('karte').classList.add('karte-geraet');
     $('kartenDialog').showModal();
 
     if(kartenObjekt){kartenObjekt.remove();kartenObjekt=null;}
 
-    kartenObjekt=L.map('karte',aufGeraet?{preferCanvas:true}:{});
-    if(aufGeraet){
-      // Keine Kartenbilder von fremden Servern: Straßen aus dem Kartenpaket zeichnen
-      karteStrassenZeichnen(kartenObjekt);
-    }else{
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        maxZoom:19,
-        attribution:'© OpenStreetMap'
-      }).addTo(kartenObjekt);
-    }
+    kartenObjekt=L.map('karte',{preferCanvas:true,maxZoom:19});
+    // Keine Kartenbilder von fremden Servern: Stadtplan aus dem Kartenpaket zeichnen
+    karteStrassenZeichnen(kartenObjekt);
 
     const linie=ergebnis.linie?linieEntschluesseln(ergebnis.linie):[];
     const koordinaten=ergebnis.koordinaten||[];

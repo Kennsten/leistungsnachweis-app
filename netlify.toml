@@ -32,13 +32,13 @@
 # Sicherheits-Kopfzeilen für die ganze App.
 # - Die Seite darf nicht in fremde Seiten eingebettet werden (Clickjacking).
 # - Verbindungen gehen nur an den eigenen Server, Supabase (Frankfurt) und pCloud.
-# - Skripte und Bilder nur von der eigenen Adresse (Karten-Kacheln von OpenStreetMap).
+# - Skripte und Bilder nur von der eigenen Adresse (die Karte zeichnet die App selbst).
 # 'unsafe-inline' bei Skripten ist nötig, weil die Seiten noch eingebaute Skripte
 # enthalten; 'wasm-unsafe-eval' braucht die Passwort-Ableitung (Argon2).
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.pcloud.com; font-src 'self' data:; connect-src 'self' blob: data: https://luizzjsxufsezgpjypwx.supabase.co wss://luizzjsxufsezgpjypwx.supabase.co https://*.pcloud.com; media-src 'self' blob: data:; object-src 'self' blob:; frame-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.pcloud.com; font-src 'self' data:; connect-src 'self' blob: data: https://luizzjsxufsezgpjypwx.supabase.co wss://luizzjsxufsezgpjypwx.supabase.co https://*.pcloud.com; media-src 'self' blob: data:; object-src 'self' blob:; frame-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"

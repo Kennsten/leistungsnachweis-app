@@ -5,7 +5,9 @@
 # karten/ dieses Zweigs. Netlify veröffentlicht es danach automatisch mit.
 #
 # Starten: GitHub → Actions → „Kartenpaket bauen“ → „Run workflow“ → Zweig wählen.
-# Läuft außerdem von selbst, wenn sich das Bauprogramm im Zweig vorschau-km-offline ändert.
+# Läuft außerdem von selbst, wenn sich das Bauprogramm (werkzeuge/kartenpaket/)
+# im Zweig produkt oder vorschau-km-offline ändert. Zum Auffrischen genügt es,
+# in werkzeuge/kartenpaket/STAND.txt das Datum zu ändern.
 # Empfehlung: alle 3 bis 6 Monate neu bauen, damit neue Straßen und Adressen drin sind.
 
 name: Kartenpaket bauen
@@ -13,7 +15,7 @@ name: Kartenpaket bauen
 on:
   workflow_dispatch:
   push:
-    branches: [vorschau-km-offline]
+    branches: [produkt, vorschau-km-offline]
     paths:
       - 'werkzeuge/kartenpaket/**'
       - '.github/workflows/kartenpaket.yml'
