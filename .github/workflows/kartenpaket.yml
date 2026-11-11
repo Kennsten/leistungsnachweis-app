@@ -6,7 +6,7 @@
 #
 # Starten: GitHub → Actions → „Kartenpaket bauen“ → „Run workflow“ → Zweig wählen.
 # Läuft außerdem von selbst, wenn sich das Bauprogramm (werkzeuge/kartenpaket/)
-# im Zweig produkt oder vorschau-km-offline ändert. Zum Auffrischen genügt es,
+# im Zweig produkt ändert. Zum Auffrischen genügt es,
 # in werkzeuge/kartenpaket/STAND.txt das Datum zu ändern.
 # Empfehlung: alle 3 bis 6 Monate neu bauen, damit neue Straßen und Adressen drin sind.
 
@@ -15,7 +15,7 @@ name: Kartenpaket bauen
 on:
   workflow_dispatch:
   push:
-    branches: [produkt, vorschau-km-offline]
+    branches: [produkt]
     paths:
       - 'werkzeuge/kartenpaket/**'
       - '.github/workflows/kartenpaket.yml'
@@ -53,6 +53,7 @@ jobs:
         run: |
           python3 werkzeuge/kartenpaket/bauen.py \
             --name region-hannover --titel "Hannover und Region Hannover" \
+            --beschreibung "Straßen, Adressen, Geschäfte und Karte für die Stadt Hannover und alle Orte der Region Hannover (mit etwa 5–10 km Rand)" \
             --grenzen 52.10,9.25,52.75,10.35 \
             /tmp/osm/niedersachsen.osm.pbf
           ls -la karten

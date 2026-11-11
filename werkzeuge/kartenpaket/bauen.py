@@ -683,6 +683,7 @@ def main():
     p.add_argument('dateien', nargs='+', help='OpenStreetMap-Dateien (*.osm.pbf)')
     p.add_argument('--name', required=True, help='kurzer Name, z. B. niedersachsen')
     p.add_argument('--titel', required=True, help='Anzeigename, z. B. "Niedersachsen und Bremen"')
+    p.add_argument('--beschreibung', default='', help='Gebiet in Worten, z. B. "Hannover und Region Hannover mit etwa 5–10 km Rand"')
     p.add_argument('--grenzen', help='nur Ausschnitt: Süd,West,Nord,Ost in Grad, z. B. 52.10,9.25,52.75,10.35')
     p.add_argument('--ziel', default=os.path.join(os.path.dirname(__file__), '..', '..', 'karten'))
     a = p.parse_args()
@@ -712,6 +713,9 @@ def main():
         'name': a.name,
         'titel': a.titel,
         'stand': datetime.date.today().isoformat(),
+        # Genauer Zeitpunkt des Baus: daran erkennt die App neuere Fassungen
+        'gebaut': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'beschreibung': a.beschreibung,
         'version': 1,
         'dateien': {'strassen': netz_datei, 'adressen': adr_datei, 'karte': karte_datei},
         'bytes': groesse(netz_datei) + groesse(adr_datei) + groesse(karte_datei),

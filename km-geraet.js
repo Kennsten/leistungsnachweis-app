@@ -728,16 +728,17 @@ async function status(){
   const ergebnis=[];
   for(const p of liste){
     const gespeichert=await c.match(ORDNER+p.dateien.strassen)&&await c.match(ORDNER+p.dateien.adressen);
-    let stand=null;
+    let stand=null,gebaut='',vollstaendig=true;
     if(gespeichert){
       const info=await c.match(ORDNER+p.name+'.info');
-      if(info)stand=(await info.json()).stand;
+      if(info){const i=await info.json();stand=i.stand;gebaut=i.gebaut||i.stand||'';}
       // Fehlt ein Teil (z. B. das Kartenbild aus einer früheren Fassung), gilt das Paket als veraltet
       for(const d of Object.values(p.dateien)){
-        if(!(await c.match(ORDNER+d))){stand='';break;}
+        if(!(await c.match(ORDNER+d))){vollstaendig=false;break;}
       }
     }
-    ergebnis.push({...p,gespeichert:Boolean(gespeichert),gespeichertStand:stand});
+    const neuer=Boolean(gespeichert)&&(!vollstaendig||String(p.gebaut||p.stand)>String(gebaut));
+    ergebnis.push({...p,gespeichert:Boolean(gespeichert),gespeichertStand:stand,neuer});
   }
   return ergebnis;
 }
@@ -761,7 +762,7 @@ async function herunterladen(name,melden){
     }
     await c.put(ORDNER+datei,new Response(new Blob(teile),{headers:{'Content-Type':'application/octet-stream'}}));
   }
-  await c.put(ORDNER+p.name+'.info',new Response(JSON.stringify({stand:p.stand,titel:p.titel}),{headers:{'Content-Type':'application/json'}}));
+  await c.put(ORDNER+p.name+'.info',new Response(JSON.stringify({stand:p.stand,gebaut:p.gebaut||p.stand,titel:p.titel}),{headers:{'Content-Type':'application/json'}}));
   await c.put(ORDNER+'pakete.json',new Response(JSON.stringify({pakete:liste}),{headers:{'Content-Type':'application/json'}}));
   geladen.delete(name);
   melden(100);

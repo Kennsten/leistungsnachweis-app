@@ -1868,6 +1868,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <section id="app" class="wrap hidden">
   <div id="installLeiste" class="install-leiste hidden"></div>
   <div id="cloudBand" class="install-leiste hidden"></div>
+  <div id="kartenBand" class="install-leiste hidden"></div>
   <div class="card top">
     <div>
       <div class="muted hidden" id="kopfName"></div>
@@ -2547,10 +2548,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
     <span id="tripKmHinweis" class="feld-hinweis"></span>
     <span id="tripKmDatenschutz" class="feld-hinweis"></span>
-    <div id="tripKmPaketFehlt" class="sich-hinweis hidden">
-      <p><strong>Kartenpaket fehlt:</strong> Damit die Kilometer auf diesem Gerät berechnet werden können – ohne dass Adressen das Gerät verlassen –, muss einmalig das Kartenpaket (ca. 5 MB) geladen werden.</p>
-      <div class="fenster-aktionen"><button type="button" id="tripKmPaketLaden" class="secondary">Kartenpaket laden</button></div>
-    </div>
+    <div id="tripKmPaket" class="sich-hinweis hidden"></div>
   </div>
 
   <details class="span2 tacho-block" id="tripTachoBox">
@@ -3628,7 +3626,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.37 Verkaufsversion';
+const APP_VERSION='0.24.38 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -3844,6 +3842,8 @@ function esc(v=''){
 function showApp(on){
   $('auth').classList.toggle('hidden',on);
   $('app').classList.toggle('hidden',!on);
+  // Kartenpaket prüfen (fehlt es, gibt es eine neuere Fassung?)
+  if(on)setTimeout(()=>{if(typeof kmPaketePruefen==='function')kmPaketePruefen(true)},1500);
 }
 
 function formatDate(value){
@@ -5741,8 +5741,7 @@ function kmModusAnwenden(){
   const hinweis=$('tripKmDatenschutz');
   if(!knoepfe||!hinweis)return;
   knoepfe.classList.toggle('hidden',modus==='aus');
-  const fehlt=$('tripKmPaketFehlt');
-  if(fehlt)fehlt.classList.toggle('hidden',!(modus==='geraet'&&!kmPaketName()));
+  kmPaketHinweisZeichnen();
   hinweis.textContent=
     modus==='aus'
       ? 'Die automatische Berechnung ist auf diesem Gerät ausgeschaltet. Bitte die Kilometer von Hand eintragen.'
@@ -5823,13 +5822,14 @@ async function kartenpaketeZeigen(){
   const gewaehlt=kmPaketName();
   ziel.innerHTML=liste.map(p=>{
     const aktiv=p.gespeichert&&p.name===gewaehlt;
-    const neuer=p.gespeichert&&(!p.gespeichertStand||p.gespeichertStand<p.stand);
+    const neuer=p.neuer;
     return '<div class="km-paket'+(aktiv?' aktiv':'')+'" data-name="'+esc(p.name)+'">'+
       '<div class="km-paket-text"><strong>'+esc(p.titel)+'</strong><br>'+
+      (p.beschreibung?'<span class="muted small">'+esc(p.beschreibung)+'</span><br>':'')+
       '<span class="muted small">'+
         (p.gespeichert
           ? 'Auf diesem Gerät gespeichert (Stand '+esc(formatDate(p.gespeichertStand||p.stand))+')'+(aktiv?' · wird benutzt':'')+
-            (neuer?' · neuere Fassung vom '+esc(formatDate(p.stand))+' verfügbar':'')
+            (neuer?' · neuere Fassung vom '+esc(formatDate(p.stand))+' verfügbar ('+mbText(p.bytes)+')':'')
           : 'Nicht gespeichert · '+mbText(p.bytes)+' · Stand '+esc(formatDate(p.stand)))+
       '</span><span class="km-paket-fortschritt muted small"></span></div>'+
       '<div class="km-paket-knoepfe">'+
@@ -5844,18 +5844,8 @@ async function kartenpaketeZeigen(){
     const name=zeile.dataset.name;
     const laden=zeile.querySelector('.km-paket-laden');
     if(laden)laden.onclick=async()=>{
-      const anzeige=zeile.querySelector('.km-paket-fortschritt');
       ziel.querySelectorAll('button').forEach(k=>k.disabled=true);
-      anzeige.textContent=' · wird geladen …';
-      try{
-        await kmHelferAuftrag({typ:'herunterladen',paket:name},f=>{anzeige.textContent=' · wird geladen: '+f+' %'});
-        kmPaketNameSetzen(name);
-        letzteRoute=null;
-        kmModusAnwenden();
-        toast('Kartenpaket gespeichert. Kilometer werden jetzt auf dem Gerät berechnet.');
-      }catch(e){
-        toast('Herunterladen fehlgeschlagen: '+e.message);
-      }
+      await kartenpaketLaden(name,zeile.querySelector('.km-paket-fortschritt'));
       kartenpaketeZeigen();
     };
     const waehlen=zeile.querySelector('.km-paket-waehlen');
@@ -5866,10 +5856,145 @@ async function kartenpaketeZeigen(){
       await kmHelferAuftrag({typ:'loeschen',paket:name}).catch(()=>{});
       if(kmPaketName()===name)kmPaketNameSetzen('');
       letzteRoute=null;
+      await kmPaketePruefen(true);
       kartenpaketeZeigen();
     };
   });
 }
+
+/* ---------- Kartenpaket: regelmäßig auf Updates prüfen, Hinweise, Herunterladen ----------
+   Geprüft wird nur die kleine Liste karten/pakete.json auf der eigenen App-Adresse
+   (dabei wird nichts übertragen): beim Start, beim Öffnen des Fahrt-Fensters
+   (höchstens stündlich) und alle 6 Stunden, solange die App offen ist. */
+let kmPaketeStatus=null,kmPaketeGeprueft=0,kmPaketePruefung=null;
+async function kmPaketePruefen(erzwingen){
+  if(kmModus()!=='geraet')return null;
+  if(!erzwingen&&kmPaketeStatus&&Date.now()-kmPaketeGeprueft<3600e3)return kmPaketeStatus;
+  if(kmPaketePruefung)return kmPaketePruefung;
+  kmPaketePruefung=kmHelferAuftrag({typ:'status'})
+    .then(liste=>{
+      kmPaketeStatus=liste||[];kmPaketeGeprueft=Date.now();
+      const gespeichert=kmPaketeStatus.filter(p=>p.gespeichert);
+      if(!kmPaketName()&&gespeichert.length===1)kmPaketNameSetzen(gespeichert[0].name);
+      kmPaketHinweisZeichnen();kartenBandZeichnen();
+      return kmPaketeStatus;
+    })
+    .catch(()=>kmPaketeStatus)
+    .finally(()=>{kmPaketePruefung=null});
+  return kmPaketePruefung;
+}
+// Das Paket, um das es gerade geht: das benutzte, sonst das erste angebotene
+function kmPaketAktuell(){
+  const liste=kmPaketeStatus||[];
+  return liste.find(p=>p.name===kmPaketName())||liste.find(p=>p.gespeichert)||liste[0]||null;
+}
+function kmPaketBeschreibung(p){
+  return '„'+esc(p.titel)+'“ – '+esc(p.beschreibung||'Straßen, Adressen und Karte')+
+    '. Größe ca. <strong>'+mbText(p.bytes)+'</strong>, Stand '+esc(formatDate(p.stand))+'.';
+}
+// Später erinnern: bis zur nächsten neuen Fassung bzw. bis morgen
+function kmUpdateSpaeter(p){try{localStorage.setItem('qa-kartenpaket-spaeter',(p.gebaut||p.stand)+'|'+todayIso())}catch(e){}}
+function kmUpdateZurueckgestellt(p){
+  try{
+    const [g,tag]=(localStorage.getItem('qa-kartenpaket-spaeter')||'').split('|');
+    return g===(p.gebaut||p.stand)&&tag===todayIso();
+  }catch(e){return false}
+}
+
+// Lädt ein Paket herunter und zeigt den Fortschritt im übergebenen Element
+async function kartenpaketLaden(name,anzeige){
+  if(anzeige)anzeige.textContent=' · wird geladen …';
+  try{
+    await kmHelferAuftrag({typ:'herunterladen',paket:name},f=>{if(anzeige)anzeige.textContent=' · wird geladen: '+f+' %'});
+    kmPaketNameSetzen(name);
+    letzteRoute=null;
+    toast('Kartenpaket gespeichert. Kilometer und Karte werden auf diesem Gerät berechnet.');
+    await kmPaketePruefen(true);
+    kmModusAnwenden();
+    return true;
+  }catch(e){
+    if(anzeige)anzeige.textContent='';
+    toast('Herunterladen fehlgeschlagen: '+e.message);
+    return false;
+  }
+}
+
+// Kasten im Fahrt-Fenster: Paket fehlt → herunterladen; neuere Fassung → aktualisieren
+function kmPaketHinweisZeichnen(){
+  const box=$('tripKmPaket');
+  if(!box)return;
+  if(kmModus()!=='geraet'){box.classList.add('hidden');return}
+  if(!kmPaketeStatus||Date.now()-kmPaketeGeprueft>3600e3)kmPaketePruefen();
+  const p=kmPaketAktuell();
+  const fehlt=!kmPaketName()||(p&&p.name===kmPaketName()&&!p.gespeichert);
+  if(!p&&!fehlt){box.classList.add('hidden');return}
+  if(fehlt){
+    box.innerHTML=
+      '<p><strong>Kartenpaket fehlt.</strong> Damit Kilometer und Karte auf diesem Gerät berechnet werden – ohne dass Adressen das Gerät verlassen –, wird einmalig das Kartenpaket gebraucht.</p>'+
+      (p?'<p class="small">'+kmPaketBeschreibung(p)+' Am besten im WLAN laden.</p>':'<p class="small">Die Liste der Kartenpakete wird gerade geprüft …</p>')+
+      (p?'<div class="fenster-aktionen"><button type="button" class="secondary" data-km-paket="laden">Kartenpaket herunterladen ('+mbText(p.bytes)+')</button>'+
+        '<span class="km-paket-fortschritt muted small"></span></div>':'');
+  }else if(p.neuer){
+    box.innerHTML=
+      '<p><strong>Neue Kartendaten verfügbar.</strong> Neue Straßen, Adressen und Geschäfte aus OpenStreetMap.</p>'+
+      '<p class="small">'+kmPaketBeschreibung(p)+' Dein Paket: Stand '+esc(formatDate(p.gespeichertStand||''))+'.</p>'+
+      '<div class="fenster-aktionen"><button type="button" class="secondary" data-km-paket="laden">Jetzt aktualisieren ('+mbText(p.bytes)+')</button>'+
+      '<span class="km-paket-fortschritt muted small"></span></div>';
+  }else{
+    box.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+  const knopf=box.querySelector('[data-km-paket="laden"]');
+  if(knopf)knopf.onclick=async()=>{
+    knopf.disabled=true;
+    await kartenpaketLaden(p.name,box.querySelector('.km-paket-fortschritt'));
+    knopf.disabled=false;
+  };
+}
+
+// Hinweisleiste oben in der App (wie bei pCloud)
+function kartenBandZeichnen(){
+  const band=$('kartenBand');
+  if(!band)return;
+  let zu=false;
+  try{zu=sessionStorage.getItem('qa-kartenband-zu')==='1'}catch(e){}
+  const p=kmPaketAktuell();
+  if(zu||kmModus()!=='geraet'||!p){band.classList.add('hidden');return}
+  const fehlt=!kmPaketName();
+  if(!fehlt&&!(p.neuer&&!kmUpdateZurueckgestellt(p))){band.classList.add('hidden');return}
+  band.innerHTML=
+    '<span>'+(fehlt
+      ? 'Für die Kilometer-Berechnung fehlt noch das Kartenpaket „'+esc(p.titel)+'“ ('+mbText(p.bytes)+').'
+      : 'Neue Kartendaten verfügbar: „'+esc(p.titel)+'“, Stand '+esc(formatDate(p.stand))+' ('+mbText(p.bytes)+').')+
+    ' <span class="km-paket-fortschritt"></span></span>'+
+    '<span class="install-leiste-knoepfe">'+
+    '<button type="button" class="abgleich-knopf" data-karten-band="laden">'+(fehlt?'Herunterladen':'Aktualisieren')+'</button>'+
+    (fehlt?'':'<button type="button" class="abgleich-knopf" data-karten-band="spaeter">Später</button>')+
+    '<button type="button" class="abgleich-knopf" data-karten-band="zu" aria-label="Hinweis ausblenden">✕</button></span>';
+  band.classList.remove('hidden');
+}
+$('kartenBand').addEventListener('click',async e=>{
+  const knopf=e.target.closest('[data-karten-band]');
+  if(!knopf)return;
+  const p=kmPaketAktuell();
+  const art=knopf.dataset.kartenBand;
+  if(art==='laden'&&p){
+    knopf.disabled=true;
+    if(await kartenpaketLaden(p.name,$('kartenBand').querySelector('.km-paket-fortschritt')))kartenBandZeichnen();
+    knopf.disabled=false;
+  }else if(art==='spaeter'&&p){
+    kmUpdateSpaeter(p);kartenBandZeichnen();
+  }else{
+    try{sessionStorage.setItem('qa-kartenband-zu','1')}catch(err){}
+    kartenBandZeichnen();
+  }
+});
+// Regelmäßig prüfen: alle 6 Stunden und beim Zurückkehren in die App (höchstens stündlich)
+setInterval(()=>{if(typeof user!=='undefined'&&user)kmPaketePruefen(true)},6*3600e3);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&typeof user!=='undefined'&&user)kmPaketePruefen();
+});
 
 // Letzte Berechnung merken, damit die Karte nicht erneut abfragen muss
 let letzteRoute=null;
@@ -8859,11 +8984,6 @@ $('tripStopovers').onblur=()=>{
 
 
 $('tripKmBerechnen').onclick=kilometerBerechnen;
-// Aus dem Fahrt-Formular direkt zum Kartenpaket (Einstellungen → Dieses Gerät)
-$('tripKmPaketLaden').onclick=()=>{
-  einstellungenOeffnen(false,'geraet');
-  $('settingsDialog').addEventListener('close',kmModusAnwenden,{once:true});
-};
 $('tripTachoStart').oninput=()=>{
   $('tripTachoHinweis').dataset.vorschlag='';
   tachoHinweisZeigen();
