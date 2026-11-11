@@ -2317,7 +2317,10 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         <select id="approvalLeistungstraegerTyp" required>
           <option value="">Bitte auswählen</option>
           <option value="LH Hannover">LH Hannover</option>
-          <option value="Region Hannover">Region Hannover</option>
+          <option value="Region Hannover Nord">Region Hannover – Nord</option>
+          <option value="Region Hannover Süd">Region Hannover – Süd</option>
+          <option value="Region Hannover Ost">Region Hannover – Ost</option>
+          <option value="Region Hannover West">Region Hannover – West</option>
           <option value="Sonstiger Leistungsträger">Sonstiger Leistungsträger</option>
         </select>
       </label>
@@ -3644,7 +3647,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.41 Verkaufsversion';
+const APP_VERSION='0.24.42 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -7750,6 +7753,15 @@ function openApprovalForm(id=''){
   $('approvalJahrBeginn').value=a.bewilligungsjahr_beginn||'';
   $('approvalStunden').value=a.stundenkontingent??'';
   $('approvalWochenFls').value=a.wochen_fls??'';
+  // Ältere Bewilligung „Region Hannover“ ohne Bereich: Eintrag nur dann einfügen
+  // (Safari zeigt versteckte Einträge trotzdem an). Beim Speichern muss ein Bereich gewählt werden.
+  const altEintrag=$('approvalTypRegionAlt');
+  if(altEintrag)altEintrag.remove();
+  if(a.leistungstraeger_typ==='Region Hannover'){
+    const o=document.createElement('option');
+    o.id='approvalTypRegionAlt';o.value='Region Hannover';o.textContent='Region Hannover (Bereich bitte wählen)';
+    $('approvalLeistungstraegerTyp').appendChild(o);
+  }
   $('approvalLeistungstraegerTyp').value=a.leistungstraeger_typ||'';
   $('approvalLeistungstraegerName').value=a.leistungstraeger_name||'';
   $('approvalAnsprechpartner').value=a.ansprechpartner||'';
@@ -10306,6 +10318,7 @@ $('approvalForm').onsubmit=async e=>{
   if(row.ende&&row.ende<row.beginn){toast('Das Enddatum darf nicht vor dem Beginn liegen.');return}
   if(!type){toast('Bitte einen Leistungsträger auswählen.');return}
   if(type==='Sonstiger Leistungsträger'&&!name){toast('Bitte den sonstigen Leistungsträger eintragen.');return}
+  if(type==='Region Hannover'){toast('Bitte bei der Region Hannover den Bereich wählen: Nord, Süd, Ost oder West.');$('approvalLeistungstraegerTyp').focus();return}
   const speichern=z=>id
     ? Daten.from('bewilligungen').update(z).eq('id',id).select('id,client_id').single()
     : Daten.from('bewilligungen').insert(z).select('id,client_id').single();

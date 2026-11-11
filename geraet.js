@@ -226,7 +226,8 @@
       ['bewilligungen_fls_halbjahr_1_check', (z) => leer(z.fls_halbjahr_1) || z.fls_halbjahr_1 >= 0],
       ['bewilligungen_fls_halbjahr_2_check', (z) => leer(z.fls_halbjahr_2) || z.fls_halbjahr_2 >= 0],
       ['bewilligungen_leistungstraeger_typ_check', (z) => leer(z.leistungstraeger_typ) ||
-        ['LH Hannover', 'Region Hannover', 'Sonstiger Leistungsträger'].includes(z.leistungstraeger_typ)],
+        ['LH Hannover', 'Region Hannover', 'Region Hannover Nord', 'Region Hannover Süd',
+          'Region Hannover Ost', 'Region Hannover West', 'Sonstiger Leistungsträger'].includes(z.leistungstraeger_typ)],
       ['bewilligungen_stundenkontingent_check', (z) => leer(z.stundenkontingent) || z.stundenkontingent >= 0],
       ['bewilligungen_wochen_fls_check', (z) => leer(z.wochen_fls) || z.wochen_fls >= 0]
     ],
