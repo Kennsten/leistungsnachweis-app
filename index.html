@@ -181,6 +181,17 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .karte-via{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--via-farbe,#C85A3E);box-shadow:0 1px 4px rgba(0,0,0,.4);box-sizing:border-box}
 .karte-tipp{margin:8px 0 0}
 .karte-etappen{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
+.konto-liste{margin:4px 0 10px;padding-left:1.2em;font-size:.9rem;line-height:1.45}
+.konto-liste li{margin:3px 0}
+.passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
+.passwort-regeln li::before{content:"○ ";color:var(--muted)}
+.passwort-regeln li.erfuellt{color:var(--brand)}
+.passwort-regeln li.erfuellt::before{content:"✓ ";color:var(--brand);font-weight:700}
+.passwort-beispiel{margin:2px 0 8px}
+.passwort-beispiel code{font-size:.95em}
+.auth-meldung{margin:8px 0;padding:10px 12px;border-radius:var(--radius-item);border:1px solid var(--line);background:var(--card);line-height:1.45}
+.auth-meldung.fehler{border-color:var(--danger);background:var(--danger-bg);color:var(--danger)}
+.auth-meldung.ok{border-color:var(--brand)}
 /* Testversion */
 .test-band{border-color:#1D4E89;background:#E8F0FA;color:#16202E}
 body.testversion #backupData.nur-voll::after,body.testversion .einst-zeile.nur-voll strong::after{content:" 🔒";font-size:.85em}
@@ -1873,7 +1884,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
     <p class="muted">Melde dich mit deinem App-Konto an.</p>
     <label>E-Mail<input id="email" type="email" autocomplete="email"></label>
-    <label>Passwort<input id="password" type="password" autocomplete="current-password"></label>
+    <label>Passwort<input id="password" type="password" autocomplete="current-password" aria-describedby="passwortRegeln"></label>
+    <ul id="passwortRegeln" class="passwort-regeln" aria-label="So muss ein neues Passwort aussehen">
+      <li id="regelLaenge" data-regel="laenge">mindestens 12 Zeichen</li>
+      <li id="regelBuchstabe" data-regel="buchstabe">mindestens ein Buchstabe</li>
+      <li id="regelZiffer" data-regel="ziffer">mindestens eine Ziffer</li>
+    </ul>
+    <p class="muted small passwort-beispiel">Gilt beim Registrieren und bei einem neuen Passwort. Beispiel: <code>Sommerwiese2026</code>. Leicht zu erratende oder bekannt gewordene Passwörter lehnt der Server ab.</p>
+    <p id="authMeldung" class="auth-meldung hidden" role="status" aria-live="polite"></p>
     <div class="actions">
       <button id="login" class="primary">Anmelden</button>
       <button id="signup" class="secondary">Registrieren</button>
@@ -2928,6 +2946,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <span class="einst-text"><strong>Testkonten verwalten</strong><small>Testzugänge freischalten, verlängern, sperren</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
+    <button type="button" class="einst-zeile" data-seite="konto" id="einstKontoZeile">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>
+      <span class="einst-text"><strong>Konto und App löschen</strong><small>Konto auflösen, Daten und App entfernen</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
     <button type="button" class="einst-zeile" id="einladenKnopf">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
       <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
@@ -2948,6 +2971,53 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <!-- Seite: Testkonten verwalten (nur Anbieter) -->
   <section class="einst-seite hidden" data-seite="verwaltung" data-titel="Testkonten verwalten">
     <div id="verwaltungInhalt"><p class="muted small">Wird geladen …</p></div>
+  </section>
+
+  <!-- Seite: Konto und App löschen -->
+  <section class="einst-seite hidden" data-seite="konto" data-titel="Konto und App löschen">
+    <p class="muted small">Hier löst du dein QA-Konto auf. Das ist <strong>endgültig</strong>: Es gibt kein Zurück und keine Wiederherstellung, auch nicht durch den Anbieter.</p>
+
+    <h3>Was gelöscht wird</h3>
+    <ul class="konto-liste">
+      <li>dein Konto bei QA: E-Mail-Adresse, Anmelde-Passwort, Tresor</li>
+      <li>alle verschlüsselten Daten auf dem Server (Klient*innen, Dokumentationen, Fahrten, Belege, Einstellungen)</li>
+      <li>alle Daten, die Kartenpakete und die gespeicherte App auf <strong>diesem</strong> Gerät</li>
+    </ul>
+    <h3>Was bleibt</h3>
+    <ul class="konto-liste">
+      <li><strong>Dateien in deiner eigenen Cloud (pCloud)</strong>: Sie gehören dir und liegen bei deinem Cloud-Anbieter. Lösche sie dort selbst, wenn du das willst. Ohne dein QA-Konto sind sie unlesbar, weil sie verschlüsselt sind.</li>
+      <li><strong>Andere Geräte</strong>: Die App dort lässt sich nach der Löschung nicht mehr anmelden. Entferne sie dort selbst (siehe unten).</li>
+      <li><strong>Ausgegebene Dateien</strong> wie Leistungsnachweise, Steuerpakete und Datensicherungen, die du gespeichert oder verschickt hast.</li>
+    </ul>
+
+    <div class="sich-hinweis">
+      <p><strong>Vorher bitte sichern.</strong> Für Leistungsnachweise, Fahrtenbuch und Belege gelten gesetzliche Aufbewahrungsfristen (steuerlich meist 6 bis 10 Jahre). Erstelle vorher ein Steuerpaket und deine Leistungsnachweise und bewahre sie auf.</p>
+      <div class="fenster-aktionen">
+        <button type="button" id="kontoSteuerpaket" class="secondary">Steuerpaket erstellen</button>
+        <button type="button" id="kontoSicherung" class="secondary nur-voll">Datensicherung erstellen</button>
+      </div>
+    </div>
+
+    <h3>Konto jetzt löschen</h3>
+    <label>Zur Bestätigung dein Anmelde-Passwort
+      <input id="kontoLoeschenPasswort" type="password" autocomplete="current-password">
+    </label>
+    <label>Zum Bestätigen das Wort <strong>LÖSCHEN</strong> eintippen
+      <input id="kontoLoeschenWort" type="text" autocomplete="off" autocapitalize="characters">
+    </label>
+    <label class="sicherung-haken"><input type="checkbox" id="kontoLoeschenHaken"> Mir ist klar, dass dies nicht rückgängig gemacht werden kann.</label>
+    <p id="kontoLoeschenMeldung" class="auth-meldung hidden" role="status"></p>
+    <div class="actions">
+      <button type="button" id="kontoLoeschenKnopf" class="kn kn-loeschen danger" disabled>Konto und alle Daten endgültig löschen</button>
+    </div>
+
+    <h3>App von diesem Gerät entfernen</h3>
+    <p class="muted small">Die Löschung leert auch den App-Speicher dieses Browsers. Das <em>Symbol</em> auf dem Home-Bildschirm kann eine Web-App nicht selbst entfernen. Das machst du so:</p>
+    <ul class="konto-liste">
+      <li><strong>iPhone und iPad:</strong> Symbol lange drücken → „App entfernen“ → „Vom Home-Bildschirm entfernen“.</li>
+      <li><strong>Android:</strong> Symbol lange drücken → „Deinstallieren“ oder „App entfernen“.</li>
+      <li><strong>Windows, Mac, Chromebook:</strong> App öffnen → Menü ⋮ oben rechts → „QA deinstallieren“ bzw. „Aus Chrome entfernen“.</li>
+    </ul>
   </section>
 
   <!-- Seite: Meine Angaben -->
@@ -3732,7 +3802,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.1 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.25.2 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -7962,9 +8032,33 @@ $('approvalBescheidLoesen').onclick=async()=>{
   await bescheidSpeichern(null);
 };
 
+// Feste Meldung auf der Anmeldeseite (bleibt stehen, im Gegensatz zur kurzen Einblendung)
+function authMeldung(text,art){
+  const m=$('authMeldung');
+  if(!m)return;
+  m.textContent=text||'';
+  m.classList.toggle('hidden',!text);
+  m.classList.toggle('fehler',art==='fehler');
+  m.classList.toggle('ok',art==='ok');
+}
+// Haken bei den Passwort-Regeln beim Tippen
+function passwortRegelnZeigen(){
+  const pw=$('password').value;
+  const ok={laenge:pw.length>=ANMELDE_PASSWORT_MIN,buchstabe:/[A-Za-zÄÖÜäöüß]/.test(pw),ziffer:/[0-9]/.test(pw)};
+  document.querySelectorAll('#passwortRegeln li').forEach(li=>li.classList.toggle('erfuellt',Boolean(ok[li.dataset.regel])));
+}
+$('password').addEventListener('input',()=>{passwortRegelnZeigen();authMeldung('')});
+$('email').addEventListener('input',()=>authMeldung(''));
+
 $('login').onclick=async()=>{
-  const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
-  if(error){toast(error.message);return}
+  const mail=$('email').value.trim();
+  if(!mail||!$('password').value){authMeldung('Bitte E-Mail und Passwort eintragen.','fehler');return}
+  authMeldung('');
+  const {error}=await sb.auth.signInWithPassword({email:mail,password:$('password').value});
+  if(error){
+    const text=anmeldeFehlerDeutsch(error);
+    authMeldung(text,'fehler');toast(text);return;
+  }
   await init();
 };
 
@@ -8019,6 +8113,12 @@ function anmeldeFehlerDeutsch(fehler){
     return 'Dieses Passwort ist zu schwach oder taucht in Listen gestohlener Passwörter auf. Bitte ein anderes wählen (mindestens '+ANMELDE_PASSWORT_MIN+' Zeichen, Buchstaben und Ziffern).';
   }
   if(/already registered|already exists/i.test(text))return 'Für diese E-Mail-Adresse gibt es schon ein Konto.';
+  if(/invalid login credentials/i.test(text)){
+    return 'E-Mail oder Passwort stimmt nicht. Mögliche Gründe: Tippfehler, das Konto gibt es nicht, oder die E-Mail wurde noch nicht bestätigt (Link in der Bestätigungs-E-Mail antippen, auch im Spam-Ordner suchen). Neu hier? Dann zuerst „Registrieren“ antippen.';
+  }
+  if(/email not confirmed/i.test(text))return 'Die E-Mail-Adresse ist noch nicht bestätigt. Bitte den Link in der Bestätigungs-E-Mail antippen (auch im Spam-Ordner nachsehen).';
+  if(/rate limit|too many/i.test(text))return 'Zu viele Versuche in kurzer Zeit. Bitte etwa eine Stunde warten und es dann noch einmal versuchen.';
+  if(/database error saving new user/i.test(text))return 'Das Konto konnte nicht angelegt werden (Fehler beim Server). Bitte später noch einmal versuchen oder beim Anbieter melden.';
   return text;
 }
 
@@ -8027,21 +8127,31 @@ $('signup').onclick=async()=>{
   const pass=$('password').value;
 
   if(!mail||!pass){
-    toast('Bitte E-Mail und Passwort eintragen.');
+    authMeldung('Bitte E-Mail und Passwort eintragen.','fehler');
     return;
   }
 
   const problem=anmeldePasswortProblem(pass);
   if(problem){
+    authMeldung(problem+' Siehe die Hinweise unter dem Passwortfeld.','fehler');
     toast(problem);
     return;
   }
 
+  authMeldung('');
   const {data,error}=await sb.auth.signUp({email:mail,password:pass});
 
-  if(error){toast(anmeldeFehlerDeutsch(error));return}
-  if(data.session){toast('Registrierung erfolgreich.');await init()}
-  else toast('Registrierung angelegt. Bitte E-Mail bestätigen.');
+  if(error){const t=anmeldeFehlerDeutsch(error);authMeldung(t,'fehler');toast(t);return}
+  // Bei schon vorhandener Adresse meldet Supabase „Erfolg“ ohne neues Konto
+  if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+    authMeldung('Für diese E-Mail-Adresse gibt es schon ein Konto. Bitte „Anmelden“ antippen, oder „Passwort vergessen“, falls du das Passwort nicht mehr weißt.','fehler');
+    return;
+  }
+  if(data.session){authMeldung('Registrierung erfolgreich.','ok');toast('Registrierung erfolgreich.');await init()}
+  else{
+    authMeldung('Fast geschafft: Wir haben eine E-Mail an '+mail+' geschickt. Bitte den Link darin antippen (auch im Spam-Ordner nachsehen). Danach hier „Anmelden“ antippen.','ok');
+    toast('Registrierung angelegt. Bitte E-Mail bestätigen.');
+  }
 };
 
 $('logout').onclick=async()=>{
@@ -12065,6 +12175,88 @@ $('geraetLeeren').onclick=async()=>{
   pcloudVerbindungVergessen();
   showApp(false);
   toast('Die Daten wurden von diesem Gerät entfernt. Du bist abgemeldet.');
+};
+
+/* ---------- Konto und App löschen (Löschung nach Art. 17 DSGVO) ----------
+   Reihenfolge: Passwort prüfen → Konto und Daten auf dem SERVER löschen (rpc
+   konto_selbst_loeschen, sql/0.32) → erst wenn das geklappt hat die Daten, Kartenpakete
+   und den App-Speicher dieses Geräts entfernen. Schlägt der Server fehl, bleibt hier alles. */
+function kontoLoeschenPruefen(){
+  const ok=$('kontoLoeschenPasswort').value.length>0&&
+    $('kontoLoeschenWort').value.trim().toUpperCase().replace('OE','Ö')==='LÖSCHEN'&&
+    $('kontoLoeschenHaken').checked;
+  $('kontoLoeschenKnopf').disabled=!ok;
+}
+['kontoLoeschenPasswort','kontoLoeschenWort'].forEach(id=>$(id).addEventListener('input',kontoLoeschenPruefen));
+$('kontoLoeschenHaken').addEventListener('change',kontoLoeschenPruefen);
+$('kontoSteuerpaket').onclick=()=>{$('settingsDialog').close();$('openSteuerpaket').click()};
+$('kontoSicherung').onclick=()=>{
+  if(typeof nurVollversion==='function'&&nurVollversion('Die automatische Datensicherung'))return;
+  $('settingsDialog').close();erstelleSicherung();
+};
+function kontoLoeschenMeldung(text,art){
+  const m=$('kontoLoeschenMeldung');
+  m.textContent=text||'';m.classList.toggle('hidden',!text);m.classList.toggle('fehler',art==='fehler');
+}
+async function appSpeicherLeeren(id){
+  // Gespeicherte Daten dieses Browsers: Kennungen des Kontos, Kartenpaket, Zwischenspeicher der App
+  try{
+    Object.keys(localStorage).filter(k=>k.includes(id)||k.startsWith('qa-kartenpaket')||k.startsWith('pcloud_'))
+      .forEach(k=>localStorage.removeItem(k));
+    sessionStorage.clear();
+  }catch(e){/* nicht schlimm */}
+  try{
+    if(window.caches){for(const n of await caches.keys())await caches.delete(n)}
+    if(navigator.serviceWorker){for(const r of await navigator.serviceWorker.getRegistrations())await r.unregister()}
+  }catch(e){/* nicht schlimm */}
+}
+$('kontoLoeschenKnopf').onclick=async()=>{
+  if(!user)return;
+  const knopf=$('kontoLoeschenKnopf');
+  if(offlineAngemeldet||navigator.onLine===false){
+    kontoLoeschenMeldung('Zum Löschen brauchst du eine Internetverbindung, denn das Konto liegt auf dem Server.','fehler');
+    return;
+  }
+  const id=user.id,mail=user.email||'';
+  let wartend=0;
+  try{if(Geraet.istOffen())await Geraet.abgleichen();wartend=await Geraet.wartendFuer(id)}catch(e){/* weiter */}
+  if(!confirm('Letzte Frage:\n\nDas Konto '+mail+' und ALLE Daten werden jetzt endgültig gelöscht.'+
+    (wartend>0?'\n\nAchtung: '+wartend+' Änderung(en) sind noch nicht abgeglichen und gehen verloren.':'')+
+    '\n\nWirklich löschen?'))return;
+  knopf.disabled=true;knopf.textContent='Wird gelöscht …';
+  kontoLoeschenMeldung('');
+  try{
+    // 1. Passwort prüfen (erneute Anmeldung)
+    const {error:pwFehler}=await sb.auth.signInWithPassword({email:mail,password:$('kontoLoeschenPasswort').value});
+    if(pwFehler)throw new Error('Das Passwort stimmt nicht.');
+    // 2. Konto und Daten auf dem Server löschen
+    const {error}=await sb.rpc('konto_selbst_loeschen');
+    if(error){
+      if(/konto_selbst_loeschen|PGRST202/.test(error.message+(error.code||'')))
+        throw new Error('Die Löschfunktion ist auf dem Server noch nicht eingerichtet. Bitte beim Anbieter melden.');
+      throw new Error(error.message);
+    }
+    // 3. Erst jetzt: dieses Gerät aufräumen
+    geraetSchliessen();
+    try{await Geraet.entfernen(id)}catch(e){/* weiter */}
+    Tresor.vergessen();
+    try{await sb.auth.signOut({scope:'local'})}catch(e){/* Konto existiert nicht mehr */}
+    await appSpeicherLeeren(id);
+    $('settingsDialog').close();
+    user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;konto=null;
+    $('list').innerHTML='';
+    pcloudVerbindungVergessen();
+    ['kontoLoeschenPasswort','kontoLoeschenWort'].forEach(i=>$(i).value='');
+    $('kontoLoeschenHaken').checked=false;kontoLoeschenPruefen();
+    showApp(false);
+    authMeldung('Dein Konto und alle Daten wurden gelöscht. Danke, dass du QA genutzt hast. Das Symbol der App auf dem Home-Bildschirm entfernst du wie in den Einstellungen beschrieben selbst.','ok');
+    $('email').value='';$('password').value='';
+  }catch(e){
+    kontoLoeschenMeldung('Nicht gelöscht: '+e.message,'fehler');
+  }finally{
+    knopf.textContent='Konto und alle Daten endgültig löschen';
+    kontoLoeschenPruefen();
+  }
 };
 
 $('tresorSperren').onclick=()=>{$('settingsDialog').close();Tresor.sperren()};
