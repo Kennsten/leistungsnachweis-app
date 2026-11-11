@@ -3732,7 +3732,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.0 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.25.1 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4638,6 +4638,10 @@ async function init(){
       return;
     }
     await loadEinstellungen();
+
+    // pCloud-Verbindung DIESES Kontos laden (nicht die eines anderen Kontos auf dem Gerät)
+    pcloudTokenLaden();
+    setTimeout(pcloudAlteVerbindungPruefen,2500);
 
     showApp(true);
     await loadPortraits();
@@ -8061,6 +8065,7 @@ $('logout').onclick=async()=>{
   geraetSchliessen();
   user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;
   $('list').innerHTML='';
+  pcloudVerbindungVergessen();
   showApp(false);
   toast('Du wurdest abgemeldet.');
   button.disabled=false;
@@ -10448,20 +10453,22 @@ $('deleteApproval').onclick=async()=>{
 /* ---------- pCloud: Dokumente ---------- */
 
 const PCLOUD_CLIENT_ID='QD8SPQBuFpL';
+/* Die pCloud-Verbindung gehört zu EINEM QA-Konto: Die Einträge im Browser tragen
+   die Konto-Kennung im Namen („pcloud_token-<Kennung>“). So übernimmt ein zweites
+   Konto auf demselben Gerät nie die Verbindung des ersten (früher lagen sie unter
+   festem Namen und blieben auch nach dem Abmelden erhalten). */
 const PCLOUD_SPEICHER='pcloud_token';
 const PCLOUD_HOST_SPEICHER='pcloud_host';
 // E-Mail des verbundenen pCloud-Kontos (nur zur Anzeige)
 const PCLOUD_KONTO_SPEICHER='pcloud_konto';
+// Zwischenablage für die Rückkehr von pCloud (Konto steht erst nach dem Start fest)
+const PCLOUD_NEU_SPEICHER='pcloud_neu';
+function pcloudSchluessel(basis){
+  return basis+'-'+((typeof user!=='undefined'&&user&&user.id)||'ohne-konto');
+}
 let pcloudKonto='';
-try{pcloudKonto=localStorage.getItem(PCLOUD_KONTO_SPEICHER)||''}catch(fehler){}
 // EU-Konten nutzen eapi.pcloud.com, US-Konten api.pcloud.com
 let PCLOUD_HOST='eapi.pcloud.com';
-
-try{
-  PCLOUD_HOST=localStorage.getItem(PCLOUD_HOST_SPEICHER)||'eapi.pcloud.com';
-}catch(fehler){
-  // Standard: EU
-}
 
 let pcloudToken=null;
 let activeCloudClient=null;
@@ -10494,13 +10501,71 @@ function cloudStartKnopfZeichnen(){
   cloudBandZeichnen();
 }
 
+// Lädt die pCloud-Verbindung des angemeldeten Kontos (ohne Anmeldung: keine)
 function pcloudTokenLaden(){
-  try{
-    pcloudToken=localStorage.getItem(PCLOUD_SPEICHER)||null;
-  }catch(fehler){
-    pcloudToken=null;
+  pcloudToken=null;pcloudKonto='';PCLOUD_HOST='eapi.pcloud.com';
+  if(typeof user!=='undefined'&&user&&user.id){
+    // Gerade von pCloud zurückgekehrt: Zugang diesem Konto zuordnen
+    try{
+      const neu=JSON.parse(sessionStorage.getItem(PCLOUD_NEU_SPEICHER)||'null');
+      if(neu&&neu.token){
+        sessionStorage.removeItem(PCLOUD_NEU_SPEICHER);
+        localStorage.setItem(pcloudSchluessel(PCLOUD_SPEICHER),neu.token);
+        localStorage.setItem(pcloudSchluessel(PCLOUD_HOST_SPEICHER),neu.host||'eapi.pcloud.com');
+        localStorage.removeItem(pcloudSchluessel(PCLOUD_KONTO_SPEICHER));
+        toast('Mit pCloud verbunden');
+        setTimeout(()=>pcloudKontoLaden().then(email=>{if(email)toast('Mit pCloud verbunden: '+email)}),300);
+      }
+    }catch(fehler){/* Zuordnung nicht möglich */}
+    try{
+      pcloudToken=localStorage.getItem(pcloudSchluessel(PCLOUD_SPEICHER))||null;
+      pcloudKonto=localStorage.getItem(pcloudSchluessel(PCLOUD_KONTO_SPEICHER))||'';
+      PCLOUD_HOST=localStorage.getItem(pcloudSchluessel(PCLOUD_HOST_SPEICHER))||'eapi.pcloud.com';
+    }catch(fehler){
+      pcloudToken=null;
+    }
   }
+  cloudAlleDateien=null;cloudFolders=[];cloudFiles=[];
   cloudStartKnopfZeichnen();
+}
+
+// Beim Abmelden: Verbindung nur aus dem Arbeitsspeicher nehmen (bleibt für das Konto gespeichert)
+function pcloudVerbindungVergessen(){
+  pcloudToken=null;pcloudKonto='';PCLOUD_HOST='eapi.pcloud.com';
+  cloudAlleDateien=null;cloudFolders=[];cloudFiles=[];activeCloudClient=null;
+  cloudStartKnopfZeichnen();
+}
+
+// Verbindung aus der Zeit vor 0.25.1 (ein Eintrag für das ganze Gerät): einmal nachfragen,
+// zu welchem Konto sie gehört – sonst würde jedes Konto auf diesem Gerät sie benutzen.
+function pcloudAlteVerbindungPruefen(){
+  if(typeof user==='undefined'||!user||!user.id)return;
+  if(typeof istTest==='function'&&istTest())return;
+  try{
+    const alt=localStorage.getItem(PCLOUD_SPEICHER);
+    if(!alt)return;
+    if(localStorage.getItem('qa-pcloud-alt-nein-'+user.id)==='1')return;
+    if(pcloudToken)return; // dieses Konto hat schon eine eigene Verbindung
+    const konto=localStorage.getItem(PCLOUD_KONTO_SPEICHER)||'';
+    const gehoert=confirm(
+      'Auf diesem Gerät ist noch eine pCloud-Verbindung aus der Zeit vor der Umstellung gespeichert'+
+      (konto?' (pCloud-Konto '+konto+')':'')+'.\n\n'+
+      'Gehört diese pCloud zu DEINEM QA-Konto'+(user.email?' ('+user.email+')':'')+'?\n\n'+
+      'OK = ja, weiter benutzen.\nAbbrechen = nein, für dieses Konto nicht verwenden.'
+    );
+    if(!gehoert){
+      localStorage.setItem('qa-pcloud-alt-nein-'+user.id,'1');
+      return;
+    }
+    localStorage.setItem(pcloudSchluessel(PCLOUD_SPEICHER),alt);
+    const host=localStorage.getItem(PCLOUD_HOST_SPEICHER);
+    if(host)localStorage.setItem(pcloudSchluessel(PCLOUD_HOST_SPEICHER),host);
+    if(konto)localStorage.setItem(pcloudSchluessel(PCLOUD_KONTO_SPEICHER),konto);
+    localStorage.removeItem(PCLOUD_SPEICHER);
+    localStorage.removeItem(PCLOUD_HOST_SPEICHER);
+    localStorage.removeItem(PCLOUD_KONTO_SPEICHER);
+    pcloudTokenLaden();
+  }catch(fehler){/* ohne Bedeutung */}
 }
 
 function pcloudTokenSpeichern(wert){
@@ -10508,10 +10573,10 @@ function pcloudTokenSpeichern(wert){
   if(!pcloudToken)pcloudKontoSpeichern('');
 
   try{
-    if(wert){
-      localStorage.setItem(PCLOUD_SPEICHER,wert);
+    if(wert&&user&&user.id){
+      localStorage.setItem(pcloudSchluessel(PCLOUD_SPEICHER),wert);
     }else{
-      localStorage.removeItem(PCLOUD_SPEICHER);
+      localStorage.removeItem(pcloudSchluessel(PCLOUD_SPEICHER));
     }
   }catch(fehler){
     // nicht speicherbar, gilt nur für diese Sitzung
@@ -10523,8 +10588,8 @@ function pcloudTokenSpeichern(wert){
 function pcloudKontoSpeichern(email){
   pcloudKonto=email||'';
   try{
-    if(pcloudKonto)localStorage.setItem(PCLOUD_KONTO_SPEICHER,pcloudKonto);
-    else localStorage.removeItem(PCLOUD_KONTO_SPEICHER);
+    if(pcloudKonto&&user&&user.id)localStorage.setItem(pcloudSchluessel(PCLOUD_KONTO_SPEICHER),pcloudKonto);
+    else localStorage.removeItem(pcloudSchluessel(PCLOUD_KONTO_SPEICHER));
   }catch(fehler){
     // nur für diese Sitzung
   }
@@ -10555,8 +10620,6 @@ function pcloudRueckkehrPruefen(){
   const token=werte.get('access_token');
 
   if(token){
-    pcloudTokenSpeichern(token);
-
     // pCloud teilt mit, in welcher Region das Konto liegt
     let host=werte.get('hostname')||'';
     const region=werte.get('locationid');
@@ -10565,12 +10628,12 @@ function pcloudRueckkehrPruefen(){
       host=region==='1'?'api.pcloud.com':'eapi.pcloud.com';
     }
 
-    PCLOUD_HOST=host;
-
+    // Wer angemeldet ist, steht erst nach dem Start fest: Zugang zwischenlegen,
+    // pcloudTokenLaden() ordnet ihn dann dem angemeldeten Konto zu.
     try{
-      localStorage.setItem(PCLOUD_HOST_SPEICHER,host);
+      sessionStorage.setItem(PCLOUD_NEU_SPEICHER,JSON.stringify({token,host}));
     }catch(fehler){
-      // nur für diese Sitzung
+      // ohne Zwischenablage geht die Verbindung nicht
     }
 
     history.replaceState(
@@ -10578,11 +10641,6 @@ function pcloudRueckkehrPruefen(){
       '',
       window.location.pathname+window.location.search
     );
-
-    toast('Mit pCloud verbunden');
-    pcloudKontoLaden().then(email=>{
-      if(email)toast('Mit pCloud verbunden: '+email);
-    });
   }
 }
 
@@ -11996,10 +12054,15 @@ $('geraetLeeren').onclick=async()=>{
     toast('Entfernen fehlgeschlagen: '+(e&&e.message?e.message:e));
     return;
   }
+  // Auch die pCloud-Verbindung dieses Kontos von diesem Gerät entfernen
+  try{
+    [PCLOUD_SPEICHER,PCLOUD_HOST_SPEICHER,PCLOUD_KONTO_SPEICHER].forEach(k=>localStorage.removeItem(pcloudSchluessel(k)));
+  }catch(e){/* nicht schlimm */}
   await sb.auth.signOut({scope:'local'});
   Tresor.vergessen();
   user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;
   $('list').innerHTML='';
+  pcloudVerbindungVergessen();
   showApp(false);
   toast('Die Daten wurden von diesem Gerät entfernt. Du bist abgemeldet.');
 };
@@ -12151,7 +12214,7 @@ $('cloudSetupTrennen').onclick=()=>{
   pcloudTokenSpeichern(null);
 
   try{
-    localStorage.removeItem(PCLOUD_HOST_SPEICHER);
+    localStorage.removeItem(pcloudSchluessel(PCLOUD_HOST_SPEICHER));
   }catch(fehler){
     // ohne Bedeutung
   }
