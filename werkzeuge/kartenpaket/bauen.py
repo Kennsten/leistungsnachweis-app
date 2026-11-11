@@ -266,11 +266,11 @@ class Leser(osmium.SimpleHandler):
             self.gesehen.add(('n', n.id))
         if 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags):
             self._adresse(tags, n.location.lat, n.location.lon)
-        name = tags.get('name')
+        name = tags.get('name') or tags.get('brand')
         if name:
             art = self._poi_art(tags)
             if art:
-                self.pois.append((name, art, n.location.lat, n.location.lon))
+                self.pois.append((name, art, n.location.lat, n.location.lon, tags.get('brand', '')))
 
     def way(self, w):
         tags = w.tags
@@ -279,7 +279,8 @@ class Leser(osmium.SimpleHandler):
         self._kartenlinie(w, tags)
         hat_adresse = 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags)
         name = tags.get('name')
-        poi_art = self._poi_art(tags) if name else None
+        marke = tags.get('brand', '')
+        poi_art = self._poi_art(tags) if (name or marke) else None
 
         if name and 'highway' in tags and not befahrbar(tags):
             # Plätze, Fußgängerzonen usw.: nur als Lage für den Straßennamen
@@ -343,7 +344,7 @@ class Leser(osmium.SimpleHandler):
             if hat_adresse:
                 self._adresse(tags, lat, lon)
             if poi_art:
-                self.pois.append((name, poi_art, lat, lon))
+                self.pois.append((name or marke, poi_art, lat, lon, marke))
 
     def area(self, a):
         self._kartenflaeche(a)
@@ -353,7 +354,8 @@ class Leser(osmium.SimpleHandler):
         tags = a.tags
         hat_adresse = 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags)
         name = tags.get('name')
-        poi_art = self._poi_art(tags) if name else None
+        marke = tags.get('brand', '')
+        poi_art = self._poi_art(tags) if (name or marke) else None
         if not (hat_adresse or poi_art):
             return
         if ('r', a.orig_id()) in self.gesehen:
@@ -376,7 +378,7 @@ class Leser(osmium.SimpleHandler):
         if hat_adresse:
             self._adresse(tags, lat, lon)
         if poi_art:
-            self.pois.append((name, poi_art, lat, lon))
+            self.pois.append((name or marke, poi_art, lat, lon, marke))
 
     def _kartenlinie(self, w, tags):
         ww, rw = tags.get('waterway'), tags.get('railway')
@@ -623,8 +625,13 @@ def adressen_schreiben(pfad, leser):
             strassen.append([n, name, '', -1, int(round(lat * 1e5)), int(round(lon * 1e5)), '', []])
 
     pois = []
-    for name, art, lat, lon in leser.pois:
-        pois.append([normalisieren(name), name, art, int(round(lat * 1e5)), int(round(lon * 1e5))])
+    for name, art, lat, lon, marke in leser.pois:
+        # Suchname: Name und Marke („EDEKA Center“ + „Marktkauf“), angezeigt wird der Name
+        such = normalisieren(name)
+        if marke and normalisieren(marke) not in such:
+            such += normalisieren(marke)
+        anzeige = name if not marke or normalisieren(marke) in normalisieren(name) else name + ' (' + marke + ')'
+        pois.append([such, anzeige, art, int(round(lat * 1e5)), int(round(lon * 1e5))])
 
     # Städte, Stadtteile, Dörfer mit Lage – für Suchen wie „Kaufland Hannover Mitte“
     plaetze = [[normalisieren(n), n, st, int(round(la * 1e5)), int(round(lo * 1e5))]

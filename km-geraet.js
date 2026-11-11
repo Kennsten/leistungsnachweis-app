@@ -326,6 +326,13 @@ function adressenLesen(text){
     if(l)l.push(i);else verz.nachName.set(s[0],[i]);
   });
   verz.namenListe=[...verz.nachName.keys()].sort();
+  verz.platzSuchen=w=>{
+    if(verz.plaetze.has(w))return verz.plaetze.get(w);
+    if(w.length<4)return null;
+    const l=[];
+    for(const [k,v] of verz.plaetze)if(k.startsWith(w))l.push(...v);
+    return l.length?l:null;
+  };
   // Städte und Stadtteile: Suchname → [{name, stufe, lat, lon}]
   verz.plaetze=new Map();
   (d.plaetze||[]).forEach(([n,name,stufe,la,lo])=>{
@@ -439,7 +446,7 @@ function adresseSuchen(verz,text,bezug){
     if(woerter.length<2)return null;
     const gegend=[],nameW=[];
     for(const w of woerter){
-      const pl=verz.plaetze.get(w);
+      const pl=verz.platzSuchen(w);
       const istOrt=verz.ortNorm.includes(w);
       if(pl||istOrt)gegend.push({w,pl:pl||[],mitte:istOrt?ortMitte(verz,w):null});
       else nameW.push(w);
@@ -466,8 +473,15 @@ function adresseSuchen(verz,text,bezug){
       if(laengstes.length>=4){kand=verz.pois.filter(p=>p[0].includes(laengstes));alle=false;}
     }
     if(!kand.length)return null;
+    // Namen, die mit dem Gesuchten beginnen, bevorzugen („Marktkauf …“ vor „Apotheke im Marktkauf“),
+    // solange einer davon in der Nähe liegt
+    const anfang=kand.filter(p=>p[0].startsWith(nameW[0]));
+    if(anfang.length&&!arten){
+      const a=naechster(anfang,nahe,p=>[p[3]/1e5,p[4]/1e5]);
+      if(!nahe||abstandM(a[3]/1e5,a[4]/1e5,nahe[0],nahe[1])<(genau?6000:25000))kand=anfang;
+    }
     const p=naechster(kand,nahe,p=>[p[3]/1e5,p[4]/1e5]);
-    const weit=nahe?abstandM(p[3]/1e5,p[4]/1e5,nahe[0],nahe[1])>(genau?4000:25000):true;
+    const weit=nahe?abstandM(p[3]/1e5,p[4]/1e5,nahe[0],nahe[1])>(genau?6000:25000):true;
     return {lat:p[3]/1e5,lon:p[4]/1e5,name:p[1]+(genau?' ('+genau.name+')':''),unsicher:!alle||weit||!nahe};
   }
 
@@ -487,7 +501,7 @@ function adresseSuchen(verz,text,bezug){
       if(mitte)return {lat:mitte[0],lon:mitte[1],name:verz.orte[verz.ortNorm.indexOf(name)],unsicher:true};
     }
     // Stadtteil oder Dorf („Linden“, „Mitte“)
-    const pl=verz.plaetze.get(name);
+    const pl=verz.platzSuchen(name);
     if(pl&&pl.length){
       const p=naechster(pl,bezug,p=>[p.lat,p.lon]);
       return {lat:p.lat,lon:p.lon,name:p.name,unsicher:true};

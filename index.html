@@ -3654,7 +3654,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.33 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.34 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9076,7 +9076,7 @@ function linieEntschluesseln(text){
 // und Namen. Nach jedem Verschieben oder Zoomen neu. Nichts wird nachgeladen.
 const KARTE_FARBEN={
   grund:'#f2efe9',
-  flaeche:{1:'#aad3df',2:'#add19e',3:'#c8e6b4',4:'#e3ddd3',5:'#ebdbe8',6:'#b9d4ad'},
+  flaeche:{1:'#aad3df',2:'#add19e',3:'#c8e6b4',4:'#e3ddd3',5:'#ece4e8',6:'#b9d4ad'},
   linie:{1:['#aad3df',5],2:['#aad3df',2],3:['#8f8f8f',1.6]},
   strasse:{1:'#e892a2',2:'#f9b29c',3:'#fcd6a4',4:'#f7fabf',5:'#ffffff',6:'#ffffff',7:'#ffffff',8:'#ffffff',9:'#ffffff'},
   rand:'#c4bdb0'
@@ -9125,11 +9125,29 @@ function karteStrassenZeichnen(karte){
       L.polyline(punkte,{renderer:leinwand.strassen,pane:'strassen',color:KARTE_FARBEN.strasse[k]||'#fff',
         weight:w,lineCap:'round',interactive:false}).addTo(ebenen.strassen);
     });
-    // Namen: Orte größer, Straßen klein
-    const beschriftung=(text,lage,klasse)=>L.marker(lage,{pane:'beschriftung',interactive:false,keyboard:false,
-      icon:L.divIcon({className:'karte-name '+klasse,html:'<span>'+esc(text)+'</span>',iconSize:null})}).addTo(ebenen.beschriftung);
-    d.orte.forEach(([stufe,name,la,lo])=>beschriftung(name,[la,lo],'ort ort-'+stufe));
-    d.namen.forEach(([k,name,la,lo])=>beschriftung(name,[la,lo],'strasse'));
+    // Namen: Orte zuerst, dann Straßen (große vor kleinen). Ein Name darf
+    // keinen anderen überdecken, und jede Straße erscheint nur einmal im Ausschnitt.
+    const belegt=[],schon=new Set();
+    const groesse=karte.getSize();
+    const beschriftung=(text,lage,klasse,zeichenBreite,hoehe)=>{
+      const p=karte.latLngToContainerPoint(lage);
+      const b=text.length*zeichenBreite/2+4,h=hoehe/2+2;
+      if(p.x<b||p.y<h||p.x>groesse.x-b||p.y>groesse.y-h)return;
+      if(belegt.some(r=>Math.abs(r.x-p.x)<r.b+b&&Math.abs(r.y-p.y)<r.h+h))return;
+      belegt.push({x:p.x,y:p.y,b,h});
+      L.marker(lage,{pane:'beschriftung',interactive:false,keyboard:false,
+        icon:L.divIcon({className:'karte-name '+klasse,html:'<span>'+esc(text)+'</span>',iconSize:null})}).addTo(ebenen.beschriftung);
+    };
+    d.orte.forEach(([stufe,name,la,lo])=>{
+      if(schon.has('o'+name))return;schon.add('o'+name);
+      beschriftung(name,[la,lo],'ort ort-'+stufe,stufe<=2?9:7.5,stufe<=2?18:14);
+    });
+    d.namen.sort((a,b)=>a[0]-b[0]).forEach(([k,name,la,lo])=>{
+      if(schon.has('s'+name))return;
+      const vorher=belegt.length;
+      beschriftung(name,[la,lo],'strasse',6,12);
+      if(belegt.length>vorher)schon.add('s'+name);
+    });
   };
   karte.on('moveend',neu);
   karte.attributionControl.addAttribution('© OpenStreetMap-Mitwirkende');
