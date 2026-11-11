@@ -178,8 +178,12 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .km-paket-knoepfe{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .karte-nr{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#C85A3E;color:#fff;font-weight:700;font-size:13px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .karte-nr.start{background:#2f3a2f}
-.karte-via{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #C85A3E;box-shadow:0 1px 4px rgba(0,0,0,.4);box-sizing:border-box}
+.karte-via{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--via-farbe,#C85A3E);box-shadow:0 1px 4px rgba(0,0,0,.4);box-sizing:border-box}
 .karte-tipp{margin:8px 0 0}
+.karte-etappen{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
+.karte-etappe{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
+.karte-etappe[aria-pressed="true"]{border-color:var(--ink);font-weight:700}
+.karte-etappe-farbe{width:28px;height:6px;border-radius:3px;flex:0 0 auto}
 .karte-anpassung{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 0;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-item);background:var(--card)}
 .karte-anpassung-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
 .route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
@@ -2452,7 +2456,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
     <button autofocus type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
   </div>
-  <p id="karteTipp" class="muted small karte-tipp">✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die rote Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen.</p>
+  <p id="karteTipp" class="muted small karte-tipp">✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die farbige Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen. Laufen Hin- und Rückweg übereinander, zuerst darunter den Abschnitt wählen.</p>
+  <div id="karteEtappen" class="karte-etappen hidden" role="group" aria-label="Abschnitte der Strecke"></div>
   <div id="karteAnpassung" class="karte-anpassung hidden">
     <span id="karteAnpassungText"></span>
     <span class="karte-anpassung-knoepfe">
@@ -3638,7 +3643,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.39 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.40 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9139,6 +9144,39 @@ function karteStrassenZeichnen(karte){
    tatsächlich gefahrene Straße ziehen → die Strecke wird auf dem Gerät neu
    berechnet. „Kilometer übernehmen“ trägt den Wert in die Fahrt ein. */
 let kartenWegpunkte=[],kartenErgebnis=null,kartenGrundKm=null,kartenRouteEbene=null;
+// Rot, Blau, Lila, Grün, Ocker – unterscheiden sich auch in der Helligkeit
+const KARTE_ETAPPEN_FARBEN=['#D1452B','#1F5FBF','#7B3FB5','#1E7A4C','#A86F00'];
+let kartenEtappeAktiv=null;   // null = alle Abschnitte anfassbar
+
+// Legende mit Knöpfen: einen Abschnitt wählen, die anderen treten zurück
+function kartenEtappenLeiste(anzahl,rundfahrt){
+  const box=$('karteEtappen');
+  if(anzahl<2){box.classList.add('hidden');box.innerHTML='';kartenEtappeAktiv=null;return}
+  const e=kartenErgebnis,via=e.via||[],namen=[];
+  // Namen der echten Punkte (ohne Zwischenpunkte): Start, 1, 2 …, Ziel
+  const echte=[];
+  via.forEach((v,i)=>{if(!v)echte.push(i)});
+  for(let k=0;k<anzahl;k++){
+    if(anzahl===2&&rundfahrt)namen.push(k===0?'Hinweg':'Rückweg');
+    else{
+      const von=k===0?'Start':'Stopp '+k;
+      const nach=k===anzahl-1?(rundfahrt?'zurück':'Ziel'):'Stopp '+(k+1);
+      namen.push(von+' → '+nach);
+    }
+  }
+  box.innerHTML=namen.map((n,k)=>
+    '<button type="button" class="karte-etappe" data-etappe="'+k+'" aria-pressed="'+(kartenEtappeAktiv===k)+'">'+
+    '<span class="karte-etappe-farbe" style="background:'+KARTE_ETAPPEN_FARBEN[k%KARTE_ETAPPEN_FARBEN.length]+'"></span>'+esc(n)+'</button>'
+  ).join('')+(kartenEtappeAktiv!=null?'<button type="button" class="karte-etappe" data-etappe="alle">Alle zeigen</button>':'');
+  box.classList.remove('hidden');
+}
+$('karteEtappen').addEventListener('click',ev=>{
+  const k=ev.target.closest('[data-etappe]');
+  if(!k||!kartenErgebnis)return;
+  const wahl=k.dataset.etappe==='alle'?null:Number(k.dataset.etappe);
+  kartenEtappeAktiv=kartenEtappeAktiv===wahl?null:wahl;
+  karteRouteZeichnen(kartenErgebnis);
+});
 
 function karteRouteZeichnen(ergebnis){
   kartenErgebnis=ergebnis;
@@ -9155,19 +9193,42 @@ function karteRouteZeichnen(ergebnis){
     koordinaten[0][0]===koordinaten[letzter][0]&&
     koordinaten[0][1]===koordinaten[letzter][1];
 
-  if(linie.length){
-    L.polyline(linie,{color:'#C85A3E',weight:5,opacity:.85,interactive:false}).addTo(kartenRouteEbene);
-    // Breite, unsichtbare Linie darüber: leicht mit dem Finger zu treffen
-    L.polyline(linie,{color:'#C85A3E',weight:26,opacity:0.01,interactive:true})
-      .on('click',e=>zwischenpunktSetzen(e.latlng))
-      .addTo(kartenRouteEbene);
+  // Abschnitte (Etappen) zwischen echten Punkten bekommen eigene Farben,
+  // damit Hin- und Rückweg mit dem Finger auseinanderzuhalten sind.
+  const abschnitte=ergebnis.abschnitte||[0];
+  const etappeVon=[];        // Teilstück j (Punkt j → j+1) gehört zu Etappe …
+  let etappe=0;
+  for(let j=0;j<koordinaten.length-1;j++){
+    etappeVon.push(etappe);
+    if(!via[j+1])etappe++;
   }
+  ergebnis._etappeVon=etappeVon;
+  const etappen=etappeVon.length?etappeVon[etappeVon.length-1]+1:0;
+  kartenEtappenLeiste(etappen,rundfahrt);
+  const aktiv=kartenEtappeAktiv;
+  const reihenfolge=[...Array(abschnitte.length).keys()]
+    .sort((x,y)=>(etappeVon[x]===aktiv)-(etappeVon[y]===aktiv));   // gewählte Etappe obenauf
+  reihenfolge.forEach(j=>{
+    const teil=linie.slice(abschnitte[j],j+1<abschnitte.length?abschnitte[j+1]+1:linie.length);
+    if(teil.length<2)return;
+    const e=etappeVon[j];
+    const farbe=KARTE_ETAPPEN_FARBEN[e%KARTE_ETAPPEN_FARBEN.length];
+    const blass=aktiv!=null&&e!==aktiv;
+    L.polyline(teil,{color:farbe,weight:blass?4:6,opacity:blass?.3:.9,interactive:false}).addTo(kartenRouteEbene);
+    // Breite, fast unsichtbare Linie darüber: leicht mit dem Finger zu treffen
+    if(!blass){
+      L.polyline(teil,{color:farbe,weight:28,opacity:0.01,interactive:true})
+        .on('click',ev=>{L.DomEvent.stop(ev);zwischenpunktSetzen(ev.latlng,j)})
+        .addTo(kartenRouteEbene);
+    }
+  });
 
   let nr=0;
   koordinaten.forEach((k,i)=>{
     if(via[i]){
+      const farbe=KARTE_ETAPPEN_FARBEN[(etappeVon[i-1]||0)%KARTE_ETAPPEN_FARBEN.length];
       const m=L.marker(k,{draggable:true,autoPan:true,
-        icon:L.divIcon({className:'',html:'<div class="karte-via"></div>',iconSize:[22,22],iconAnchor:[11,11]})});
+        icon:L.divIcon({className:'',html:'<div class="karte-via" style="--via-farbe:'+farbe+'"></div>',iconSize:[22,22],iconAnchor:[11,11]})});
       m.on('dragend',()=>{
         const ll=m.getLatLng();
         kartenWegpunkte[i]={lat:ll.lat,lon:ll.lng};
@@ -9209,16 +9270,18 @@ function karteRouteZeichnen(ergebnis){
 }
 
 // Neuen Zwischenpunkt in den Abschnitt einfügen, auf den getippt wurde
-function zwischenpunktSetzen(latlng){
+function zwischenpunktSetzen(latlng,abschnitt){
   const e=kartenErgebnis;
   if(!e||!e._linie||!e._linie.length)return;
-  let beste=0,bd=Infinity;
-  e._linie.forEach((p,i)=>{
-    const d=(p[0]-latlng.lat)**2+((p[1]-latlng.lng)*0.61)**2;
-    if(d<bd){bd=d;beste=i;}
-  });
-  let abschnitt=0;
-  (e.abschnitte||[0]).forEach((start,j)=>{if(start<=beste)abschnitt=j;});
+  if(abschnitt==null){
+    let beste=0,bd=Infinity;
+    e._linie.forEach((p,i)=>{
+      const d=(p[0]-latlng.lat)**2+((p[1]-latlng.lng)*0.61)**2;
+      if(d<bd){bd=d;beste=i;}
+    });
+    abschnitt=0;
+    (e.abschnitte||[0]).forEach((start,j)=>{if(start<=beste)abschnitt=j;});
+  }
   kartenWegpunkte.splice(abschnitt+1,0,{lat:latlng.lat,lon:latlng.lng});
   karteNeuBerechnen();
 }
@@ -9279,6 +9342,7 @@ async function karteZeigen(){
 
     kartenWegpunkte=adressen.slice();
     kartenGrundKm=ergebnis.km;
+    kartenEtappeAktiv=null;
     $('karte').classList.add('karte-geraet');
     $('kartenDialog').showModal();
 
