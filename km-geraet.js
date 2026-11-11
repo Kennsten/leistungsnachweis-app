@@ -476,13 +476,16 @@ function adresseSuchen(verz,text,bezug){
     // Namen, die mit dem Gesuchten beginnen, bevorzugen („Marktkauf …“ vor „Apotheke im Marktkauf“),
     // solange einer davon in der Nähe liegt
     const anfang=kand.filter(p=>p[0].startsWith(nameW[0]));
-    if(anfang.length&&!arten){
-      const a=naechster(anfang,nahe,p=>[p[3]/1e5,p[4]/1e5]);
-      if(!nahe||abstandM(a[3]/1e5,a[4]/1e5,nahe[0],nahe[1])<(genau?6000:25000))kand=anfang;
-    }
+    if(anfang.length&&!arten)kand=anfang;
     const p=naechster(kand,nahe,p=>[p[3]/1e5,p[4]/1e5]);
-    const weit=nahe?abstandM(p[3]/1e5,p[4]/1e5,nahe[0],nahe[1])>(genau?6000:25000):true;
-    return {lat:p[3]/1e5,lon:p[4]/1e5,name:p[1]+(genau?' ('+genau.name+')':''),unsicher:!alle||weit||!nahe};
+    // Wie weit darf der Treffer vom genannten Ort entfernt sein?
+    // Stadt 8 km, Stadtteil/Dorf 3 km, kleiner Ortsteil 2 km
+    const grenze=genau?(genau.stufe<=2?8000:genau.stufe===3?3000:2000):25000;
+    const abstand=nahe?abstandM(p[3]/1e5,p[4]/1e5,nahe[0],nahe[1]):Infinity;
+    const dort=abstand<=grenze;
+    let name=p[1];
+    if(genau)name+=dort?' ('+genau.name+')':', '+(abstand/1000).toLocaleString('de-DE',{maximumFractionDigits:0})+' km von '+genau.name+' entfernt';
+    return {lat:p[3]/1e5,lon:p[4]/1e5,name,unsicher:!alle||!dort||!nahe};
   }
 
   // 1. Straße genau gefunden

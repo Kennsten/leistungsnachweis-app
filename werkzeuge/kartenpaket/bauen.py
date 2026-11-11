@@ -630,7 +630,9 @@ def adressen_schreiben(pfad, leser):
         such = normalisieren(name)
         if marke and normalisieren(marke) not in such:
             such += normalisieren(marke)
-        anzeige = name if not marke or normalisieren(marke) in normalisieren(name) else name + ' (' + marke + ')'
+        n_n, n_m = normalisieren(name), normalisieren(marke) if marke else ''
+        # Marke nur zeigen, wenn sie etwas Neues sagt („EDEKA Center (Marktkauf)“, nicht „Aldi (Aldi Nord)“)
+        anzeige = name if not marke or n_m in n_n or n_n in n_m else name + ' (' + marke + ')'
         pois.append([such, anzeige, art, int(round(lat * 1e5)), int(round(lon * 1e5))])
 
     # Städte, Stadtteile, Dörfer mit Lage – für Suchen wie „Kaufland Hannover Mitte“
