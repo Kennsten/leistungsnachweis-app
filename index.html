@@ -2943,15 +2943,19 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <p class="muted small">Für die Berechnung auf dem Gerät braucht die App einmalig ein <strong>Kartenpaket</strong> (Straßen und Adressen aus OpenStreetMap). Es wird von der App-Adresse geladen und bleibt auf diesem Gerät. Danach verlassen keine Adressen das Gerät – die Berechnung klappt auch ohne Internet. Am besten im WLAN herunterladen.</p>
       <div id="kmPakete" class="km-pakete"><p class="muted small">Kartenpakete werden geprüft …</p></div>
     </div>
-    <p class="muted small">Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen. Im Fahrtenbuch und im Leistungsnachweis bleibt die volle Adresse erhalten, die Kürzung gilt nur für die Weitergabe an externe Dienste.</p>
-    <h3>Dienste mit Adressübertragung</h3>
-    <p class="muted small">Für diese Funktionen gehen Adressen unverschlüsselt an externe Dienste. Du kannst sie auf diesem Gerät sperren oder dauerhaft erlauben. Standard ist: vorher fragen.</p>
-    <label>Kilometer berechnen (Geoapify)
-      <select id="dienstSetRoute"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
-    </label>
-    <label>Karte (OpenStreetMap)
-      <select id="dienstSetKarte"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
-    </label>
+    <p class="muted small">Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen.</p>
+    <!-- Nur sichtbar bei „Über Routendienst“: dann gehen Adressen an externe Dienste -->
+    <div id="dienstBereich" class="hidden">
+      <p class="muted small">Im Fahrtenbuch und im Leistungsnachweis bleibt die volle Adresse erhalten, die Kürzung gilt nur für die Weitergabe an externe Dienste.</p>
+      <h3>Dienste mit Adressübertragung</h3>
+      <p class="muted small">Für diese Funktionen gehen Adressen unverschlüsselt an externe Dienste. Du kannst sie auf diesem Gerät sperren oder dauerhaft erlauben. Standard ist: vorher fragen.</p>
+      <label>Kilometer berechnen (Geoapify)
+        <select id="dienstSetRoute"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
+      </label>
+      <label>Karte (OpenStreetMap)
+        <select id="dienstSetKarte"><option value="">Jedes Mal fragen</option><option value="immer">Immer erlauben</option><option value="gesperrt">Sperren</option></select>
+      </label>
+    </div>
     <h3>Sicherheitshinweise</h3>
     <p class="muted small">Weggeklickte Hinweise und Rückfragen mit „Nicht mehr fragen“ erscheinen wieder. Gesperrte Dienste bleiben gesperrt.</p>
     <div class="actions">
@@ -3654,7 +3658,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.35 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.36 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5998,6 +6002,8 @@ function dienstEinstellungenZeigen(){
   [['route','dienstSetRoute'],['karte','dienstSetKarte']]
     .forEach(([art,id])=>{$(id).value=dienstEinstellung(art)});
   $('kmModusSelect').value=kmModus();
+  // Der Bereich zu externen Diensten nur, wenn sie überhaupt benutzt werden
+  $('dienstBereich').classList.toggle('hidden',!['strasse','hausnummer'].includes(kmModus()));
 }
 $('kmModusSelect').onchange=()=>{
   const wahl=$('kmModusSelect').value;
