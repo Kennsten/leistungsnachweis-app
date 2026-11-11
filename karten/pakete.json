@@ -4,6 +4,8 @@
       "name": "region-hannover",
       "titel": "Hannover und Region Hannover",
       "stand": "2026-11-11",
+      "gebaut": "2026-11-11T06:52:22Z",
+      "beschreibung": "Straßen, Adressen, Geschäfte und Karte für die Stadt Hannover und alle Orte der Region Hannover (mit etwa 5–10 km Rand)",
       "version": 1,
       "dateien": {
         "strassen": "region-hannover-strassen.bin.gz",
