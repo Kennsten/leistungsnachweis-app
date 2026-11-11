@@ -164,7 +164,12 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .km-strecke li{margin:1px 0}
 #kartenDialog{width:min(900px,96vw);max-width:96vw}
 #karte{height:min(65vh,560px);border-radius:var(--radius-item);margin-top:12px;border:1px solid var(--line)}
-#karte.karte-geraet{background:#f4f1ea}
+#karte.karte-geraet{background:#f2efe9}
+.karte-name{white-space:nowrap;font:600 11px/1.1 system-ui,-apple-system,sans-serif;color:#555;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
+.karte-name span{display:inline-block;transform:translate(-50%,-50%)}
+.karte-name.strasse{font-weight:500;font-size:10.5px;color:#666}
+.karte-name.ort{color:#333;font-weight:700}
+.karte-name.ort-1{font-size:17px}.karte-name.ort-2{font-size:15px}.karte-name.ort-3{font-size:13px}.karte-name.ort-4,.karte-name.ort-5{font-size:12px;font-weight:600;color:#444}
 .km-paket-box{margin:8px 0 4px}
 .km-pakete{display:grid;gap:8px;margin-top:6px}
 .km-paket{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px;background:var(--card)}
@@ -3649,7 +3654,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.31 Verkaufsversion (Vorschau)';
+const APP_VERSION='0.24.32 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5867,7 +5872,7 @@ async function kartenpaketeZeigen(){
   const gewaehlt=kmPaketName();
   ziel.innerHTML=liste.map(p=>{
     const aktiv=p.gespeichert&&p.name===gewaehlt;
-    const neuer=p.gespeichert&&p.gespeichertStand&&p.gespeichertStand<p.stand;
+    const neuer=p.gespeichert&&(!p.gespeichertStand||p.gespeichertStand<p.stand);
     return '<div class="km-paket'+(aktiv?' aktiv':'')+'" data-name="'+esc(p.name)+'">'+
       '<div class="km-paket-text"><strong>'+esc(p.titel)+'</strong><br>'+
       '<span class="muted small">'+
@@ -9066,30 +9071,65 @@ function linieEntschluesseln(text){
   return punkte;
 }
 
-// Zeichnet die Straßen des sichtbaren Ausschnitts aus dem Kartenpaket
-// (nach jedem Verschieben oder Zoomen neu). Größere Straßen kräftiger.
+// Zeichnet den sichtbaren Ausschnitt aus dem Kartenpaket wie einen Stadtplan:
+// Flächen (Wohngebiete, Grün, Wald, Wasser), Flüsse und Bahn, Straßen mit Rand
+// und Namen. Nach jedem Verschieben oder Zoomen neu. Nichts wird nachgeladen.
+const KARTE_FARBEN={
+  grund:'#f2efe9',
+  flaeche:{1:'#aad3df',2:'#add19e',3:'#c8e6b4',4:'#e3ddd3',5:'#ebdbe8',6:'#b9d4ad'},
+  linie:{1:['#aad3df',5],2:['#aad3df',2],3:['#8f8f8f',1.6]},
+  strasse:{1:'#e892a2',2:'#f9b29c',3:'#fcd6a4',4:'#f7fabf',5:'#ffffff',6:'#ffffff',7:'#ffffff',8:'#ffffff',9:'#ffffff'},
+  rand:'#c4bdb0'
+};
 function karteStrassenZeichnen(karte){
-  const ebene=L.layerGroup().addTo(karte);
-  // Eigene Ebene unter der Route (die Route liegt immer obenauf)
-  karte.createPane('strassen').style.zIndex=350;
-  const darstellung=L.canvas({padding:0.3,pane:'strassen'});
-  const breite={1:4,2:3.5,3:3,4:2.6,5:2.2,6:1.6,7:1.3,8:1,9:0.8};
-  const farbe=k=>k<=2?'#d9a441':k<=4?'#e8c87a':'#b9b4a8';
+  const ebenen={};
+  [['flaechen',310],['gewaesser',320],['strassenrand',340],['strassen',350],['beschriftung',380]].forEach(([n,z])=>{
+    karte.createPane(n).style.zIndex=z;
+    ebenen[n]=L.layerGroup().addTo(karte);
+  });
+  karte.getPane('beschriftung').style.pointerEvents='none';
+  const leinwand={};
+  ['flaechen','gewaesser','strassenrand','strassen'].forEach(n=>{leinwand[n]=L.canvas({padding:0.3,pane:n})});
+  // Straßenbreite je Klasse und Zoomstufe (in Bildpunkten)
+  const breite=(k,z)=>{
+    const grund={1:6,2:5.5,3:5,4:4.5,5:4,6:3,7:2.6,8:2,9:1.6}[k]||1.5;
+    return Math.max(0.8,grund*Math.pow(1.35,z-15));
+  };
   let auftrag=0;
   const neu=async()=>{
     const nr=++auftrag;
     const g=karte.getBounds().pad(0.2);
-    let linien=[];
+    const z=karte.getZoom();
+    let d;
     try{
-      linien=await kmHelferAuftrag({typ:'strassen',paket:kmPaketName(),
+      d=await kmHelferAuftrag({typ:'karte',paket:kmPaketName(),
         grenzen:[g.getSouth(),g.getWest(),g.getNorth(),g.getEast()]});
     }catch(e){return}
     if(nr!==auftrag||!kartenObjekt)return;
-    ebene.clearLayers();
-    // Kleine Straßen zuerst, große darüber
-    linien.sort((a,b)=>b[0]-a[0]).forEach(([k,punkte])=>{
-      L.polyline(punkte,{renderer:darstellung,pane:'strassen',color:farbe(k),weight:breite[k]||1,opacity:.9,interactive:false}).addTo(ebene);
+    Object.values(ebenen).forEach(e=>e.clearLayers());
+
+    d.flaechen.forEach(([art,ringe])=>{
+      L.polygon(ringe,{renderer:leinwand.flaechen,pane:'flaechen',stroke:art===1,color:'#9cc7d5',weight:0.8,
+        fillColor:KARTE_FARBEN.flaeche[art]||'#e3ddd3',fillOpacity:1,interactive:false}).addTo(ebenen.flaechen);
     });
+    d.linien.forEach(([art,punkte])=>{
+      const [farbe,w]=KARTE_FARBEN.linie[art]||['#999',1];
+      L.polyline(punkte,{renderer:leinwand.gewaesser,pane:'gewaesser',color:farbe,
+        weight:art===3?w:Math.max(1,w*Math.pow(1.25,z-14)),dashArray:art===3?'6 4':null,interactive:false}).addTo(ebenen.gewaesser);
+    });
+    // Straßen: erst der graue Rand, darüber die Füllung; kleine zuerst, große obenauf
+    d.strassen.sort((a,b)=>b[0]-a[0]).forEach(([k,punkte])=>{
+      const w=breite(k,z);
+      L.polyline(punkte,{renderer:leinwand.strassenrand,pane:'strassenrand',color:KARTE_FARBEN.rand,
+        weight:w+1.6,lineCap:'round',interactive:false}).addTo(ebenen.strassenrand);
+      L.polyline(punkte,{renderer:leinwand.strassen,pane:'strassen',color:KARTE_FARBEN.strasse[k]||'#fff',
+        weight:w,lineCap:'round',interactive:false}).addTo(ebenen.strassen);
+    });
+    // Namen: Orte größer, Straßen klein
+    const beschriftung=(text,lage,klasse)=>L.marker(lage,{pane:'beschriftung',interactive:false,keyboard:false,
+      icon:L.divIcon({className:'karte-name '+klasse,html:'<span>'+esc(text)+'</span>',iconSize:null})}).addTo(ebenen.beschriftung);
+    d.orte.forEach(([stufe,name,la,lo])=>beschriftung(name,[la,lo],'ort ort-'+stufe));
+    d.namen.forEach(([k,name,la,lo])=>beschriftung(name,[la,lo],'strasse'));
   };
   karte.on('moveend',neu);
   karte.attributionControl.addAttribution('© OpenStreetMap-Mitwirkende');

@@ -575,6 +575,69 @@ function strassenImAusschnitt(netz,[s,w,n,o]){
 }
 
 // ---------------------------------------------------------------------------
+// Kartenbild (Flächen, Flüsse, Bahn, Namen) – nur zum Anzeigen
+// ---------------------------------------------------------------------------
+function zahlenEntpacken(z){
+  const p=[];let la=0,lo=0;
+  for(let i=0;i<z.length;i+=2){la+=z[i];lo+=z[i+1];p.push([la/1e5,lo/1e5]);}
+  return p;
+}
+function grenzenVon(z){
+  let la=0,lo=0,s=Infinity,n=-Infinity,w=Infinity,o=-Infinity;
+  for(let i=0;i<z.length;i+=2){la+=z[i];lo+=z[i+1];if(la<s)s=la;if(la>n)n=la;if(lo<w)w=lo;if(lo>o)o=lo;}
+  return [s/1e5,w/1e5,n/1e5,o/1e5];
+}
+function kartenbildLesen(text){
+  const d=JSON.parse(text);
+  // Nur die Grenzen vorab berechnen; Punkte erst beim Zeichnen entpacken (spart Speicher)
+  d.flaechen.forEach(f=>{f.g=grenzenVon(f[1][0]);});
+  d.linien.forEach(l=>{l.g=grenzenVon(l[1]);});
+  return d;
+}
+const ueberlappt=(g,[s,w,n,o])=>!(g[2]<s||g[0]>n||g[3]<w||g[1]>o);
+
+function kartenbildImAusschnitt(bild,grenzen){
+  const [s,w,n,o]=grenzen;
+  const hoehe=n-s;
+  // Kleine Flächen erst bei näherem Hinsehen
+  const mindest=hoehe/250;
+  const flaechen=[];
+  for(const f of bild.flaechen){
+    if(!ueberlappt(f.g,grenzen))continue;
+    if(Math.max(f.g[2]-f.g[0],(f.g[3]-f.g[1])*0.6)<mindest)continue;
+    flaechen.push([f[0],f[1].map(zahlenEntpacken)]);
+    if(flaechen.length>12000)break;
+  }
+  const linien=[];
+  for(const l of bild.linien){
+    if(l[0]===2&&hoehe>0.08)continue;      // Bäche nur bei nahem Blick
+    if(!ueberlappt(l.g,grenzen))continue;
+    linien.push([l[0],zahlenEntpacken(l[1])]);
+  }
+  const drinnen=(la,lo)=>la>=s&&la<=n&&lo>=w&&lo<=o;
+  const maxStufe=hoehe>0.5?2:hoehe>0.15?3:hoehe>0.05?4:5;
+  const orte=bild.orte.filter(x=>x[0]<=maxStufe&&drinnen(x[2]/1e5,x[3]/1e5))
+    .slice(0,80).map(x=>[x[0],x[1],x[2]/1e5,x[3]/1e5]);
+  const maxKlasse=hoehe>0.12?0:hoehe>0.05?3:hoehe>0.025?5:7;
+  const namen=bild.namen.filter(x=>x[0]<=maxKlasse&&drinnen(x[2]/1e5,x[3]/1e5))
+    .slice(0,160).map(x=>[x[0],x[1],x[2]/1e5,x[3]/1e5]);
+  return {flaechen,linien,orte,namen};
+}
+
+async function kartenbildOeffnen(name){
+  const paket=await paketOeffnen(name);
+  if(paket.bild!==undefined)return paket.bild;
+  paket.bild=null;
+  const c=await caches.open(SPEICHER);
+  const liste=await c.match(ORDNER+'pakete.json');
+  const p=liste&&((await liste.json()).pakete||[]).find(x=>x.name===name);
+  const datei=p&&p.dateien&&p.dateien.karte;
+  const antwort=datei&&await c.match(ORDNER+datei);
+  if(antwort)paket.bild=kartenbildLesen(new TextDecoder().decode(await entpacken(await antwort.arrayBuffer())));
+  return paket.bild;
+}
+
+// ---------------------------------------------------------------------------
 // Pakete laden, speichern, löschen
 // ---------------------------------------------------------------------------
 const geladen=new Map(); // name → {netz, verz}
@@ -599,6 +662,10 @@ async function status(){
     if(gespeichert){
       const info=await c.match(ORDNER+p.name+'.info');
       if(info)stand=(await info.json()).stand;
+      // Fehlt ein Teil (z. B. das Kartenbild aus einer früheren Fassung), gilt das Paket als veraltet
+      for(const d of Object.values(p.dateien)){
+        if(!(await c.match(ORDNER+d))){stand='';break;}
+      }
     }
     ergebnis.push({...p,gespeichert:Boolean(gespeichert),gespeichertStand:stand});
   }
@@ -611,7 +678,7 @@ async function herunterladen(name,melden){
   if(!p)throw new Error('Kartenpaket nicht gefunden.');
   const c=await caches.open(SPEICHER);
   let fertig=0;
-  for(const datei of [p.dateien.strassen,p.dateien.adressen]){
+  for(const datei of Object.values(p.dateien)){
     const antwort=await fetch(ORDNER+datei,{cache:'no-store'});
     if(!antwort.ok)throw new Error('Herunterladen fehlgeschlagen (Status '+antwort.status+').');
     const leser=antwort.body.getReader();
@@ -676,6 +743,14 @@ if(typeof WorkerGlobalScope!=='undefined'&&self instanceof WorkerGlobalScope){
         const paket=await paketOeffnen(e.data.paket);
         return antworten(true,strassenImAusschnitt(paket.netz,e.data.grenzen));
       }
+      if(typ==='karte'){
+        // Straßen und – falls vorhanden – Flächen, Flüsse, Bahn und Namen im Ausschnitt
+        const paket=await paketOeffnen(e.data.paket);
+        const bild=await kartenbildOeffnen(e.data.paket).catch(()=>null);
+        const ergebnis=bild?kartenbildImAusschnitt(bild,e.data.grenzen):{flaechen:[],linien:[],orte:[],namen:[]};
+        ergebnis.strassen=strassenImAusschnitt(paket.netz,e.data.grenzen);
+        return antworten(true,ergebnis);
+      }
       antworten(false,'Unbekannter Auftrag.');
     }catch(fehler){
       antworten(false,(fehler&&fehler.message)||String(fehler));
@@ -684,4 +759,4 @@ if(typeof WorkerGlobalScope!=='undefined'&&self instanceof WorkerGlobalScope){
 }
 
 // Für Tests außerhalb des Browsers (node)
-if(typeof module!=='undefined')module.exports={norm,netzLesen,adressenLesen,adresseZerlegen,adresseSuchen,naechsteStrasse,strecke,routeBerechnen,entpacken,strassenImAusschnitt};
+if(typeof module!=='undefined')module.exports={kartenbildLesen,kartenbildImAusschnitt,norm,netzLesen,adressenLesen,adresseZerlegen,adresseSuchen,naechsteStrasse,strecke,routeBerechnen,entpacken,strassenImAusschnitt};

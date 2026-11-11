@@ -82,6 +82,44 @@ POI_SCHLUESSEL = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Kartenbild (nur zum Anzeigen): Flächen, Linien und Ortsnamen
+# Nummer = Art; die App wählt danach Farbe und Reihenfolge.
+# ---------------------------------------------------------------------------
+FLAECHE_WASSER, FLAECHE_WALD, FLAECHE_GRUEN, FLAECHE_WOHNEN, FLAECHE_GEWERBE, FLAECHE_FRIEDHOF = 1, 2, 3, 4, 5, 6
+LINIE_FLUSS, LINIE_BACH, LINIE_BAHN = 1, 2, 3
+ORT_STUFE = {'city': 1, 'town': 2, 'suburb': 3, 'village': 3, 'quarter': 4, 'hamlet': 5, 'neighbourhood': 5}
+
+
+def flaechen_art(tags):
+    natural, landuse, leisure = tags.get('natural'), tags.get('landuse'), tags.get('leisure')
+    if natural == 'water' or landuse in ('reservoir', 'basin') or tags.get('waterway') == 'riverbank':
+        return FLAECHE_WASSER
+    if landuse == 'forest' or natural == 'wood':
+        return FLAECHE_WALD
+    if landuse == 'cemetery' or tags.get('amenity') == 'grave_yard':
+        return FLAECHE_FRIEDHOF
+    if leisure in ('park', 'garden', 'nature_reserve', 'golf_course', 'pitch', 'playground', 'recreation_ground') or \
+            landuse in ('grass', 'meadow', 'recreation_ground', 'allotments', 'village_green', 'orchard') or \
+            natural in ('scrub', 'heath', 'wetland', 'grassland'):
+        return FLAECHE_GRUEN
+    if landuse in ('residential',):
+        return FLAECHE_WOHNEN
+    if landuse in ('commercial', 'retail', 'industrial', 'railway'):
+        return FLAECHE_GEWERBE
+    return 0
+
+
+def zahlen_kodieren(punkte):
+    """[(lat, lon), …] → [lat0, lon0, dLat, dLon, …] in Grad × 1e5 (≈ 1 m)."""
+    aus, vor_la, vor_lo = [], 0, 0
+    for la, lo in punkte:
+        a, b = int(round(la * 1e5)), int(round(lo * 1e5))
+        aus.extend((a - vor_la, b - vor_lo))
+        vor_la, vor_lo = a, b
+    return aus
+
+
 def tempo_aus_tag(wert):
     """'50' → 50, '30 mph' → 48, 'DE:urban' → 50, sonst None."""
     if not wert:
@@ -202,6 +240,11 @@ class Leser(osmium.SimpleHandler):
         self.adressen = []        # (strasse, hausnummer, plz, ort, lat, lon)
         self.pois = []            # (name, art, lat, lon)
         self.strassen_namen = []  # (name, lat, lon) – Mittelpunkte benannter Straßen
+        # Kartenbild
+        self.k_flaechen = []      # (art, [Ring außen, Löcher …])
+        self.k_linien = []        # (art, Punkte)
+        self.k_orte = []          # (stufe, name, lat, lon)
+        self.k_namen = []         # (klasse, name, lat, lon) – Straßennamen
 
     def drin(self, lat, lon):
         g = self.grenzen
@@ -216,6 +259,9 @@ class Leser(osmium.SimpleHandler):
             return
         if not self.drin(n.location.lat, n.location.lon):
             return
+        stufe = ORT_STUFE.get(tags.get('place'))
+        if stufe and tags.get('name'):
+            self.k_orte.append((stufe, tags['name'], n.location.lat, n.location.lon))
         if 'addr:housenumber' in tags or 'name' in tags:
             self.gesehen.add(('n', n.id))
         if 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags):
@@ -230,6 +276,7 @@ class Leser(osmium.SimpleHandler):
         tags = w.tags
         if w.id in self.gesehen:
             return
+        self._kartenlinie(w, tags)
         hat_adresse = 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags)
         name = tags.get('name')
         poi_art = self._poi_art(tags) if name else None
@@ -274,6 +321,8 @@ class Leser(osmium.SimpleHandler):
             if name:
                 m = len(ids) // 2
                 self.strassen_namen.append((name, lats[m] / 1e7, lons[m] / 1e7))
+                if klasse <= 7:
+                    self.k_namen.append((klasse, name, lats[m] / 1e7, lons[m] / 1e7))
             return
 
         if hat_adresse or poi_art:
@@ -297,7 +346,8 @@ class Leser(osmium.SimpleHandler):
                 self.pois.append((name, poi_art, lat, lon))
 
     def area(self, a):
-        # Nur Flächen aus Relationen; einfache Flächen kommen schon über way()
+        self._kartenflaeche(a)
+        # Adressen/Orte nur aus Relationen; einfache Flächen kommen schon über way()
         if a.from_way():
             return
         tags = a.tags
@@ -327,6 +377,44 @@ class Leser(osmium.SimpleHandler):
             self._adresse(tags, lat, lon)
         if poi_art:
             self.pois.append((name, poi_art, lat, lon))
+
+    def _kartenlinie(self, w, tags):
+        ww, rw = tags.get('waterway'), tags.get('railway')
+        if ww in ('river', 'canal'):
+            art = LINIE_FLUSS
+        elif ww == 'stream':
+            art = LINIE_BACH
+        elif rw in ('rail', 'light_rail') and tags.get('service') not in ('yard', 'siding', 'spur'):
+            art = LINIE_BAHN
+        else:
+            return
+        punkte = [(nd.location.lat, nd.location.lon) for nd in w.nodes if nd.location.valid()]
+        if len(punkte) < 2 or not any(self.drin(la, lo) for la, lo in punkte):
+            return
+        self.k_linien.append((art, vereinfachen(punkte, 8.0)))
+
+    def _kartenflaeche(self, a):
+        art = flaechen_art(a.tags)
+        if not art:
+            return
+        for aussen in a.outer_rings():
+            ring = [(nd.lat, nd.lon) for nd in aussen if nd.location.valid()]
+            if len(ring) < 4:
+                continue
+            la = [p[0] for p in ring]
+            lo = [p[1] for p in ring]
+            # Sehr kleine Flächen (unter etwa 40 × 40 m) weglassen
+            if (max(la) - min(la)) < 0.00036 and (max(lo) - min(lo)) < 0.0006:
+                continue
+            if self.grenzen is not None and (max(la) < self.grenzen[0] or min(la) > self.grenzen[2]
+                                              or max(lo) < self.grenzen[1] or min(lo) > self.grenzen[3]):
+                continue
+            ringe = [vereinfachen(ring, 6.0)]
+            for innen in a.inner_rings(aussen):
+                loch = [(nd.lat, nd.lon) for nd in innen if nd.location.valid()]
+                if len(loch) >= 4:
+                    ringe.append(vereinfachen(loch, 6.0))
+            self.k_flaechen.append((art, ringe))
 
     def _adresse(self, tags, lat, lon):
         strasse = tags.get('addr:street') or tags.get('addr:place')
@@ -545,6 +633,38 @@ def adressen_schreiben(pfad, leser):
           f'{len(pois):,} bekannte Orte, {len(orte):,} Orte')
 
 
+def kartenbild_schreiben(pfad, leser):
+    """Kartenbild als JSON (gzip):
+    flaechen: [Art, [Ring, Ring …]]   Ring = zahlen_kodieren(Punkte)
+    linien:   [Art, Punkte kodiert]
+    orte:     [Stufe, Name, Lat×1e5, Lon×1e5]
+    namen:    [Klasse, Name, Lat×1e5, Lon×1e5]  (Straßennamen, je Name und ~300 m einmal)"""
+    # Wasser zuerst, dann Wohnen/Gewerbe, dann Grün – große Flächen vor kleinen
+    reihenfolge = {FLAECHE_WOHNEN: 0, FLAECHE_GEWERBE: 1, FLAECHE_WALD: 2, FLAECHE_GRUEN: 3,
+                   FLAECHE_FRIEDHOF: 4, FLAECHE_WASSER: 5}
+    def groesse(f):
+        r = f[1][0]
+        return -(max(p[0] for p in r) - min(p[0] for p in r)) * (max(p[1] for p in r) - min(p[1] for p in r))
+    flaechen = sorted(leser.k_flaechen, key=lambda f: (reihenfolge.get(f[0], 9), groesse(f)))
+    gesehen, namen = set(), []
+    for klasse, name, lat, lon in sorted(leser.k_namen):
+        schluessel = (name, round(lat * 330), round(lon * 220))
+        if schluessel in gesehen:
+            continue
+        gesehen.add(schluessel)
+        namen.append([klasse, name, int(round(lat * 1e5)), int(round(lon * 1e5))])
+    daten = {
+        'flaechen': [[art, [zahlen_kodieren(r) for r in ringe]] for art, ringe in flaechen],
+        'linien': [[art, zahlen_kodieren(p)] for art, p in leser.k_linien],
+        'orte': [[st, n, int(round(la * 1e5)), int(round(lo * 1e5))] for st, n, la, lo in sorted(leser.k_orte)],
+        'namen': namen,
+    }
+    with gzip.open(pfad, 'wt', encoding='utf-8', compresslevel=9) as f:
+        json.dump(daten, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  Kartenbild: {len(flaechen):,} Flächen, {len(leser.k_linien):,} Linien, '
+          f'{len(leser.k_orte):,} Ortsnamen, {len(namen):,} Straßennamen')
+
+
 def main():
     p = argparse.ArgumentParser(description='Kartenpaket für die Kilometer-Berechnung bauen')
     p.add_argument('dateien', nargs='+', help='OpenStreetMap-Dateien (*.osm.pbf)')
@@ -570,14 +690,18 @@ def main():
     adr_datei = f'{a.name}-adressen.json.gz'
     adressen_schreiben(os.path.join(a.ziel, adr_datei), leser)
 
+    print('Schreibe Kartenbild …')
+    karte_datei = f'{a.name}-karte.json.gz'
+    kartenbild_schreiben(os.path.join(a.ziel, karte_datei), leser)
+
     groesse = lambda d: os.path.getsize(os.path.join(a.ziel, d))
     eintrag = {
         'name': a.name,
         'titel': a.titel,
         'stand': datetime.date.today().isoformat(),
         'version': 1,
-        'dateien': {'strassen': netz_datei, 'adressen': adr_datei},
-        'bytes': groesse(netz_datei) + groesse(adr_datei),
+        'dateien': {'strassen': netz_datei, 'adressen': adr_datei, 'karte': karte_datei},
+        'bytes': groesse(netz_datei) + groesse(adr_datei) + groesse(karte_datei),
         'grenzen': grenzen,
         'quelle': '© OpenStreetMap-Mitwirkende (ODbL)'
     }
