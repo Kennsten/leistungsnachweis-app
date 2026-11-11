@@ -626,7 +626,11 @@ def adressen_schreiben(pfad, leser):
     for name, art, lat, lon in leser.pois:
         pois.append([normalisieren(name), name, art, int(round(lat * 1e5)), int(round(lon * 1e5))])
 
-    daten = {'orte': orte, 'strassen': strassen, 'pois': pois}
+    # Städte, Stadtteile, Dörfer mit Lage – für Suchen wie „Kaufland Hannover Mitte“
+    plaetze = [[normalisieren(n), n, st, int(round(la * 1e5)), int(round(lo * 1e5))]
+               for st, n, la, lo in leser.k_orte]
+
+    daten = {'orte': orte, 'strassen': strassen, 'pois': pois, 'plaetze': plaetze}
     with gzip.open(pfad, 'wt', encoding='utf-8', compresslevel=9) as f:
         json.dump(daten, f, ensure_ascii=False, separators=(',', ':'))
     print(f'  Adressen: {len(leser.adressen):,} Hausnummern in {len(strassen):,} Straßen, '

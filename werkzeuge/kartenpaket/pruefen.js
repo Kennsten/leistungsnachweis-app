@@ -17,7 +17,9 @@ const PROBEN = {
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Flughafenstraße 4, 30855 Langenhagen'], von: 10, bis: 18 },
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Marktstraße, 31303 Burgdorf'], von: 18, bis: 35 },
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Marktstraße, 31535 Neustadt am Rübenberge'], von: 22, bis: 45 },
-    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke', 'Ernst-August-Platz 1, 30159 Hannover'], von: 0.1, bis: 6 }
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke', 'Ernst-August-Platz 1, 30159 Hannover'], von: 0.1, bis: 6 },
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Kaufland Hannover Mitte'], von: 0.1, bis: 8 },
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke Linden'], von: 1, bis: 8 }
   ]
 };
 

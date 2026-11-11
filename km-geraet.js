@@ -326,6 +326,11 @@ function adressenLesen(text){
     if(l)l.push(i);else verz.nachName.set(s[0],[i]);
   });
   verz.namenListe=[...verz.nachName.keys()].sort();
+  // Städte und Stadtteile: Suchname → [{name, stufe, lat, lon}]
+  verz.plaetze=new Map();
+  (d.plaetze||[]).forEach(([n,name,stufe,la,lo])=>{
+    const l=verz.plaetze.get(n)||[];l.push({name,stufe,lat:la/1e5,lon:lo/1e5});verz.plaetze.set(n,l);
+  });
   return verz;
 }
 
@@ -427,6 +432,45 @@ function adresseSuchen(verz,text,bezug){
     return {lat:p[3]/1e5,lon:p[4]/1e5,name:p[1],unsicher:!(exakt||arten)||weit||!nahe};
   }
 
+  // Freie Suche aus mehreren Wörtern: „Kaufland Hannover Mitte“, „Apotheke Linden“.
+  // Wörter, die Orte oder Stadtteile sind, bestimmen die Gegend; die übrigen den Namen.
+  function freieSuche(){
+    const woerter=String(text).split(/[\s,]+/).map(norm).filter(w=>w.length>=2&&!/^\d+$/.test(w));
+    if(woerter.length<2)return null;
+    const gegend=[],nameW=[];
+    for(const w of woerter){
+      const pl=verz.plaetze.get(w);
+      const istOrt=verz.ortNorm.includes(w);
+      if(pl||istOrt)gegend.push({w,pl:pl||[],mitte:istOrt?ortMitte(verz,w):null});
+      else nameW.push(w);
+    }
+    if(!nameW.length)return null;
+    // Gegend: der genaueste Ort (Stadtteil vor Stadt), nahe an den übrigen Ortsangaben
+    let nahe=bezug,gross=null;
+    for(const g of gegend){
+      const stadt=g.pl.find(p=>p.stufe<=2);
+      if(stadt||g.mitte)gross=gross||(stadt?[stadt.lat,stadt.lon]:g.mitte);
+    }
+    let genau=null;
+    for(const g of gegend)for(const p of g.pl){
+      if(gross&&abstandM(p.lat,p.lon,gross[0],gross[1])>20000)continue;
+      if(!genau||p.stufe>genau.stufe)genau=p;
+    }
+    if(genau)nahe=[genau.lat,genau.lon];else if(gross)nahe=gross;
+    // Bekannte Orte, deren Name alle Namenswörter enthält (oder deren Art passt)
+    const arten=nameW.length===1?ARTEN[nameW[0]]:null;
+    let kand=verz.pois.filter(p=>arten?arten.includes(p[2]):nameW.every(w=>p[0].includes(w)));
+    let alle=true;
+    if(!kand.length&&!arten){
+      const laengstes=nameW.slice().sort((a,b)=>b.length-a.length)[0];
+      if(laengstes.length>=4){kand=verz.pois.filter(p=>p[0].includes(laengstes));alle=false;}
+    }
+    if(!kand.length)return null;
+    const p=naechster(kand,nahe,p=>[p[3]/1e5,p[4]/1e5]);
+    const weit=nahe?abstandM(p[3]/1e5,p[4]/1e5,nahe[0],nahe[1])>(genau?4000:25000):true;
+    return {lat:p[3]/1e5,lon:p[4]/1e5,name:p[1]+(genau?' ('+genau.name+')':''),unsicher:!alle||weit||!nahe};
+  }
+
   // 1. Straße genau gefunden
   let treffer=verz.nachName.get(name);
   let unsicher=false;
@@ -434,10 +478,19 @@ function adresseSuchen(verz,text,bezug){
   if(!treffer&&!z.nr){
     const ort=poiSuchen(true);
     if(ort)return ort;
+    // Mehrere Wörter mit Ortsangabe („Kaufland Hannover Mitte“)
+    const frei=freieSuche();
+    if(frei)return frei;
     // Genau ein Ortsname („Wunstorf“) – vor ähnlichen Straßen („Wunstorfer Straße“)
     if(verz.ortNorm.includes(name)){
       const mitte=ortMitte(verz,name);
       if(mitte)return {lat:mitte[0],lon:mitte[1],name:verz.orte[verz.ortNorm.indexOf(name)],unsicher:true};
+    }
+    // Stadtteil oder Dorf („Linden“, „Mitte“)
+    const pl=verz.plaetze.get(name);
+    if(pl&&pl.length){
+      const p=naechster(pl,bezug,p=>[p.lat,p.lon]);
+      return {lat:p.lat,lon:p.lon,name:p.name,unsicher:true};
     }
   }
   // 3. Straße beginnt mit dem Eingetippten („Engelbosteler“ → „Engelbosteler Damm“)
