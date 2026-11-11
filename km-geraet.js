@@ -156,8 +156,9 @@ function netzRaster(netz){
   netz.raster={anfang,anzahl:zaehler,liste};
 }
 
-// Nächste befahrbare Stelle zu einem Punkt (keine Autobahn, keine Auffahrt)
-function naechsteStrasse(netz,lat,lon){
+// Nächste befahrbare Stelle zu einem Punkt (keine Autobahn, keine Auffahrt –
+// außer bei Zwischenpunkten, die man auf der Karte auf eine Autobahn zieht)
+function naechsteStrasse(netz,lat,lon,auchSchnell){
   const kx=111320*Math.cos(lat*Math.PI/180),ky=110540;
   let beste=null;
   for(let ring=0;ring<=6;ring++){
@@ -171,7 +172,7 @@ function naechsteStrasse(netz,lat,lon){
       for(let p=start;p<ende;p++){
         const e=netz.raster.liste[p];
         const klasse=netz.art[e]&15;
-        if(klasse<=2)continue;
+        if(klasse<=2&&!auchSchnell)continue;
         const pk=kantenPunkte(netz,e);
         let entlang=0;
         for(let i=1;i<pk.length;i++){
@@ -587,25 +588,40 @@ function ortMitte(verz,ortN){
 // ---------------------------------------------------------------------------
 // Berechnung über alle Punkte
 // ---------------------------------------------------------------------------
+// adressen: Texte (Adressen, Orte) oder {lat, lon} für Zwischenpunkte, die
+// auf der Karte per Finger gesetzt wurden („über diese Straße gefahren“)
 function routeBerechnen(paket,adressen){
   const {netz,verz}=paket;
+  const schluessel=a=>typeof a==='string'?a:'@'+a.lat+','+a.lon;
   const gefunden=new Map();
   let bezug=null;
   for(const a of adressen){
-    if(gefunden.has(a))continue;
+    const k=schluessel(a);
+    if(gefunden.has(k))continue;
+    if(typeof a!=='string'){
+      const s=naechsteStrasse(netz,a.lat,a.lon,true);
+      if(!s||s.d>1500)throw new Error('An dieser Stelle der Karte ist keine befahrbare Straße.');
+      gefunden.set(k,{lat:s.punkt[0],lon:s.punkt[1],name:'Zwischenpunkt',via:true,strasse:s});
+      continue;
+    }
     const t=adresseSuchen(verz,a,bezug);
     if(!t)throw new Error('Adresse nicht im Kartenpaket gefunden: '+a+'. Bitte Schreibweise prüfen oder die Kilometer von Hand eintragen.');
     const s=naechsteStrasse(netz,t.lat,t.lon);
     if(!s||s.d>3000)throw new Error('Keine befahrbare Straße in der Nähe von: '+a+'.');
-    gefunden.set(a,{...t,strasse:s});
+    gefunden.set(k,{...t,strasse:s});
     if(!bezug)bezug=[t.lat,t.lon];
   }
-  const punkte=adressen.map(a=>gefunden.get(a));
+  const punkte=adressen.map(a=>gefunden.get(schluessel(a)));
   let meter=0;const linie=[];
+  // Abschnitte: wo in der Linie beginnt der Weg zum nächsten Punkt?
+  const abschnitte=[];
   for(let i=1;i<punkte.length;i++){
-    if(adressen[i]===adressen[i-1])continue;
+    abschnitte.push(linie.length);
+    if(schluessel(adressen[i])===schluessel(adressen[i-1]))continue;
     const r=strecke(netz,punkte[i-1].strasse,punkte[i].strasse);
-    if(!r)throw new Error('Keine Strecke gefunden zwischen „'+adressen[i-1]+'“ und „'+adressen[i]+'“.');
+    if(!r)throw new Error(punkte[i].via||punkte[i-1].via
+      ? 'Über diesen Punkt lässt sich keine Strecke fahren (z. B. Einbahnstraße). Bitte den Punkt etwas verschieben.'
+      : 'Keine Strecke gefunden zwischen „'+adressen[i-1]+'“ und „'+adressen[i]+'“.');
     meter+=r.meter;
     linie.push(...r.punkte);
   }
@@ -614,6 +630,8 @@ function routeBerechnen(paket,adressen){
     km:Math.round(meter/100)/10,
     punkte:punkte.map(p=>p.name),
     koordinaten:punkte.map(p=>[p.lat,p.lon]),
+    via:punkte.map(p=>Boolean(p.via)),
+    abschnitte,
     linie:polylineKodieren(linie),
     unsicher,
     geraet:true

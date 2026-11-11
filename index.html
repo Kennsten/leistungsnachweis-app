@@ -178,6 +178,10 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .km-paket-knoepfe{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .karte-nr{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#C85A3E;color:#fff;font-weight:700;font-size:13px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .karte-nr.start{background:#2f3a2f}
+.karte-via{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #C85A3E;box-shadow:0 1px 4px rgba(0,0,0,.4);box-sizing:border-box}
+.karte-tipp{margin:8px 0 0}
+.karte-anpassung{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 0;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-item);background:var(--card)}
+.karte-anpassung-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
 .route-vorschau{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-weight:400;font-size:.85rem;color:var(--ink)}
 .route-vorschau:empty{display:none}
 .route-vorschau li{position:relative;display:flex;align-items:center;gap:8px;padding:3px 0 3px 0}
@@ -2448,6 +2452,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </div>
     <button autofocus type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
   </div>
+  <p id="karteTipp" class="muted small karte-tipp">✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die rote Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen.</p>
+  <div id="karteAnpassung" class="karte-anpassung hidden">
+    <span id="karteAnpassungText"></span>
+    <span class="karte-anpassung-knoepfe">
+      <button type="button" id="karteKmUebernehmen">Kilometer übernehmen</button>
+      <button type="button" id="karteZuruecksetzen" class="secondary">Zurücksetzen</button>
+    </span>
+  </div>
   <div id="karte"></div>
   <p class="muted small" style="margin:8px 0 0">
     Kartendaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende ·
@@ -3626,7 +3638,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.24.38 Verkaufsversion';
+const APP_VERSION='0.24.39 Verkaufsversion (Vorschau)';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -9122,6 +9134,134 @@ function karteStrassenZeichnen(karte){
   karte.attributionControl.addAttribution('© OpenStreetMap-Mitwirkende');
 }
 
+/* ---------- Karte: Strecke anzeigen und per Finger anpassen ----------
+   Auf die rote Linie tippen → weißer Zwischenpunkt entsteht; ihn auf die
+   tatsächlich gefahrene Straße ziehen → die Strecke wird auf dem Gerät neu
+   berechnet. „Kilometer übernehmen“ trägt den Wert in die Fahrt ein. */
+let kartenWegpunkte=[],kartenErgebnis=null,kartenGrundKm=null,kartenRouteEbene=null;
+
+function karteRouteZeichnen(ergebnis){
+  kartenErgebnis=ergebnis;
+  if(kartenRouteEbene)kartenRouteEbene.clearLayers();
+  else kartenRouteEbene=L.layerGroup().addTo(kartenObjekt);
+
+  const linie=ergebnis.linie?linieEntschluesseln(ergebnis.linie):[];
+  ergebnis._linie=linie;
+  const koordinaten=ergebnis.koordinaten||[];
+  const punkte=ergebnis.punkte||[];
+  const via=ergebnis.via||[];
+  const letzter=koordinaten.length-1;
+  const rundfahrt=letzter>0&&
+    koordinaten[0][0]===koordinaten[letzter][0]&&
+    koordinaten[0][1]===koordinaten[letzter][1];
+
+  if(linie.length){
+    L.polyline(linie,{color:'#C85A3E',weight:5,opacity:.85,interactive:false}).addTo(kartenRouteEbene);
+    // Breite, unsichtbare Linie darüber: leicht mit dem Finger zu treffen
+    L.polyline(linie,{color:'#C85A3E',weight:26,opacity:0.01,interactive:true})
+      .on('click',e=>zwischenpunktSetzen(e.latlng))
+      .addTo(kartenRouteEbene);
+  }
+
+  let nr=0;
+  koordinaten.forEach((k,i)=>{
+    if(via[i]){
+      const m=L.marker(k,{draggable:true,autoPan:true,
+        icon:L.divIcon({className:'',html:'<div class="karte-via"></div>',iconSize:[22,22],iconAnchor:[11,11]})});
+      m.on('dragend',()=>{
+        const ll=m.getLatLng();
+        kartenWegpunkte[i]={lat:ll.lat,lon:ll.lng};
+        karteNeuBerechnen();
+      });
+      m.on('click',()=>{
+        kartenWegpunkte.splice(i,1);
+        karteNeuBerechnen();
+      });
+      m.addTo(kartenRouteEbene);
+      return;
+    }
+    if(rundfahrt&&i===letzter)return;
+    const istStart=i===0;
+    const istZiel=i===letzter;
+    const beschriftung=istStart?'▶':(istZiel?'■':String(++nr));
+    L.marker(k,{
+      icon:L.divIcon({
+        className:'',
+        html:'<div class="karte-nr'+(istStart||istZiel?' start':'')+'">'+beschriftung+'</div>',
+        iconSize:[26,26],
+        iconAnchor:[13,13]
+      })
+    }).bindPopup(esc(punkte[i]||'')+(istStart&&rundfahrt?' (Start und Ziel)':''))
+      .addTo(kartenRouteEbene);
+  });
+
+  // Kopfzeile und Leiste „angepasst“
+  $('kartenTitel').textContent=formatKm(ergebnis.km)+' km';
+  const anzahl=via.filter(Boolean).length;
+  $('karteAnpassung').classList.toggle('hidden',!anzahl);
+  if(anzahl){
+    const unterschied=ergebnis.km-kartenGrundKm;
+    $('karteAnpassungText').innerHTML='<strong>Angepasst: '+esc(formatKm(ergebnis.km))+' km</strong> '+
+      '(berechnet waren '+esc(formatKm(kartenGrundKm))+' km, '+(unterschied>=0?'+':'')+esc(formatKm(Math.round(unterschied*10)/10))+' km) · '+
+      anzahl+' Zwischenpunkt'+(anzahl===1?'':'e');
+    $('karteKmUebernehmen').textContent='Kilometer übernehmen ('+Math.round(ergebnis.km+1e-9)+' km)';
+  }
+}
+
+// Neuen Zwischenpunkt in den Abschnitt einfügen, auf den getippt wurde
+function zwischenpunktSetzen(latlng){
+  const e=kartenErgebnis;
+  if(!e||!e._linie||!e._linie.length)return;
+  let beste=0,bd=Infinity;
+  e._linie.forEach((p,i)=>{
+    const d=(p[0]-latlng.lat)**2+((p[1]-latlng.lng)*0.61)**2;
+    if(d<bd){bd=d;beste=i;}
+  });
+  let abschnitt=0;
+  (e.abschnitte||[0]).forEach((start,j)=>{if(start<=beste)abschnitt=j;});
+  kartenWegpunkte.splice(abschnitt+1,0,{lat:latlng.lat,lon:latlng.lng});
+  karteNeuBerechnen();
+}
+
+async function karteNeuBerechnen(){
+  const vorher=kartenErgebnis;
+  try{
+    const ergebnis=await kmHelferAuftrag({typ:'route',paket:kmPaketName(),adressen:kartenWegpunkte});
+    karteRouteZeichnen(ergebnis);
+  }catch(fehler){
+    toast(fehler.message);
+    // Zurück zum letzten funktionierenden Stand
+    if(vorher){
+      kartenWegpunkte=kartenWegpunkteAus(vorher);
+      karteRouteZeichnen(vorher);
+    }
+  }
+}
+// Wegpunkte aus einem Ergebnis wiederherstellen (Adressen bleiben, Zwischenpunkte als Lage)
+function kartenWegpunkteAus(ergebnis){
+  const adressen=fahrtAdressen()||[];
+  let a=0;
+  return (ergebnis.via||[]).map((v,i)=>v?{lat:ergebnis.koordinaten[i][0],lon:ergebnis.koordinaten[i][1]}:adressen[a++]);
+}
+
+$('karteZuruecksetzen').onclick=()=>{
+  kartenWegpunkte=(fahrtAdressen()||[]).slice();
+  karteNeuBerechnen();
+};
+$('karteKmUebernehmen').onclick=()=>{
+  const e=kartenErgebnis;
+  if(!e)return;
+  const km=Math.round(e.km+1e-9);
+  $('tripKilometers').value=String(km);
+  kmQuelleSetzen('berechnet');
+  const anzahl=(e.via||[]).filter(Boolean).length;
+  $('tripKmHinweis').innerHTML='<strong>'+esc(formatKm(e.km))+' km</strong> – Strecke auf der Karte angepasst ('+
+    anzahl+' Zwischenpunkt'+(anzahl===1?'':'e')+'), gerundet '+km+' km. Vorher berechnet: '+esc(formatKm(kartenGrundKm))+' km.';
+  if(typeof tachoHinweisZeigen==='function')tachoHinweisZeigen();
+  $('kartenDialog').close();
+  toast('Angepasste Kilometer übernommen: '+km+' km');
+};
+
 async function karteZeigen(){
   const knopf=$('tripKarte');
   const adressen=fahrtAdressen();
@@ -9137,45 +9277,21 @@ async function karteZeigen(){
   try{
     const [ergebnis]=await Promise.all([routeAbfragen(adressen),leafletLaden()]);
 
-    $('kartenTitel').textContent=formatKm(ergebnis.km)+' km';
+    kartenWegpunkte=adressen.slice();
+    kartenGrundKm=ergebnis.km;
     $('karte').classList.add('karte-geraet');
     $('kartenDialog').showModal();
 
     if(kartenObjekt){kartenObjekt.remove();kartenObjekt=null;}
+    kartenRouteEbene=null;
 
     kartenObjekt=L.map('karte',{preferCanvas:true,maxZoom:19});
     // Keine Kartenbilder von fremden Servern: Stadtplan aus dem Kartenpaket zeichnen
     karteStrassenZeichnen(kartenObjekt);
+    karteRouteZeichnen(ergebnis);
 
-    const linie=ergebnis.linie?linieEntschluesseln(ergebnis.linie):[];
-    const koordinaten=ergebnis.koordinaten||[];
-    const punkte=ergebnis.punkte||[];
-    const letzter=koordinaten.length-1;
-    const rundfahrt=letzter>0&&
-      koordinaten[0][0]===koordinaten[letzter][0]&&
-      koordinaten[0][1]===koordinaten[letzter][1];
-
-    if(linie.length){
-      L.polyline(linie,{color:'#C85A3E',weight:5,opacity:.85}).addTo(kartenObjekt);
-    }
-
-    koordinaten.forEach((k,i)=>{
-      if(rundfahrt&&i===letzter)return;
-      const istStart=i===0;
-      const istZiel=i===letzter;
-      const beschriftung=istStart?'▶':(istZiel?'■':String(i));
-      L.marker(k,{
-        icon:L.divIcon({
-          className:'',
-          html:'<div class="karte-nr'+(istStart||istZiel?' start':'')+'">'+beschriftung+'</div>',
-          iconSize:[26,26],
-          iconAnchor:[13,13]
-        })
-      }).bindPopup(esc(punkte[i]||'')+(istStart&&rundfahrt?' (Start und Ziel)':''))
-        .addTo(kartenObjekt);
-    });
-
-    const grenzen=L.latLngBounds(linie.length?linie:koordinaten);
+    const linie=ergebnis._linie||[];
+    const grenzen=L.latLngBounds(linie.length?linie:(ergebnis.koordinaten||[]));
     setTimeout(()=>{
       kartenObjekt.invalidateSize();
       kartenObjekt.fitBounds(grenzen,{padding:[24,24]});
