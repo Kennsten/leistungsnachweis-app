@@ -19,7 +19,10 @@ const PROBEN = {
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Marktstraße, 31535 Neustadt am Rübenberge'], von: 22, bis: 45 },
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke', 'Ernst-August-Platz 1, 30159 Hannover'], von: 0.1, bis: 6 },
     { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Kaufland Hannover Mitte'], von: 0.1, bis: 8 },
-    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke Linden'], von: 1, bis: 8 }
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Apotheke Linden'], von: 1, bis: 8 },
+    // Tippfehler und ähnlich klingende Buchstaben: „geweken kamp“ → „Geveker Kamp“
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'geweken kamp 5'], von: 4, bis: 12 },
+    { adressen: ['Ernst-August-Platz 1, 30159 Hannover', 'Lsiter Meile 50'], von: 0.5, bis: 5 }
   ]
 };
 

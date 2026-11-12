@@ -395,6 +395,53 @@ const ARTEN={
   sanitaetshaus:['shop=medical_supply'],optiker:['shop=optician'],hoerakustiker:['shop=hearing_aids']
 };
 
+// ---------------------------------------------------------------------------
+// Tippfehler-tolerante Suche
+// ---------------------------------------------------------------------------
+// Buchstaben, die gleich oder ähnlich klingen, kosten beim Verwechseln nur wenig
+// (geweken ↔ geveker: w/v klingt gleich).
+const AEHNLICH=['vw','fv','fw','ck','kq','cz','sz','dt','bp','gk','iy','ij','ae','ou','mn'];
+const aehnlichSet=new Set(AEHNLICH.flatMap(p=>[p,p[1]+p[0]]));
+function tippAbstand(a,b,grenze){
+  // Damerau-Levenshtein (mit vertauschten Nachbarbuchstaben), gewichtet
+  const n=a.length,m=b.length;
+  if(Math.abs(n-m)>grenze)return Infinity;
+  let vv=new Array(m+1),v=new Array(m+1),w=new Array(m+1);
+  for(let j=0;j<=m;j++)v[j]=j;
+  for(let i=1;i<=n;i++){
+    w[0]=i;let zeileMin=w[0];
+    for(let j=1;j<=m;j++){
+      const x=a[i-1],y=b[j-1];
+      const kosten=x===y?0:aehnlichSet.has(x+y)?0.5:1;
+      let d=Math.min(v[j]+1,w[j-1]+1,v[j-1]+kosten);
+      if(i>1&&j>1&&x===b[j-2]&&a[i-2]===y)d=Math.min(d,vv[j-2]+1);
+      w[j]=d;if(d<zeileMin)zeileMin=d;
+    }
+    if(zeileMin>grenze)return Infinity;
+    const t=vv;vv=v;v=w;w=t;
+  }
+  return v[m];
+}
+// Wie viele Tippfehler sind je nach Länge erlaubt?
+function erlaubteFehler(laenge){return laenge<5?0:laenge<8?1:laenge<12?2:3}
+
+// Straßen mit ähnlichem Namen („geweken kamp“ → „Geveker Kamp“).
+// Liefert die Indexe der Straßen mit dem kleinsten Abstand.
+function aehnlicheStrassen(verz,name){
+  const grenze=erlaubteFehler(name.length);
+  if(!grenze)return null;
+  let best=Infinity,namen=[];
+  for(const k of verz.namenListe){
+    let d=tippAbstand(name,k,grenze);
+    // Auch Namensanfang („gevekerk“ → „gevekerkamp“), etwas schlechter bewertet
+    if(d===Infinity&&name.length>=6&&k.length>name.length)d=tippAbstand(name,k.slice(0,name.length),grenze)+0.5;
+    if(d>grenze)continue;
+    if(d<best){best=d;namen=[k];}else if(d===best)namen.push(k);
+  }
+  if(!namen.length)return null;
+  return namen.flatMap(k=>verz.nachName.get(k));
+}
+
 function naechster(liste,bezug,lage){
   if(!bezug)return liste[0];
   let beste=null,bd=Infinity;
@@ -519,6 +566,16 @@ function adresseSuchen(verz,text,bezug){
     for(let i=lo;i<verz.namenListe.length&&verz.namenListe[i].startsWith(name)&&kandidaten.length<400;i++)
       kandidaten.push(...verz.nachName.get(verz.namenListe[i]));
     if(kandidaten.length){treffer=kandidaten;unsicher=true;}
+  }
+  // 3b. Tippfehler oder Buchstabendreher („geweken kamp“ → „Geveker Kamp“).
+  //     Ohne Hausnummer erst, wenn kein bekannter Ort ähnlich heißt.
+  if(!treffer){
+    const aehnlich=aehnlicheStrassen(verz,name);
+    if(aehnlich){
+      const ort=z.nr?null:poiSuchen(false);
+      if(ort)return ort;
+      treffer=aehnlich;unsicher=true;
+    }
   }
 
   if(treffer){
