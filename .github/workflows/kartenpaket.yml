@@ -50,6 +50,9 @@ jobs:
       # Ausschnitt: Region Hannover mit etwa 5–10 km Rand
       # (Süd, West, Nord, Ost in Grad)
       - name: Kartenpaket bauen (Region Hannover)
+        env:
+          # Zeigt im Protokoll, wie diese Namen in den Kartendaten eingetragen sind
+          QA_ZEIGEN: Trammplatz
         run: |
           python3 werkzeuge/kartenpaket/bauen.py \
             --name region-hannover --titel "Hannover und Region Hannover" \

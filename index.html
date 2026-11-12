@@ -230,6 +230,8 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .satz-feld input{background:var(--card);color:var(--ink)}
 .satz-feld-zeile{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .satz-feld-teil{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600}
+.fb-schutz{border:1px solid var(--line);border-radius:var(--radius-item,12px);padding:8px 14px;margin:10px 0}
+.fb-schutz-titel{margin:4px 0 0;font-weight:700;font-size:.9rem}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -2505,6 +2507,12 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </label>
 </div>
 
+<div class="fb-schutz">
+  <p class="fb-schutz-titel">Datenschutz im Fahrtenbuch</p>
+  <label class="sicherung-haken"><input type="checkbox" id="allTripsNamen"> Namen der Klient*innen zeigen (sonst nur Kennung, z. B. K001)</label>
+  <label class="sicherung-haken"><input type="checkbox" id="allTripsHausnummern"> Hausnummern zeigen (sonst nur Straße und Ort)</label>
+</div>
+
 <div class="ansicht-leiste">
   <div class="umschalter" id="allTripsListe" role="group" aria-label="Welche Liste">
     <button type="button" data-wert="berechnet">Berechnete km</button>
@@ -3289,6 +3297,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
   <label class="sicherung-haken"><input type="checkbox" id="spBelege" checked> Belege als Dateien beilegen</label>
   <label class="sicherung-haken"><input type="checkbox" id="spZweckNeutral" checked> Reisezweck neutral („Klientenbesuch“ statt eigenem Text, z. B. ohne Arzt- oder Klinikangaben)</label>
+  <label class="sicherung-haken"><input type="checkbox" id="spHausnummern"> Hausnummern im Fahrtenbuch zeigen (sonst nur Straße und Ort – schützt die Wohnadressen der Klient*innen)</label>
   <label class="sicherung-haken"><input type="checkbox" id="spKlarnamen"> Bewirtungen mit Klarnamen (sonst werden Klientennamen durch die Kennung ersetzt)</label>
   <label class="sicherung-haken"><input type="checkbox" id="spVerzeichnis"> Klientenverzeichnis beilegen (Kennung, Name, Adresse)</label>
   <p class="muted small" id="spVerzeichnisHinweis">Das Finanzamt könnte nach dem Klientenverzeichnis fragen. Es muss sich mit dem Fahrtenbuch zusammenführen lassen. Ob es der Steuerberatung immer mitgegeben werden soll, klärst du am besten mit ihr.</p>
@@ -3902,7 +3911,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.11 Verkaufsversion';
+const APP_VERSION='0.25.12 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -5518,15 +5527,21 @@ async function loadAllTrips(){
         : `Jahr ${year}`)
     : 'Gesamter Zeitraum';
 
+  // Datenschutz: ohne Häkchen nur Kennung statt Name und Adressen ohne Hausnummer
+  const mitNamen=$('allTripsNamen').checked;
+  const mitHausnummern=$('allTripsHausnummern').checked;
+  const klientVon=id=>clients.find(c=>String(c.id)===String(id))||null;
   const clientName=clientId=>{
-    const client=clients.find(
-      c=>String(c.id)===String(clientId)
-    );
-    return client?client.name:'Unbekannter Klient';
+    const client=klientVon(clientId);
+    if(!client)return 'Unbekannter Klient';
+    return mitNamen?client.name:(client.client_code||'ohne Kennung');
   };
+  const adr=a=>mitHausnummern?String(a||''):hausnummerEntfernen(a);
+  const namenWeg=(text,id)=>mitNamen?String(text||''):spNamenErsetzen(text,klientVon(id));
 
   allTripsPayload={
     zeitraum:zeitraum,
+    kennungen:!mitNamen,
     createdAt:todayIso(),
     totalKm:totalKm,
     trips:allTrips
@@ -5539,10 +5554,10 @@ async function loadAllTrips(){
         client:trip.allgemein
           ? 'Allgemein'
           : clientName(trip.client_id),
-        start:trip.start_address||'',
-        stops:trip.intermediate_stops||trip.stopovers||'',
-        destination:trip.destination_address||trip.destination||'',
-        purpose:trip.purpose||'',
+        start:adr(trip.start_address),
+        stops:(mitHausnummern?String:stoppsOhneHausnummer)(namenWeg(trip.intermediate_stops||trip.stopovers||'',trip.client_id)),
+        destination:adr(trip.destination_address||trip.destination),
+        purpose:namenWeg(trip.purpose||'',trip.client_id),
         km:Number(trip.kilometers||0),
         tachoStart:trip.tacho_start??null,
         tachoEnde:trip.tacho_ende??null
@@ -6039,6 +6054,12 @@ function hausnummerEntfernen(adresse){
   m=text.match(/^(.*[^\d\s].*?)\s+\d{1,4}\s*[a-zA-Z]?(\s+\d{5}\b.*)$/);
   if(m)return m[1].trim()+m[2];
   return text;
+}
+// Mehrere Stopps (je Zeile oder mit „ - “ getrennt): jede Adresse ohne Hausnummer
+function stoppsOhneHausnummer(text){
+  return String(text||'').split(/\n/).map(zeile=>
+    zeile.split(/\s+-\s+/).map(hausnummerEntfernen).join(' - ')
+  ).join('\n');
 }
 function adresseNachGenauigkeit(adresse){
   // Auf dem Gerät verlässt nichts die App: immer mit Hausnummer (genauer)
@@ -8372,6 +8393,8 @@ $('allTrips').onclick=async()=>{
 };
   $('allTripsYear').onchange=loadAllTrips;
 $('allTripsMonth').onchange=loadAllTrips;
+$('allTripsNamen').onchange=loadAllTrips;
+$('allTripsHausnummern').onchange=loadAllTrips;
 
 $('printAllTrips').onclick=()=>{
   if(!allTripsPayload||!allTripsPayload.trips.length){
@@ -17408,6 +17431,9 @@ async function spErstellen(){
     const name=(istTest()?'MUSTER_':'')+spName;
     const klarnamen=$('spKlarnamen').checked;
     const zweckNeutral=$('spZweckNeutral').checked;
+    const mitHausnummern=$('spHausnummern').checked;
+    const adr=a=>mitHausnummern?String(a||''):hausnummerEntfernen(a);
+    const stoppsAdr=a=>mitHausnummern?String(a||''):stoppsOhneHausnummer(a);
     const mitVerzeichnis=$('spVerzeichnis').checked;
     const mitBelegen=$('spBelege').checked;
     fort.textContent='Daten werden gesammelt …';
@@ -17427,9 +17453,9 @@ async function spErstellen(){
           t.allgemein?'Allgemeine Fahrt':'Klientenbesuch',
           c?(c.client_code||'ohne Kennung'):'',
           (c&&zweckNeutral)?'Klientenbesuch':spTextUmbruch(spNamenErsetzen(t.purpose||'',c)),
-          t.start_address||'',
-          spStoppsNummeriert(spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c)),
-          t.destination_address||t.destination||'',
+          adr(t.start_address),
+          spStoppsNummeriert(stoppsAdr(spNamenErsetzen(t.intermediate_stops||t.stopovers||'',c))),
+          adr(t.destination_address||t.destination),
           spKm(t.kilometers),
           t.tacho_start!=null?spKm(t.tacho_start):'',
           t.tacho_ende!=null?spKm(t.tacho_ende):''

@@ -173,6 +173,18 @@ def befahrbar(tags):
     return True
 
 
+ZEIGEN = os.environ.get('QA_ZEIGEN', '').strip()
+
+
+def ist_platz(tags):
+    """Benannte Plätze und Fußgängerflächen (z. B. Trammplatz): kein Straßennetz,
+    aber als Adresse suchbar."""
+    if not tags.get('name'):
+        return False
+    return ('highway' in tags and not befahrbar(tags)) or 'area:highway' in tags \
+        or tags.get('place') in ('square', 'plaza')
+
+
 def normalisieren(text):
     """Vereinheitlicht Straßen- und Ortsnamen für die Suche.
     Muss genau so in der App (km-geraet.js, Funktion norm) umgesetzt sein."""
@@ -266,6 +278,9 @@ class Leser(osmium.SimpleHandler):
             self.gesehen.add(('n', n.id))
         if 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags):
             self._adresse(tags, n.location.lat, n.location.lon)
+        self._zeigen('Punkt', n.id, tags)
+        if tags.get('place') in ('square', 'plaza') and tags.get('name'):
+            self.strassen_namen.append((tags['name'], n.location.lat, n.location.lon))
         name = tags.get('name') or tags.get('brand')
         if name:
             art = self._poi_art(tags)
@@ -282,7 +297,8 @@ class Leser(osmium.SimpleHandler):
         marke = tags.get('brand', '')
         poi_art = self._poi_art(tags) if (name or marke) else None
 
-        if name and 'highway' in tags and not befahrbar(tags):
+        self._zeigen('Weg', w.id, tags)
+        if ist_platz(tags) and not befahrbar(tags):
             # Plätze, Fußgängerzonen usw.: nur als Lage für den Straßennamen
             m = len(w.nodes) // 2
             if len(w.nodes) and w.nodes[m].location.valid():
@@ -352,11 +368,13 @@ class Leser(osmium.SimpleHandler):
         if a.from_way():
             return
         tags = a.tags
+        self._zeigen('Fläche', a.orig_id(), tags)
         hat_adresse = 'addr:housenumber' in tags and ('addr:street' in tags or 'addr:place' in tags)
         name = tags.get('name')
         marke = tags.get('brand', '')
         poi_art = self._poi_art(tags) if (name or marke) else None
-        if not (hat_adresse or poi_art):
+        platz = ist_platz(tags)
+        if not (hat_adresse or poi_art or platz):
             return
         if ('r', a.orig_id()) in self.gesehen:
             return
@@ -375,6 +393,8 @@ class Leser(osmium.SimpleHandler):
         if not self.drin(lat, lon):
             return
         self.gesehen.add(('r', a.orig_id()))
+        if platz:
+            self.strassen_namen.append((name, lat, lon))
         if hat_adresse:
             self._adresse(tags, lat, lon)
         if poi_art:
@@ -417,6 +437,15 @@ class Leser(osmium.SimpleHandler):
                 if len(loch) >= 4:
                     ringe.append(vereinfachen(loch, 6.0))
             self.k_flaechen.append((art, ringe))
+
+    def _zeigen(self, art, oid, tags):
+        """Zur Fehlersuche: Objekte mit einem gesuchten Namen im Protokoll zeigen
+        (Umgebungsvariable QA_ZEIGEN, z. B. „Trammplatz“)."""
+        if not ZEIGEN:
+            return
+        werte = [tags.get(k, '') for k in ('name', 'addr:street', 'addr:place')]
+        if any(ZEIGEN in w for w in werte):
+            print(f'  [Suche „{ZEIGEN}“] {art} {oid}: ' + ', '.join(f'{t.k}={t.v}' for t in tags))
 
     def _adresse(self, tags, lat, lon):
         strasse = tags.get('addr:street') or tags.get('addr:place')

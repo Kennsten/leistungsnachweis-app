@@ -26,6 +26,11 @@ const PROBEN = {
   ]
 };
 
+// Suchbegriffe, die einen bestimmten Namen finden sollten
+const NAMEN = {
+  'region-hannover': [['Trammplatz 2, 30159 Hannover', 'Trammplatz'], ['geweken kamp', 'Geveker Kamp']]
+};
+
 (async () => {
   const lesen = d => { const b = fs.readFileSync(path.join(ordner, d)); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
   const liste = JSON.parse(fs.readFileSync(path.join(ordner, 'pakete.json'), 'utf8')).pakete;
@@ -50,6 +55,12 @@ const PROBEN = {
       fehler++;
       console.log('FEHLER ' + probe.adressen.join(' → ') + ': ' + e.message);
     }
+  }
+  // Namen, die gefunden werden sollten (nur Warnung, bricht nicht ab)
+  for (const [eingabe, soll] of (NAMEN[name] || [])) {
+    const r = K.adresseSuchen(verz, eingabe, null);
+    const ok = r && r.name.toLowerCase().includes(soll.toLowerCase());
+    console.log(`${ok ? 'OK    ' : 'WARNUNG'} Suche „${eingabe}“ → ${r ? r.name : 'nicht gefunden'}`);
   }
   if (fehler) {
     console.log(fehler + ' Probe(n) fehlgeschlagen.');
