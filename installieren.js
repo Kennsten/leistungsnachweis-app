@@ -456,7 +456,10 @@
     document.getElementById('einladenAdresse').textContent = adresse;
     document.getElementById('einladenTeilen').classList.toggle('hidden', !navigator.share);
     const s = document.getElementById('settingsDialog');
-    if (s && s.open) s.close();
+    if (s && s.open) {
+      if (typeof window.einstellungenVerlassen === 'function') window.einstellungenVerlassen();
+      else s.close();
+    }
     dlg.showModal();
   }
 

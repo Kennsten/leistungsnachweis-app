@@ -3848,7 +3848,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.5 Verkaufsversion';
+const APP_VERSION='0.25.6 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4668,7 +4668,7 @@ async function konflikteAnzeigen(){
 
 async function konfliktDialogOeffnen(){
   if(!Geraet.istOffen())return;
-  if($('settingsDialog').open)$('settingsDialog').close();
+  einstellungenVerlassen();
   await konflikteAnzeigen();
   $('konfliktDialog').showModal();
 }
@@ -12180,11 +12180,13 @@ async function loadEinstellungen(){
 }
 
 /* Menü mit Unterseiten: zuerst eine Liste, ein Tipp öffnet das Thema */
+var einstAktuelleSeite='menue';
 function einstellungenSeite(name){
   // Testversion: Cloud und Datensicherung sind sichtbar, aber gesperrt
   if((name==='sicherung'||name==='cloud')&&typeof nurVollversion==='function'&&
      nurVollversion(name==='cloud'?'Die Verbindung zu deiner eigenen Cloud (Dokumente und Belege)':'Die automatische Datensicherung'))return;
   const menue=name==='menue';
+  einstAktuelleSeite=name;
   $('settingsMenue').classList.toggle('hidden',!menue);
   let titel='Einstellungen';
   document.querySelectorAll('#settingsDialog .einst-seite').forEach(seite=>{
@@ -12241,7 +12243,31 @@ function einstellungenOeffnen(ersterStart=false,seite){
 }
 
 $('openSettings').onclick=()=>einstellungenOeffnen();
-$('closeSettings').onclick=()=>$('settingsDialog').close();
+// „Schließen“ auf einer Unterseite führt zurück zur Liste, erst in der Liste schließt es ganz
+$('closeSettings').onclick=()=>{
+  if($('settingsMenue').classList.contains('hidden')){einstellungenStatusZeigen();einstellungenSeite('menue');return}
+  $('settingsDialog').close();
+};
+
+/* Aus den Einstellungen in ein anderes Fenster (Tresor, Steuerpaket, Sicherung …):
+   Die Einstellungen machen Platz und öffnen sich danach wieder auf derselben Seite. */
+var einstRueckkehr=null;
+function einstellungenVerlassen(){
+  if(!$('settingsDialog').open)return;
+  einstRueckkehr={seite:einstAktuelleSeite,ruhig:0};
+  $('settingsDialog').close();
+}
+setInterval(()=>{
+  if(!einstRueckkehr)return;
+  if(!user||$('app').classList.contains('hidden')){einstRueckkehr=null;return}
+  const beschaeftigt=document.querySelector('dialog[open]')||!$('busyBar').classList.contains('hidden');
+  if(beschaeftigt){einstRueckkehr.ruhig=0;return}
+  // kurz warten, falls gleich das nächste Fenster aufgeht
+  if(++einstRueckkehr.ruhig<2)return;
+  const seite=einstRueckkehr.seite;
+  einstRueckkehr=null;
+  einstellungenOeffnen(false,seite);
+},300);
 $('settingsZurueck').onclick=()=>{einstellungenStatusZeigen();einstellungenSeite('menue')};
 $('settingsMenue').addEventListener('click',e=>{
   const zeile=e.target.closest('[data-seite]');
@@ -12254,7 +12280,7 @@ $('settingsDialog').addEventListener('cancel',e=>{
   einstellungenStatusZeigen();
   einstellungenSeite('menue');
 });
-$('sicherungJetzt').onclick=()=>{$('settingsDialog').close();erstelleSicherung()};
+$('sicherungJetzt').onclick=()=>{einstellungenVerlassen();erstelleSicherung()};
 
 $('geraetLeeren').onclick=async()=>{
   if(!user)return;
@@ -12305,10 +12331,10 @@ function kontoLoeschenPruefen(){
 }
 ['kontoLoeschenPasswort','kontoLoeschenWort'].forEach(id=>$(id).addEventListener('input',kontoLoeschenPruefen));
 $('kontoLoeschenHaken').addEventListener('change',kontoLoeschenPruefen);
-$('kontoSteuerpaket').onclick=()=>{$('settingsDialog').close();$('openSteuerpaket').click()};
+$('kontoSteuerpaket').onclick=()=>{einstellungenVerlassen();$('openSteuerpaket').click()};
 $('kontoSicherung').onclick=()=>{
   if(typeof nurVollversion==='function'&&nurVollversion('Die automatische Datensicherung'))return;
-  $('settingsDialog').close();erstelleSicherung();
+  einstellungenVerlassen();erstelleSicherung();
 };
 function kontoLoeschenMeldung(text,art){
   const m=$('kontoLoeschenMeldung');
@@ -12376,7 +12402,7 @@ $('kontoLoeschenKnopf').onclick=async()=>{
 };
 
 $('tresorSperren').onclick=()=>{$('settingsDialog').close();Tresor.sperren()};
-$('tresorPasswortAendern').onclick=()=>{$('settingsDialog').close();Tresor.passwortAendern()};
+$('tresorPasswortAendern').onclick=()=>{einstellungenVerlassen();Tresor.passwortAendern()};
 function tresorPasskeyZeigen(){
   const knopf=$('tresorPasskey'),hinweis=$('tresorPasskeyHinweis');
   if(!knopf||!window.Tresor||!Tresor.passkey)return;
@@ -12393,10 +12419,10 @@ function tresorPasskeyZeigen(){
 window.tresorPasskeyGeaendert=tresorPasskeyZeigen;
 $('tresorPasskey').onclick=()=>{
   if(Tresor.passkey.eingerichtet()){Tresor.passkey.entfernen();toast('Fingerabdruck / Gesicht entfernt');tresorPasskeyZeigen();return}
-  $('settingsDialog').close();Tresor.passkey.einrichten();
+  einstellungenVerlassen();Tresor.passkey.einrichten();
 };
-$('tresorNotfallblatt').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattErneuern()};
-$('tresorNotfallblattDrucken').onclick=()=>{$('settingsDialog').close();Tresor.notfallblattDrucken()};
+$('tresorNotfallblatt').onclick=()=>{einstellungenVerlassen();Tresor.notfallblattErneuern()};
+$('tresorNotfallblattDrucken').onclick=()=>{einstellungenVerlassen();Tresor.notfallblattDrucken()};
 
 $('settingsForm').onsubmit=async e=>{
   e.preventDefault();
@@ -14520,7 +14546,7 @@ async function wiederherstellenOeffnen(){
   if(!Tresor.datenschluessel()){toast('Der Tresor ist gesperrt. Bitte zuerst entsperren.');return}
   whDatei=null;whInhalt=null;
   whSchritt('whAuswahl');
-  $('settingsDialog').close();
+  einstellungenVerlassen();
   $('wiederherstellenDialog').showModal();
   const liste=$('whListe');
   if(!pcloudToken){liste.innerHTML='<p class="muted">pCloud ist auf diesem Gerät nicht eingerichtet.</p>';return}
@@ -14856,7 +14882,7 @@ $('tourNichtMehr').onchange=e=>{
   if(e.target.checked)toast('Der Rundgang erscheint nicht mehr beim Anmelden. Wieder einschalten: Einstellungen → Beispieldaten und Rundgang.');
 };
 $('tourBeimAnmelden').onchange=e=>tourAusSetzen(!e.target.checked);
-$('tourJetzt').onclick=()=>{tourNachEinstellungen=0;$('settingsDialog').close()};
+$('tourJetzt').onclick=()=>{tourNachEinstellungen=0;einstellungenVerlassen()};
 $('settingsDialog').addEventListener('close',()=>{
   if(tourNachEinstellungen===null)return;
   const seite=tourNachEinstellungen;
