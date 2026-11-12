@@ -255,17 +255,20 @@
     return 'safari';
   }
 
-  // Welcher Geräteblock ist beim Öffnen schon aufgeklappt?
-  function geraetArt() {
-    const p = plattform();
-    return p === 'ios' ? 'ios' : p === 'android' ? 'android' : 'computer';
-  }
+  // Welche Geräteblöcke hat der Nutzer aufgeklappt? (bleibt beim Neuzeichnen erhalten)
+  const offen = new Set();
+  document.addEventListener('toggle', (e) => {
+    const d = e.target;
+    if (!d || !d.classList || !d.classList.contains('install-geraet')) return;
+    if (d.open) offen.add(d.dataset.art); else offen.delete(d.dataset.art);
+  }, true);
 
   const bildSchritt = (text, name) =>
     '<li>' + text + (name ? bild(name) : '') + '</li>';
 
   function geraet(art, titelText, inhalt) {
-    return '<details class="install-geraet"' + (geraetArt() === art ? ' open' : '') + '>' +
+    // Alle Varianten sind anfangs zugeklappt; man öffnet nur die eigene.
+    return '<details class="install-geraet" data-art="' + art + '"' + (offen.has(art) ? ' open' : '') + '>' +
       '<summary>' + titelText + '</summary>' + inhalt + '</details>';
   }
 
@@ -285,7 +288,9 @@
         '<ol class="install-schritte">' +
         bildSchritt('Klicke oben in der Menüleiste auf <strong>„Ablage“</strong> und dann auf <strong>„Zum Dock hinzufügen …“</strong>. Klicke im Fenster auf <strong>„Hinzufügen“</strong>.', 'mac') +
         bildSchritt('Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> im Dock.') +
-        '</ol>' + hinweis('Der Menüpunkt heißt je nach macOS-Version leicht anders.'));
+        '</ol>' + hinweis('Der Menüpunkt heißt je nach macOS-Version leicht anders.')) +
+      geraet('linux', 'Linux',
+        hinweis('Safari gibt es für Linux nicht. Bitte nimm <strong>Chrome</strong>, <strong>Chromium</strong> oder <strong>Edge</strong>, siehe Reiter „Chrome / Edge“.'));
   }
 
   function inhaltChrome() {
@@ -300,6 +305,11 @@
         bildSchritt('Öffne diese Seite in <strong>Chrome</strong> oder <strong>Edge</strong>. Klicke rechts in der Adresszeile auf das Symbol <strong>„Installieren“</strong> und bestätige.', 'chromePc') +
         bildSchritt('Öffne die App ab jetzt über das Symbol <strong>„QA“</strong> (Startmenü, Desktop oder Dock).') +
         '</ol>' + hinweis('Fehlt das Symbol in der Adresszeile: Klicke oben rechts auf <strong>⋮</strong> bzw. <strong>…</strong> und such nach <strong>„Als App installieren“</strong> (in Chrome unter „Streamen, speichern und teilen“, in Edge unter „Apps“).')) +
+      geraet('linux', 'Linux (z. B. Ubuntu, Linux Mint)',
+        '<ol class="install-schritte">' +
+        bildSchritt('Öffne diese Seite in <strong>Chrome</strong>, <strong>Chromium</strong> oder <strong>Edge</strong>. Klicke rechts in der Adresszeile auf das Symbol <strong>„Installieren“</strong> und bestätige.', 'chromePc') +
+        bildSchritt('Die App erscheint danach im <strong>Anwendungsmenü</strong> (je nach System „Programme“, „Aktivitäten“ oder Startmenü) als <strong>„QA“</strong>. Du kannst sie dort auch an die Leiste anheften.') +
+        '</ol>' + hinweis('Fehlt das Symbol in der Adresszeile: Klicke oben rechts auf <strong>⋮</strong> und wähle <strong>„Streamen, speichern und teilen“ → „Als App installieren“</strong>. Hast du Chromium als Snap- oder Flatpak-Paket, kann der Menüpunkt fehlen – dann nimm Google Chrome oder Edge.')) +
       geraet('ios', 'iPhone und iPad',
         '<ol class="install-schritte">' +
         bildSchritt('Wenn sich das Anmeldefenster in <strong>Chrome</strong> geöffnet hat, tippe auf das <strong>Teilen-Symbol</strong> ' + TEILEN + ' (beim iPad rechts neben der Adresszeile, beim iPhone oben rechts im Menü <strong>•••</strong>).') +
@@ -320,7 +330,9 @@
       geraet('android', 'Android',
         hinweis('Firefox legt auf Android nur eine Verknüpfung an. Die App öffnet sich dann im Browser, nicht als eigene App. Bitte nimm <strong>Chrome</strong>, siehe Reiter „Chrome“.', true)) +
       geraet('computer', 'Windows und Mac (Computer)',
-        hinweis('Firefox kann die App am Computer nach unserem Kenntnisstand nicht zuverlässig installieren. Bitte nimm <strong>Chrome</strong> oder <strong>Edge</strong>, auf dem Mac auch <strong>Safari</strong>.', true));
+        hinweis('Firefox kann die App am Computer nach unserem Kenntnisstand nicht zuverlässig installieren. Bitte nimm <strong>Chrome</strong> oder <strong>Edge</strong>, auf dem Mac auch <strong>Safari</strong>.', true)) +
+      geraet('linux', 'Linux',
+        hinweis('Firefox kann die App unter Linux nicht installieren. Bitte nimm <strong>Chrome</strong>, <strong>Chromium</strong> oder <strong>Edge</strong>, siehe Reiter „Chrome / Edge“. Im Browserfenster funktioniert die App aber auch in Firefox.', true));
   }
 
   function hilfeInhalt() {
@@ -343,7 +355,7 @@
     return '<button type="button" class="install-box-kopf" data-box aria-expanded="' + boxOffen + '" aria-controls="installBoxInhalt">' +
       '<span class="install-box-symbol">' + BOX_SYMBOL + '</span>' +
       '<span class="install-box-text"><strong>Vorbereitende Maßnahme</strong>' +
-      '<span>für iPhone/iPad/macOS sowie Android und Windows – bitte hier klicken</span></span>' +
+      '<span>für iPhone, iPad, Android, Windows, Mac und Linux – bitte hier klicken</span></span>' +
       '<span class="install-box-pfeil" aria-hidden="true"></span></button>' +
       '<div id="installBoxInhalt" class="install-box-inhalt' + (boxOffen ? '' : ' hidden') + '">' +
       '<h2>App auf dem Gerät installieren</h2>' + warum() + hilfeInhalt() + '</div>';

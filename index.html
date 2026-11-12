@@ -205,10 +205,22 @@ body.testversion #backupData.nur-voll::after,body.testversion .einst-zeile.nur-v
 .button-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:44px;padding:0 16px;border-radius:var(--radius-btn,10px);font-weight:600}
 .button-link.primary{background:var(--brand);color:var(--on-brand)}
 .button-link.secondary{border:1px solid var(--line);color:var(--ink);background:var(--card)}
-.tour-inhalt{min-height:220px}
-.tour-karte h3{margin:6px 0 8px;font-size:1.15rem}
+#tourDialog{padding:0;overflow:hidden;max-width:min(560px,94vw);border:0}
+.tour-kopf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 16px;background:linear-gradient(135deg,var(--brand-dark),var(--brand));color:var(--on-brand)}
+.tour-kopf h2{margin:2px 0 0;font-size:1.35rem;color:var(--on-brand)}
+.tour-oberzeile{font-size:.8rem;font-weight:600;letter-spacing:.02em;opacity:.9}
+.tour-zu{flex:0 0 auto;width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.15);color:var(--on-brand);font-size:1rem}
+.tour-zu:hover{background:rgba(255,255,255,.28)}
+.tour-punkte{display:flex;gap:6px;justify-content:center;padding:12px 20px 0}
+.tour-punkte span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tour-punkte span.an{background:var(--brand);width:22px;border-radius:4px}
+.tour-inhalt{min-height:220px;padding:6px 20px 0}
+.tour-karte{border-left:4px solid var(--brand);background:var(--accent);border-radius:12px;padding:12px 16px;margin-top:10px}
+.tour-karte h3{margin:2px 0 8px;font-size:1.2rem;color:var(--brand-dark)}
+.tour-symbol{font-size:1.8rem;line-height:1;display:block;margin-bottom:4px}
 .tour-karte p{margin:0 0 10px;line-height:1.5}
-.tour-fuss{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.tour-fuss{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 20px 0}
+dialog label.tour-nicht-mehr{margin:12px 20px 16px;font-size:.9rem;color:var(--muted)}
 .verwaltung-liste{display:grid;gap:10px;margin-top:10px}
 .verwaltung-konto{border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px;background:var(--card)}
 .verwaltung-konto .knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -2902,20 +2914,22 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
-<dialog id="tourDialog">
-  <div class="top">
+<dialog id="tourDialog" aria-labelledby="tourTitel">
+  <div class="tour-kopf">
     <div>
-      <div class="muted">QA – Qualifizierte Assistenz</div>
-      <h2>So hilft dir QA</h2>
+      <div class="tour-oberzeile">QA – Qualifizierte Assistenz · Testversion</div>
+      <h2 id="tourTitel">So hilft dir QA</h2>
     </div>
-    <button autofocus type="button" id="tourZu" class="kn kn-schliessen secondary">Schließen</button>
+    <button autofocus type="button" id="tourZu" class="tour-zu" aria-label="Rundgang schließen">✕</button>
   </div>
+  <div id="tourPunkte" class="tour-punkte" aria-hidden="true"></div>
   <div id="tourInhalt" class="tour-inhalt"></div>
   <div class="tour-fuss">
     <button type="button" id="tourZurueck" class="secondary">Zurück</button>
     <span id="tourStand" class="muted small"></span>
     <button type="button" id="tourWeiter" class="primary">Weiter</button>
   </div>
+  <label class="sicherung-haken tour-nicht-mehr"><input type="checkbox" id="tourNichtMehr"> Nicht mehr beim Anmelden anzeigen</label>
 </dialog>
 
 <dialog id="settingsDialog">
@@ -2962,7 +2976,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </button>
     <button type="button" class="einst-zeile hidden" data-seite="beispiel" id="einstBeispielZeile">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
-      <span class="einst-text"><strong>Beispieldaten</strong><small>Erfundene Klient*innen zum Ausprobieren laden oder entfernen</small></span>
+      <span class="einst-text"><strong>Beispieldaten und Rundgang</strong><small>Erfundene Klient*innen laden oder entfernen, Rundgang „So hilft dir QA“</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
     <button type="button" class="einst-zeile hidden" data-seite="verwaltung" id="einstVerwaltungZeile">
@@ -2988,13 +3002,16 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </nav>
 
   <!-- Seite: Beispieldaten (Testversion und Verwaltung) -->
-  <section class="einst-seite hidden" data-seite="beispiel" data-titel="Beispieldaten">
+  <section class="einst-seite hidden" data-seite="beispiel" data-titel="Beispieldaten und Rundgang">
     <p class="muted small">Drei erfundene Klient*innen (Kennungen B901 bis B903, Namen mit „(Beispiel)“) mit Bewilligungen, Dokumentationen, Fahrten, Terminen und Belegen der letzten Wochen. So siehst du sofort, wie Kalender, Leistungsnachweis, Fahrtenbuch und Steuerpaket aussehen. Deine eigenen Einträge bleiben unverändert.</p>
     <p id="beispielStand" class="einst-status"></p>
     <div class="actions">
       <button type="button" id="beispielLaden" class="primary">Beispieldaten laden</button>
       <button type="button" id="beispielEntfernen" class="secondary">Beispieldaten vollständig entfernen</button>
     </div>
+    <h3>Rundgang „So hilft dir QA“</h3>
+    <label class="sicherung-haken"><input type="checkbox" id="tourBeimAnmelden"> Beim Anmelden zeigen</label>
+    <div class="actions"><button type="button" id="tourJetzt" class="secondary">Rundgang jetzt ansehen</button></div>
   </section>
 
   <!-- Seite: Testkonten verwalten (nur Anbieter) -->
@@ -3831,7 +3848,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.3 Verkaufsversion';
+const APP_VERSION='0.25.4 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -8270,6 +8287,7 @@ $('logout').onclick=async()=>{
   const {error}=await sb.auth.signOut({scope:'local'});
   if(error){toast('Abmelden fehlgeschlagen: '+error.message);button.disabled=false;return}
   Tresor.vergessen();
+  tourInSitzungGezeigt=false;
   geraetSchliessen();
   user=null;clients=[];approvals=[];docs=[];activeClient=null;activeDocsClient=null;
   $('list').innerHTML='';
@@ -12176,7 +12194,7 @@ function einstellungenSeite(name){
   });
   if(name==='tresor'&&typeof tresorPasskeyZeigen==='function')tresorPasskeyZeigen();
   if(name==='geraet'){dienstEinstellungenZeigen();kartenpaketeZeigen();}
-  if(name==='beispiel')beispielStandZeigen();
+  if(name==='beispiel'){beispielStandZeigen();$('tourBeimAnmelden').checked=!tourAus()}
   if(name==='verwaltung')verwaltungZeigen();
   if(name==='cloud')cloudHinweisZeigen();
   $('settingsZurueck').classList.toggle('hidden',menue);
@@ -14722,7 +14740,7 @@ function kontoAnwenden(){
   if(typeof cloudBandZeichnen==='function')cloudBandZeichnen();
   if(konto&&!konto.aktiv)kontoSperreZeigen();
   else if($('kontoSperreDialog').open)$('kontoSperreDialog').close();
-  if(test&&konto.aktiv&&!tourGesehen())setTimeout(()=>tourOeffnen(0),900);
+  if(test&&konto.aktiv&&!tourAus()&&!tourInSitzungGezeigt){tourInSitzungGezeigt=true;setTimeout(()=>tourOeffnen(0),900)}
 }
 // Regelmäßig nachsehen (Freischaltung oder Ablauf während die App offen ist)
 setInterval(()=>{if(typeof user!=='undefined'&&user)kontoLaden()},60*60e3);
@@ -14794,25 +14812,52 @@ const TOUR=[
   {t:'Deine Daten gehören dir',x:'<p><strong>Ende-zu-Ende verschlüsselt:</strong> Alles wird auf deinem Gerät verschlüsselt, den Schlüssel hast nur du. Der Server in Frankfurt sieht nur unlesbare Kopien. Die App läuft auch ohne Internet.</p><p>In der Vollversion liegen Dokumente und automatische Datensicherungen verschlüsselt in <strong>deiner eigenen Cloud</strong>.</p>'},
   {t:'Neugierig auf die Vollversion?',x:'<p>Nach Vertragsabschluss wird dein Testkonto zur Vollversion – alles, was du angelegt hast, bleibt erhalten. Die Beispieldaten entfernst du mit einem Knopf.</p><p>Kontakt: Oliver Stork · <a href="mailto:kontakt@qualifizierte-assistenz.de?subject=QA-App%20Vollversion">kontakt@qualifizierte-assistenz.de</a></p>'}
 ];
+const TOUR_SYMBOL=['👋','📝','📊','🚗','📄','🧾','🔐','✨'];
 let tourSeite=0;
-function tourGesehen(){try{return localStorage.getItem('qa-tour-'+((user&&user.id)||''))==='1'}catch(e){return true}}
+var tourInSitzungGezeigt=false;   // je App-Start bzw. Anmeldung einmal zeigen
+var tourNachEinstellungen=null;   // Seite, mit der der Rundgang nach den Einstellungen weitergeht
+const tourSchluessel=()=>'qa-tour-aus-'+((user&&user.id)||'');
+function tourAus(){try{return localStorage.getItem(tourSchluessel())==='1'}catch(e){return false}}
+function tourAusSetzen(aus){
+  try{aus?localStorage.setItem(tourSchluessel(),'1'):localStorage.removeItem(tourSchluessel())}catch(e){}
+  $('tourNichtMehr').checked=aus;
+  $('tourBeimAnmelden').checked=!aus;
+}
 function tourOeffnen(seite){
   tourSeite=seite||0;
-  try{localStorage.setItem('qa-tour-'+((user&&user.id)||''),'1')}catch(e){}
+  $('tourNichtMehr').checked=tourAus();
   tourZeichnen();
   if(!$('tourDialog').open)$('tourDialog').showModal();
 }
 function tourZeichnen(){
   const k=TOUR[tourSeite];
-  $('tourInhalt').innerHTML='<div class="tour-karte"><h3>'+esc(k.t)+'</h3>'+k.x+
-    (k.k?'<p><button type="button" id="tourAktion" class="secondary">'+esc(k.k)+'</button></p>':'')+'</div>';
-  if(k.k)$('tourAktion').onclick=()=>{$('tourDialog').close();k.a()};
+  $('tourPunkte').innerHTML=TOUR.map((_,i)=>'<span'+(i===tourSeite?' class="an"':'')+'></span>').join('');
+  $('tourInhalt').innerHTML='<div class="tour-karte"><span class="tour-symbol" aria-hidden="true">'+(TOUR_SYMBOL[tourSeite]||'')+'</span><h3>'+esc(k.t)+'</h3>'+k.x+
+    (k.k?'<p><button type="button" id="tourAktion" class="primary">'+esc(k.k)+'</button></p>':'')+'</div>';
+  if(k.k)$('tourAktion').onclick=()=>{
+    // Nach dem Schließen der Einstellungen geht der Rundgang mit der nächsten Seite weiter
+    tourNachEinstellungen=Math.min(tourSeite+1,TOUR.length-1);
+    $('tourDialog').close();
+    k.a();
+  };
   $('tourStand').textContent=(tourSeite+1)+' von '+TOUR.length;
   $('tourZurueck').disabled=tourSeite===0;
   $('tourWeiter').textContent=tourSeite===TOUR.length-1?'Fertig':'Weiter';
 }
 $('tourZurueck').onclick=()=>{if(tourSeite>0){tourSeite--;tourZeichnen()}};
 $('tourWeiter').onclick=()=>{if(tourSeite<TOUR.length-1){tourSeite++;tourZeichnen()}else $('tourDialog').close()};
+$('tourNichtMehr').onchange=e=>{
+  tourAusSetzen(e.target.checked);
+  if(e.target.checked)toast('Der Rundgang erscheint nicht mehr beim Anmelden. Wieder einschalten: Einstellungen → Beispieldaten und Rundgang.');
+};
+$('tourBeimAnmelden').onchange=e=>tourAusSetzen(!e.target.checked);
+$('tourJetzt').onclick=()=>{tourNachEinstellungen=0;$('settingsDialog').close()};
+$('settingsDialog').addEventListener('close',()=>{
+  if(tourNachEinstellungen===null)return;
+  const seite=tourNachEinstellungen;
+  tourNachEinstellungen=null;
+  setTimeout(()=>tourOeffnen(seite),150);
+});
 $('tourZu').onclick=()=>$('tourDialog').close();
 
 /* ----- Beispieldaten: laden und vollständig entfernen -----
