@@ -232,6 +232,11 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .satz-feld-teil{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600}
 .fb-schutz{border:1px solid var(--line);border-radius:var(--radius-item,12px);padding:8px 14px;margin:10px 0}
 .fb-schutz-titel{margin:4px 0 0;font-weight:700;font-size:.9rem}
+/* Vorführung: alles ausblenden, was Konto, Tresor, Cloud oder Installation betrifft */
+body.vorfuehrung #installLeiste,body.vorfuehrung #cloudBand,body.vorfuehrung #installKarte,
+body.vorfuehrung #einstKontoZeile,body.vorfuehrung #einstVerwaltungZeile,
+body.vorfuehrung .einst-zeile[data-seite="tresor"],body.vorfuehrung #einstInstallZeile{display:none!important}
+body.vorfuehrung #testBand a.abgleich-knopf{text-decoration:none;color:inherit}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -2936,7 +2941,11 @@ a.einst-zeile{text-decoration:none;color:inherit}
     </div>
     <button autofocus type="button" id="einladenSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
-  <p class="muted small">Mit der Handy-Kamera scannen. Die App öffnet sich und zeigt, wie man sie auf den Home-Bildschirm legt. Danach registrieren.</p>
+  <div class="umschalter" id="einladenArt" role="group" aria-label="Welcher Zugang">
+    <button type="button" data-wert="testen" aria-pressed="true">7 Tage testen</button>
+    <button type="button" data-wert="vorfuehrung" aria-pressed="false">Vorführung</button>
+  </div>
+  <p class="muted small" id="einladenText">Mit der Handy-Kamera scannen. Die App öffnet sich und zeigt, wie man sie auf den Home-Bildschirm legt. Danach registrieren.</p>
   <div id="einladenQr" class="einladen-qr"></div>
   <p id="einladenAdresse" class="einladen-adresse"></p>
   <div class="actions">
@@ -2974,7 +2983,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <dialog id="tourDialog" aria-labelledby="tourTitel">
   <div class="tour-kopf">
     <div>
-      <div class="tour-oberzeile">QA – Qualifizierte Assistenz · Testversion</div>
+      <div class="tour-oberzeile" id="tourOberzeile">QA – Qualifizierte Assistenz · Testversion</div>
       <h2 id="tourTitel">So hilft dir QA</h2>
     </div>
     <button autofocus type="button" id="tourZu" class="tour-zu" aria-label="Rundgang schließen">✕</button>
@@ -3924,7 +3933,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.15 Verkaufsversion';
+const APP_VERSION='0.26.0 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4148,8 +4157,13 @@ function esc(v=''){
   b.textContent='VORSCHAU – nur zum Testen ('+m[1]+', Version '+APP_VERSION+'). Nicht die Haupt-App.';
   document.body.prepend(b);
 })();
+/* Vorführung für Interessierte: …/?vorfuehrung öffnet die App ohne Anmeldung, ohne Tresor
+   und ohne Server. Alles läuft nur im Browser und wird bei jedem Start zurückgesetzt. */
+var IST_VORFUEHRUNG=/[?&]vorfuehrung\b/.test(location.search);
+if(IST_VORFUEHRUNG)document.body.classList.add('vorfuehrung');
 if(/[?&]testen\b/.test(location.search)){const h=document.getElementById('testenHinweis');if(h)h.classList.remove('hidden')}
 function showApp(on){
+  if(IST_VORFUEHRUNG)$('logout').textContent='Neu starten';
   $('auth').classList.toggle('hidden',on);
   $('app').classList.toggle('hidden',!on);
   // Kartenpaket prüfen (fehlt es, gibt es eine neuere Fassung?)
@@ -4505,6 +4519,12 @@ function abgleichAnzeigen(s){
   const warten=wartend===1?'1 Änderung wartet':wartend+' Änderungen warten';
   let zustand=s.zustand;
   let text;
+  if(IST_VORFUEHRUNG){
+    box.dataset.zustand='ok';
+    $('abgleichText').textContent='Vorführung · nichts wird gespeichert';
+    $('abgleichJetzt').classList.add('hidden');
+    return;
+  }
   if(zustand==='abgleich'){
     text='Abgleich läuft …';
   }else if(zustand==='offline'){
@@ -4808,6 +4828,34 @@ function istNetzFehler(fehler){
 
 let offlineAngemeldet=false;
 
+// Vorführung: frische Beispieldaten nur im Browser, ohne Server, Tresor und Cloud
+const VORFUEHRUNG_NUTZER={id:'00000000-0000-4000-8000-00000000f0e1',email:'vorfuehrung@beispiel.de'};
+async function vorfuehrungStarten(){
+  user=Object.assign({},VORFUEHRUNG_NUTZER);
+  offlineAngemeldet=true;
+  // Jede Vorführung beginnt frisch: alte Einträge dieses Browsers verwerfen
+  try{await Geraet.entfernen(user.id)}catch(e){/* nichts da */}
+  const schluessel=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  // Ersatz für den Tresor: ein Schlüssel nur für diese Sitzung
+  Tresor.datenschluessel=()=>schluessel;
+  await Geraet.oeffnen({sb:null,user,schluessel:()=>schluessel,status:abgleichAnzeigen,fremdGeaendert:nachFremdAenderung});
+  Daten.speicherSetzen(Geraet.speicher);
+  await Daten.from('einstellungen').upsert({
+    user_id:user.id,
+    auftragnehmer_name:'Beispiel GmbH',
+    auftragnehmer_adresse:'Ernst-August-Platz 1, 30159 Hannover',
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  await loadEinstellungen();
+  showApp(true);
+  try{await beispieldatenLaden()}catch(e){console.error(e)}
+  await loadPortraits();
+  await loadClients();
+  await loadTextbausteine();
+  appBereit=true;
+  abgleichAnzeigen({zustand:'vorfuehrung'});
+}
+
 let neuAngemeldet=false;
 async function installationAnbieten(){
   const merker='qa-install-gefragt-'+user.id;
@@ -4822,6 +4870,7 @@ async function installationAnbieten(){
 }
 
 async function init(){
+  if(IST_VORFUEHRUNG){await vorfuehrungStarten();return}
   let {data:{session},error}=await sb.auth.getSession();
   offlineAngemeldet=false;
   if(!session&&istNetzFehler(error)){
@@ -8358,6 +8407,10 @@ $('registrierenForm').onsubmit=async e=>{
 };
 
 $('logout').onclick=async()=>{
+  if(IST_VORFUEHRUNG){
+    if(confirm('Vorführung neu starten? Alle Eingaben werden verworfen und die Beispieldaten neu geladen.'))location.reload();
+    return;
+  }
   const button=$('logout');
   button.disabled=true;
   try{
@@ -12729,6 +12782,7 @@ $('saveNewPassword').onclick=async()=>{
 };
 
 sb.auth.onAuthStateChange((event,session)=>{
+  if(IST_VORFUEHRUNG)return;
   if(session){user=session.user;offlineAngemeldet=false}
   else if(event==='SIGNED_OUT'||!offlineAngemeldet){user=null;Tresor.vergessen();geraetSchliessen();showApp(false)}
 
@@ -14870,7 +14924,7 @@ $('wiederherstellenOeffnen').onclick=wiederherstellenOeffnen;
    gesperrt (mit Schloss sichtbar), Leistungsnachweis und Steuerpaket tragen „MUSTER“.
    Ist die Datenbank noch nicht erweitert, gilt jedes Konto als Vollversion. */
 var konto=null;   // {status:'test'|'voll'|'gesperrt', test_bis, aktiv, verwaltung, verwaltung_frei, loeschung_am}
-function istTest(){return Boolean(konto&&konto.status==='test')}
+function istTest(){return Boolean(konto&&(konto.status==='test'||konto.status==='vorfuehrung'))}
 function kontoSpeicherSchluessel(){return 'qa-konto-'+((typeof user!=='undefined'&&user&&user.id)||'')}
 function kontoAktiv(k){
   if(!k)return true;
@@ -14880,6 +14934,7 @@ function kontoAktiv(k){
 }
 async function kontoLaden(){
   if(typeof user==='undefined'||!user)return;
+  if(IST_VORFUEHRUNG){konto={status:'vorfuehrung',aktiv:true};kontoAnwenden();return}
   let neu=null;
   try{
     const {data,error}=await sb.rpc('mein_konto');
@@ -14925,6 +14980,16 @@ function testBandZeichnen(){
   let zu=false;
   try{zu=sessionStorage.getItem('qa-testband-zu')==='1'}catch(e){}
   if(!istTest()||!konto.aktiv||zu){band.classList.add('hidden');return}
+  if(IST_VORFUEHRUNG){
+    band.innerHTML=
+      '<span><strong>Vorführung</strong> – alle Personen und Angaben sind erfunden („Beispiel GmbH“). '+
+      'Eingaben werden nicht gespeichert und beim nächsten Start zurückgesetzt.</span>'+
+      '<span class="install-leiste-knoepfe">'+
+      '<button type="button" class="abgleich-knopf" data-test-band="tour">So hilft dir QA</button>'+
+      '<a class="abgleich-knopf" href="./?testen">7 Tage mit eigenem Konto testen</a></span>';
+    band.classList.remove('hidden');
+    return;
+  }
   const tage=testTageUebrig();
   band.innerHTML=
     '<span><strong>Testversion</strong> – noch '+tage+(tage===1?' Tag':' Tage')+' (bis '+esc(datumKurz(konto.test_bis))+'). '+
@@ -15001,6 +15066,7 @@ function tourBeispielDa(){
 }
 function tourOeffnen(seite){
   tourSeite=seite||0;
+  if(IST_VORFUEHRUNG)$('tourOberzeile').textContent='QA – Qualifizierte Assistenz · Vorführung';
   $('tourNichtMehr').checked=tourAus();
   tourZeichnen();
   if(!$('tourDialog').open)$('tourDialog').showModal();

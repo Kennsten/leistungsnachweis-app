@@ -437,13 +437,26 @@
 
   // Einladungs-Link führt zur Testversion: Wer sich darüber registriert,
   // bekommt ein 7-Tage-Testkonto (die App zeigt dazu einen Hinweis).
+  // „testen“: 7 Tage mit eigenem Konto; „vorfuehrung“: sofort ohne Anmeldung mit Beispieldaten
+  let einladenArt = 'testen';
+  const EINLADEN_TEXT = {
+    testen: 'Mit der Handy-Kamera scannen. Die App öffnet sich und zeigt, wie man sie auf den Home-Bildschirm legt. Danach registrieren – 7 Tage kostenlos.',
+    vorfuehrung: 'Mit der Handy-Kamera scannen. Die App öffnet sich sofort mit erfundenen Beispieldaten – ohne Anmeldung, ohne Tresor. Eingaben werden nicht gespeichert.'
+  };
   function appAdresse() {
-    return new URL('./?testen', location.href).href;
+    return new URL('./?' + einladenArt, location.href).href;
+  }
+  function einladenArtSetzen(art) {
+    einladenArt = art;
+    document.querySelectorAll('#einladenArt [data-wert]').forEach((k) => k.setAttribute('aria-pressed', String(k.dataset.wert === art)));
+    const text = document.getElementById('einladenText');
+    if (text) text.textContent = EINLADEN_TEXT[art];
   }
 
   function einladungZeigen() {
     const dlg = document.getElementById('einladenDialog');
     if (!dlg) return;
+    einladenArtSetzen(einladenArt);
     const adresse = appAdresse();
     const qr = document.getElementById('einladenQr');
     qr.innerHTML = '';
@@ -460,7 +473,7 @@
       if (typeof window.einstellungenVerlassen === 'function') window.einstellungenVerlassen();
       else s.close();
     }
-    dlg.showModal();
+    if (!dlg.open) dlg.showModal();
   }
 
   async function teilen() {
@@ -506,6 +519,13 @@
     knopf('einladenSchliessen', () => document.getElementById('einladenDialog').close());
     knopf('einladenTeilen', teilen);
     knopf('einladenKopieren', kopieren);
+    const art = document.getElementById('einladenArt');
+    if (art) art.addEventListener('click', (e) => {
+      const k = e.target.closest('[data-wert]');
+      if (!k) return;
+      einladenArtSetzen(k.dataset.wert);
+      einladungZeigen();
+    });
     try {
       window.matchMedia('(display-mode: standalone)').addEventListener('change', anzeigen);
     } catch (e) { /* alter Browser */ }

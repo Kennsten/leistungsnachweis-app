@@ -955,8 +955,11 @@
           $t('#tPw').select();
           return;
         }
+        // Fingerabdruck / Gesicht anbieten, solange es auf diesem Gerät noch nicht eingerichtet ist
+        const kopie = passkeyAngebotPassend() ? roh.slice() : null;
         await schluesselAktivieren(roh);
-        fertig();
+        if (kopie) ansichtPasskeyAngebot(kopie);
+        else fertig();
       } catch (fehler) {
         fehlerZeigen(fehlermeldungText(fehler));
       } finally {
@@ -964,6 +967,54 @@
           knopf.disabled = false;
           knopf.textContent = 'Entsperren';
         }
+      }
+    };
+  }
+
+  /* ---------------- Angebot: Fingerabdruck / Gesicht ---------------- */
+
+  function passkeyAngebotName() {
+    return 'qa-passkey-angebot-aus-' + (ctx && ctx.user ? ctx.user.id : '');
+  }
+
+  function passkeyAngebotPassend() {
+    if (!passkeyUnterstuetzt() || passkeyLesen()) return false;
+    try { return localStorage.getItem(passkeyAngebotName()) !== '1'; } catch (e) { return false; }
+  }
+
+  // roh: Kopie des Datenschlüssels; wird nach Gebrauch überschrieben
+  function ansichtPasskeyAngebot(roh) {
+    const weiter = () => { roh.fill(0); fertig(); };
+    zeigen(`
+      <h2>Schneller entsperren?</h2>
+      <p>Statt jedes Mal das Tresor-Passwort einzutippen, kannst du den Tresor auf <b>diesem Gerät</b> mit
+      <b>Fingerabdruck, Gesicht</b> oder dem <b>Gerätecode</b> öffnen.</p>
+      <p class="muted small">Dein Fingerabdruck bzw. dein Gesicht verlassen das Gerät nicht. Das Tresor-Passwort bleibt als Rückweg bestehen.
+      Nur auf eigenen Geräten einrichten, auf denen keine fremden Fingerabdrücke oder Gesichter hinterlegt sind.</p>
+      <p class="t-fehler"></p>
+      <div class="actions">
+        <button type="button" id="tPkJa" class="primary">Jetzt einrichten</button>
+        <button type="button" id="tPkSpaeter" class="secondary">Später</button>
+      </div>
+      <p><button type="button" id="tPkNie" class="t-link">Nicht mehr fragen (später unter Einstellungen → Tresor und Sicherheit möglich)</button></p>`);
+    $t('#tPkSpaeter').onclick = weiter;
+    $t('#tPkNie').onclick = () => {
+      try { localStorage.setItem(passkeyAngebotName(), '1'); } catch (e) { /* egal */ }
+      weiter();
+    };
+    $t('#tPkJa').onclick = async () => {
+      const knopf = $t('#tPkJa');
+      knopf.disabled = true;
+      knopf.textContent = 'Bitte am Gerät bestätigen …';
+      try {
+        await passkeyEinrichtenMit(roh);
+        meldung('Entsperren mit Fingerabdruck / Gesicht ist eingerichtet');
+        if (typeof window.tresorPasskeyGeaendert === 'function') window.tresorPasskeyGeaendert();
+        weiter();
+      } catch (fehler) {
+        const abgebrochen = fehler && fehler.name === 'NotAllowedError';
+        fehlerZeigen(abgebrochen ? 'Abgebrochen. Du kannst es erneut versuchen oder „Später“ wählen.' : fehlermeldungText(fehler));
+        if (knopf.isConnected) { knopf.disabled = false; knopf.textContent = 'Jetzt einrichten'; }
       }
     };
   }
