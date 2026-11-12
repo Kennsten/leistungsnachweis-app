@@ -188,6 +188,7 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .install-fuss{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
 #registrierenDialog{max-width:440px}
 #registrierenDialog h2{margin-top:0}
+.vorschau-band{position:sticky;top:0;z-index:50;background:#b3261e;color:#fff;font-weight:700;font-size:.85rem;text-align:center;padding:6px 10px;line-height:1.3}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -4044,6 +4045,16 @@ function esc(v=''){
 }
 
 // Kommt jemand über den Test-Link (QR-Code „Kolleg*innen einladen“): Hinweis zeigen
+// Vorschau-Adressen (vorschau-…--….netlify.app) deutlich kennzeichnen, damit sie
+// nicht mit der Haupt-App verwechselt werden. Auf der Haupt-App erscheint nichts.
+(function(){
+  const m=/^(vorschau-[a-z0-9-]+)--/.exec(location.hostname);
+  if(!m)return;
+  const b=document.createElement('div');
+  b.className='vorschau-band';
+  b.textContent='VORSCHAU – nur zum Testen ('+m[1]+', Version '+APP_VERSION+'). Nicht die Haupt-App.';
+  document.body.prepend(b);
+})();
 if(/[?&]testen\b/.test(location.search)){const h=document.getElementById('testenHinweis');if(h)h.classList.remove('hidden')}
 function showApp(on){
   $('auth').classList.toggle('hidden',on);
