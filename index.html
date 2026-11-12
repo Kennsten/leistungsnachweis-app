@@ -1763,6 +1763,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 /* Einstellungen: Menü-Liste und Unterseiten */
 .einst-liste{display:flex;flex-direction:column;margin-top:6px;border:1px solid var(--line);
   border-radius:var(--radius-item);overflow:hidden;background:var(--card)}
+a.einst-zeile{text-decoration:none;color:inherit}
 .einst-zeile{display:flex;align-items:center;gap:14px;width:100%;margin:0;padding:12px 14px;border:0;
   border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .einst-zeile:first-child{border-top:0}
@@ -1966,7 +1967,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
         Passwort vergessen
       </button>
     </p>
-    <div class="version" style="text-align:center;margin-top:16px"></div>
+    <p class="small" style="text-align:center;margin:14px 0 0"><a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a></p>
+    <div class="version" style="text-align:center;margin-top:8px"></div>
   </div>
 </section>
 
@@ -2905,6 +2907,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     </ul>
     <p class="muted small">Beispiel: <code>Sommerwiese2026</code>. Leicht zu erratende Passwörter lehnt der Server ab.</p>
     <p class="auth-meldung ok small">Nach dem Registrieren schicken wir dir eine <strong>E-Mail mit einem Link</strong>. Tippe den Link an, um dein Konto zu bestätigen (auch im Spam-Ordner nachsehen). Danach meldest du dich mit E-Mail und Passwort an.</p>
+    <p class="muted small">Mit der Registrierung gilt die <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
     <p id="regMeldung" class="auth-meldung hidden" role="status" aria-live="polite"></p>
     <div class="actions">
       <button type="submit" id="regAbsenden" class="primary">Konto anlegen</button>
@@ -3048,6 +3051,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
       <span class="einst-text"><strong>App installieren</strong><small>Als App aufs Gerät legen – mit Anleitung</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
+    <a class="einst-zeile" href="datenschutz.html" target="_blank" rel="noopener" id="einstDatenschutzZeile">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+      <span class="einst-text"><strong>Datenschutzerklärung</strong><small>Welche Daten die App verarbeitet und wer sie erhält</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </a>
     <button type="button" class="einst-zeile" id="einladenKnopf">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
       <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
@@ -3911,7 +3919,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.13 Verkaufsversion';
+const APP_VERSION='0.25.14 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND

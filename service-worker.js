@@ -13,7 +13,7 @@
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.25.13';
+const CACHE_NAME = 'qa-produkt-0.25.14';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [
@@ -24,6 +24,7 @@ const APP_DATEIEN = [
   './leistungsnachweis.html',
   './klientenbogen.html',
   './ausgaben.html',
+  './datenschutz.html',
   './manifest.json',
   './tresor.js',
   './daten.js',
