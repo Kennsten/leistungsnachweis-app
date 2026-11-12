@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impressum – QA – Qualifizierte Assistenz</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#f3f5f1;color:#1f2a24;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;line-height:1.55}
+    .kopf{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #dbe3d8}
+    .kopf strong{font-size:17px}
+    .kopf a,.kopf button{appearance:none;border:1px solid #58755e;border-radius:10px;padding:9px 14px;background:#e3ebe1;color:#1f2a24;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+    main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+    h1{font-size:1.6rem;margin:.4em 0 .2em}
+    h2{font-size:1.15rem;margin:1.8em 0 .4em;color:#425b48}
+    h3{font-size:1rem;margin:1.2em 0 .3em}
+    p,li{margin:.4em 0}
+    .stand{color:#5d6b61;font-size:.92rem}
+    .hinweis{border:1px solid #c98a1b;background:#fff8e8;border-radius:12px;padding:10px 14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse;margin:10px 0;background:#fff;font-size:.94rem}
+    th,td{border:1px solid #dbe3d8;padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:#e3ebe1}
+    .tabelle{overflow-x:auto}
+    a{color:#425b48}
+    @media print{.kopf{display:none}body{background:#fff}}
+  </style>
+</head>
+<body>
+  <div class="kopf">
+    <strong>Impressum</strong>
+    <a href="./" id="zurueck">Zurück zur App</a>
+  </div>
+  <main>
+    <h1>Impressum</h1>
+    <p class="stand">Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG)</p>
+    <p class="hinweis"><strong>Entwurf.</strong> Dieses Impressum ist noch nicht anwaltlich geprüft.</p>
+
+    <h2>Anbieter</h2>
+    <p>Oliver Stork<br>Lichtenbergplatz 7<br>30449 Hannover<br>Deutschland</p>
+
+    <h2>Kontakt</h2>
+    <p>E-Mail: <a href="mailto:kontakt@qualifizierte-assistenz.de">kontakt@qualifizierte-assistenz.de</a></p>
+
+    <h2>Angebot</h2>
+    <p>„QA – Qualifizierte Assistenz“ ist eine Web-App für freiberufliche Fachkräfte der Qualifizierten Assistenz: Dokumentation, Fahrten, Abrechnung und Steuer.</p>
+
+    <h2>Verbraucherstreitbeilegung</h2>
+    <p>Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+    <h2>Datenschutz</h2>
+    <p>Wie die App mit Daten umgeht, steht in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+
+    <h2>Quellen und Lizenzen</h2>
+    <ul>
+      <li>Kartendaten: © OpenStreetMap-Mitwirkende, verfügbar unter der Open Database License (ODbL), <a href="https://www.openstreetmap.org/copyright" rel="noopener">openstreetmap.org/copyright</a>.</li>
+      <li>Kartendarstellung mit Leaflet (BSD-2-Lizenz).</li>
+      <li>Schrift „Bangers“ unter der SIL Open Font License 1.1.</li>
+    </ul>
+  </main>
+  <script>
+    // Aus der App geöffnet (neuer Tab): „Zurück“ schließt den Tab
+    document.getElementById('zurueck').addEventListener('click', function (e) {
+      if (window.opener) { e.preventDefault(); window.close(); }
+    });
+  </script>
+</body>
+</html>

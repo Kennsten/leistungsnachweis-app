@@ -1967,7 +1967,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
         Passwort vergessen
       </button>
     </p>
-    <p class="small" style="text-align:center;margin:14px 0 0"><a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a></p>
+    <p class="small" style="text-align:center;margin:14px 0 0"><a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a> · <a href="impressum.html" target="_blank" rel="noopener">Impressum</a></p>
     <div class="version" style="text-align:center;margin-top:8px"></div>
   </div>
 </section>
@@ -3056,6 +3056,11 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <span class="einst-text"><strong>Datenschutzerklärung</strong><small>Welche Daten die App verarbeitet und wer sie erhält</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </a>
+    <a class="einst-zeile" href="impressum.html" target="_blank" rel="noopener" id="einstImpressumZeile">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></span>
+      <span class="einst-text"><strong>Impressum</strong><small>Anbieter der App und Kontakt</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </a>
     <button type="button" class="einst-zeile" id="einladenKnopf">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
       <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
@@ -3919,7 +3924,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.14 Verkaufsversion';
+const APP_VERSION='0.25.15 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
