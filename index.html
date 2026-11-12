@@ -189,6 +189,42 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 #registrierenDialog{max-width:440px}
 #registrierenDialog h2{margin-top:0}
 .vorschau-band{position:sticky;top:0;z-index:50;background:#b3261e;color:#fff;font-weight:700;font-size:.85rem;text-align:center;padding:6px 10px;line-height:1.3}
+.satz-bogen{border:1px solid var(--line);border-radius:var(--radius-item,12px);background:var(--card);padding:16px 18px;margin:10px 0 14px}
+.satz-bogen-kopfzeile{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;letter-spacing:.06em;color:var(--muted);margin-bottom:12px}
+.satz-kacheln{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.satz-kachel{border-radius:12px;padding:12px 14px;border:1px solid var(--line);border-left-width:5px}
+.satz-kachel.fls,.satz-feld.satz-fls{border-left-color:var(--brand);background:var(--accent)}
+.satz-kachel.wege,.satz-feld.satz-wege{border-left-color:#1D4E89;background:#E8F0FA;color:#16202E}
+.satz-kachel-titel{display:flex;gap:8px;align-items:center;font-weight:700}
+.satz-kachel-titel small{display:block;font-weight:500;color:inherit;opacity:.75;font-size:.8rem}
+.satz-betrag{font-size:1.6rem;font-weight:800;margin:6px 0 0;letter-spacing:-.01em}
+.satz-seit{font-size:.82rem;opacity:.8}
+.satz-symbol{font-size:1.4rem;line-height:1}
+.satz-abschnitt{border-top:1px solid var(--line);margin-top:14px;padding-top:9px}
+.satz-abschnitt-titel{font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--brand-dark);margin:0 0 6px}
+.satz-zeile{display:grid;grid-template-columns:max-content minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line)}
+.satz-zeile:last-child{border-bottom:0}
+.satz-zeile .satz-datum{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.92rem}
+.satz-zeile .satz-wert{font-weight:700;font-variant-numeric:tabular-nums}
+.satz-zeile .satz-bem{grid-column:2/3;font-size:.85rem;color:var(--muted)}
+.satz-marke{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;border:1px solid var(--line);color:var(--muted)}
+.satz-marke.aktuell{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.satz-marke.kuenftig{background:#fff3d6;border-color:#c98a1b;color:#4a3300}
+.satz-zeile.frueher .satz-wert,.satz-zeile.frueher .satz-datum{color:var(--muted);font-weight:500}
+.satz-zeile .kn.deleteRate{padding:6px 10px;font-size:.8rem;min-height:34px}
+.satz-neu{border:1px solid var(--line);border-radius:var(--radius-item,12px);background:var(--card);margin:10px 0}
+.satz-neu>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:14px 16px}
+.satz-neu>summary::-webkit-details-marker{display:none}
+.satz-neu>summary small{display:block;color:var(--muted);font-size:.82rem;font-weight:400}
+.satz-neu-pfeil{width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:var(--accent);position:relative}
+.satz-neu-pfeil::before{content:"";position:absolute;left:10px;top:8px;width:7px;height:7px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg);transition:transform .15s}
+.satz-neu[open] .satz-neu-pfeil::before{transform:rotate(45deg);left:10px;top:7px}
+.satz-neu form{padding:0 16px 14px}
+.satz-felder{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:6px 0}
+.satz-feld{border:1px solid var(--line);border-left-width:5px;border-radius:12px;padding:10px 12px;margin:0}
+.satz-feld-kopf{display:flex;gap:8px;align-items:center}
+.satz-feld-kopf small{display:block;font-weight:500;opacity:.75;font-size:.8rem}
+.satz-feld input{background:var(--card);color:var(--ink)}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -3501,34 +3537,40 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button autofocus type="button" id="closeRates" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
-  <form id="rateForm">
-    <p class="muted small">Trage einen oder beide Beträge ein. Ein leeres Feld lässt den bisherigen Satz unverändert.</p>
-    <div class="grid">
+  <div id="ratesList"></div>
+
+  <details id="rateNeu" class="satz-neu">
+    <summary><span class="satz-neu-pfeil" aria-hidden="true"></span><span><strong>Neuen Satz eintragen</strong><small>z. B. wenn sich ab einem Datum ein Betrag ändert</small></span></summary>
+    <form id="rateForm">
       <label>Gültig ab
         <input id="rateFrom" type="date" required>
       </label>
 
-      <label>Bemerkung
+      <p class="muted small">Es gibt <strong>zwei verschiedene Sätze</strong>. Trag nur den ein, der sich ändert – ein leeres Feld lässt den bisherigen Satz unverändert.</p>
+
+      <div class="satz-felder">
+        <label class="satz-feld satz-fls">
+          <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🕒</span><span><strong>Fachleistungsstunde (FLS)</strong><small>Betrag je Stunde, in Euro</small></span></span>
+          <input id="rateFls" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 62,50">
+          <span class="feld-hinweis" id="rateFlsAktuell"></span>
+        </label>
+
+        <label class="satz-feld satz-wege">
+          <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🚗</span><span><strong>Wegepauschale</strong><small>Betrag je Fahrt, in Euro</small></span></span>
+          <input id="rateWege" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 8,00">
+          <span class="feld-hinweis" id="rateWegeAktuell"></span>
+        </label>
+      </div>
+
+      <label>Bemerkung (freiwillig)
         <input id="rateNote" placeholder="z. B. Vereinbarung 2026">
       </label>
 
-      <label>Betrag je FLS in Euro
-        <input id="rateFls" type="text" inputmode="decimal" autocomplete="off">
-        <span class="feld-hinweis" id="rateFlsAktuell"></span>
-      </label>
-
-      <label>Betrag je Wegepauschale in Euro
-        <input id="rateWege" type="text" inputmode="decimal" autocomplete="off">
-        <span class="feld-hinweis" id="rateWegeAktuell"></span>
-      </label>
-    </div>
-
-    <div class="actions">
-      <button type="submit" class="kn kn-speichern primary">Sätze speichern</button>
-    </div>
-  </form>
-
-  <div id="ratesList"></div>
+      <div class="actions">
+        <button type="submit" class="kn kn-speichern primary">Speichern</button>
+      </div>
+    </form>
+  </details>
 </dialog>
 
 <dialog id="docRangeDialog">
@@ -3848,7 +3890,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.6 Verkaufsversion';
+const APP_VERSION='0.25.7 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -13684,55 +13726,59 @@ function satzHinweiseZeigen(){
   }
 }
 
+const SATZ_ARTEN={
+  fls:{name:'Fachleistungsstunde (FLS)',je:'je Stunde',symbol:'🕒',klasse:'fls'},
+  wegepauschale:{name:'Wegepauschale',je:'je Fahrt',symbol:'🚗',klasse:'wege'}
+};
 function renderRates(){
   satzHinweiseZeigen();
+  const heute=todayIso();
+  // Eingabe zugeklappt, sobald Sätze da sind; ohne Sätze gleich offen
+  $('rateNeu').open=!verguetungssaetze.length;
+
   if(!verguetungssaetze.length){
     $('ratesList').innerHTML=
-      '<p class="muted">Noch keine Sätze hinterlegt. '+
-      'Ohne Sätze kann keine Einnahme berechnet werden.</p>';
+      '<div class="satz-bogen"><p class="muted" style="margin:0">Noch keine Sätze hinterlegt. '+
+      'Ohne Sätze kann keine Einnahme berechnet werden. Trag unten deine Sätze ein.</p></div>';
     return;
   }
 
-  const gruppen={
-    fls:'Betrag je FLS',
-    wegepauschale:'Betrag je Wegepauschale'
-  };
+  const kacheln=Object.entries(SATZ_ARTEN).map(([art,a])=>{
+    const s=aktuellerSatz(art);
+    return '<div class="satz-kachel '+a.klasse+'">'+
+      '<div class="satz-kachel-titel"><span class="satz-symbol" aria-hidden="true">'+a.symbol+'</span>'+
+      '<span>'+esc(a.name)+'<small>'+esc(a.je)+'</small></span></div>'+
+      (s?'<p class="satz-betrag">'+formatEuro(s.betrag)+'</p><div class="satz-seit">gültig seit '+formatDate(s.gueltig_ab)+'</div>'
+        :'<p class="satz-betrag">–</p><div class="satz-seit">noch kein Satz</div>')+
+    '</div>';
+  }).join('');
 
-  $('ratesList').innerHTML=Object.keys(gruppen).map(art=>{
+  const verlauf=Object.entries(SATZ_ARTEN).map(([art,a])=>{
     const eintraege=verguetungssaetze
       .filter(s=>s.art===art)
-      .sort((a,b)=>String(b.gueltig_ab).localeCompare(String(a.gueltig_ab)));
-
-    if(!eintraege.length){
-      return `
-        <div class="doc-item">
-          <h3>${esc(gruppen[art])}</h3>
-          <p class="muted">Kein Satz hinterlegt.</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="doc-item">
-        <h3>${esc(gruppen[art])}</h3>
-        ${eintraege.map(s=>`
-          <div class="doc-head" style="margin-top:10px">
-            <div>
-              <div class="fls-value">${formatEuro(s.betrag)}</div>
-              <div class="meta">gültig ab ${formatDate(s.gueltig_ab)}</div>
-              ${s.bemerkung?`<div class="meta">${esc(s.bemerkung)}</div>`:''}
-            </div>
-            <button
-              type="button"
-              class="kn kn-loeschen secondary deleteRate"
-              data-id="${esc(s.id)}">
-              Löschen
-            </button>
-          </div>
-        `).join('')}
-      </div>
-    `;
+      .sort((x,y)=>String(y.gueltig_ab).localeCompare(String(x.gueltig_ab)));
+    const aktuell=aktuellerSatz(art);
+    const zeilen=eintraege.length?eintraege.map(s=>{
+      const kuenftig=String(s.gueltig_ab)>heute;
+      const istAktuell=aktuell&&String(aktuell.id)===String(s.id);
+      const marke=istAktuell?'<span class="satz-marke aktuell">aktuell</span>'
+        :kuenftig?'<span class="satz-marke kuenftig">künftig</span>'
+        :'<span class="satz-marke">früher</span>';
+      return '<div class="satz-zeile'+(!istAktuell&&!kuenftig?' frueher':'')+'">'+
+        '<span class="satz-datum">ab '+formatDate(s.gueltig_ab)+'</span>'+
+        '<span><span class="satz-wert">'+formatEuro(s.betrag)+'</span>'+marke+'</span>'+
+        '<button type="button" class="kn kn-loeschen secondary deleteRate" data-id="'+esc(s.id)+'" aria-label="Satz ab '+esc(formatDate(s.gueltig_ab))+' löschen">Löschen</button>'+
+        (s.bemerkung?'<span class="satz-bem">'+esc(s.bemerkung)+'</span>':'')+
+      '</div>';
+    }).join(''):'<p class="muted small" style="margin:4px 0">Kein Satz hinterlegt.</p>';
+    return '<div class="satz-abschnitt"><p class="satz-abschnitt-titel">'+a.symbol+' '+esc(a.name.toUpperCase())+' – '+esc(a.je.toUpperCase())+'</p>'+zeilen+'</div>';
   }).join('');
+
+  $('ratesList').innerHTML='<div class="satz-bogen">'+
+    '<div class="satz-bogen-kopfzeile"><span>DEINE VERGÜTUNGSSÄTZE</span><span>Stand '+esc(formatDate(heute))+'</span></div>'+
+    '<div class="satz-kacheln">'+kacheln+'</div>'+
+    verlauf+
+  '</div>';
 
   document.querySelectorAll('.deleteRate').forEach(
     b=>b.onclick=()=>deleteRate(b.dataset.id)
