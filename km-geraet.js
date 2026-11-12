@@ -442,6 +442,12 @@ function aehnlicheStrassen(verz,name){
   return namen.flatMap(k=>verz.nachName.get(k));
 }
 
+// Orte, die in den OpenStreetMap-Daten fehlen (dort ohne Namen eingetragen).
+// Suchname (wie norm()) → [Straße, Ort, Lat, Lon]. Bei Bedarf hier ergänzen.
+const ERGAENZUNGEN={
+  trammplatz:['Trammplatz','Hannover',52.36808,9.73800]   // vor dem Neuen Rathaus
+};
+
 function naechster(liste,bezug,lage){
   if(!bezug)return liste[0];
   let beste=null,bd=Infinity;
@@ -534,6 +540,12 @@ function adresseSuchen(verz,text,bezug){
     let name=p[1];
     if(genau)name+=dort?' ('+genau.name+')':', '+(abstand/1000).toLocaleString('de-DE',{maximumFractionDigits:0})+' km von '+genau.name+' entfernt';
     return {lat:p[3]/1e5,lon:p[4]/1e5,name,unsicher:!alle||!dort||!nahe};
+  }
+
+  // 0. Ergänzte Orte, die in den Kartendaten fehlen („Trammplatz“)
+  if(ERGAENZUNGEN[name]&&!verz.nachName.get(name)){
+    const [strasse,ort,la,lo]=ERGAENZUNGEN[name];
+    return {lat:la,lon:lo,name:strasse+(z.nr?' '+z.nr:'')+', '+ort,unsicher:false};
   }
 
   // 1. Straße genau gefunden
