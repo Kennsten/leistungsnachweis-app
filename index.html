@@ -209,7 +209,6 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .satz-zeile .satz-bem{grid-column:2/3;font-size:.85rem;color:var(--muted)}
 .satz-marke{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;border:1px solid var(--line);color:var(--muted)}
 .satz-marke.aktuell{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
-.satz-marke.kuenftig{background:#fff3d6;border-color:#c98a1b;color:#4a3300}
 .satz-zeile.frueher .satz-wert,.satz-zeile.frueher .satz-datum{color:var(--muted);font-weight:500}
 .satz-zeile .kn.deleteRate{padding:6px 10px;font-size:.8rem;min-height:34px}
 .satz-neu{border:1px solid var(--line);border-radius:var(--radius-item,12px);background:var(--card);margin:10px 0}
@@ -225,6 +224,8 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .satz-feld-kopf{display:flex;gap:8px;align-items:center}
 .satz-feld-kopf small{display:block;font-weight:500;opacity:.75;font-size:.8rem}
 .satz-feld input{background:var(--card);color:var(--ink)}
+.satz-feld-zeile{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.satz-feld-teil{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -3542,22 +3543,24 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   <details id="rateNeu" class="satz-neu">
     <summary><span class="satz-neu-pfeil" aria-hidden="true"></span><span><strong>Neuen Satz eintragen</strong><small>z. B. wenn sich ab einem Datum ein Betrag ändert</small></span></summary>
     <form id="rateForm">
-      <label>Gültig ab
-        <input id="rateFrom" type="date" required>
-      </label>
-
-      <p class="muted small">Es gibt <strong>zwei verschiedene Sätze</strong>. Trag nur den ein, der sich ändert – ein leeres Feld lässt den bisherigen Satz unverändert.</p>
+      <p class="muted small">Es gibt <strong>zwei verschiedene Sätze</strong>. Trag jeweils den <strong>Betrag</strong> und das Datum ein, <strong>ab dem er gilt</strong>. Ändert sich nur ein Satz, lass den anderen Kasten leer – dann bleibt er unverändert.</p>
 
       <div class="satz-felder">
         <label class="satz-feld satz-fls">
-          <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🕒</span><span><strong>Fachleistungsstunde (FLS)</strong><small>Betrag je Stunde, in Euro</small></span></span>
-          <input id="rateFls" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 62,50">
+          <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🕒</span><span><strong>Fachleistungsstunde (FLS)</strong><small>je Stunde</small></span></span>
+          <span class="satz-feld-zeile">
+            <span class="satz-feld-teil">Betrag in Euro<input id="rateFls" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 62,50"></span>
+            <span class="satz-feld-teil">gültig ab<input id="rateFlsAb" type="date"></span>
+          </span>
           <span class="feld-hinweis" id="rateFlsAktuell"></span>
         </label>
 
         <label class="satz-feld satz-wege">
-          <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🚗</span><span><strong>Wegepauschale</strong><small>Betrag je Fahrt, in Euro</small></span></span>
-          <input id="rateWege" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 8,00">
+          <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🚗</span><span><strong>Wegepauschale</strong><small>je Fahrt</small></span></span>
+          <span class="satz-feld-zeile">
+            <span class="satz-feld-teil">Betrag in Euro<input id="rateWege" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 8,00"></span>
+            <span class="satz-feld-teil">gültig ab<input id="rateWegeAb" type="date"></span>
+          </span>
           <span class="feld-hinweis" id="rateWegeAktuell"></span>
         </label>
       </div>
@@ -3890,7 +3893,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.7 Verkaufsversion';
+const APP_VERSION='0.25.8 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -13762,10 +13765,10 @@ function renderRates(){
       const kuenftig=String(s.gueltig_ab)>heute;
       const istAktuell=aktuell&&String(aktuell.id)===String(s.id);
       const marke=istAktuell?'<span class="satz-marke aktuell">aktuell</span>'
-        :kuenftig?'<span class="satz-marke kuenftig">künftig</span>'
+        :kuenftig?''
         :'<span class="satz-marke">früher</span>';
       return '<div class="satz-zeile'+(!istAktuell&&!kuenftig?' frueher':'')+'">'+
-        '<span class="satz-datum">ab '+formatDate(s.gueltig_ab)+'</span>'+
+        '<span class="satz-datum">gültig ab<br><strong>'+formatDate(s.gueltig_ab)+'</strong></span>'+
         '<span><span class="satz-wert">'+formatEuro(s.betrag)+'</span>'+marke+'</span>'+
         '<button type="button" class="kn kn-loeschen secondary deleteRate" data-id="'+esc(s.id)+'" aria-label="Satz ab '+esc(formatDate(s.gueltig_ab))+' löschen">Löschen</button>'+
         (s.bemerkung?'<span class="satz-bem">'+esc(s.bemerkung)+'</span>':'')+
@@ -13811,7 +13814,9 @@ async function deleteRate(id){
 $('openRates').onclick=async()=>{
   await loadVerguetungssaetze();
 
-  $('rateFrom').value=todayIso().slice(0,8)+'01';
+  const monatsanfang=todayIso().slice(0,8)+'01';
+  $('rateFlsAb').value=monatsanfang;
+  $('rateWegeAb').value=monatsanfang;
   $('rateFls').value='';
   $('rateWege').value='';
   $('rateNote').value='';
@@ -13825,17 +13830,18 @@ $('closeRates').onclick=()=>$('ratesDialog').close();
 $('rateForm').onsubmit=async e=>{
   e.preventDefault();
 
-  const gueltigAb=$('rateFrom').value;
-  const eintraege=[['fls',$('rateFls').value],['wegepauschale',$('rateWege').value]]
+  const eintraege=[['fls',$('rateFls').value,$('rateFlsAb').value,'Fachleistungsstunde'],
+                   ['wegepauschale',$('rateWege').value,$('rateWegeAb').value,'Wegepauschale']]
     .filter(([,wert])=>String(wert).trim()!=='')
-    .map(([art,wert])=>({art,betrag:Number(String(wert).replace(',','.'))}));
+    .map(([art,wert,ab,name])=>({art,ab,name,betrag:Number(String(wert).replace(',','.'))}));
 
-  if(!gueltigAb){
-    toast('Bitte das Datum „Gültig ab“ eintragen.');
-    return;
-  }
   if(!eintraege.length){
     toast('Bitte mindestens einen Betrag eintragen.');
+    return;
+  }
+  const ohneDatum=eintraege.find(x=>!x.ab);
+  if(ohneDatum){
+    toast('Bitte bei „'+ohneDatum.name+'“ eintragen, ab wann der Betrag gilt.');
     return;
   }
   if(eintraege.some(x=>!Number.isFinite(x.betrag)||x.betrag<=0)){
@@ -13850,7 +13856,7 @@ $('rateForm').onsubmit=async e=>{
         {
           user_id:user.id,
           art:x.art,
-          gueltig_ab:gueltigAb,
+          gueltig_ab:x.ab,
           betrag:x.betrag,
           bemerkung:$('rateNote').value.trim()||null
         },
@@ -13868,6 +13874,7 @@ $('rateForm').onsubmit=async e=>{
   $('rateFls').value='';
   $('rateWege').value='';
   $('rateNote').value='';
+  $('rateFlsAb').value=$('rateWegeAb').value=todayIso().slice(0,8)+'01';
 
   await loadVerguetungssaetze();
   renderRates();
