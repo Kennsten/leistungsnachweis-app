@@ -183,6 +183,11 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .karte-etappen{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
 .konto-liste{margin:4px 0 10px;padding-left:1.2em;font-size:.9rem;line-height:1.45}
 .konto-liste li{margin:3px 0}
+.install-warum ul{margin:4px 0 8px;padding-left:20px}
+.install-warum li{margin:2px 0}
+.install-fuss{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+#registrierenDialog{max-width:440px}
+#registrierenDialog h2{margin-top:0}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -1880,17 +1885,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <p class="anmelde-bereiche"><span>Dokumentation · Fahrten ·</span> <span>Abrechnung · Steuer</span></p>
     <p class="anmelde-sicher">Ende-zu-Ende-verschlüsselt – nur du kannst deine Daten lesen.</p>
     <div id="testenHinweis" class="sich-hinweis hidden">
-      <p><strong>7 Tage kostenlos testen.</strong> Tippe unten auf „Registrieren“ – dein Testkonto ist sofort bereit. In der App kannst du Beispieldaten laden und alles ausprobieren. Nach 7 Tagen endet der Test automatisch; bei Vertragsabschluss wird das Konto zur Vollversion, mit allen Einträgen.</p>
+      <p><strong>7 Tage kostenlos testen.</strong> Tippe unten auf „Registrieren“ und bestätige den Link in der E-Mail – dann ist dein Testkonto bereit. In der App kannst du Beispieldaten laden und alles ausprobieren. Nach 7 Tagen endet der Test automatisch; bei Vertragsabschluss wird das Konto zur Vollversion, mit allen Einträgen.</p>
     </div>
-    <p class="muted">Melde dich mit deinem App-Konto an.</p>
+    <p class="muted" id="anmeldeText">Melde dich mit deinem App-Konto an.</p>
     <label>E-Mail<input id="email" type="email" autocomplete="email"></label>
-    <label>Passwort<input id="password" type="password" autocomplete="current-password" aria-describedby="passwortRegeln"></label>
-    <ul id="passwortRegeln" class="passwort-regeln" aria-label="So muss ein neues Passwort aussehen">
-      <li id="regelLaenge" data-regel="laenge">mindestens 12 Zeichen</li>
-      <li id="regelBuchstabe" data-regel="buchstabe">mindestens ein Buchstabe</li>
-      <li id="regelZiffer" data-regel="ziffer">mindestens eine Ziffer</li>
-    </ul>
-    <p class="muted small passwort-beispiel">Gilt beim Registrieren und bei einem neuen Passwort. Beispiel: <code>Sommerwiese2026</code>. Leicht zu erratende oder bekannt gewordene Passwörter lehnt der Server ab.</p>
+    <label>Passwort<input id="password" type="password" autocomplete="current-password"></label>
     <p id="authMeldung" class="auth-meldung hidden" role="status" aria-live="polite"></p>
     <div class="actions">
       <button id="login" class="primary">Anmelden</button>
@@ -2827,12 +2826,36 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
   </div>
 </dialog>
 
+<dialog id="registrierenDialog" aria-labelledby="registrierenTitel">
+  <form id="registrierenForm" class="registrieren" novalidate>
+    <h2 id="registrierenTitel">Registrieren</h2>
+    <label>E-Mail<input id="regEmail" type="email" autocomplete="email" required></label>
+    <label>Passwort<input id="regPasswort" type="password" autocomplete="new-password" aria-describedby="passwortRegeln" required></label>
+    <ul id="passwortRegeln" class="passwort-regeln" aria-label="So muss das Passwort aussehen">
+      <li data-regel="laenge">mindestens 12 Zeichen</li>
+      <li data-regel="buchstabe">mindestens ein Buchstabe</li>
+      <li data-regel="ziffer">mindestens eine Ziffer</li>
+    </ul>
+    <p class="muted small">Beispiel: <code>Sommerwiese2026</code>. Leicht zu erratende Passwörter lehnt der Server ab.</p>
+    <p class="auth-meldung ok small">Nach dem Registrieren schicken wir dir eine <strong>E-Mail mit einem Link</strong>. Tippe den Link an, um dein Konto zu bestätigen (auch im Spam-Ordner nachsehen). Danach meldest du dich mit E-Mail und Passwort an.</p>
+    <p id="regMeldung" class="auth-meldung hidden" role="status" aria-live="polite"></p>
+    <div class="actions">
+      <button type="submit" id="regAbsenden" class="primary">Konto anlegen</button>
+      <button type="button" id="regAbbrechen" class="secondary">Abbrechen</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="installDialog">
   <div class="top">
     <div><div class="muted">Installieren</div></div>
     <button autofocus type="button" id="installDialogSchliessen" class="kn kn-schliessen secondary">Schließen</button>
   </div>
   <div id="installDialogInhalt"></div>
+  <div id="installDialogFuss" class="install-fuss hidden">
+    <p class="muted small">Du kannst die App jederzeit später installieren: <strong>Einstellungen → App installieren</strong>.</p>
+    <div class="actions"><button type="button" id="installImBrowser" class="secondary">Im Browser weiter</button></div>
+  </div>
 </dialog>
 
 <dialog id="einladenDialog">
@@ -2949,6 +2972,11 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
     <button type="button" class="einst-zeile" data-seite="konto" id="einstKontoZeile">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>
       <span class="einst-text"><strong>Konto und App löschen</strong><small>Konto auflösen, Daten und App entfernen</small></span>
+      <span class="einst-pfeil" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="einst-zeile" data-anleitung id="einstInstallZeile">
+      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg></span>
+      <span class="einst-text"><strong>App installieren</strong><small>Als App aufs Gerät legen – mit Anleitung</small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
     <button type="button" class="einst-zeile" id="einladenKnopf">
@@ -3802,7 +3830,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.2 Verkaufsversion';
+const APP_VERSION='0.25.3 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4676,6 +4704,19 @@ function istNetzFehler(fehler){
 
 let offlineAngemeldet=false;
 
+let neuAngemeldet=false;
+async function installationAnbieten(){
+  const merker='qa-install-gefragt-'+user.id;
+  let schonGefragt=false;
+  try{schonGefragt=localStorage.getItem(merker)==='1'}catch(e){}
+  const jetzt=neuAngemeldet||!schonGefragt;
+  neuAngemeldet=false;
+  if(!jetzt||!window.Installieren||Installieren.istInstalliert())return;
+  try{localStorage.setItem(merker,'1')}catch(e){}
+  $('auth').classList.add('hidden');
+  await Installieren.fragen();
+}
+
 async function init(){
   let {data:{session},error}=await sb.auth.getSession();
   offlineAngemeldet=false;
@@ -4690,6 +4731,10 @@ async function init(){
   if(error){toast(error.message);showApp(false);return}
   if(session){
     user=session.user;
+
+    // Nach der Anmeldung zuerst die Installation anbieten (nur im Browser,
+    // nach jeder neuen Anmeldung bzw. einmal je Konto und Gerät)
+    await installationAnbieten();
 
     // Tresor: erst nach Eingabe des Tresor-Passworts geht es weiter
     await Tresor.oeffnen({
@@ -8043,11 +8088,11 @@ function authMeldung(text,art){
 }
 // Haken bei den Passwort-Regeln beim Tippen
 function passwortRegelnZeigen(){
-  const pw=$('password').value;
+  const pw=$('regPasswort').value;
   const ok={laenge:pw.length>=ANMELDE_PASSWORT_MIN,buchstabe:/[A-Za-zÄÖÜäöüß]/.test(pw),ziffer:/[0-9]/.test(pw)};
   document.querySelectorAll('#passwortRegeln li').forEach(li=>li.classList.toggle('erfuellt',Boolean(ok[li.dataset.regel])));
 }
-$('password').addEventListener('input',()=>{passwortRegelnZeigen();authMeldung('')});
+$('password').addEventListener('input',()=>authMeldung(''));
 $('email').addEventListener('input',()=>authMeldung(''));
 
 $('login').onclick=async()=>{
@@ -8059,6 +8104,7 @@ $('login').onclick=async()=>{
     const text=anmeldeFehlerDeutsch(error);
     authMeldung(text,'fehler');toast(text);return;
   }
+  neuAngemeldet=true;
   await init();
 };
 
@@ -8122,35 +8168,76 @@ function anmeldeFehlerDeutsch(fehler){
   return text;
 }
 
-$('signup').onclick=async()=>{
-  const mail=$('email').value.trim();
-  const pass=$('password').value;
-
-  if(!mail||!pass){
-    authMeldung('Bitte E-Mail und Passwort eintragen.','fehler');
-    return;
-  }
-
-  const problem=anmeldePasswortProblem(pass);
-  if(problem){
-    authMeldung(problem+' Siehe die Hinweise unter dem Passwortfeld.','fehler');
-    toast(problem);
-    return;
-  }
-
+/* Registrieren: eigenes, schlichtes Fenster. Nach erfolgreicher Registrierung
+   zeigt die Anmeldeseite nur noch „Anmelden“ – bis die App neu geladen wird. */
+function regMeldung(text,art){
+  const m=$('regMeldung');
+  m.textContent=text||'';
+  m.classList.toggle('hidden',!text);
+  m.classList.toggle('fehler',art==='fehler');
+  m.classList.toggle('ok',art==='ok');
+}
+$('signup').onclick=()=>{
   authMeldung('');
-  const {data,error}=await sb.auth.signUp({email:mail,password:pass});
+  regMeldung('');
+  $('regEmail').value=$('email').value.trim();
+  $('regPasswort').value='';
+  passwortRegelnZeigen();
+  $('registrierenDialog').showModal();
+  ($('regEmail').value?$('regPasswort'):$('regEmail')).focus();
+};
+$('regAbbrechen').onclick=()=>$('registrierenDialog').close();
+$('regPasswort').addEventListener('input',()=>{passwortRegelnZeigen();regMeldung('')});
+$('regEmail').addEventListener('input',()=>regMeldung(''));
 
-  if(error){const t=anmeldeFehlerDeutsch(error);authMeldung(t,'fehler');toast(t);return}
-  // Bei schon vorhandener Adresse meldet Supabase „Erfolg“ ohne neues Konto
-  if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
-    authMeldung('Für diese E-Mail-Adresse gibt es schon ein Konto. Bitte „Anmelden“ antippen, oder „Passwort vergessen“, falls du das Passwort nicht mehr weißt.','fehler');
-    return;
-  }
-  if(data.session){authMeldung('Registrierung erfolgreich.','ok');toast('Registrierung erfolgreich.');await init()}
-  else{
-    authMeldung('Fast geschafft: Wir haben eine E-Mail an '+mail+' geschickt. Bitte den Link darin antippen (auch im Spam-Ordner nachsehen). Danach hier „Anmelden“ antippen.','ok');
-    toast('Registrierung angelegt. Bitte E-Mail bestätigen.');
+function nachRegistrierungAnmelden(mail){
+  $('signup').classList.add('hidden');
+  const t=$('testenHinweis');if(t)t.classList.add('hidden');
+  $('anmeldeText').textContent='Bitte bestätige zuerst deine E-Mail-Adresse und melde dich dann hier an.';
+  $('email').value=mail;
+  $('password').value='';
+  authMeldung('Fast geschafft: Wir haben eine E-Mail an '+mail+' geschickt. Bitte den Link darin antippen (auch im Spam-Ordner nachsehen). Danach hier mit deinem Passwort „Anmelden“.','ok');
+  $('password').focus();
+}
+
+$('registrierenForm').onsubmit=async e=>{
+  e.preventDefault();
+  const mail=$('regEmail').value.trim();
+  const pass=$('regPasswort').value;
+
+  if(!mail||!pass){regMeldung('Bitte E-Mail und Passwort eintragen.','fehler');return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){regMeldung('Bitte eine gültige E-Mail-Adresse eintragen.','fehler');return}
+  const problem=anmeldePasswortProblem(pass);
+  if(problem){regMeldung(problem,'fehler');return}
+
+  const knopf=$('regAbsenden');
+  knopf.disabled=true;
+  regMeldung('');
+  try{
+    const {data,error}=await sb.auth.signUp({
+      email:mail,
+      password:pass,
+      options:{emailRedirectTo:window.location.origin+window.location.pathname}
+    });
+    if(error){regMeldung(anmeldeFehlerDeutsch(error),'fehler');return}
+    // Bei schon vorhandener Adresse meldet Supabase „Erfolg“ ohne neues Konto
+    if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+      regMeldung('Für diese E-Mail-Adresse gibt es schon ein Konto. Bitte „Abbrechen“ und dann „Anmelden“ – oder „Passwort vergessen“, falls du das Passwort nicht mehr weißt.','fehler');
+      return;
+    }
+    $('registrierenDialog').close();
+    if(data.session){
+      // Konto ohne E-Mail-Bestätigung (z. B. vom Anbieter freigeschaltet): direkt weiter
+      $('signup').classList.add('hidden');
+      neuAngemeldet=true;
+      toast('Registrierung erfolgreich.');
+      await init();
+    }else{
+      nachRegistrierungAnmelden(mail);
+      toast('Konto angelegt. Bitte E-Mail bestätigen.');
+    }
+  }finally{
+    knopf.disabled=false;
   }
 };
 

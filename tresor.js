@@ -434,20 +434,19 @@
   function ansichtEinrichten() {
     zeigen(`
       <h2>Tresor einrichten</h2>
-      <p>Deine Klientendaten liegen künftig in einem <b>Tresor</b>. Das ist ein verschlüsselter Speicher,
-      den nur du öffnen kannst – nicht der Server und nicht der Anbieter der App.</p>
+      <p>Stell dir die App wie eine Wohnung vor: Mit dem <b>Anmelde-Passwort</b> kommst du durch die Haustür.
+      Deine Klientendaten liegen drinnen zusätzlich in einem <b>Tresor</b> – einem Safe, den nur du öffnen kannst.
+      Nicht einmal der Server oder der Anbieter der App kann hineinsehen.</p>
       <div class="t-drei">
-        <div class="t-drei-titel">Drei Dinge, die du kennen solltest</div>
+        <div class="t-drei-titel">Du hast damit drei Schlüssel</div>
         <ol>
-          <li><b>Anmelde-Passwort</b> – für dein Konto (E-Mail und Passwort). Kennst du schon.
-            Vergessen? Neues per E-Mail anfordern.</li>
-          <li><b>Tresor-Passwort</b> – öffnet deine Klientendaten. Du gibst es bei jedem Öffnen der App ein
-            und nach 30 Minuten Pause. Es verlässt dein Gerät nie. <i>Legst du jetzt fest.</i></li>
-          <li><b>Wiederherstellungsschlüssel</b> – der Ersatzschlüssel für das Tresor-Passwort,
-            nur für den Notfall. 32 Zeichen auf einem Notfallblatt zum Ausdrucken.
-            <i>Bekommst du im nächsten Schritt.</i></li>
+          <li><b>Anmelde-Passwort</b> (Haustür) – das hast du schon. Vergessen? Neues per E-Mail anfordern.</li>
+          <li><b>Tresor-Passwort</b> (Safe) – öffnet deine Klientendaten. Du gibst es beim Öffnen der App ein
+            und nach 30 Minuten Pause. <i>Legst du jetzt fest.</i></li>
+          <li><b>Wiederherstellungsschlüssel</b> (Ersatzschlüssel) – nur für den Notfall, wenn du das Tresor-Passwort vergisst.
+            Du druckst ihn auf einem Notfallblatt aus. <i>Kommt im nächsten Schritt.</i></li>
         </ol>
-        <div class="t-drei-fuss">Bitte wähle für das Tresor-Passwort <b>nicht</b> dasselbe wie für die Anmeldung.</div>
+        <div class="t-drei-fuss">Bitte nimm für den Tresor <b>ein anderes</b> Passwort als für die Anmeldung.</div>
       </div>
       <div class="t-hinweis">Tipp: Ein Satz aus mehreren Wörtern ist sicher und gut zu merken,
       zum Beispiel „Kaffee am Morgen mit Hund“. Mindestens ${MIN_PASSWORT} Zeichen.</div>
@@ -461,9 +460,8 @@
           <input id="tPw2" type="password" autocomplete="new-password" required>
         </label>
         <div class="t-warnung">
-          <b>Wichtig:</b> Niemand kann ein vergessenes Tresor-Passwort zurücksetzen – auch nicht der Anbieter der App.
-          Im nächsten Schritt bekommst du einen <b>Wiederherstellungsschlüssel</b> zum Ausdrucken.
-          Ohne Tresor-Passwort und ohne Wiederherstellungsschlüssel sind deine Daten verloren.
+          <b>Wichtig:</b> Den Safe kann niemand aufbrechen – auch der Anbieter nicht. Das schützt deine Daten,
+          heißt aber auch: Hast du weder das Tresor-Passwort noch den Ersatzschlüssel (Notfallblatt), sind die Daten verloren.
         </div>
         <label class="t-check"><input type="checkbox" id="tVerstanden">
           <span>Ich habe verstanden: Ohne Tresor-Passwort und ohne Wiederherstellungsschlüssel sind meine Daten unwiederbringlich verloren.</span>
@@ -549,8 +547,8 @@
 
     zeigen(`
       <h2>${esc(titel || 'Dein Wiederherstellungs\u00ADschlüssel')}</h2>
-      <p>Mit diesem Schlüssel kannst du ein neues Tresor-Passwort festlegen, falls du es vergisst.
-      Er wird <b>nur jetzt</b> angezeigt.</p>
+      <p>Das ist dein <b>Ersatzschlüssel</b> für den Tresor. Falls du das Tresor-Passwort einmal vergisst,
+      legst du damit ein neues fest. Er wird <b>nur jetzt</b> angezeigt – bitte gleich als PDF speichern und ausdrucken.</p>
       <div class="t-code">${gruppenHtml(code)}</div>
       <div class="t-qr">${qrSvg(codeFormatieren(code))}</div>
       <div class="t-hinweis">
@@ -911,7 +909,8 @@
     zeigen(`
       <h2>Tresor gesperrt</h2>
       <p class="muted">${esc(mail)}</p>
-      <p>Gib dein <b>Tresor-Passwort</b> ein. Es schützt deine Klientendaten und ist nicht dasselbe wie dein Anmelde-Passwort.</p>
+      <p>Deine Klientendaten sind verschlossen. Gib dein <b>Tresor-Passwort</b> ein, um sie zu öffnen.</p>
+      <p class="muted small">Das ist das zweite Passwort, das du beim Einrichten des Tresors selbst festgelegt hast – nicht das Passwort für die Anmeldung.</p>
       ${passkeyUnterstuetzt() && passkeyLesen() ? '<div class="actions"><button type="button" id="tPasskeyKnopf" class="primary">Mit Fingerabdruck / Gesicht entsperren</button></div><p class="muted small">oder mit Passwort:</p>' : ''}
       <form id="tEntsperren">
         ${benutzerFeld()}

@@ -70,7 +70,18 @@
   }
 
   function warum() {
-    return '<p class="muted small">Nur über das QA-Symbol sind deine Daten sicher auf dem Gerät gespeichert und ohne Internet verfügbar.</p>';
+    return '<div class="install-warum">' +
+      '<p><strong>Wofür ist das gut?</strong> Du legst die App wie jede andere App als Symbol <strong>„QA“</strong> auf dein Gerät. Dann:</p>' +
+      '<ul>' +
+      '<li>öffnet sie sich mit einem Tipp, ohne Adresszeile und Browser-Knöpfe,</li>' +
+      '<li>bleiben deine Daten dauerhaft und verschlüsselt auf dem Gerät gespeichert,</li>' +
+      '<li>kannst du auch ohne Internet arbeiten (z. B. unterwegs bei Klient*innen).</li>' +
+      '</ul>' +
+      '<p class="muted small"><strong>Muss ich das?</strong> Nein. Die App funktioniert auch hier im Browserfenster. ' +
+      'Aber: Manche Browser (vor allem Safari auf iPhone und iPad) räumen gespeicherte Daten von Webseiten nach einiger Zeit von selbst weg. ' +
+      'Deine Einträge sind dann nicht verloren – sie liegen verschlüsselt auf dem Server –, die App muss sie aber neu laden, und ohne Internet geht dann nichts. ' +
+      'Nach dem Installieren meldest du dich in der App eventuell einmal neu an.</p>' +
+      '</div>';
   }
 
   const hilfe = (punkte) => '<details class="install-hilfe"><summary>Klappt etwas nicht?</summary><ul>' +
@@ -372,7 +383,10 @@
     }
 
     if (dialogInhalt) {
-      dialogInhalt.innerHTML = '<h2>' + titel() + '</h2>' + warum() + (installiertJetzt ? anleitung() : hilfeInhalt());
+      const schon = istInstalliert() && !installiertJetzt
+        ? hinweis('Du nutzt die App bereits als installierte App auf diesem Gerät. Die Anleitung unten hilft dir, sie auf einem weiteren Gerät zu installieren.')
+        : '';
+      dialogInhalt.innerHTML = '<h2>' + titel() + '</h2>' + schon + warum() + (installiertJetzt ? anleitung() : hilfeInhalt());
     }
   }
 
@@ -386,6 +400,25 @@
       if (wahl && wahl.outcome === 'accepted') installiertJetzt = true;
     } catch (f) { /* abgebrochen */ }
     anzeigen();
+  }
+
+  /* ---------------- Nach der Anmeldung automatisch anbieten ---------------- */
+
+  // Öffnet die Anleitung und wartet, bis sie geschlossen wird
+  // („Im Browser weiter“ oder Schließen). Ist die App schon installiert, passiert nichts.
+  function fragen() {
+    const dlg = document.getElementById('installDialog');
+    if (!dlg || istInstalliert() || typeof dlg.showModal !== 'function') return Promise.resolve();
+    anzeigen();
+    const fuss = document.getElementById('installDialogFuss');
+    if (fuss) fuss.classList.remove('hidden');
+    return new Promise((fertig) => {
+      dlg.addEventListener('close', () => {
+        if (fuss) fuss.classList.add('hidden');
+        fertig();
+      }, { once: true });
+      try { dlg.showModal(); } catch (e) { fertig(); }
+    });
   }
 
   /* ---------------- Kolleg*innen einladen ---------------- */
@@ -453,6 +486,7 @@
     });
     const knopf = (id, f) => { const el = document.getElementById(id); if (el) el.onclick = f; };
     knopf('installDialogSchliessen', () => document.getElementById('installDialog').close());
+    knopf('installImBrowser', () => document.getElementById('installDialog').close());
     knopf('einladenKnopf', einladungZeigen);
     knopf('einladenSchliessen', () => document.getElementById('einladenDialog').close());
     knopf('einladenTeilen', teilen);
@@ -466,5 +500,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 
-  window.Installieren = { anzeigen, istInstalliert, plattform };
+  window.Installieren = { anzeigen, istInstalliert, plattform, fragen };
 })();
