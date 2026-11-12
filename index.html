@@ -3848,7 +3848,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.4 Verkaufsversion';
+const APP_VERSION='0.25.5 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -14823,6 +14823,9 @@ function tourAusSetzen(aus){
   $('tourNichtMehr').checked=aus;
   $('tourBeimAnmelden').checked=!aus;
 }
+function tourBeispielDa(){
+  try{return Array.isArray(clients)&&clients.some(istBeispielKlient)}catch(e){return false}
+}
 function tourOeffnen(seite){
   tourSeite=seite||0;
   $('tourNichtMehr').checked=tourAus();
@@ -14833,7 +14836,9 @@ function tourZeichnen(){
   const k=TOUR[tourSeite];
   $('tourPunkte').innerHTML=TOUR.map((_,i)=>'<span'+(i===tourSeite?' class="an"':'')+'></span>').join('');
   $('tourInhalt').innerHTML='<div class="tour-karte"><span class="tour-symbol" aria-hidden="true">'+(TOUR_SYMBOL[tourSeite]||'')+'</span><h3>'+esc(k.t)+'</h3>'+k.x+
-    (k.k?'<p><button type="button" id="tourAktion" class="primary">'+esc(k.k)+'</button></p>':'')+'</div>';
+    (k.k?(tourBeispielDa()
+      ?'<p><button type="button" id="tourAktion" class="secondary" disabled>✓ Beispieldaten bereits heruntergeladen</button></p>'
+      :'<p><button type="button" id="tourAktion" class="primary">'+esc(k.k)+'</button></p>'):'')+'</div>';
   if(k.k)$('tourAktion').onclick=()=>{
     // Nach dem Schließen der Einstellungen geht der Rundgang mit der nächsten Seite weiter
     tourNachEinstellungen=Math.min(tourSeite+1,TOUR.length-1);
@@ -14879,6 +14884,7 @@ async function beispielStandZeigen(){
       ? 'Beispieldaten sind geladen: '+vorhanden.map(c=>c.client_code+' '+c.name).join(', ')+'.'
       : 'Zurzeit sind keine Beispieldaten geladen.';
     $('beispielLaden').disabled=vorhanden.length>0;
+    $('beispielLaden').textContent=vorhanden.length?'✓ Beispieldaten bereits heruntergeladen':'Beispieldaten laden';
     $('beispielEntfernen').disabled=!vorhanden.length;
   }catch(e){ziel.textContent='Stand nicht lesbar: '+e.message}
 }
@@ -15017,7 +15023,6 @@ async function beispieldatenEntfernen(){
 $('beispielLaden').onclick=async()=>{
   const k=$('beispielLaden');k.disabled=true;k.textContent='Wird geladen …';
   try{await beispieldatenLaden()}catch(e){toast('Beispieldaten fehlgeschlagen: '+e.message)}
-  k.textContent='Beispieldaten laden';
   beispielStandZeigen();
 };
 $('beispielEntfernen').onclick=async()=>{
@@ -15025,7 +15030,7 @@ $('beispielEntfernen').onclick=async()=>{
   const k=$('beispielEntfernen');k.disabled=true;k.textContent='Wird entfernt …';
   try{await beispieldatenEntfernen()}catch(e){toast('Entfernen fehlgeschlagen: '+e.message)}
   k.textContent='Beispieldaten vollständig entfernen';
-  beispielStandZeigen();
+  await beispielStandZeigen();
 };
 
 /* ----- Verwaltung der Testkonten (nur Anbieter) ----- */
