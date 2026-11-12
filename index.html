@@ -286,6 +286,9 @@ dialog label.tour-nicht-mehr{margin:12px 20px 16px;font-size:.9rem;color:var(--m
 .primary{background:var(--brand);color:var(--on-brand)}
 .primary:hover{background:var(--brand-dark)}
 .secondary{background:var(--accent);color:var(--ink)}
+/* Zweitrangige Knöpfe immer umrandet – sonst wirken sie wie Überschriften */
+.secondary{border:1px solid var(--brand);border:1px solid color-mix(in srgb,var(--brand) 60%,transparent)}
+.secondary:hover{border-color:var(--brand)}
 .danger{background:var(--danger-bg);color:var(--danger)}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 .actions button{flex:1}
@@ -1707,6 +1710,8 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 .fs-fahrt{--fs-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 17H3.5a1 1 0 0 1-1-1v-3.2a2 2 0 0 1 .6-1.4L5 9.5l1.6-3.3A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.8 1.2L19 9.5l1.9 1.9a2 2 0 0 1 .6 1.4V16a1 1 0 0 1-1 1H19'/%3E%3Cpath d='M5 9.5h14M9 17h6'/%3E%3Ccircle cx='7' cy='17' r='2'/%3E%3Ccircle cx='17' cy='17' r='2'/%3E%3C/svg%3E")}
 @media (max-width:520px){.fenster-symbol{width:34px;height:34px}.fenster-titel{gap:10px}}
 .kn.kn-einstellungen{--kn-ico:var(--kn-ico-zahnrad);background:var(--accent);color:var(--ink)}
+/* auch getönte Knöpfe umrandet, damit sie als Knopf erkennbar sind */
+.kn.kn-neu,.kn.kn-einstellungen{border-color:color-mix(in srgb,var(--brand) 60%,transparent)}
 .card.install-karte{margin-bottom:16px;padding:0;overflow:hidden;border:2px solid var(--brand);
   background:color-mix(in srgb,var(--brand) 12%,var(--card))}
 .install-karte h2{margin:0 0 6px;font-size:1.15rem}
@@ -3897,7 +3902,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.9 Verkaufsversion';
+const APP_VERSION='0.25.10 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
