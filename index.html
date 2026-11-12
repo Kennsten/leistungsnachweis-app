@@ -210,7 +210,11 @@ textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
 .satz-marke{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;border:1px solid var(--line);color:var(--muted)}
 .satz-marke.aktuell{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
 .satz-zeile.frueher .satz-wert,.satz-zeile.frueher .satz-datum{color:var(--muted);font-weight:500}
-.satz-zeile .kn.deleteRate{padding:6px 10px;font-size:.8rem;min-height:34px}
+.satz-zeile .kn.deleteRate,.satz-zeile .kn.editRate{padding:6px 10px;font-size:.8rem;min-height:34px}
+.satz-knoepfe{display:flex;flex-direction:column;gap:6px}
+.satz-zeile.satz-bearbeiten{display:block;background:var(--accent);border-radius:10px;padding:10px 12px;margin:6px 0;border:1px solid var(--brand)}
+.satz-bearbeiten-titel{margin:0 0 6px;font-weight:700}
+.satz-bearbeiten label.satz-feld-teil{margin:6px 0}
 .satz-neu{border:1px solid var(--line);border-radius:var(--radius-item,12px);background:var(--card);margin:10px 0}
 .satz-neu>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:14px 16px}
 .satz-neu>summary::-webkit-details-marker{display:none}
@@ -3893,7 +3897,7 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.25.8 Verkaufsversion';
+const APP_VERSION='0.25.9 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -13767,10 +13771,25 @@ function renderRates(){
       const marke=istAktuell?'<span class="satz-marke aktuell">aktuell</span>'
         :kuenftig?''
         :'<span class="satz-marke">früher</span>';
+      if(String(s.id)===String(satzInBearbeitung)){
+        return '<div class="satz-zeile satz-bearbeiten" data-id="'+esc(s.id)+'">'+
+          '<p class="satz-bearbeiten-titel">Satz ändern</p>'+
+          '<div class="satz-feld-zeile">'+
+            '<label class="satz-feld-teil">gültig ab<input type="date" class="satzAbNeu" value="'+esc(String(s.gueltig_ab).slice(0,10))+'"></label>'+
+            '<label class="satz-feld-teil">Betrag in Euro<input type="text" inputmode="decimal" class="satzBetragNeu" value="'+esc(Number(s.betrag).toFixed(2).replace('.',','))+'"></label>'+
+          '</div>'+
+          '<label class="satz-feld-teil">Bemerkung (freiwillig)<input type="text" class="satzBemNeu" value="'+esc(s.bemerkung||'')+'"></label>'+
+          '<div class="actions"><button type="button" class="kn kn-speichern primary satzAendernSpeichern">Speichern</button>'+
+          '<button type="button" class="secondary satzAendernAbbrechen">Abbrechen</button></div>'+
+        '</div>';
+      }
       return '<div class="satz-zeile'+(!istAktuell&&!kuenftig?' frueher':'')+'">'+
         '<span class="satz-datum">gültig ab<br><strong>'+formatDate(s.gueltig_ab)+'</strong></span>'+
         '<span><span class="satz-wert">'+formatEuro(s.betrag)+'</span>'+marke+'</span>'+
-        '<button type="button" class="kn kn-loeschen secondary deleteRate" data-id="'+esc(s.id)+'" aria-label="Satz ab '+esc(formatDate(s.gueltig_ab))+' löschen">Löschen</button>'+
+        '<span class="satz-knoepfe">'+
+          '<button type="button" class="kn kn-bearbeiten secondary editRate" data-id="'+esc(s.id)+'" aria-label="Satz ab '+esc(formatDate(s.gueltig_ab))+' ändern">Ändern</button>'+
+          '<button type="button" class="kn kn-loeschen secondary deleteRate" data-id="'+esc(s.id)+'" aria-label="Satz ab '+esc(formatDate(s.gueltig_ab))+' löschen">Löschen</button>'+
+        '</span>'+
         (s.bemerkung?'<span class="satz-bem">'+esc(s.bemerkung)+'</span>':'')+
       '</div>';
     }).join(''):'<p class="muted small" style="margin:4px 0">Kein Satz hinterlegt.</p>';
@@ -13786,6 +13805,39 @@ function renderRates(){
   document.querySelectorAll('.deleteRate').forEach(
     b=>b.onclick=()=>deleteRate(b.dataset.id)
   );
+  document.querySelectorAll('.editRate').forEach(
+    b=>b.onclick=()=>{satzInBearbeitung=b.dataset.id;renderRates();
+      const feld=document.querySelector('.satz-bearbeiten .satzAbNeu');if(feld)feld.focus()}
+  );
+  const zeile=document.querySelector('.satz-bearbeiten');
+  if(zeile){
+    zeile.querySelector('.satzAendernAbbrechen').onclick=()=>{satzInBearbeitung=null;renderRates()};
+    zeile.querySelector('.satzAendernSpeichern').onclick=()=>satzAendern(zeile);
+  }
+}
+
+var satzInBearbeitung=null;
+async function satzAendern(zeile){
+  const id=zeile.dataset.id;
+  const alt=verguetungssaetze.find(x=>String(x.id)===String(id));
+  if(!alt)return;
+  const ab=zeile.querySelector('.satzAbNeu').value;
+  const betrag=Number(String(zeile.querySelector('.satzBetragNeu').value).trim().replace(',','.'));
+  const bemerkung=zeile.querySelector('.satzBemNeu').value.trim()||null;
+  if(!ab){toast('Bitte das Datum „gültig ab“ eintragen.');return}
+  if(!Number.isFinite(betrag)||betrag<=0){toast('Bitte einen gültigen Betrag eintragen, z. B. 41,50.');return}
+  const doppelt=verguetungssaetze.find(x=>x.art===alt.art&&String(x.id)!==String(id)&&String(x.gueltig_ab).slice(0,10)===ab);
+  if(doppelt){toast('Für dieses Datum gibt es schon einen Satz dieser Art. Bitte ein anderes Datum wählen oder den anderen Satz ändern.');return}
+  const {error}=await Daten
+    .from('verguetungssaetze')
+    .update({gueltig_ab:ab,betrag,bemerkung})
+    .eq('id',id);
+  if(error){toast('Satz konnte nicht geändert werden: '+error.message);return}
+  toast('Satz geändert');
+  satzInBearbeitung=null;
+  await loadVerguetungssaetze();
+  renderRates();
+  if($('incomeDialog').open)await loadIncome();
 }
 
 async function deleteRate(id){
@@ -13814,6 +13866,7 @@ async function deleteRate(id){
 $('openRates').onclick=async()=>{
   await loadVerguetungssaetze();
 
+  satzInBearbeitung=null;
   const monatsanfang=todayIso().slice(0,8)+'01';
   $('rateFlsAb').value=monatsanfang;
   $('rateWegeAb').value=monatsanfang;
