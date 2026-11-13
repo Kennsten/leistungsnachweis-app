@@ -240,6 +240,13 @@ body.vorfuehrung #installLeiste,body.vorfuehrung #cloudBand,body.vorfuehrung #in
 body.vorfuehrung #einstKontoZeile,body.vorfuehrung #einstVerwaltungZeile,
 body.vorfuehrung .einst-zeile[data-seite="tresor"],body.vorfuehrung #einstInstallZeile{display:none!important}
 body.vorfuehrung #testBand a.abgleich-knopf{text-decoration:none;color:inherit}
+.ziel-titel{margin:16px 0 6px;font-size:1rem}
+.ziel-liste{display:grid;gap:8px;margin-bottom:10px}
+.ziel-zeile,label.ziel-zeile{display:flex;flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--radius-item,12px);padding:10px 12px;margin:0;font-weight:500}
+.ziel-zeile input[type=checkbox]{width:22px;min-width:22px;height:22px;min-height:0;margin:0;padding:0;flex:0 0 auto}
+.ziel-zeile>span{flex:1 1 180px;min-width:0;text-align:left}
+.ziel-zeile small{display:block;color:var(--muted);font-weight:400}
+.ziel-zeile button{flex:0 0 auto;padding:8px 12px}
 .passwort-regeln{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem}
 .passwort-regeln li::before{content:"○ ";color:var(--muted)}
 .passwort-regeln li.erfuellt{color:var(--brand)}
@@ -1998,6 +2005,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <section id="app" class="wrap hidden">
   <div id="installLeiste" class="install-leiste hidden"></div>
   <div id="cloudBand" class="install-leiste hidden"></div>
+  <div id="sicherungBand" class="install-leiste hidden"></div>
   <div id="kartenBand" class="install-leiste hidden"></div>
   <div id="testBand" class="install-leiste test-band hidden"></div>
   <div class="card top">
@@ -2026,7 +2034,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <div class="kopf-knoepfe">
       <button id="logout" class="secondary">Abmelden</button>
       <button type="button" id="openSettings" class="kn kn-einstellungen secondary">Einstellungen</button>
-      <button type="button" id="backupData" class="secondary nur-voll">Datensicherung</button>
+      <button type="button" id="backupData" class="secondary">Datensicherung</button>
     </div>
   </div>
 
@@ -2864,7 +2872,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <div id="whAuswahl">
     <p class="muted small">Wähle eine Sicherung. Vor dem Wiederherstellen siehst du, was sie enthält, und musst noch einmal bestätigen.</p>
-    <h3>Sicherungen in pCloud</h3>
+    <h3>Gespeicherte Sicherungen</h3>
     <div id="whListe" class="wh-liste"><p class="muted">Wird geladen …</p></div>
     <h3 style="margin-top:18px">Datei von diesem Gerät</h3>
     <input type="file" id="whDatei" accept=".json,application/json" class="hidden">
@@ -3038,7 +3046,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <span class="einst-text"><strong>Tresor und Sicherheit</strong><small id="einstStatusTresor"></small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
     </button>
-    <button type="button" class="einst-zeile nur-voll" data-seite="sicherung">
+    <button type="button" class="einst-zeile" data-seite="sicherung">
       <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 4v10M8 10l4 4 4-4"/></svg></span>
       <span class="einst-text"><strong>Datensicherung</strong><small id="einstStatusSicherung"></small></span>
       <span class="einst-pfeil" aria-hidden="true"></span>
@@ -3134,7 +3142,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <p><strong>Vorher bitte sichern.</strong> Für Leistungsnachweise, Fahrtenbuch und Belege gelten gesetzliche Aufbewahrungsfristen (steuerlich meist 6 bis 10 Jahre). Erstelle vorher ein Steuerpaket und deine Leistungsnachweise und bewahre sie auf.</p>
       <div class="fenster-aktionen">
         <button type="button" id="kontoSteuerpaket" class="secondary">Steuerpaket erstellen</button>
-        <button type="button" id="kontoSicherung" class="secondary nur-voll">Datensicherung erstellen</button>
+        <button type="button" id="kontoSicherung" class="secondary">Datensicherung erstellen</button>
       </div>
     </div>
 
@@ -3204,7 +3212,20 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <button type="button" id="sicherungJetzt" class="primary">Jetzt sichern</button>
       <button type="button" id="wiederherstellenOeffnen" class="secondary">Aus Sicherung wiederherstellen …</button>
     </div>
-    <label>Zusätzlich auf diesem Gerät speichern
+    <h3 class="ziel-titel">Wohin wird gesichert?</h3>
+    <div class="ziel-liste">
+      <label class="ziel-zeile">
+        <input type="checkbox" id="zielPcloud">
+        <span><strong>pCloud</strong><small id="zielPcloudStatus"></small></span>
+      </label>
+      <div class="ziel-zeile" id="zielOrdnerZeile">
+        <input type="checkbox" id="zielOrdner" aria-labelledby="zielOrdnerName">
+        <span><strong id="zielOrdnerName">Ordner, externe Festplatte oder USB-Stick</strong><small id="zielOrdnerStatus"></small></span>
+        <button type="button" id="zielOrdnerWaehlen" class="secondary">Ordner wählen …</button>
+      </div>
+      <p class="muted small hidden" id="zielOrdnerNichtMoeglich">Ordner und USB-Sticks direkt beschreiben können Chrome und Edge am Computer. Auf iPad und iPhone speicherst du die Sicherung stattdessen als Datei (Einstellung darunter) und wählst dort „In Dateien sichern“ – dabei lässt sich auch ein angesteckter USB-Stick auswählen.</p>
+    </div>
+    <label>Zusätzlich als Datei speichern (Download, z. B. auf einen USB-Stick)
       <select id="sicherungGeraetWahl">
         <option value="fragen">Jedes Mal fragen</option>
         <option value="immer">Immer</option>
@@ -3214,7 +3235,8 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <details class="install-hilfe">
       <summary>So funktioniert die Sicherung</summary>
       <ul>
-        <li>Sicherungen werden verschlüsselt in pCloud im Ordner „Datensicherung“ abgelegt. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</li>
+        <li>Sicherungen werden verschlüsselt abgelegt: in pCloud im Ordner „Datensicherung“ und/oder in deinem gewählten Ordner im Unterordner „QA-Datensicherung“. Öffnen lassen sie sich nur mit deinem Tresor-Passwort oder dem Wiederherstellungsschlüssel.</li>
+        <li>Deine Einträge liegen außerdem immer verschlüsselt auf diesem Gerät und als verschlüsselte Kopie auf dem Server in Frankfurt. Die Sicherung ist der zusätzliche Schutz, falls beides verloren geht.</li>
         <li>Automatisch gesichert wird beim Öffnen der App und wenn die App 10 Minuten im Hintergrund war (auf iPad und iPhone beim Zurückkehren), nur wenn sich etwas geändert hat. Sicherungen der letzten 9 Wochen bleiben erhalten, ältere werden gelöscht.</li>
       </ul>
     </details>
@@ -3953,7 +3975,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.9 Verkaufsversion';
+const APP_VERSION='0.27.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -12378,9 +12400,13 @@ async function loadEinstellungen(){
 /* Menü mit Unterseiten: zuerst eine Liste, ein Tipp öffnet das Thema */
 var einstAktuelleSeite='menue';
 function einstellungenSeite(name){
-  // Testversion: Cloud und Datensicherung sind sichtbar, aber gesperrt
-  if((name==='sicherung'||name==='cloud')&&typeof nurVollversion==='function'&&
-     nurVollversion(name==='cloud'?'Die Verbindung zu deiner eigenen Cloud (Dokumente und Belege)':'Die automatische Datensicherung'))return;
+  // Testversion: Cloud sichtbar, aber gesperrt. Die Datensicherung (Ordner/Datei) ist frei,
+  // nur in der Vorführung nicht (dort gibt es nichts Echtes zu sichern).
+  if(name==='cloud'&&typeof nurVollversion==='function'&&
+     nurVollversion('Die Verbindung zu deiner eigenen Cloud (Dokumente und Belege)'))return;
+  if(name==='sicherung'&&IST_VORFUEHRUNG&&typeof nurVollversion==='function'&&
+     nurVollversion('Die Datensicherung'))return;
+  if(name==='sicherung')sicherungZieleZeigen();
   const menue=name==='menue';
   einstAktuelleSeite=name;
   $('settingsMenue').classList.toggle('hidden',!menue);
@@ -12427,7 +12453,7 @@ function einstellungenStatusZeigen(){
 
 let cloudStartNachSpeichern=false;
 function einstellungenOeffnen(ersterStart=false,seite){
-  if((seite==='sicherung'||seite==='cloud')&&istTest()){einstellungenSeite(seite);return}
+  if(seite==='cloud'&&istTest()){einstellungenSeite(seite);return}
   cloudStartNachSpeichern=Boolean(ersterStart);
   $('sicherungGeraetWahl').value=sicherungGeraetWahl();
   $('settingsName').value=auftragnehmerName();
@@ -12529,7 +12555,7 @@ function kontoLoeschenPruefen(){
 $('kontoLoeschenHaken').addEventListener('change',kontoLoeschenPruefen);
 $('kontoSteuerpaket').onclick=()=>{einstellungenVerlassen();$('openSteuerpaket').click()};
 $('kontoSicherung').onclick=()=>{
-  if(typeof nurVollversion==='function'&&nurVollversion('Die automatische Datensicherung'))return;
+  if(IST_VORFUEHRUNG&&typeof nurVollversion==='function'&&nurVollversion('Die Datensicherung'))return;
   einstellungenVerlassen();erstelleSicherung();
 };
 function kontoLoeschenMeldung(text,art){
@@ -14572,9 +14598,199 @@ async function sicherungDateiBauen(leise=false){
 async function sicherungInPcloudAblegen(blob,name){
   const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
   await pcloudDateiHochladen(ordner,name,blob);
-  sicherungFingerabdruckMerken(null);
   sicherungenAufraeumen(ordner).catch(()=>{});
   return ordner;
+}
+
+
+/* ---------- Speicher-Anschlüsse für die Datensicherung ----------
+   Jeder Speicherort bietet dieselben Grundfunktionen. Weitere (z. B. WebDAV
+   für Nextcloud/HiDrive) werden hier ergänzt.
+     bereit(nachfragen) – darf jetzt gesichert werden? (nachfragen: Zugriff erbitten, nur nach Tippen)
+     ablegen(blob,name) – Sicherungsdatei speichern
+     liste()            – [{id,name,zeit,groesse}], neueste zuerst
+     laden(id)          – Dateiinhalt als Text */
+const ORDNER_MOEGLICH=typeof window.showDirectoryPicker==='function';
+const ORDNER_UNTERORDNER='QA-Datensicherung';
+
+function sicherungZieleSchluessel(){return 'qa-sicherung-ziele-'+(user&&user.id)}
+function sicherungZieleLesen(){
+  try{
+    const z=JSON.parse(localStorage.getItem(sicherungZieleSchluessel())||'null');
+    if(z&&typeof z==='object')return {pcloud:z.pcloud!==false,ordner:Boolean(z.ordner)};
+  }catch(e){}
+  return {pcloud:true,ordner:false};
+}
+function sicherungZieleSetzen(z){
+  try{localStorage.setItem(sicherungZieleSchluessel(),JSON.stringify(z))}catch(e){}
+}
+
+// Gewählter Ordner wird als „Griff“ im Gerätespeicher gemerkt (nur auf diesem Gerät)
+function zielDbOeffnen(){
+  return new Promise((ok,nein)=>{
+    const r=indexedDB.open('qa-sicherungsziele',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('griffe');
+    r.onsuccess=()=>ok(r.result);
+    r.onerror=()=>nein(r.error);
+  });
+}
+async function ordnerGriffLesen(){
+  if(!ORDNER_MOEGLICH||!user)return null;
+  try{
+    const db=await zielDbOeffnen();
+    return await new Promise(ok=>{
+      const r=db.transaction('griffe').objectStore('griffe').get('ordner-'+user.id);
+      r.onsuccess=()=>ok(r.result||null);r.onerror=()=>ok(null);
+    });
+  }catch(e){return null}
+}
+async function ordnerGriffSpeichern(griff){
+  const db=await zielDbOeffnen();
+  await new Promise((ok,nein)=>{
+    const t=db.transaction('griffe','readwrite');
+    if(griff)t.objectStore('griffe').put(griff,'ordner-'+user.id);
+    else t.objectStore('griffe').delete('ordner-'+user.id);
+    t.oncomplete=ok;t.onerror=()=>nein(t.error);
+  });
+}
+
+const SICHERUNGSZIELE={
+  pcloud:{
+    name:'pCloud',
+    async bereit(){return Boolean(pcloudToken)&&!istTest()&&navigator.onLine!==false},
+    async ablegen(blob,name){await sicherungInPcloudAblegen(blob,name)},
+    async liste(){
+      const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
+      const ergebnis=await pcloudAnfrage('listfolder',{folderid:ordner});
+      return ((ergebnis.metadata&&ergebnis.metadata.contents)||[])
+        .filter(d=>!d.isfolder&&/\.json$/i.test(d.name))
+        .map(d=>({id:String(d.fileid),name:d.name,zeit:Date.parse(d.created)||0,groesse:d.size||0}))
+        .sort((a,b)=>b.zeit-a.zeit);
+    },
+    laden(id){return pcloudTextLaden(id)}
+  },
+  ordner:{
+    name:'Ordner',
+    async bereit(nachfragen){
+      const griff=await ordnerGriffLesen();
+      if(!griff)return false;
+      let stand=await griff.queryPermission({mode:'readwrite'});
+      if(stand!=='granted'&&nachfragen){
+        try{stand=await griff.requestPermission({mode:'readwrite'})}catch(e){/* ohne Tippen nicht erlaubt */}
+      }
+      return stand==='granted';
+    },
+    async unterordner(){
+      const griff=await ordnerGriffLesen();
+      if(!griff)throw new Error('Kein Ordner gewählt.');
+      return griff.getDirectoryHandle(ORDNER_UNTERORDNER,{create:true});
+    },
+    async ablegen(blob,name){
+      const ordner=await this.unterordner();
+      const datei=await ordner.getFileHandle(name,{create:true});
+      const schreiber=await datei.createWritable();
+      await schreiber.write(blob);
+      await schreiber.close();
+      ordnerSicherungenAufraeumen(ordner).catch(()=>{});
+    },
+    async liste(){
+      const ordner=await this.unterordner();
+      const liste=[];
+      for await(const [name,griff] of ordner.entries()){
+        if(griff.kind!=='file'||!/^QA-Sicherung .*\.json$/.test(name))continue;
+        const f=await griff.getFile();
+        liste.push({id:name,name,zeit:f.lastModified,groesse:f.size});
+      }
+      return liste.sort((a,b)=>b.zeit-a.zeit);
+    },
+    async laden(id){
+      const ordner=await this.unterordner();
+      return (await (await ordner.getFileHandle(id)).getFile()).text();
+    }
+  }
+};
+
+// Wie in pCloud: Sicherungen der letzten 9 Wochen bleiben, mindestens die drei neuesten
+async function ordnerSicherungenAufraeumen(ordner){
+  const liste=await SICHERUNGSZIELE.ordner.liste();
+  const grenze=Date.now()-SICHERUNG_AUFBEWAHREN_TAGE*24*60*60*1000;
+  for(const d of liste.slice(SICHERUNG_MINDESTENS).filter(d=>d.zeit&&d.zeit<grenze)){
+    await ordner.removeEntry(d.id);
+  }
+}
+
+// Welche gewählten Ziele sind jetzt nutzbar? (nachfragen nur direkt nach einem Tippen)
+async function sicherungZieleBereit(nachfragen){
+  const gewaehlt=sicherungZieleLesen();
+  const bereit=[],fehlt=[];
+  for(const art of ['pcloud','ordner']){
+    if(!gewaehlt[art])continue;
+    if(art==='ordner'&&!ORDNER_MOEGLICH)continue;
+    if(await SICHERUNGSZIELE[art].bereit(nachfragen))bereit.push(art);else fehlt.push(art);
+  }
+  return {bereit,fehlt};
+}
+
+// Einstellungsseite „Datensicherung“: Ziele anzeigen
+async function sicherungZieleZeigen(){
+  const z=sicherungZieleLesen();
+  const test=istTest();
+  $('zielPcloud').checked=z.pcloud&&!test;
+  $('zielPcloud').disabled=test;
+  $('zielPcloudStatus').textContent=test
+    ? '🔒 in der Vollversion'
+    : (pcloudToken?'verbunden – sichert automatisch':'nicht verbunden (Einstellungen → Dokumente und Cloud)');
+  $('zielOrdnerZeile').classList.toggle('hidden',!ORDNER_MOEGLICH);
+  $('zielOrdnerNichtMoeglich').classList.toggle('hidden',ORDNER_MOEGLICH);
+  if(!ORDNER_MOEGLICH)return;
+  const griff=await ordnerGriffLesen();
+  $('zielOrdner').checked=z.ordner&&Boolean(griff);
+  $('zielOrdner').disabled=!griff;
+  let status='noch kein Ordner gewählt';
+  if(griff){
+    const stand=await griff.queryPermission({mode:'readwrite'}).catch(()=>'prompt');
+    status=(griff.name?'„'+griff.name+'“ – ':'')+(stand==='granted'?'sichert automatisch':'Zugriff wird beim nächsten Sichern erbeten');
+  }
+  $('zielOrdnerStatus').textContent=status;
+  $('zielOrdnerWaehlen').textContent=griff?'Anderen Ordner …':'Ordner wählen …';
+}
+
+$('zielPcloud').onchange=()=>{const z=sicherungZieleLesen();z.pcloud=$('zielPcloud').checked;sicherungZieleSetzen(z);sicherungZieleZeigen()};
+$('zielOrdner').onchange=()=>{const z=sicherungZieleLesen();z.ordner=$('zielOrdner').checked;sicherungZieleSetzen(z);sicherungZieleZeigen();sicherungBandZeigen()};
+$('zielOrdnerWaehlen').onclick=async()=>{
+  try{
+    const griff=await window.showDirectoryPicker({id:'qa-sicherung',mode:'readwrite',startIn:'documents'});
+    await ordnerGriffSpeichern(griff);
+    const z=sicherungZieleLesen();z.ordner=true;sicherungZieleSetzen(z);
+    toast('Ordner „'+griff.name+'“ gewählt. Sicherungen landen dort im Unterordner „'+ORDNER_UNTERORDNER+'“.');
+    sicherungFingerabdruckMerken(null);   // beim nächsten Mal auch dorthin sichern
+    await sicherungZieleZeigen();
+    sicherungBandZeigen();
+    autoSicherung('ordner');
+  }catch(e){
+    if(e&&e.name!=='AbortError')toast('Ordner konnte nicht gewählt werden: '+e.message);
+  }
+};
+
+// Hinweis oben: Ordner gewählt, aber der Browser braucht nach dem Neustart erneut die Erlaubnis
+async function sicherungBandZeigen(){
+  const band=$('sicherungBand');
+  if(!band)return;
+  let zeigen=false;
+  if(user&&ORDNER_MOEGLICH&&sicherungZieleLesen().ordner&&!IST_VORFUEHRUNG){
+    zeigen=!(await SICHERUNGSZIELE.ordner.bereit(false))&&Boolean(await ordnerGriffLesen());
+  }
+  if(!zeigen){band.classList.add('hidden');return}
+  band.innerHTML='<span>Automatische Sicherung in deinen Ordner: Der Browser braucht nach dem Neustart einmal deine Erlaubnis.</span>'+
+    '<span class="install-leiste-knoepfe"><button type="button" class="abgleich-knopf" id="sicherungBandErlauben">Erlauben</button></span>';
+  band.classList.remove('hidden');
+  $('sicherungBandErlauben').onclick=async()=>{
+    if(await SICHERUNGSZIELE.ordner.bereit(true)){
+      band.classList.add('hidden');
+      sicherungFingerabdruckMerken(null);
+      autoSicherung('ordner');
+    }
+  };
 }
 
 /* ---------- Aufräumen: Sicherungen der letzten 9 Wochen bleiben ----------
@@ -14623,8 +14839,11 @@ function sicherungFingerabdruckMerken(wert){
 }
 
 async function autoSicherung(anlass){
-  if(!user||!appBereit||!pcloudToken)return false;
-  if(!Tresor.datenschluessel()||navigator.onLine===false){
+  if(!user||!appBereit||IST_VORFUEHRUNG)return false;
+  const {bereit}=await sicherungZieleBereit(false);
+  sicherungBandZeigen();
+  if(!bereit.length)return false;
+  if(!Tresor.datenschluessel()){
     autoSicherungAusstehend=anlass;   // später nachholen
     return false;
   }
@@ -14635,7 +14854,11 @@ async function autoSicherung(anlass){
     const gebaut=await sicherungDateiBauen(true);
     if(!gebaut.blob)return false;
     if(gebaut.fingerabdruck===sicherungFingerabdruckLesen())return false;   // nichts geändert
-    await sicherungInPcloudAblegen(gebaut.blob,gebaut.name);
+    let geschafft=0;
+    for(const art of bereit){
+      try{await SICHERUNGSZIELE[art].ablegen(gebaut.blob,gebaut.name);geschafft++}catch(e){/* nächstes Ziel */}
+    }
+    if(!geschafft)throw new Error('Kein Ziel erreichbar');
     sicherungFingerabdruckMerken(gebaut.fingerabdruck);
     await speichereLetzteSicherung();
     zeigeSicherungsKnopf();
@@ -14684,6 +14907,9 @@ async function erstelleSicherung(){
     return;
   }
 
+  // Erlaubnis für den Ordner direkt nach dem Tippen erbitten (später lässt der Browser das nicht zu)
+  const ziele=await sicherungZieleBereit(true);
+
   knopf.disabled=true;
   knopf.classList.remove('sicherung-faellig');
   knopf.textContent='Sicherung läuft …';
@@ -14717,21 +14943,24 @@ async function erstelleSicherung(){
     return;
   }
 
-  // 1. In pCloud ablegen
-  let inPcloud=false;
-  let pcloudProblem='';
-  if(!pcloudToken){
-    pcloudProblem='pCloud ist auf diesem Gerät nicht eingerichtet.';
-  }else if(navigator.onLine===false){
-    pcloudProblem='Ohne Internet kann die Sicherung nicht in pCloud abgelegt werden.';
-  }else{
+  // 1. In alle gewählten, erreichbaren Ziele ablegen (pCloud, Ordner/Festplatte)
+  const erledigt=[];
+  const probleme=[];
+  for(const art of ziele.bereit){
     try{
-      await sicherungInPcloudAblegen(blob,name);
-      sicherungFingerabdruckMerken(fingerabdruck);
-      inPcloud=true;
+      await SICHERUNGSZIELE[art].ablegen(blob,name);
+      erledigt.push(SICHERUNGSZIELE[art].name);
     }catch(problem){
-      pcloudProblem='Ablage in pCloud fehlgeschlagen: '+problem.message;
+      probleme.push(SICHERUNGSZIELE[art].name+': '+problem.message);
     }
+  }
+  if(erledigt.length)sicherungFingerabdruckMerken(fingerabdruck);
+  const inPcloud=erledigt.length>0;
+  let pcloudProblem=probleme.join(' · ');
+  if(!erledigt.length&&!pcloudProblem){
+    pcloudProblem=istTest()
+      ? 'In der Testversion gibt es keine Cloud-Sicherung.'
+      : 'Es ist kein Speicherort eingerichtet (pCloud oder Ordner).';
   }
   endeSchritt();
 
@@ -14743,16 +14972,16 @@ async function erstelleSicherung(){
   }else if(!inPcloud||wahl==='fragen'){
     aufGeraet=await sicherungGeraetFragen(
       inPcloud
-        ? 'Die Sicherung liegt verschlüsselt in pCloud im Ordner „'+SICHERUNG_ORDNER+'“ ('+name+').'
-        : pcloudProblem+' Speichere die Datei deshalb besser auf diesem Gerät.',
-      inPcloud?'Sicherung in pCloud abgelegt':'Sicherung nicht in pCloud'
+        ? 'Die Sicherung liegt verschlüsselt in: '+erledigt.join(' und ')+' ('+name+').'
+        : pcloudProblem+' Speichere die Datei deshalb auf diesem Gerät oder einem USB-Stick.',
+      inPcloud?'Sicherung abgelegt':'Sicherung noch nicht abgelegt'
     );
   }
   if(aufGeraet)sicherungAufGeraetSpeichern(blob,name);
 
   if(inPcloud||aufGeraet){
     await speichereLetzteSicherung();
-    const wo=[inPcloud?'pCloud':'',aufGeraet?'Gerät':''].filter(Boolean).join(' und ');
+    const wo=[...erledigt,aufGeraet?'Datei':''].filter(Boolean).join(' und ');
     toast(anzahl+' Datensätze verschlüsselt gesichert ('+wo+')'+
       (fehler.length?'. Es fehlen: '+fehler.join(', '):''));
   }else{
@@ -14805,24 +15034,29 @@ async function wiederherstellenOeffnen(){
   einstellungenVerlassen();
   $('wiederherstellenDialog').showModal();
   const liste=$('whListe');
-  if(!pcloudToken){liste.innerHTML='<p class="muted">pCloud ist auf diesem Gerät nicht eingerichtet.</p>';return}
   liste.innerHTML='<p class="muted">Wird geladen …</p>';
-  try{
-    const ordner=await pcloudOrdner(0,SICHERUNG_ORDNER);
-    const ergebnis=await pcloudAnfrage('listfolder',{folderid:ordner});
-    const dateien=((ergebnis.metadata&&ergebnis.metadata.contents)||[])
-      .filter(d=>!d.isfolder&&/\.json$/i.test(d.name))
-      .sort((a,b)=>(Date.parse(b.created)||0)-(Date.parse(a.created)||0));
-    if(!dateien.length){liste.innerHTML='<p class="muted">Noch keine Sicherungen in pCloud.</p>';return}
-    liste.innerHTML=dateien.map(d=>
-      '<button type="button" class="secondary" data-fileid="'+esc(String(d.fileid))+'">'+
-        '<span>'+esc(whZeit(d.created))+'</span>'+
-        '<span class="muted small">'+(Math.max(1,Math.round((d.size||0)/1024)))+' KB</span>'+
-      '</button>'
-    ).join('');
-  }catch(e){
-    liste.innerHTML='<p class="muted">Sicherungen konnten nicht geladen werden: '+esc(e.message)+'</p>';
+  const teile=[];
+  const quellen=[];
+  if(pcloudToken&&!istTest())quellen.push('pcloud');
+  if(ORDNER_MOEGLICH&&await ordnerGriffLesen())quellen.push('ordner');
+  for(const art of quellen){
+    const ziel=SICHERUNGSZIELE[art];
+    try{
+      if(!(await ziel.bereit(art==='ordner'))){
+        teile.push('<p class="muted small">'+esc(ziel.name)+': Zugriff nicht erlaubt.</p>');continue;
+      }
+      const dateien=await ziel.liste();
+      if(!dateien.length){teile.push('<p class="muted small">'+esc(ziel.name)+': noch keine Sicherungen.</p>');continue}
+      teile.push(dateien.map(d=>
+        '<button type="button" class="secondary" data-quelle="'+art+'" data-fileid="'+esc(d.id)+'">'+
+          '<span>'+esc(whZeit(new Date(d.zeit).toISOString()))+' · '+esc(ziel.name)+'</span>'+
+          '<span class="muted small">'+(Math.max(1,Math.round((d.groesse||0)/1024)))+' KB</span>'+
+        '</button>').join(''));
+    }catch(e){
+      teile.push('<p class="muted small">'+esc(ziel.name)+': Sicherungen konnten nicht geladen werden ('+esc(e.message)+').</p>');
+    }
   }
+  liste.innerHTML=teile.length?teile.join(''):'<p class="muted">Keine Speicherorte eingerichtet. Wähle unten eine Sicherungsdatei.</p>';
 }
 
 /* Dateiinhalt aus pCloud holen – über das Hilfsprogramm in Supabase,
@@ -14920,8 +15154,9 @@ async function whStarten(){
     if(vorher.blob){
       const name=vorher.name.replace('.json',' vor Wiederherstellung.json');
       let gesichert=false;
-      if(pcloudToken&&navigator.onLine!==false){
-        try{await sicherungInPcloudAblegen(vorher.blob,name);gesichert=true}catch(e){}
+      const {bereit}=await sicherungZieleBereit(false);
+      for(const art of bereit){
+        try{await SICHERUNGSZIELE[art].ablegen(vorher.blob,name);gesichert=true}catch(e){}
       }
       if(!gesichert)sicherungAufGeraetSpeichern(vorher.blob,name);
     }
@@ -15509,7 +15744,7 @@ $('whListe').onclick=async e=>{
   if(!b)return;
   const beschriftung=b.innerHTML;
   b.disabled=true;b.textContent='Wird geladen …';
-  try{await whDateiPruefen(await pcloudTextLaden(b.dataset.fileid))}
+  try{await whDateiPruefen(await SICHERUNGSZIELE[b.dataset.quelle||'pcloud'].laden(b.dataset.fileid))}
   catch(f){toast('Sicherung konnte nicht geladen werden: '+f.message)}
   finally{b.disabled=false;b.innerHTML=beschriftung}
 };
