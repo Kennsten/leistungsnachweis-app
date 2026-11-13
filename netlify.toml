@@ -3,7 +3,7 @@
 # mehr von fremden Servern und funktioniert ohne Internet.
 [build]
   publish = "."
-  command = "npm install --no-audit --no-fund && node scripts/bibliotheken-kopieren.mjs && rm -rf node_modules"
+  command = "npm install --no-audit --no-fund && node scripts/bibliotheken-kopieren.mjs && node scripts/stand-setzen.mjs && rm -rf node_modules"
 
 [[headers]]
   for = "/*.html"
