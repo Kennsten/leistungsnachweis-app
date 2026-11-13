@@ -3933,7 +3933,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.0 Verkaufsversion';
+const APP_VERSION='0.26.1 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4105,7 +4105,16 @@ const SUPA_UMZUG_AB='2026-08-01';
 const SUPA_ADRESSE_ALT='Königstr. 6, 30175 Hannover';
 const SUPA_ADRESSE_NEU='Königstr. 4, 30175 Hannover';
 
+// Vorführung: erfundene Firma statt SuPA (Anzeige, Ausdrucke, Tabellen)
+var VORFUEHRUNG_FIRMA='Beispiel GmbH';
+var VORFUEHRUNG_FIRMA_ADRESSE='Ernst-August-Platz 1, 30159 Hannover';
+function vorfuehrungText(t){
+  if(!IST_VORFUEHRUNG||typeof t!=='string'||t.indexOf('SuPA')<0)return t;
+  return t.replace(/SuPA[\s-]Büro/g,'Büro '+VORFUEHRUNG_FIRMA).replace(/SuPA GmbH/g,VORFUEHRUNG_FIRMA).replace(/SuPA/g,VORFUEHRUNG_FIRMA)
+    .replace(/Königstr(aße|\.) [46], 30175 Hannover/g,VORFUEHRUNG_FIRMA_ADRESSE);
+}
 function supaAdresse(datum){
+  if(IST_VORFUEHRUNG)return VORFUEHRUNG_FIRMA_ADRESSE;
   const tag=String(datum||todayIso()).slice(0,10);
 
   return tag<SUPA_UMZUG_AB
@@ -4830,7 +4839,25 @@ let offlineAngemeldet=false;
 
 // Vorführung: frische Beispieldaten nur im Browser, ohne Server, Tresor und Cloud
 const VORFUEHRUNG_NUTZER={id:'00000000-0000-4000-8000-00000000f0e1',email:'vorfuehrung@beispiel.de'};
+function vorfuehrungTexteErsetzen(){
+  // Sichtbare Texte (auch Auswahllisten und Meldungen): SuPA -> Beispiel GmbH; Werte bleiben gleich
+  const ersetzen=wurzel=>{
+    const w=document.createTreeWalker(wurzel,NodeFilter.SHOW_TEXT);
+    let n;while((n=w.nextNode())){if(n.nodeValue.indexOf('SuPA')>=0)n.nodeValue=vorfuehrungText(n.nodeValue)}
+  };
+  ersetzen(document.body);
+  new MutationObserver(liste=>{
+    for(const m of liste){
+      if(m.type==='characterData'){if(m.target.nodeValue.indexOf('SuPA')>=0)m.target.nodeValue=vorfuehrungText(m.target.nodeValue)}
+      else for(const k of m.addedNodes){if(k.nodeType===3){if(k.nodeValue.indexOf('SuPA')>=0)k.nodeValue=vorfuehrungText(k.nodeValue)}else if(k.nodeType===1)ersetzen(k)}
+    }
+  }).observe(document.body,{childList:true,subtree:true,characterData:true});
+  // Übergaben an Ausdruck-Seiten (Leistungsnachweis, Fahrtenbuch …)
+  const setzen=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k,v){return setzen.call(this,k,vorfuehrungText(String(v)))};
+}
 async function vorfuehrungStarten(){
+  vorfuehrungTexteErsetzen();
   user=Object.assign({},VORFUEHRUNG_NUTZER);
   offlineAngemeldet=true;
   // Jede Vorführung beginnt frisch: alte Einträge dieses Browsers verwerfen
@@ -4842,8 +4869,8 @@ async function vorfuehrungStarten(){
   Daten.speicherSetzen(Geraet.speicher);
   await Daten.from('einstellungen').upsert({
     user_id:user.id,
-    auftragnehmer_name:'Beispiel GmbH',
-    auftragnehmer_adresse:'Ernst-August-Platz 1, 30159 Hannover',
+    auftragnehmer_name:'Jana Muster',
+    auftragnehmer_adresse:'Lindener Marktplatz 1, 30449 Hannover',
     updated_at:new Date().toISOString()
   },{onConflict:'user_id'});
   await loadEinstellungen();
@@ -14982,7 +15009,7 @@ function testBandZeichnen(){
   if(!istTest()||!konto.aktiv||zu){band.classList.add('hidden');return}
   if(IST_VORFUEHRUNG){
     band.innerHTML=
-      '<span><strong>Vorführung</strong> – alle Personen und Angaben sind erfunden („Beispiel GmbH“). '+
+      '<span><strong>Vorführung</strong> – alle Personen, Firmen und Angaben sind erfunden. '+
       'Eingaben werden nicht gespeichert und beim nächsten Start zurückgesetzt.</span>'+
       '<span class="install-leiste-knoepfe">'+
       '<button type="button" class="abgleich-knopf" data-test-band="tour">So hilft dir QA</button>'+
@@ -17281,6 +17308,7 @@ function spZipBauen(dateien){
 }
 
 function spCsv(kopf,zeilen){
+  if(IST_VORFUEHRUNG){kopf=kopf.map(vorfuehrungText);zeilen=zeilen.map(z=>z.map(vorfuehrungText))}
   const feld=v=>{
     let t=v==null?'':String(v);
     if(/^[=+\-@]/.test(t)&&!/^-?\d+([.,]\d+)?$/.test(t))t="'"+t;
