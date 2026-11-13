@@ -91,6 +91,13 @@ a:hover { color: var(--brand-dark); }
 .btn-hell { background: transparent; color: var(--ink); border-color: var(--line); }
 .btn-hell:hover { background: var(--soft); color: var(--ink); border-color: var(--green); }
 .btn-reihe { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1.6rem; }
+/* Einstieg: zwei Wege mit Erklärung darunter */
+.wahl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 1.6rem; }
+.wahl-punkt { display: flex; flex-direction: column; gap: .5rem; }
+.wahl-punkt .btn { text-align: center; }
+.wahl-punkt p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.45; }
+.wahl-punkt strong { color: var(--ink); }
+@media (max-width: 520px) { .wahl { grid-template-columns: 1fr; gap: 20px; } }
 
 /* ---------- Abschnitte ---------- */
 section { padding: 64px 0; }
