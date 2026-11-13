@@ -317,6 +317,16 @@ dialog label.tour-nicht-mehr{margin:12px 20px 16px;font-size:.9rem;color:var(--m
 .fenster-aktionen button{margin:0;min-width:0}
 @media (min-width:640px){.fenster-aktionen{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
 /* Route für Karten-App: Stopps zum Kopieren, Sicherheitshinweis mit Wegklick-Stufen */
+.jahr-box{margin:12px 0 8px;padding:14px 16px;border-radius:var(--radius-item,14px);background:var(--brand-dark);color:var(--on-brand)}
+.jahr-box .summary-row span,.jahr-box .summary-row strong{color:var(--on-brand)}
+.jahr-kopf{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.3);font-size:1.05rem;font-weight:700}
+.jahr-kopf strong{font-size:1.5rem}
+.monate-titel{margin:22px 0 8px;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.monat-karte{border:1.5px solid var(--line);border-left:5px solid var(--brand);border-radius:var(--radius-item,14px);padding:12px 14px;margin:0 0 14px;background:var(--card)}
+.monat-kopf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.monat-kopf h3{margin:0;flex:1;font-size:1.05rem}
+.monat-marke{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--accent);color:var(--brand-dark)}
+.monat-summe{font-size:1.05rem}
 .einnahmen-hinweis{margin:10px 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line,#d8dee4);background:var(--card);font-size:.88rem;line-height:1.45}
 .route-kopie-liste{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .route-kopie-liste li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line,#d8dee4);border-radius:12px;background:var(--card,#fff)}
@@ -1819,6 +1829,7 @@ body.diktat-bereit .diktat-knopf{display:flex}
 @keyframes diktatPuls{50%{box-shadow:0 0 0 8px rgba(192,57,43,.18)}}
 @media (prefers-reduced-motion:reduce){.diktat-knopf.nimmt-auf{animation:none}}
 .diktat-hinweis{display:block;margin:4px 0 0;font-size:.85rem;font-weight:500;color:var(--muted)}
+.sp-empfohlen{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--brand-dark);vertical-align:1px}
 .diktat-fortschritt{height:10px;border-radius:6px;background:var(--track);overflow:hidden;margin:8px 0}
 .diktat-fortschritt>div{height:100%;width:0;background:var(--brand);transition:width .3s}
 .ort-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -3355,6 +3366,8 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <p class="muted small" data-erklaerung>Für die Berechnung auf dem Gerät braucht die App einmalig ein <strong>Kartenpaket</strong> (Straßen und Adressen aus OpenStreetMap). Es wird von der App-Adresse geladen und bleibt auf diesem Gerät. Danach verlassen keine Adressen das Gerät – die Berechnung klappt auch ohne Internet. Am besten im WLAN herunterladen.</p>
       <div id="kmPakete" class="km-pakete"><p class="muted small">Kartenpakete werden geprüft …</p></div>
     </div>
+    <h3>Sprachpaket fürs Diktieren</h3>
+    <div data-sprachpakete></div>
     <p class="muted small" data-erklaerung>Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen.</p>
     <div class="actions">
       <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
@@ -3365,13 +3378,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
   <!-- Seite: Diktieren mit Sprachpaket -->
   <section class="einst-seite hidden" data-seite="diktat" data-titel="Diktieren">
     <p class="muted small">Mit dem Sprachpaket wandelt die App Gesprochenes <strong>direkt auf diesem Gerät</strong> in Text um. Aufnahme und Text verlassen das Gerät nicht. Danach erscheint in der Dokumentation ein 🎤.</p>
-    <p class="einst-status" id="diktatStatus"></p>
-    <div id="diktatFortschritt" class="diktat-fortschritt hidden"><div></div></div>
-    <div class="actions">
-      <button type="button" id="diktatLaden" class="primary" data-modell="gross">Großes Sprachpaket laden</button>
-      <button type="button" id="diktatLadenMittel" class="secondary" data-modell="mittel">Mittleres Sprachpaket laden</button>
-      <button type="button" id="diktatLoeschen" class="kn kn-loeschen danger hidden">Sprachpaket von diesem Gerät löschen</button>
-    </div>
+    <div data-sprachpakete></div>
   </section>
 
   <!-- Seite: Hinweise und Erklärungen -->
@@ -4075,7 +4082,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.32.0 Verkaufsversion';
+const APP_VERSION='0.33.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -12591,7 +12598,7 @@ function einstellungenSeite(name){
     if(aktiv)titel=seite.dataset.titel;
   });
   if(name==='tresor'&&typeof tresorPasskeyZeigen==='function')tresorPasskeyZeigen();
-  if(name==='geraet'){dienstEinstellungenZeigen();kartenpaketeZeigen();}
+  if(name==='geraet'){dienstEinstellungenZeigen();kartenpaketeZeigen();diktatSeiteZeigen();}
   if(name==='beispiel'){beispielStandZeigen();$('tourBeimAnmelden').checked=!tourAus()}
   if(name==='verwaltung')verwaltungZeigen();
   if(name==='cloud')cloudHinweisZeigen();
@@ -14418,8 +14425,9 @@ function renderIncome(eintraege,jahr){
     jahrTermine+=mTermine;
 
     return `
-      <div class="doc-item">
-        <h3>${esc(monatLabel(monat))}</h3>
+      <div class="monat-karte">
+        <div class="monat-kopf"><span class="monat-marke">Monat</span><h3>${esc(monatLabel(monat))}</h3>
+          <strong class="monat-summe">${formatEuro(mEuroFls+mEuroWege)}</strong></div>
 
         <div class="income-table">
           ${zeilenHtml}
@@ -14457,10 +14465,10 @@ function renderIncome(eintraege,jahr){
   $('incomeContent').innerHTML=`
     ${warnung}
 
-    <div class="summary-box">
-      <div class="summary-row">
-        <span><strong>Jahr ${esc(jahr)}</strong></span>
-        <strong></strong>
+    <div class="jahr-box">
+      <div class="jahr-kopf">
+        <span>Jahresübersicht ${esc(jahr)}</span>
+        <strong>${formatEuro(jahrEuroFls+jahrEuroWege)}</strong>
       </div>
       <div class="summary-row">
         <span>Termine</span>
@@ -14480,6 +14488,7 @@ function renderIncome(eintraege,jahr){
       </div>
     </div>
 
+    <h3 class="monate-titel">Monatsabrechnungen</h3>
     ${monatsBloecke}
   `;
 }
@@ -15510,6 +15519,7 @@ const TOUR=[
   {t:'Willkommen bei QA',x:'<p>Weniger Papierkram, mehr Zeit für deine Klient*innen: Dokumentation, Fahrten, Abrechnung und Steuer in einer App – für freiberufliche Fachkräfte der Qualifizierten Assistenz.</p><p>In der Testversion kannst du <strong>Beispieldaten</strong> laden: drei erfundene Klient*innen mit Dokumentationen, Fahrten und Belegen der letzten Wochen. So siehst du sofort, wie alles zusammenspielt.</p>',
    k:'Beispieldaten laden',a:()=>einstellungenOeffnen(false,'beispiel')},
   {t:'Dokumentieren in Minuten',x:'<p>Tägliche Einträge mit <strong>Textbausteinen</strong>, Kalender und Terminen. Ausfälle mit und ohne Fahrt werden richtig gezählt, die Fachleistungsstunden rechnet die App selbst.</p>'},
+  {t:'Diktieren statt tippen',x:'<p>Dokumentationen einfach einsprechen: Mit dem <strong>Sprachpaket</strong> wandelt die App Gesprochenes <strong>direkt auf deinem Gerät</strong> in Text um – Aufnahme und Text verlassen das Gerät nie. Einmalig laden unter Einstellungen → Diktieren, dann auf das 🎤 im Textfeld tippen.</p>'},
   {t:'Bewilligungen im Blick',x:'<p>Kontingente, verbrauchte Stunden, fällige Verlaufsberichte und die Fortschreibung des Gesamtplans – je Klient*in auf einen Blick. Die App erinnert dich, bevor ein Bericht fällig wird.</p>'},
   {t:'Fahrtenbuch ohne Rechnen',x:'<p>Bekannte Strecken trägt die App sofort ein, neue berechnet sie <strong>direkt auf deinem Gerät</strong> – keine Adresse verlässt das Gerät. Auf der Karte kannst du die Strecke mit dem Finger auf den tatsächlich gefahrenen Weg ziehen.</p>'},
   {t:'Leistungsnachweis auf Knopfdruck',x:'<p>Der monatliche Nachweis für den Kostenträger entsteht aus deinen Dokumentationen, in der geforderten Vorlage, als PDF und Excel.</p><p class="muted small">In der Testversion tragen Leistungsnachweis und Steuerpaket das Wasserzeichen „MUSTER“.</p>'},
@@ -15517,7 +15527,7 @@ const TOUR=[
   {t:'Deine Daten gehören dir',x:'<p><strong>Ende-zu-Ende verschlüsselt:</strong> Alles wird auf deinem Gerät verschlüsselt, den Schlüssel hast nur du. Der Server in Frankfurt sieht nur unlesbare Kopien. Die App läuft auch ohne Internet.</p><p>In der Vollversion liegen Dokumente und automatische Datensicherungen verschlüsselt in <strong>deiner eigenen Cloud</strong>.</p>'},
   {t:'Neugierig auf die Vollversion?',x:'<p>Nach Vertragsabschluss wird dein Testkonto zur Vollversion – alles, was du angelegt hast, bleibt erhalten. Die Beispieldaten entfernst du mit einem Knopf.</p><p>Kontakt: Oliver Stork · <a href="mailto:kontakt@qualifizierte-assistenz.de?subject=QA-App%20Vollversion">kontakt@qualifizierte-assistenz.de</a></p>'}
 ];
-const TOUR_SYMBOL=['👋','📝','📊','🚗','📄','🧾','🔐','✨'];
+const TOUR_SYMBOL=['👋','📝','🎤','📊','🚗','📄','🧾','🔐','✨'];
 let tourSeite=0;
 var tourInSitzungGezeigt=false;   // je App-Start bzw. Anmeldung einmal zeigen
 var tourNachEinstellungen=null;   // Seite, mit der der Rundgang nach den Einstellungen weitergeht
@@ -18473,9 +18483,8 @@ init();
         // Die Gesamtgröße ist erst bekannt, wenn alle Dateien begonnen haben – bis dahin die Schätzung nehmen
         const gesamt=Math.max(m.gesamt,erwartetMB*1e6);
         const pz=Math.min(100,Math.round(m.geladen/gesamt*100));
-        const leiste=$('diktatFortschritt');
-        leiste.classList.remove('hidden');leiste.firstElementChild.style.width=pz+'%';
-        $('diktatStatus').textContent='Wird geladen … '+Math.round(m.geladen/1e6)+' von ca. '+Math.round(gesamt/1e6)+' MB ('+pz+' %)';
+        spBalken(pz);
+        spStatus('Wird geladen … '+Math.round(m.geladen/1e6)+' von ca. '+Math.round(gesamt/1e6)+' MB ('+pz+' %)');
       }else if(m.typ==='bereit'){
         bereit=true;schreiben(MERKER,'1');anwenden();
         if(m.modus)schreiben('qa-diktat-modus',m.modus);
@@ -18515,8 +18524,7 @@ init();
           letzter=e;
           if(worker){worker.terminate();worker=null}
           bereit=false;
-          const st=$('diktatStatus');
-          if(st&&modus!=='cpu')st.textContent='Der Grafik-Speicher reicht nicht – die App versucht es auf anderem Weg …';
+          if(modus!=='cpu')spStatus('Der Grafik-Speicher reicht nicht – die App versucht es auf anderem Weg …');
         }
       }
       throw letzter||new Error('Sprachpaket startet nicht.');
@@ -18531,72 +18539,82 @@ init();
     });
   }
 
-  /* Einstellungsseite */
-  window.diktatStatusMenue=()=>{const el=$('einstStatusDiktat');if(el)el.textContent=paketDa()?'✓ Sprachpaket auf diesem Gerät':'Sprachpaket für Spracheingabe auf dem Gerät'};
+  /* Einstellungen: Sprachpakete als Liste (wie die Kartenpakete) */
+  function spStatus(t){document.querySelectorAll('[data-sprachpakete] .sp-status').forEach(el=>el.textContent=t||'')}
+  function spBalken(pz){document.querySelectorAll('[data-sprachpakete] .sp-balken').forEach(el=>{el.classList.toggle('hidden',pz==null);if(pz!=null)el.firstElementChild.style.width=pz+'%'})}
+  const STUFE_TEXT={gpu:'Grafik-Beschleunigung',gemischt:'gemischt',cpu:'Prozessor'};
+  window.diktatStatusMenue=()=>{const el=$('einstStatusDiktat');if(el)el.textContent=paketDa()?'✓ '+MODELLE[modellWahl()].name+' auf diesem Gerät':'Sprachpaket für Spracheingabe auf dem Gerät'};
   window.diktatSeiteZeigen=async()=>{
+    const ziele=[...document.querySelectorAll('[data-sprachpakete]')];
+    if(!ziele.length)return;
     const c=await cacheGroesse();
     if(paketDa()&&!c.onnx){schreiben(MERKER,null);anwenden()}   // vom Browser gelöscht
-    const da=paketDa();
-    const g=await groesseSchaetzen();
-    const gG=await groesseSchaetzen('gross'),gM=await groesseSchaetzen('mittel');
-    if(!ladeLauf)$('diktatFortschritt').classList.add('hidden');
-    $('diktatStatus').textContent=da
-      ? '✓ '+MODELLE[modellWahl()].name+' ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')+
-        ({gpu:' Stufe 1 (Grafik).',gemischt:' Stufe 2 (gemischt).',cpu:' Stufe 3 (Prozessor).'}[lesen('qa-diktat-modus')]||'')
-      : 'Noch kein Sprachpaket geladen. Empfohlen für dieses Gerät: '+MODELLE[MOBIL?'mittel':'gross'].name+'.';
-    // Ist ein Paket da, kann man zum anderen wechseln
-    const knG=$('diktatLaden'),knM=$('diktatLadenMittel');
-    knG.textContent=(da?'Wechseln zum großen Sprachpaket':'Großes Sprachpaket laden')+' (ca. '+gG.mb+' MB) – '+MODELLE.gross.info;
-    knM.textContent=(da?'Wechseln zum mittleren Sprachpaket':'Mittleres Sprachpaket laden')+' (ca. '+gM.mb+' MB) – '+MODELLE.mittel.info;
-    knG.classList.toggle('hidden',da&&modellWahl()==='gross');
-    knM.classList.toggle('hidden',da&&modellWahl()==='mittel');
-    // Empfohlenes Paket hervorheben
+    const da=paketDa(),aktiv=da?modellWahl():'';
     const empf=MOBIL?'mittel':'gross';
-    knG.className=empf==='gross'?'primary':'secondary';knM.className=empf==='mittel'?'primary':'secondary';
-    knG.classList.toggle('hidden',da&&modellWahl()==='gross');knM.classList.toggle('hidden',da&&modellWahl()==='mittel');
-    $('diktatLoeschen').classList.toggle('hidden',!da);
+    const gr={gross:await groesseSchaetzen('gross'),mittel:await groesseSchaetzen('mittel')};
+    const zeilen=['gross','mittel'].map(m=>{
+      const M=MODELLE[m],ist=aktiv===m;
+      const stufe=ist&&STUFE_TEXT[lesen('qa-diktat-modus')];
+      return '<div class="km-paket'+(ist?' aktiv':'')+'" data-modell="'+m+'">'+
+        '<div class="km-paket-text"><strong>'+M.name+'</strong>'+(m===empf?' <span class="sp-empfohlen">empfohlen für dieses Gerät</span>':'')+'<br>'+
+        '<span class="muted small">'+M.info+'</span><br>'+
+        '<span class="muted small">'+(ist
+          ? 'Auf diesem Gerät gespeichert'+(c.mb?' ('+c.mb+' MB)':'')+' · wird benutzt'+(stufe?' · rechnet mit: '+stufe:'')
+          : 'Nicht gespeichert · ca. '+gr[m].mb+' MB')+'</span></div>'+
+        '<div class="km-paket-knoepfe">'+
+          (ist?'<button type="button" class="link-knopf sp-entfernen">Entfernen</button>'
+              :'<button type="button" class="'+(m===empf&&!da?'primary':'secondary')+' sp-laden">'+(da?'Stattdessen laden':'Herunterladen')+'</button>')+
+        '</div></div>';
+    }).join('');
+    const hinweis=gr.gross.schnell?'':'<p class="muted small">Dieses Gerät hat keine Grafik-Beschleunigung für den Browser – das Umwandeln dauert dort länger.</p>';
+    ziele.forEach(z=>{
+      z.innerHTML='<p class="einst-status sp-status"></p><div class="diktat-fortschritt sp-balken hidden"><div></div></div>'+
+        '<div class="km-pakete">'+zeilen+'</div>'+hinweis+
+        '<p class="muted small">Geladen wird einmalig von Hugging Face (Anbieter frei verfügbarer Sprachmodelle). Sprache und Texte verlassen das Gerät nie.</p>';
+      z.querySelectorAll('.sp-laden').forEach(k=>k.onclick=()=>paketLaden(k.closest('[data-modell]').dataset.modell));
+      z.querySelectorAll('.sp-entfernen').forEach(k=>k.onclick=paketEntfernen);
+    });
+    if(ladeLauf){spStatus('Wird geladen …');document.querySelectorAll('[data-sprachpakete] button').forEach(k=>k.disabled=true)}
   };
   async function paketLaden(modell){
-    const vorher=lesen('qa-diktat-modell');
+    const vorher=lesen('qa-diktat-modell'),vorherDa=paketDa();
     const g=await groesseSchaetzen(modell);
     erwartetMB=g.mb;
     const wenig=navigator.deviceMemory&&navigator.deviceMemory<6;
     if(!confirm(MODELLE[modell].name+': ca. '+g.mb+' MB – bitte im WLAN laden.\n\n'+
       'Es wird einmalig von Hugging Face geladen (Anbieter frei verfügbarer Sprachmodelle). Dabei erfährt Hugging Face nur die Internet-Adresse des Geräts – nie deine Sprache oder deine Texte.\n\n'+
-      (wenig?'Achtung: Dieses Gerät hat wenig Arbeitsspeicher. Das Sprachpaket läuft dort eventuell nicht.\n\n':'')+
+      (wenig&&modell==='gross'?'Achtung: Dieses Gerät hat wenig Arbeitsspeicher. Das große Sprachpaket läuft dort eventuell nicht – besser das mittlere nehmen.\n\n':'')+
       (g.schnell?'':'Ohne Grafik-Beschleunigung dauert das Umwandeln länger.\n\n')+
       'Jetzt laden?'))return;
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
     // Bisheriges Paket schließen; das neue wird gewählt
     if(worker){worker.terminate();worker=null}
     bereit=false;schreiben(MERKER,null);schreiben('qa-diktat-modus',null);schreiben('qa-diktat-modell',modell);anwenden();
-    $('diktatLaden').disabled=true;$('diktatLadenMittel').disabled=true;
-    $('diktatStatus').textContent='Wird vorbereitet …';
+    document.querySelectorAll('[data-sprachpakete] button').forEach(k=>k.disabled=true);
+    spStatus('Wird vorbereitet …');
     letzteBewegung=Date.now();
     // Hängt der Download (z. B. Verbindung weg), Bescheid geben statt endlos zu warten
     const waechter=setInterval(()=>{
-      if(Date.now()-letzteBewegung>60000)$('diktatStatus').textContent='Der Download stockt – bitte Internetverbindung prüfen. Er läuft weiter, sobald die Verbindung wieder da ist.';
+      if(Date.now()-letzteBewegung>60000)spStatus('Der Download stockt – bitte Internetverbindung prüfen. Er läuft weiter, sobald die Verbindung wieder da ist.');
     },10000);
+    let ok=false;
     try{
-      await laden();
-      $('diktatFortschritt').classList.add('hidden');
+      await laden();ok=true;
       // Das andere Paket aus dem Speicher entfernen
       const anderes=MODELLE[modell==='gross'?'mittel':'gross'].id;
       try{const c=await caches.open(CACHE);for(const k of await c.keys())if(k.url.includes(anderes))await c.delete(k)}catch(e){}
-      toast('Sprachpaket bereit. In der Dokumentation erscheint jetzt ein 🎤.');
+      toast(MODELLE[modell].name+' bereit. In der Dokumentation erscheint jetzt ein 🎤.');
     }catch(e){
-      $('diktatFortschritt').classList.add('hidden');
-      if(vorher&&vorher!==modell)schreiben('qa-diktat-modell',vorher);
+      if(vorher&&vorher!==modell){schreiben('qa-diktat-modell',vorher);if(vorherDa)schreiben(MERKER,'1');anwenden()}
       toast('Sprachpaket konnte nicht geladen werden: '+e.message);
     }
     clearInterval(waechter);
-    $('diktatLaden').disabled=false;$('diktatLadenMittel').disabled=false;
-    diktatSeiteZeigen();diktatStatusMenue();
+    spBalken(null);
+    await diktatSeiteZeigen();diktatStatusMenue();
+    if(ok)spStatus('✓ Fertig – das Sprachpaket ist bereit.');
   }
-  $('diktatLaden').onclick=()=>paketLaden('gross');
-  $('diktatLadenMittel').onclick=()=>paketLaden('mittel');
-  $('diktatLoeschen').onclick=async()=>{
-    if(!confirm('Sprachpaket von diesem Gerät löschen? Du kannst es jederzeit neu laden.'))return;
+  async function paketEntfernen(){
+    if(!confirm('Sprachpaket von diesem Gerät entfernen? Du kannst es jederzeit neu laden.'))return;
     try{
       const c=await caches.open(CACHE);
       for(const k of await c.keys())if(Object.values(MODELLE).some(m=>k.url.includes(m.id)))await c.delete(k);
@@ -18604,8 +18622,8 @@ init();
     if(worker){worker.terminate();worker=null}
     bereit=false;schreiben(MERKER,null);schreiben('qa-diktat-modus',null);schreiben('qa-diktat-modell',null);anwenden();
     diktatSeiteZeigen();diktatStatusMenue();
-    toast('Sprachpaket gelöscht.');
-  };
+    toast('Sprachpaket entfernt.');
+  }
 
   /* Aufnahme */
   let aufnahme=null;
