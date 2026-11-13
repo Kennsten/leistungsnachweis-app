@@ -201,3 +201,21 @@ details p { margin: 0 0 16px; color: var(--muted); }
 
 .nav .btn { white-space: nowrap; }
 @media (max-width: 420px) { .kopf .btn { padding: .55rem 1rem; min-height: 44px; } .marke span small { display: none; } }
+
+/* Hinweis: noch keine Produkte */
+.kein-angebot { background: var(--brand); color: #fff; font-size: .95rem; padding: .6rem 0; text-align: center; }
+.kein-angebot strong { color: #fff; }
+
+/* Namensabfrage: Startseite vernebelt, bis der Name stimmt */
+.tor { display: none; }
+body.verriegelt { overflow: hidden; }
+body.verriegelt > :not(.tor) { filter: blur(9px); pointer-events: none; user-select: none; }
+body.verriegelt .tor { display: grid; place-items: center; position: fixed; inset: 0; z-index: 1000; padding: 16px; background: rgba(30, 36, 32, .35); }
+.tor-karte { width: min(420px, 100%); background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 26px 24px; box-shadow: 0 20px 60px rgba(0,0,0,.25); text-align: center; }
+.tor-karte h1 { font-size: 1.35rem; margin: .6rem 0 .5rem; }
+.tor-karte p { color: var(--muted); margin: 0 0 1rem; }
+.tor-karte label { display: block; text-align: left; font-weight: 600; margin-bottom: .35rem; }
+.tor-karte input { width: 100%; font: inherit; font-size: 1.05rem; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); margin-bottom: .9rem; }
+.tor-karte .btn { width: 100%; justify-content: center; }
+.tor-meldung { min-height: 1.4em; margin-top: .8rem !important; color: var(--brand) !important; font-weight: 600; }
+.tor-recht { font-size: .85rem; margin: .6rem 0 0 !important; }

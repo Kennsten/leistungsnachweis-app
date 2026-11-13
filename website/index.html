@@ -15,7 +15,19 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="verriegelt">
+<div id="tor" class="tor" role="dialog" aria-modal="true" aria-labelledby="torTitel">
+  <form id="torForm" class="tor-karte">
+    <img src="icons/icon-192.png" alt="" width="56" height="56">
+    <h1 id="torTitel">Diese Seite ist noch nicht öffentlich</h1>
+    <p>Zurzeit werden hier noch keine Produkte angeboten. Wenn du eingeladen wurdest, gib bitte den Namen ein, den du kennst (Vorname und erster Buchstabe des Nachnamens).</p>
+    <label for="torName">Name</label>
+    <input id="torName" name="name" autocomplete="off" autocapitalize="words" spellcheck="false" maxlength="60" required placeholder="Vorname N.">
+    <button type="submit" class="btn">Seite öffnen</button>
+    <p id="torMeldung" class="tor-meldung" role="status" aria-live="polite"></p>
+    <p class="tor-recht"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+  </form>
+</div>
 <a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
 <header class="kopf">
@@ -33,6 +45,7 @@
     </nav>
   </div>
 </header>
+<div class="kein-angebot" role="note"><div class="wrap"><strong>Hinweis:</strong> Auf dieser Seite werden zurzeit noch keine Produkte angeboten. Die QA-App befindet sich in der Erprobung.</div></div>
 
 <main id="inhalt">
 
@@ -278,5 +291,6 @@
   </div>
 </footer>
 
+<script src="tor.js"></script>
 </body>
 </html>

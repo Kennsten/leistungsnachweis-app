@@ -5,6 +5,11 @@
 [build]
   publish = "."
 
+# Server-Funktion für die Namensabfrage (IP-Sperre nach 10 Fehlversuchen)
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 # Sicherheits-Kopfzeilen (Schutz gegen Einbettung in fremde Seiten, Sniffing usw.)
 [[headers]]
   for = "/*"
@@ -13,10 +18,15 @@
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 [[headers]]
   for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/tor.js"
   [headers.values]
     Cache-Control = "no-cache, must-revalidate"
 
