@@ -3368,7 +3368,8 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <p class="einst-status" id="diktatStatus"></p>
     <div id="diktatFortschritt" class="diktat-fortschritt hidden"><div></div></div>
     <div class="actions">
-      <button type="button" id="diktatLaden" class="primary">Sprachpaket laden</button>
+      <button type="button" id="diktatLaden" class="primary" data-modell="gross">Großes Sprachpaket laden</button>
+      <button type="button" id="diktatLadenMittel" class="secondary" data-modell="mittel">Mittleres Sprachpaket laden</button>
       <button type="button" id="diktatLoeschen" class="kn kn-loeschen danger hidden">Sprachpaket von diesem Gerät löschen</button>
     </div>
   </section>
@@ -4074,7 +4075,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.31.3 Verkaufsversion';
+const APP_VERSION='0.32.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -18428,7 +18429,12 @@ init();
 <script>
 /* ---------- Diktieren mit Sprachpaket (Spracherkennung auf dem Gerät) ---------- */
 (function(){
-  const MODELL='onnx-community/whisper-large-v3-turbo-german-ONNX';
+  const MODELLE={
+    gross:{id:'onnx-community/whisper-large-v3-turbo-german-ONNX',name:'Großes Sprachpaket',mbGpu:570,mbCpu:770,info:'beste Erkennung, für Computer'},
+    mittel:{id:'onnx-community/whisper-small-cv11-german-ONNX',name:'Mittleres Sprachpaket',mbGpu:230,mbCpu:330,info:'braucht weniger Speicher, für iPad und Handy – macht etwas mehr Fehler'}
+  };
+  const MOBIL=/iPhone|iPad|iPod|Android/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+  const modellWahl=()=>MODELLE[lesen('qa-diktat-modell')]?lesen('qa-diktat-modell'):(MOBIL?'mittel':'gross');
   const CACHE='transformers-cache';
   const MERKER='qa-diktat-paket';
   const MIK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>';
@@ -18440,16 +18446,18 @@ init();
   const paketDa=()=>lesen(MERKER)==='1';
   function anwenden(){document.body.classList.toggle('diktat-bereit',paketDa())}
 
-  async function groesseSchaetzen(){
+  async function groesseSchaetzen(modell){
+    const m=MODELLE[modell||modellWahl()];
     try{
-      if(navigator.gpu){const a=await navigator.gpu.requestAdapter();if(a)return {mb:a.features.has('shader-f16')?570:770,schnell:true}}
+      if(navigator.gpu){const a=await navigator.gpu.requestAdapter();if(a)return {mb:a.features.has('shader-f16')?m.mbGpu:m.mbCpu,schnell:true}}
     }catch(e){}
-    return {mb:770,schnell:false};
+    return {mb:m.mbCpu,schnell:false};
   }
   async function cacheGroesse(){
     try{
       const c=await caches.open(CACHE);const keys=await c.keys();
-      const eigene=keys.filter(k=>k.url.includes(MODELL));
+      const id=MODELLE[modellWahl()].id;
+      const eigene=keys.filter(k=>k.url.includes(id));
       let sum=0;
       for(const k of eigene){const r=await c.match(k);const l=r&&r.headers.get('content-length');if(l)sum+=Number(l)}
       return {anzahl:eigene.length,mb:Math.round(sum/1e6),onnx:eigene.some(k=>/encoder_model/.test(k.url))};
@@ -18490,7 +18498,7 @@ init();
   function ladenEinmal(modus){
     const v={};v.p=new Promise((ok,nein)=>{v.ok=ok;v.nein=nein});
     ladeVersprechen=v;
-    helfer().postMessage({typ:'laden',modus});
+    helfer().postMessage({typ:'laden',modus,modell:modellWahl()});
     return v.p.finally(()=>{if(ladeVersprechen===v)ladeVersprechen=null});
   }
   // Probiert die Stufen nacheinander; die erste, die klappt, wird für dieses Gerät gemerkt
@@ -18519,37 +18527,50 @@ init();
     const id=++auftragNr;
     return new Promise((ok,nein)=>{
       offen[id]=m=>m.typ==='text'?ok(m.text):nein(new Error(m.meldung));
-      helfer().postMessage({typ:'umwandeln',id,audio,modus:lesen('qa-diktat-modus')||'gpu'},[audio.buffer]);
+      helfer().postMessage({typ:'umwandeln',id,audio,modus:lesen('qa-diktat-modus')||'gpu',modell:modellWahl()},[audio.buffer]);
     });
   }
 
   /* Einstellungsseite */
   window.diktatStatusMenue=()=>{const el=$('einstStatusDiktat');if(el)el.textContent=paketDa()?'✓ Sprachpaket auf diesem Gerät':'Sprachpaket für Spracheingabe auf dem Gerät'};
   window.diktatSeiteZeigen=async()=>{
-    const g=await groesseSchaetzen();
     const c=await cacheGroesse();
     if(paketDa()&&!c.onnx){schreiben(MERKER,null);anwenden()}   // vom Browser gelöscht
     const da=paketDa();
+    const g=await groesseSchaetzen();
+    const gG=await groesseSchaetzen('gross'),gM=await groesseSchaetzen('mittel');
     if(!ladeLauf)$('diktatFortschritt').classList.add('hidden');
     $('diktatStatus').textContent=da
-      ? '✓ Sprachpaket ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')+
+      ? '✓ '+MODELLE[modellWahl()].name+' ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')+
         ({gpu:' Stufe 1 (Grafik).',gemischt:' Stufe 2 (gemischt).',cpu:' Stufe 3 (Prozessor).'}[lesen('qa-diktat-modus')]||'')
-      : 'Noch nicht geladen. Größe: ca. '+g.mb+' MB.';
-    $('diktatLaden').classList.toggle('hidden',da);
-    $('diktatLaden').textContent='Sprachpaket laden (ca. '+g.mb+' MB)';
+      : 'Noch kein Sprachpaket geladen. Empfohlen für dieses Gerät: '+MODELLE[MOBIL?'mittel':'gross'].name+'.';
+    // Ist ein Paket da, kann man zum anderen wechseln
+    const knG=$('diktatLaden'),knM=$('diktatLadenMittel');
+    knG.textContent=(da?'Wechseln zum großen Sprachpaket':'Großes Sprachpaket laden')+' (ca. '+gG.mb+' MB) – '+MODELLE.gross.info;
+    knM.textContent=(da?'Wechseln zum mittleren Sprachpaket':'Mittleres Sprachpaket laden')+' (ca. '+gM.mb+' MB) – '+MODELLE.mittel.info;
+    knG.classList.toggle('hidden',da&&modellWahl()==='gross');
+    knM.classList.toggle('hidden',da&&modellWahl()==='mittel');
+    // Empfohlenes Paket hervorheben
+    const empf=MOBIL?'mittel':'gross';
+    knG.className=empf==='gross'?'primary':'secondary';knM.className=empf==='mittel'?'primary':'secondary';
+    knG.classList.toggle('hidden',da&&modellWahl()==='gross');knM.classList.toggle('hidden',da&&modellWahl()==='mittel');
     $('diktatLoeschen').classList.toggle('hidden',!da);
   };
-  $('diktatLaden').onclick=async()=>{
-    const g=await groesseSchaetzen();
+  async function paketLaden(modell){
+    const vorher=lesen('qa-diktat-modell');
+    const g=await groesseSchaetzen(modell);
     erwartetMB=g.mb;
     const wenig=navigator.deviceMemory&&navigator.deviceMemory<6;
-    if(!confirm('Das Sprachpaket ist ca. '+g.mb+' MB groß – bitte im WLAN laden.\n\n'+
+    if(!confirm(MODELLE[modell].name+': ca. '+g.mb+' MB – bitte im WLAN laden.\n\n'+
       'Es wird einmalig von Hugging Face geladen (Anbieter frei verfügbarer Sprachmodelle). Dabei erfährt Hugging Face nur die Internet-Adresse des Geräts – nie deine Sprache oder deine Texte.\n\n'+
       (wenig?'Achtung: Dieses Gerät hat wenig Arbeitsspeicher. Das Sprachpaket läuft dort eventuell nicht.\n\n':'')+
       (g.schnell?'':'Ohne Grafik-Beschleunigung dauert das Umwandeln länger.\n\n')+
       'Jetzt laden?'))return;
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
-    $('diktatLaden').disabled=true;
+    // Bisheriges Paket schließen; das neue wird gewählt
+    if(worker){worker.terminate();worker=null}
+    bereit=false;schreiben(MERKER,null);schreiben('qa-diktat-modus',null);schreiben('qa-diktat-modell',modell);anwenden();
+    $('diktatLaden').disabled=true;$('diktatLadenMittel').disabled=true;
     $('diktatStatus').textContent='Wird vorbereitet …';
     letzteBewegung=Date.now();
     // Hängt der Download (z. B. Verbindung weg), Bescheid geben statt endlos zu warten
@@ -18559,23 +18580,29 @@ init();
     try{
       await laden();
       $('diktatFortschritt').classList.add('hidden');
+      // Das andere Paket aus dem Speicher entfernen
+      const anderes=MODELLE[modell==='gross'?'mittel':'gross'].id;
+      try{const c=await caches.open(CACHE);for(const k of await c.keys())if(k.url.includes(anderes))await c.delete(k)}catch(e){}
       toast('Sprachpaket bereit. In der Dokumentation erscheint jetzt ein 🎤.');
     }catch(e){
       $('diktatFortschritt').classList.add('hidden');
+      if(vorher&&vorher!==modell)schreiben('qa-diktat-modell',vorher);
       toast('Sprachpaket konnte nicht geladen werden: '+e.message);
     }
     clearInterval(waechter);
-    $('diktatLaden').disabled=false;
+    $('diktatLaden').disabled=false;$('diktatLadenMittel').disabled=false;
     diktatSeiteZeigen();diktatStatusMenue();
-  };
+  }
+  $('diktatLaden').onclick=()=>paketLaden('gross');
+  $('diktatLadenMittel').onclick=()=>paketLaden('mittel');
   $('diktatLoeschen').onclick=async()=>{
     if(!confirm('Sprachpaket von diesem Gerät löschen? Du kannst es jederzeit neu laden.'))return;
     try{
       const c=await caches.open(CACHE);
-      for(const k of await c.keys())if(k.url.includes(MODELL))await c.delete(k);
+      for(const k of await c.keys())if(Object.values(MODELLE).some(m=>k.url.includes(m.id)))await c.delete(k);
     }catch(e){}
     if(worker){worker.terminate();worker=null}
-    bereit=false;schreiben(MERKER,null);schreiben('qa-diktat-modus',null);anwenden();
+    bereit=false;schreiben(MERKER,null);schreiben('qa-diktat-modus',null);schreiben('qa-diktat-modell',null);anwenden();
     diktatSeiteZeigen();diktatStatusMenue();
     toast('Sprachpaket gelöscht.');
   };

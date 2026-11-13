@@ -3,7 +3,11 @@
 // Aufnahmen und Texte verlassen das Gerät nie.
 import { pipeline, env } from './lib/diktat/transformers.min.js';
 
-const MODELL = 'onnx-community/whisper-large-v3-turbo-german-ONNX';
+// Großes Paket (beste Erkennung) oder mittleres Paket (weniger Speicher, z. B. für iPad und Handy)
+const MODELLE = {
+  gross: 'onnx-community/whisper-large-v3-turbo-german-ONNX',
+  mittel: 'onnx-community/whisper-small-cv11-german-ONNX'
+};
 
 env.allowLocalModels = false;
 env.useBrowserCache = true;
@@ -40,12 +44,12 @@ async function einstellungen(modus) {
   return { modus: 'cpu', device: 'wasm', dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' } };
 }
 
-function bereitmachen(modus) {
+function bereitmachen(modus, modell) {
   if (laden) return laden;
   laden = (async () => {
     const wahl = await einstellungen(modus || 'gpu');
     const stand = {};
-    erkenner = await pipeline('automatic-speech-recognition', MODELL, {
+    erkenner = await pipeline('automatic-speech-recognition', MODELLE[modell] || MODELLE.gross, {
       device: wahl.device,
       dtype: wahl.dtype,
       // Kein wachsender Vorrats-Speicher: sonst stürzt Safari auf dem iPad beim zweiten Satz ab
@@ -70,15 +74,13 @@ self.onmessage = async (e) => {
   const auftrag = e.data || {};
   try {
     if (auftrag.typ === 'laden') {
-      await bereitmachen(auftrag.modus);
+      await bereitmachen(auftrag.modus, auftrag.modell);
     } else if (auftrag.typ === 'umwandeln') {
-      await bereitmachen(auftrag.modus);
-      const ergebnis = await erkenner(auftrag.audio, {
-        language: 'german',
-        task: 'transcribe',
-        chunk_length_s: 30,
-        stride_length_s: 5
-      });
+      await bereitmachen(auftrag.modus, auftrag.modell);
+      // Das mittlere Paket kennt nur Deutsch und nimmt keine Sprachangabe an
+      const optionen = { chunk_length_s: 30, stride_length_s: 5 };
+      if (auftrag.modell !== 'mittel') Object.assign(optionen, { language: 'german', task: 'transcribe' });
+      const ergebnis = await erkenner(auftrag.audio, optionen);
       const text = (Array.isArray(ergebnis) ? ergebnis.map((r) => r.text).join(' ') : ergebnis.text) || '';
       self.postMessage({ typ: 'text', id: auftrag.id, text: text.trim() });
     }
