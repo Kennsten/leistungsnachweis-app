@@ -38,7 +38,11 @@ const KOPIEN = [
   { von: join(MODULE, 'jspdf/dist/jspdf.umd.min.js'), nach: 'jspdf.umd.min.js' },
   { von: join(MODULE, 'leaflet/dist/leaflet.js'), nach: 'leaflet/leaflet.js' },
   { von: join(MODULE, 'leaflet/dist/leaflet.css'), nach: 'leaflet/leaflet.css' },
-  { von: join(MODULE, 'leaflet/dist/images'), nach: 'leaflet/images', ordner: true }
+  { von: join(MODULE, 'leaflet/dist/images'), nach: 'leaflet/images', ordner: true },
+  // Diktat: Spracherkennung auf dem Gerät (nur geladen, wenn jemand das Sprachpaket nutzt)
+  { von: join(MODULE, '@huggingface/transformers/dist/transformers.min.js'), nach: 'diktat/transformers.min.js' },
+  { von: join(MODULE, 'onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.mjs'), nach: 'diktat/ort-wasm-simd-threaded.jsep.mjs' },
+  { von: join(MODULE, 'onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm'), nach: 'diktat/ort-wasm-simd-threaded.jsep.wasm' }
 ];
 
 rmSync(ZIEL, { recursive: true, force: true });

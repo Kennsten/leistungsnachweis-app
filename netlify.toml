@@ -38,8 +38,19 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.pcloud.com; font-src 'self' data:; connect-src 'self' blob: data: https://luizzjsxufsezgpjypwx.supabase.co wss://luizzjsxufsezgpjypwx.supabase.co https://*.pcloud.com; media-src 'self' blob: data:; object-src 'self' blob:; frame-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.pcloud.com; font-src 'self' data:; connect-src 'self' blob: data: https://luizzjsxufsezgpjypwx.supabase.co wss://luizzjsxufsezgpjypwx.supabase.co https://*.pcloud.com https://huggingface.co https://*.huggingface.co https://*.hf.co; media-src 'self' blob: data:; object-src 'self' blob:; frame-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=(), usb=()"
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(), payment=(), usb=()"
+
+# Diktat-Bausteine: richtige Dateiarten, damit der Browser sie als Programm bzw. Rechenkern lädt
+[[headers]]
+  for = "/lib/diktat/*.mjs"
+  [headers.values]
+    Content-Type = "text/javascript; charset=utf-8"
+
+[[headers]]
+  for = "/lib/diktat/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"

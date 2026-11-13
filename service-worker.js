@@ -13,7 +13,7 @@
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.30.0';
+const CACHE_NAME = 'qa-produkt-0.31.0';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [
@@ -205,6 +205,8 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/.netlify/')) return;
   // Kartenpakete verwaltet der Rechen-Helfer (km-geraet.js) selbst
   if (url.pathname.startsWith('/karten/')) return;
+  // Diktat-Bausteine (u. a. 28 MB Rechenkern) nicht in den App-Speicher legen; der Browser-Zwischenspeicher genügt
+  if (url.pathname.startsWith('/lib/diktat/')) return;
 
   if (istSeite(request, url)) {
     event.respondWith(netzZuerst(request));

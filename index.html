@@ -1806,6 +1806,21 @@ body.vorfuehrung .einst-gruppe-titel:has(+ .einst-liste #einstKontoZeile),
 body.vorfuehrung .einst-liste:has(#einstKontoZeile){display:none}
 .einst-zeile.hidden:first-child+.einst-zeile,body.vorfuehrung .einst-zeile[data-seite="tresor"]+.einst-zeile{border-top:0}
 .einst-rechtliches{text-align:center;margin:18px 0 4px}
+/* Diktat mit Sprachpaket */
+.diktat-feld{position:relative;display:block;min-width:0}
+.diktat-feld>textarea{width:100%}
+body.diktat-bereit .diktat-feld>textarea{padding-right:56px}
+.diktat-knopf{display:none;position:absolute;right:8px;bottom:10px;width:42px;height:42px;min-height:0;margin:0;padding:0;
+  border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--brand-dark);cursor:pointer;align-items:center;justify-content:center}
+body.diktat-bereit .diktat-knopf{display:flex}
+.diktat-knopf svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.diktat-knopf.nimmt-auf{background:#c0392b;border-color:#c0392b;color:#fff;animation:diktatPuls 1.2s ease-in-out infinite}
+.diktat-knopf.arbeitet{opacity:.6;cursor:progress}
+@keyframes diktatPuls{50%{box-shadow:0 0 0 8px rgba(192,57,43,.18)}}
+@media (prefers-reduced-motion:reduce){.diktat-knopf.nimmt-auf{animation:none}}
+.diktat-hinweis{display:block;margin:4px 0 0;font-size:.85rem;font-weight:500;color:var(--muted)}
+.diktat-fortschritt{height:10px;border-radius:6px;background:var(--track);overflow:hidden;margin:8px 0}
+.diktat-fortschritt>div{height:100%;width:0;background:var(--brand);transition:width .3s}
 .ort-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ort-chip{display:inline-flex;align-items:center;gap:2px;padding:2px 4px 2px 10px;border:1px solid var(--line);border-radius:999px;font-size:.88rem;font-weight:500}
 .ort-chip button{min-height:0;width:26px;height:26px;padding:0;margin:0;border:0;background:none;color:var(--muted);font-size:1rem;cursor:pointer}
@@ -2409,9 +2424,9 @@ a.einst-zeile{text-decoration:none;color:inherit}
           Bausteine verwalten
         </button>
       </div>
-      <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
-      <p class="muted small span2" data-erklaerung style="font-weight:400;margin:-4px 0 0">🎤 Tipp: Du kannst auch diktieren – mit dem Mikrofon auf der Tastatur deines Handys oder Tablets. Fehlt das Mikrofon, ist die Diktierfunktion auf dem Gerät ausgeschaltet. Am sichersten auf iPhone und iPad – auf Android-Handys geht die Sprache oft an Google oder Samsung.</p>
-      <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
+      <label class="span2">Dokumentation<textarea data-diktat id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
+      <p class="muted small span2" data-erklaerung style="font-weight:400;margin:-4px 0 0">🎤 Tipp: Du kannst auch diktieren – mit dem Mikrofon auf der Tastatur deines Handys oder Tablets. Fehlt das Mikrofon, ist die Diktierfunktion auf dem Gerät ausgeschaltet. Am sichersten auf iPhone und iPad – auf Android-Handys geht die Sprache oft an Google oder Samsung. Ganz ohne Weitergabe: Einstellungen → Diktieren.</p>
+      <label class="span2">Vereinbarungen / Besonderheiten<textarea data-diktat id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
     </div>
     <div style="margin-bottom:10px">
       <button type="button" id="saveDocAndTrip" class="secondary" style="width:100%">
@@ -3093,6 +3108,11 @@ a.einst-zeile{text-decoration:none;color:inherit}
         <span class="einst-text"><strong>Meine Angaben</strong><small id="einstStatusAngaben"></small></span>
         <span class="einst-pfeil" aria-hidden="true"></span>
       </button>
+      <button type="button" class="einst-zeile" data-seite="diktat">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></span>
+        <span class="einst-text"><strong>Diktieren</strong><small id="einstStatusDiktat">Sprachpaket für Spracheingabe auf dem Gerät</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
       <button type="button" class="einst-zeile" id="einstSteuerpaket">
         <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3M4 13h16M11 13v2h2v-2"/></svg></span>
         <span class="einst-text"><strong>Steuerpaket</strong><small>Fahrten, Ausgaben und Belege für die Steuerberatung</small></span>
@@ -3339,6 +3359,17 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <div class="actions">
       <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
       <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
+    </div>
+  </section>
+
+  <!-- Seite: Diktieren mit Sprachpaket -->
+  <section class="einst-seite hidden" data-seite="diktat" data-titel="Diktieren">
+    <p class="muted small">Mit dem Sprachpaket wandelt die App Gesprochenes <strong>direkt auf diesem Gerät</strong> in Text um. Aufnahme und Text verlassen das Gerät nicht. Danach erscheint in der Dokumentation ein 🎤.</p>
+    <p class="einst-status" id="diktatStatus"></p>
+    <div id="diktatFortschritt" class="diktat-fortschritt hidden"><div></div></div>
+    <div class="actions">
+      <button type="button" id="diktatLaden" class="primary">Sprachpaket laden</button>
+      <button type="button" id="diktatLoeschen" class="kn kn-loeschen danger hidden">Sprachpaket von diesem Gerät löschen</button>
     </div>
   </section>
 
@@ -4043,7 +4074,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.30.0 Verkaufsversion';
+const APP_VERSION='0.31.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -12547,6 +12578,7 @@ function einstellungenSeite(name){
   if(name==='sicherung'&&IST_VORFUEHRUNG&&typeof nurVollversion==='function'&&
      nurVollversion('Die Datensicherung'))return;
   if(name==='sicherung')sicherungZieleZeigen();
+  if(name==='diktat')diktatSeiteZeigen();
   if(name==='erklaerungen'&&typeof erklaerungenSeiteZeigen==='function')erklaerungenSeiteZeigen();
   const menue=name==='menue';
   einstAktuelleSeite=name;
@@ -12572,6 +12604,7 @@ function einstellungenStatusZeigen(){
   const name=auftragnehmerName();
   $('einstStatusAngaben').textContent=name||'Bitte ausfüllen';
   $('einstStatusTresor').textContent='Sperrt nach 30 Minuten';
+  diktatStatusMenue();
   if(typeof erklaerungenStatus==='function')$('einstStatusErklaerungen').textContent=erklaerungenStatus();
 
   let sicherung='noch keine Sicherung';
@@ -18392,6 +18425,210 @@ init();
         });
       }
     </script>
+<script>
+/* ---------- Diktieren mit Sprachpaket (Spracherkennung auf dem Gerät) ---------- */
+(function(){
+  const MODELL='onnx-community/whisper-large-v3-turbo-german-ONNX';
+  const CACHE='transformers-cache';
+  const MERKER='qa-diktat-paket';
+  const MIK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>';
+  const STOPP='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/></svg>';
+  let worker=null,bereit=false,ladeVersprechen=null,auftragNr=0,erwartetMB=770;
+  const offen={};
+  function lesen(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function schreiben(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  const paketDa=()=>lesen(MERKER)==='1';
+  function anwenden(){document.body.classList.toggle('diktat-bereit',paketDa())}
+
+  async function groesseSchaetzen(){
+    try{
+      if(navigator.gpu){const a=await navigator.gpu.requestAdapter();if(a)return {mb:a.features.has('shader-f16')?570:770,schnell:true}}
+    }catch(e){}
+    return {mb:770,schnell:false};
+  }
+  async function cacheGroesse(){
+    try{
+      const c=await caches.open(CACHE);const keys=await c.keys();
+      const eigene=keys.filter(k=>k.url.includes(MODELL));
+      let sum=0;
+      for(const k of eigene){const r=await c.match(k);const l=r&&r.headers.get('content-length');if(l)sum+=Number(l)}
+      return {anzahl:eigene.length,mb:Math.round(sum/1e6),onnx:eigene.some(k=>/encoder_model/.test(k.url))};
+    }catch(e){return {anzahl:0,mb:0,onnx:false}}
+  }
+  function helfer(){
+    if(worker)return worker;
+    worker=new Worker('diktat-worker.js',{type:'module'});
+    worker.onmessage=e=>{
+      const m=e.data||{};
+      if(m.typ==='fortschritt'){
+        // Die Gesamtgröße ist erst bekannt, wenn alle Dateien begonnen haben – bis dahin die Schätzung nehmen
+        const gesamt=Math.max(m.gesamt,erwartetMB*1e6);
+        const pz=Math.min(100,Math.round(m.geladen/gesamt*100));
+        const leiste=$('diktatFortschritt');
+        leiste.classList.remove('hidden');leiste.firstElementChild.style.width=pz+'%';
+        $('diktatStatus').textContent='Wird geladen … '+Math.round(m.geladen/1e6)+' von ca. '+Math.round(gesamt/1e6)+' MB ('+pz+' %)';
+      }else if(m.typ==='bereit'){
+        bereit=true;schreiben(MERKER,'1');anwenden();
+        if(ladeVersprechen&&ladeVersprechen.ok)ladeVersprechen.ok(m);
+      }else if(m.typ==='text'||m.typ==='fehler'){
+        if(m.id&&offen[m.id]){offen[m.id](m);delete offen[m.id];return}
+        if(m.typ==='fehler'&&ladeVersprechen&&ladeVersprechen.nein)ladeVersprechen.nein(new Error(m.meldung));
+      }
+    };
+    worker.onerror=e=>{
+      const f=new Error(e.message||'Der Rechen-Helfer ist abgestürzt (vermutlich zu wenig Arbeitsspeicher).');
+      if(ladeVersprechen&&ladeVersprechen.nein)ladeVersprechen.nein(f);
+      Object.values(offen).forEach(fn=>fn({typ:'fehler',meldung:f.message}));
+      worker=null;bereit=false;ladeVersprechen=null;
+    };
+    return worker;
+  }
+  function laden(){
+    if(bereit)return Promise.resolve();
+    if(ladeVersprechen)return ladeVersprechen.p;
+    const v={};v.p=new Promise((ok,nein)=>{v.ok=ok;v.nein=nein});
+    v.p.catch(()=>{}).then(()=>{});
+    ladeVersprechen=v;
+    helfer().postMessage({typ:'laden'});
+    v.p.then(()=>{ladeVersprechen=null},()=>{ladeVersprechen=null});
+    return v.p;
+  }
+  function umwandeln(audio){
+    const id=++auftragNr;
+    return new Promise((ok,nein)=>{
+      offen[id]=m=>m.typ==='text'?ok(m.text):nein(new Error(m.meldung));
+      helfer().postMessage({typ:'umwandeln',id,audio},[audio.buffer]);
+    });
+  }
+
+  /* Einstellungsseite */
+  window.diktatStatusMenue=()=>{const el=$('einstStatusDiktat');if(el)el.textContent=paketDa()?'✓ Sprachpaket auf diesem Gerät':'Sprachpaket für Spracheingabe auf dem Gerät'};
+  window.diktatSeiteZeigen=async()=>{
+    const g=await groesseSchaetzen();
+    const c=await cacheGroesse();
+    if(paketDa()&&!c.onnx){schreiben(MERKER,null);anwenden()}   // vom Browser gelöscht
+    const da=paketDa();
+    $('diktatStatus').textContent=da
+      ? '✓ Sprachpaket ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')
+      : 'Noch nicht geladen. Größe: ca. '+g.mb+' MB.';
+    $('diktatLaden').classList.toggle('hidden',da);
+    $('diktatLaden').textContent='Sprachpaket laden (ca. '+g.mb+' MB)';
+    $('diktatLoeschen').classList.toggle('hidden',!da);
+  };
+  $('diktatLaden').onclick=async()=>{
+    const g=await groesseSchaetzen();
+    erwartetMB=g.mb;
+    const wenig=navigator.deviceMemory&&navigator.deviceMemory<6;
+    if(!confirm('Das Sprachpaket ist ca. '+g.mb+' MB groß – bitte im WLAN laden.\n\n'+
+      'Es wird einmalig von Hugging Face geladen (Anbieter frei verfügbarer Sprachmodelle). Dabei erfährt Hugging Face nur die Internet-Adresse des Geräts – nie deine Sprache oder deine Texte.\n\n'+
+      (wenig?'Achtung: Dieses Gerät hat wenig Arbeitsspeicher. Das Sprachpaket läuft dort eventuell nicht.\n\n':'')+
+      (g.schnell?'':'Ohne Grafik-Beschleunigung dauert das Umwandeln länger.\n\n')+
+      'Jetzt laden?'))return;
+    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+    $('diktatLaden').disabled=true;
+    $('diktatStatus').textContent='Wird vorbereitet …';
+    try{
+      await laden();
+      $('diktatFortschritt').classList.add('hidden');
+      toast('Sprachpaket bereit. In der Dokumentation erscheint jetzt ein 🎤.');
+    }catch(e){
+      $('diktatFortschritt').classList.add('hidden');
+      toast('Sprachpaket konnte nicht geladen werden: '+e.message);
+    }
+    $('diktatLaden').disabled=false;
+    diktatSeiteZeigen();diktatStatusMenue();
+  };
+  $('diktatLoeschen').onclick=async()=>{
+    if(!confirm('Sprachpaket von diesem Gerät löschen? Du kannst es jederzeit neu laden.'))return;
+    try{
+      const c=await caches.open(CACHE);
+      for(const k of await c.keys())if(k.url.includes(MODELL))await c.delete(k);
+    }catch(e){}
+    if(worker){worker.terminate();worker=null}
+    bereit=false;schreiben(MERKER,null);anwenden();
+    diktatSeiteZeigen();diktatStatusMenue();
+    toast('Sprachpaket gelöscht.');
+  };
+
+  /* Aufnahme */
+  let aufnahme=null;
+  async function zu16k(blob){
+    const roh=await blob.arrayBuffer();
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const puffer=await new Promise((ok,nein)=>ctx.decodeAudioData(roh,ok,nein));
+    ctx.close&&ctx.close();
+    const n=Math.ceil(puffer.duration*16000);
+    const off=new OfflineAudioContext(1,n,16000);
+    const q=off.createBufferSource();q.buffer=puffer;q.connect(off.destination);q.start();
+    const r=await off.startRendering();
+    return new Float32Array(r.getChannelData(0));
+  }
+  function einfuegen(feld,text){
+    if(!text)return;
+    const a=feld.selectionStart??feld.value.length,b=feld.selectionEnd??a;
+    const vor=feld.value.slice(0,a),nach=feld.value.slice(b);
+    const luecke=vor&&!/\s$/.test(vor)?' ':'';
+    feld.value=vor+luecke+text+(nach&&!/^\s/.test(nach)?' ':'')+nach;
+    const pos=(vor+luecke+text).length;
+    try{feld.setSelectionRange(pos,pos)}catch(e){}
+    feld.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  function hinweis(feld,text){
+    const h=feld.closest('.diktat-feld').nextElementSibling;
+    if(h&&h.classList.contains('diktat-hinweis')){if(text)h.textContent=text;else h.remove();return}
+    if(!text)return;
+    const el=document.createElement('span');el.className='diktat-hinweis';el.setAttribute('role','status');el.textContent=text;
+    feld.closest('.diktat-feld').after(el);
+  }
+  async function starten(feld,knopf){
+    let strom;
+    try{strom=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})}
+    catch(e){toast('Kein Zugriff aufs Mikrofon. Bitte im Browser erlauben.');return}
+    const teile=[];
+    const rec=new MediaRecorder(strom);
+    rec.ondataavailable=e=>{if(e.data&&e.data.size)teile.push(e.data)};
+    rec.onstop=async()=>{
+      strom.getTracks().forEach(t=>t.stop());
+      knopf.classList.remove('nimmt-auf');knopf.classList.add('arbeitet');knopf.innerHTML=MIK;
+      hinweis(feld,bereit?'Wird in Text umgewandelt …':'Sprachpaket wird gestartet und Text umgewandelt … (beim ersten Mal etwas länger)');
+      try{
+        const audio=await zu16k(new Blob(teile,{type:rec.mimeType||'audio/webm'}));
+        if(audio.length<16000*0.4)throw new Error('Die Aufnahme war zu kurz.');
+        const text=await umwandeln(audio);
+        einfuegen(feld,text);
+        hinweis(feld,text?'':'Es wurde kein Text erkannt.');
+        if(text)setTimeout(()=>hinweis(feld,''),400);
+      }catch(e){hinweis(feld,'Umwandeln fehlgeschlagen: '+e.message)}
+      knopf.classList.remove('arbeitet');aufnahme=null;
+    };
+    rec.start();
+    aufnahme={rec,feld,knopf};
+    knopf.classList.add('nimmt-auf');knopf.innerHTML=STOPP;
+    knopf.setAttribute('aria-label','Aufnahme beenden');
+    hinweis(feld,'● Aufnahme läuft – zum Beenden ■ antippen');
+    laden().catch(()=>{});   // Sprachpaket schon starten, während gesprochen wird
+  }
+  function ausstatten(feld){
+    if(feld.dataset.diktatFertig)return;feld.dataset.diktatFertig='1';
+    const huelle=document.createElement('span');huelle.className='diktat-feld';
+    feld.parentNode.insertBefore(huelle,feld);huelle.appendChild(feld);
+    const k=document.createElement('button');k.type='button';k.className='diktat-knopf';
+    k.setAttribute('aria-label','Diktieren');k.title='Diktieren';k.innerHTML=MIK;
+    k.onclick=()=>{
+      if(k.classList.contains('arbeitet'))return;
+      if(aufnahme&&aufnahme.knopf===k){aufnahme.rec.stop();k.setAttribute('aria-label','Diktieren');return}
+      if(aufnahme)return;
+      starten(feld,k);
+    };
+    huelle.appendChild(k);
+  }
+  document.querySelectorAll('textarea[data-diktat]').forEach(ausstatten);
+  if(!window.MediaRecorder||!navigator.mediaDevices){schreiben(MERKER,null)}
+  anwenden();
+  // Beim Schließen eines Fensters eine laufende Aufnahme beenden
+  document.addEventListener('close',e=>{if(aufnahme&&e.target.contains(aufnahme.feld))aufnahme.rec.stop()},true);
+})();
+</script>
 <script>
 /* ---------- Erklärtexte: mit × wegklicken, in Einstellungen wieder einschalten ---------- */
 (function(){
