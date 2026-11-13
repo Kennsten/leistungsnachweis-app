@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#C85A3E">
+<!-- Eigene Farben: verhindert, dass Browser im Dunkelmodus (z. B. Samsung Internet) die Seite selbst umfärben -->
+<meta name="color-scheme" content="only light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="QA">
@@ -659,6 +661,8 @@ dialog:modal{
   .approval-head .actions,.doc-head .actions{width:100%}
   .client-buttons{grid-template-columns:1fr 1fr}
 }
+/* Helle Designs: Browser (z. B. Samsung Internet im Dunkelmodus) dürfen die Seite nicht selbst umfärben */
+:root{color-scheme:only light}
 /* ---------- Dunkles Design ---------- */
 [data-theme="dunkel"]{
   color-scheme:dark;
@@ -1834,6 +1838,9 @@ a.einst-zeile{text-decoration:none;color:inherit}
 #settingsTitel{font-size:1.3rem;overflow-wrap:break-word}
 .kopf-knoepfe #backupData{white-space:normal;line-height:1.2}
 .klapp-titel{margin:0}
+/* Schmale Bildschirme bzw. große Schrift: Titel nicht mit „Schließen“ überlappen lassen */
+.klapp-kopf>.klapp-text>span:first-child{overflow-wrap:anywhere;hyphens:auto}
+@media (max-width:430px){.klapp-wort{display:none}}
 .klapp-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
   margin:0;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .klapp-pfeil{flex:0 0 auto;width:.8em;height:.8em;background:var(--brand-dark);transform:rotate(90deg);transition:transform .2s;
@@ -4011,7 +4018,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.29.3 Verkaufsversion';
+const APP_VERSION='0.29.4 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
