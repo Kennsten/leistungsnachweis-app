@@ -1960,6 +1960,12 @@ a.einst-zeile{text-decoration:none;color:inherit}
 #clientForm .kn.kb-klein{padding:6px 10px;font-size:.82rem}
 .kb-kopfknoepfe .kn{padding:11px 16px}
 .kb-kopfknoepfe .kn.kb-klein{padding:6px 10px;font-size:.82rem}
+/* Passwort bei Bedarf sichtbar machen */
+.pw-feld{position:relative;display:block;min-width:0}
+.pw-feld>input{width:100%;padding-right:96px}
+.pw-zeigen{position:absolute;right:6px;top:50%;transform:translateY(-50%);margin:0;min-height:0;padding:6px 10px;
+  font-size:.85rem;font-weight:600;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}
+.pw-zeigen[aria-pressed="true"]{background:var(--accent)}
 </style>
 </head>
 <body>
@@ -3975,7 +3981,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.27.0 Verkaufsversion';
+const APP_VERSION='0.27.1 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -18102,5 +18108,47 @@ init();
         });
       }
     </script>
+<script>
+/* Jedes Passwortfeld bekommt einen Knopf „Anzeigen“ – auch Felder, die später erscheinen (z. B. Tresor) */
+(function(){
+  function ausstatten(feld){
+    if(feld.dataset.pwKnopf)return;
+    feld.dataset.pwKnopf='1';
+    const huelle=document.createElement('span');
+    huelle.className='pw-feld';
+    feld.parentNode.insertBefore(huelle,feld);
+    huelle.appendChild(feld);
+    const knopf=document.createElement('button');
+    knopf.type='button';
+    knopf.className='pw-zeigen';
+    function setzen(sichtbar){
+      feld.type=sichtbar?'text':'password';
+      knopf.textContent=sichtbar?'Verbergen':'Anzeigen';
+      knopf.setAttribute('aria-pressed',sichtbar?'true':'false');
+      knopf.setAttribute('aria-label',sichtbar?'Passwort verbergen':'Passwort anzeigen');
+    }
+    knopf.addEventListener('click',()=>{
+      const pos=feld.selectionStart;
+      setzen(feld.type==='password');
+      feld.focus();
+      try{if(pos!=null)feld.setSelectionRange(pos,pos)}catch(e){}
+    });
+    // Beim Absenden wieder verbergen, damit der Browser es korrekt als Passwort speichert
+    if(feld.form)feld.form.addEventListener('submit',()=>setzen(false));
+    const dialog=feld.closest('dialog');
+    if(dialog)dialog.addEventListener('close',()=>setzen(false));
+    setzen(false);
+    huelle.appendChild(knopf);
+  }
+  function suchen(wurzel){
+    if(wurzel.matches&&wurzel.matches('input[type=password]'))ausstatten(wurzel);
+    if(wurzel.querySelectorAll)wurzel.querySelectorAll('input[type=password]').forEach(ausstatten);
+  }
+  suchen(document);
+  new MutationObserver(liste=>{
+    for(const m of liste)for(const n of m.addedNodes)if(n.nodeType===1)suchen(n);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
