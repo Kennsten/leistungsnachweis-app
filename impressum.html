@@ -59,9 +59,23 @@
   </main>
   <script>
     // Aus der App geöffnet (neuer Tab): „Zurück“ schließt den Tab
-    document.getElementById('zurueck').addEventListener('click', function (e) {
-      if (window.opener) { e.preventDefault(); window.close(); }
-    });
+    // Rückweg: Zusatz (z. B. ?vorfuehrung, ?testen) beibehalten, damit man nicht in der Vollversion landet
+    (function () {
+      var zusatz = location.search || '';
+      var zurueck = document.getElementById('zurueck');
+      zurueck.href = './' + zusatz;
+      document.querySelectorAll('a[href="datenschutz.html"],a[href="impressum.html"]').forEach(function (a) {
+        a.href = a.getAttribute('href') + zusatz;
+      });
+      // Aus der App in einem neuen Tab geöffnet: Tab schließen, sonst zurück zur App
+      zurueck.addEventListener('click', function (e) {
+        if (history.length <= 1) {
+          e.preventDefault();
+          window.close();
+          setTimeout(function () { location.href = zurueck.href; }, 300);
+        }
+      });
+    })();
   </script>
 </body>
 </html>

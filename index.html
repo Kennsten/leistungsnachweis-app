@@ -253,7 +253,8 @@ body.testversion #backupData.nur-voll::after,body.testversion .einst-zeile.nur-v
 .button-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:44px;padding:0 16px;border-radius:var(--radius-btn,10px);font-weight:600}
 .button-link.primary{background:var(--brand);color:var(--on-brand)}
 .button-link.secondary{border:1px solid var(--line);color:var(--ink);background:var(--card)}
-#tourDialog{padding:0;overflow:hidden;max-width:min(560px,94vw);border:0}
+#tourDialog{padding:0;overflow-x:hidden;overflow-y:auto;max-width:min(560px,94vw);border:0}
+#tourDialog .tour-kopf{position:sticky;top:0;z-index:3}
 .tour-kopf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 16px;background:linear-gradient(135deg,var(--brand-dark),var(--brand));color:var(--on-brand)}
 .tour-kopf h2{margin:2px 0 0;font-size:1.35rem;color:var(--on-brand)}
 .tour-oberzeile{font-size:.8rem;font-weight:600;letter-spacing:.02em;opacity:.9}
@@ -559,7 +560,7 @@ dialog label.sicherung-haken input[type="checkbox"]{width:22px;min-width:22px;he
   text-overflow:ellipsis;
 }
 .meta{font-size:.9rem;color:var(--muted)}
-dialog{width:min(94vw,700px);max-height:92vh;overflow:auto;border:0;border-radius:24px;padding:0 22px 22px;background:var(--card);box-shadow:0 20px 50px rgba(47,58,52,.22)}
+dialog{width:min(94vw,700px);max-height:92vh;max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:0;border-radius:24px;padding:0 22px 22px;background:var(--card);box-shadow:0 20px 50px rgba(47,58,52,.22)}
 
 dialog .top{
   position:sticky;
@@ -3942,7 +3943,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.3 Verkaufsversion';
+const APP_VERSION='0.26.4 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4179,6 +4180,11 @@ function esc(v=''){
    und ohne Server. Alles läuft nur im Browser und wird bei jedem Start zurückgesetzt. */
 var IST_VORFUEHRUNG=/[?&]vorfuehrung\b/.test(location.search);
 if(IST_VORFUEHRUNG)document.body.classList.add('vorfuehrung');
+// Datenschutz und Impressum: Zusatz (?vorfuehrung, ?testen) mitgeben, damit der Rückweg
+// wieder in dieselbe Variante führt und nicht in die Vollversion
+if(/[?&](vorfuehrung|testen)\b/.test(location.search)){
+  document.querySelectorAll('a[href="datenschutz.html"],a[href="impressum.html"]').forEach(a=>{a.href=a.getAttribute('href')+location.search});
+}
 if(/[?&]testen\b/.test(location.search)){const h=document.getElementById('testenHinweis');if(h)h.classList.remove('hidden')}
 function showApp(on){
   if(IST_VORFUEHRUNG)$('logout').textContent='Neu starten';
@@ -4867,6 +4873,7 @@ function vorfuehrungTexteErsetzen(){
 }
 async function vorfuehrungStarten(){
   vorfuehrungTexteErsetzen();
+
   user=Object.assign({},VORFUEHRUNG_NUTZER);
   offlineAngemeldet=true;
   // Jede Vorführung beginnt frisch: alte Einträge dieses Browsers verwerfen
