@@ -425,6 +425,9 @@
         .startsWith('ausfall');
     }
 
+    // Alte Einträge hießen „Wohnung Klient“
+    function ortAnzeige(o){const t=String(o||'').trim();return t==='Wohnung Klient'?'Wohnung Klient*in':t}
+
     function hatWegepauschale(entry){
       const ort=String(entry&&entry.ort_der_leistung||'')
         .trim()
@@ -504,7 +507,7 @@ const totalWay=entries.reduce(
             <tr>
               <td>${esc(formatDate(entry.datum))}</td>
               <td>${esc(String(entry.beginn||'').slice(0,5))} – ${esc(String(entry.ende||'').slice(0,5))}</td>
-              <td>${esc(entry.ort_der_leistung||'')}</td>
+              <td>${esc(ortAnzeige(entry.ort_der_leistung))}</td>
               <td class="number">${Number(entry.dauer_minuten||0)}</td>
               <td class="number">${formatFls(eintragFls(entry))}</td>
 <td class="center-text">${hatWegepauschale(entry)?1:''}</td>
@@ -1204,7 +1207,7 @@ const totalWay=entries.reduce(
           zellen=[
             lnZelle.zahl(z('A'),f.A,lnExcelDatum(e.datum)),
             lnZelle.zahl(z('B'),f.B,lnExcelZeit(e.beginn)),
-            lnZelle.text(z('C'),f.C,e.ort_der_leistung||''),
+            lnZelle.text(z('C'),f.C,ortAnzeige(e.ort_der_leistung)),
             lnZelle.zahl(z('D'),f.D,minuten),
             // Gleicher Wert wie die Vorlagen-Formel: Formel behalten,
             // sonst den in der App gespeicherten FLS-Wert eintragen.

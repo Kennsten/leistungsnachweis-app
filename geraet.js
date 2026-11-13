@@ -108,6 +108,7 @@
       ["kontakt2_rolle", "text", false, null],
       ["kontakt2_adresse", "text", false, null],
       ["kontakt2_email", "text", false, null],
+      ["kontakte_weitere", "text", false, null],
     ],
     dokumentationen: [
       ["id", "uuid", true, "gen_random_uuid()"],
@@ -135,6 +136,7 @@
       ["updated_at", "timestamp with time zone", true, "now()"],
       ["portraits_ausgeblendet", "text", false, null],
       ["beleg_pruefung_ignoriert", "text", false, null],
+      ["eigene_orte", "text", false, null],
     ],
     portraits: [
       ["id", "uuid", true, "gen_random_uuid()"],

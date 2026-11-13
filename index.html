@@ -1806,6 +1806,9 @@ body.vorfuehrung .einst-gruppe-titel:has(+ .einst-liste #einstKontoZeile),
 body.vorfuehrung .einst-liste:has(#einstKontoZeile){display:none}
 .einst-zeile.hidden:first-child+.einst-zeile,body.vorfuehrung .einst-zeile[data-seite="tresor"]+.einst-zeile{border-top:0}
 .einst-rechtliches{text-align:center;margin:18px 0 4px}
+.ort-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ort-chip{display:inline-flex;align-items:center;gap:2px;padding:2px 4px 2px 10px;border:1px solid var(--line);border-radius:999px;font-size:.88rem;font-weight:500}
+.ort-chip button{min-height:0;width:26px;height:26px;padding:0;margin:0;border:0;background:none;color:var(--muted);font-size:1rem;cursor:pointer}
 
 .einst-rechtliches a{color:var(--muted)}
 /* Erklärtexte: wegklickbar, in den Einstellungen wieder einschaltbar */
@@ -1953,9 +1956,27 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
 /* ---------- Klienten-Maske: Abschnitte ---------- */
 .kb-abschnitt{font-size:.95rem;margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--line);color:var(--brand-dark)}
-#clientForm .top+input+.kb-abschnitt{border-top:0;padding-top:0;margin-top:6px}
+#clientForm .top+input+.kb-abschnitt,#clientForm .top+input+.abschnitt>.kb-abschnitt,#approvalForm .top+input+.kb-abschnitt,#approvalForm .top+input+.abschnitt>.kb-abschnitt{border-top:0;padding-top:0;margin-top:6px}
 .kb-kontakt{border:1px solid var(--line);border-radius:var(--radius-item);padding:10px 12px 4px;margin:8px 0}
 .kb-kontakt-titel{margin:0 0 2px;font-size:.82rem;font-weight:600;color:var(--muted)}
+.kontakt-liste{display:grid;gap:8px;margin:6px 0 8px}
+.kontakt-zeile{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--radius-item);padding:8px 10px 8px 12px;background:var(--card)}
+.kontakt-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.kontakt-text small{display:block;color:var(--muted);font-size:.85rem}
+.kontakt-zeile button,.abschnitt-bearbeiten{flex:0 0 auto;min-height:0;padding:6px 12px;font-size:.88rem}
+.kontakt-knoepfe{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 8px}
+.kontakt-neu{width:100%}
+.kb-kontakt .kb-klein{width:auto}
+/* Einklappbare Abschnitte */
+.abschnitt h3.kb-abschnitt{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
+.abschnitt-titel{flex:0 0 auto}
+.abschnitt-kurz{display:none;flex:1 1 100%;order:3;color:var(--muted);font-weight:400;font-size:.88rem;line-height:1.4;overflow-wrap:anywhere}
+.abschnitt .abschnitt-bearbeiten{display:none;margin-left:auto}
+.abschnitt.zu .abschnitt-kurz{display:block}
+.abschnitt.zu .abschnitt-bearbeiten{display:inline-flex}
+.abschnitt.zu h3.kb-abschnitt{cursor:pointer}
+.abschnitt.zu .abschnitt-inhalt{display:none}
+.abschnitt.zu h3.kb-abschnitt{margin-bottom:2px}
 
 /* ---------- Klientenbogen ---------- */
 .kbogen{background:#fff;color:#1f2a24;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45;padding:26px 28px;border-radius:6px;border:1px solid #e2e0d6;max-width:720px;margin:0 auto}
@@ -2243,27 +2264,9 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <label>Mobil<input id="mobil" type="tel" inputmode="tel"></label>
     </div>
 
-    <h3 class="kb-abschnitt">👥 Kontaktpersonen</h3>
-      <div class="kb-kontakt">
-        <p class="kb-kontakt-titel">Kontaktperson 1</p>
-        <div class="grid">
-          <label>Name<input id="kontaktperson1" autocomplete="off"></label>
-          <label>Rolle<input id="kontakt1Rolle" placeholder="z. B. gesetzliche Betreuerin" autocomplete="off"></label>
-          <label class="span2">Adresse<input id="kontakt1Adresse" placeholder="Straße Nr., PLZ Ort" autocomplete="off"></label>
-          <label>Telefon<input id="telefon1" type="tel" inputmode="tel"></label>
-          <label>E-Mail<input id="kontakt1Email" type="email" inputmode="email" autocapitalize="off" autocomplete="off"></label>
-        </div>
-      </div>
-      <div class="kb-kontakt">
-        <p class="kb-kontakt-titel">Kontaktperson 2</p>
-        <div class="grid">
-          <label>Name<input id="kontaktperson2" autocomplete="off"></label>
-          <label>Rolle<input id="kontakt2Rolle" placeholder="z. B. gesetzliche Betreuerin" autocomplete="off"></label>
-          <label class="span2">Adresse<input id="kontakt2Adresse" placeholder="Straße Nr., PLZ Ort" autocomplete="off"></label>
-          <label>Telefon<input id="telefon2" type="tel" inputmode="tel"></label>
-          <label>E-Mail<input id="kontakt2Email" type="email" inputmode="email" autocapitalize="off" autocomplete="off"></label>
-        </div>
-      </div>
+    <h3 class="kb-abschnitt" data-immer-offen>👥 Kontaktpersonen / Institutionen</h3>
+    <div id="kontaktListe" class="kontakt-liste"></div>
+    <button type="button" id="kontaktNeu" class="secondary kontakt-neu">+ Kontaktperson / Institution hinzufügen</button>
 
     <h3 class="kb-abschnitt">🖼 Porträt</h3>
     <div class="grid">
@@ -2276,7 +2279,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
             <button type="button" id="portraitEntfernen" class="secondary hidden">Initialen verwenden</button>
           </div>
         </div>
-        <p class="muted small" id="portraitName"></p>
+        <p class="muted small" id="portraitName" data-kurz-text></p>
         <p class="muted small" data-erklaerung>Das Porträt wird im Design „Comic“ angezeigt, in den anderen Designs die Initialen.</p>
       </div>
     </div>
@@ -2372,13 +2375,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
           <option value="Ausfall">Ausfall (alt)</option>
         </select>
         <label>Leistungsort
-  <select id="docOrt">
-    <option value="Wohnung Klient">Wohnung Klient</option>
-    <option value="Begleitung außer Haus">Begleitung außer Haus</option>
-    <option value="SuPA Büro">SuPA Büro</option>
-    <option value="Telefon">Telefon</option>
-    <option value="Online">Online</option>
-  </select>
+  <select id="docOrt" data-ortwahl></select>
 </label>
 <label>Kennziffer
   <select id="docKennziffer">
@@ -2472,15 +2469,19 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <button autofocus type="button" id="closeApprovalForm" class="kn kn-schliessen secondary">Schließen</button>
     </div>
     <input type="hidden" id="approvalId">
+    <h3 class="kb-abschnitt">📅 Zeitraum</h3>
     <div class="grid">
       <label>Beginn<input id="approvalBeginn" type="date" required></label>
       <label>Ende (optional)<input id="approvalEnde" type="date"></label>
       <label>Bewilligungsjahr beginnt am (nur falls abweichend)<input id="approvalJahrBeginn" type="date"></label>
-      <label>Fortschreibung des Gesamtplans zum<input id="approvalGesamtplan" type="date"></label>
-      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
-      <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
+    </div>
+    <h3 class="kb-abschnitt">⏱ Umfang</h3>
+    <div class="grid">
       <label>Gesamt-FLS pro 12 Monate<input id="approvalStunden" type="text" inputmode="decimal" required autocomplete="off"></label>
       <label>Wochen-FLS<input id="approvalWochenFls" type="text" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <h3 class="kb-abschnitt">🏛 Leistungsträger</h3>
+    <div class="grid">
       <label>Leistungsträger
         <select id="approvalLeistungstraegerTyp" required>
           <option value="">Bitte auswählen</option>
@@ -2494,11 +2495,18 @@ a.einst-zeile{text-decoration:none;color:inherit}
       </label>
       <label id="approvalLeistungstraegerNameWrap" class="hidden">Name des sonstigen Leistungsträgers<input id="approvalLeistungstraegerName" placeholder="z. B. Stadt Peine"></label>
       <label>Ansprechpartner<input id="approvalAnsprechpartner"></label>
-      <label class="span2">Bemerkungen<textarea id="approvalBemerkungen" rows="3"></textarea></label>
-
-      <div class="span2 summary-box" style="margin:8px 0">
+    </div>
+    <h3 class="kb-abschnitt">📋 Berichte und Gesamtplan</h3>
+    <div class="grid">
+      <label>Verlaufsbericht fällig am<input id="approvalBerichtFaellig" type="date"></label>
+      <label>Verlaufsbericht versendet am<input id="approvalVerlaufsbericht" type="date"></label>
+      <label>Fortschreibung des Gesamtplans zum<input id="approvalGesamtplan" type="date"></label>
+    </div>
+    <h3 class="kb-abschnitt">📄 Bescheid</h3>
+    <div class="grid">
+      <div class="span2 summary-box" style="margin:4px 0">
         <div style="font-weight:650;margin-bottom:6px">Bewilligungsbescheid (aus pCloud)</div>
-        <div id="approvalBescheidStatus" class="muted small"></div>
+        <div id="approvalBescheidStatus" class="muted small" data-kurz-text></div>
         <div class="actions" style="margin-top:10px">
           <button type="button" id="approvalBescheidWaehlen" class="secondary">
             Aus pCloud wählen
@@ -2509,6 +2517,10 @@ a.einst-zeile{text-decoration:none;color:inherit}
           </button>
         </div>
       </div>
+    </div>
+    <h3 class="kb-abschnitt">📝 Bemerkungen</h3>
+    <div class="grid">
+      <label class="span2">Bemerkungen<textarea id="approvalBemerkungen" rows="3"></textarea></label>
     </div>
     <div class="actions">
       <button type="button" id="deleteApproval" class="kn kn-loeschen danger hidden">Löschen</button>
@@ -3339,6 +3351,19 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </section>
 </dialog>
 
+<dialog id="ortDialog" class="klein-dialog">
+  <form id="ortForm" method="dialog">
+    <div class="top">
+      <div><div class="muted">Leistungsort</div><h2>Anderer Ort</h2></div>
+      <button type="button" id="ortAbbrechen" class="kn kn-schliessen secondary">Schließen</button>
+    </div>
+    <label>Ort<input id="ortNeu" required maxlength="60" placeholder="z. B. Tagesstätte, Arztpraxis" autocomplete="off"></label>
+    <label class="sicherung-haken"><input type="checkbox" id="ortMerken" checked> In der Liste speichern</label>
+    <div id="ortGespeichert"></div>
+    <div class="actions"><button type="submit" class="kn kn-speichern primary">Übernehmen</button></div>
+  </form>
+</dialog>
+
 <dialog id="routeKopieDialog">
   <div class="top">
     <div>
@@ -3963,13 +3988,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       </label>
 
       <label class="span2">Leistungsort
-        <select id="terminOrt">
-          <option value="Wohnung Klient">Wohnung Klient</option>
-          <option value="Begleitung außer Haus">Begleitung außer Haus</option>
-          <option value="SuPA Büro">SuPA Büro</option>
-          <option value="Telefon">Telefon</option>
-          <option value="Online">Online</option>
-        </select>
+        <select id="terminOrt" data-ortwahl></select>
       </label>
 
       <label class="span2" id="terminWiederholungWrap">Wiederholung
@@ -4024,7 +4043,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.29.5 Verkaufsversion';
+const APP_VERSION='0.30.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -4547,15 +4566,17 @@ function applyTripDocumentation(documentationId){
 
   $('tripDestination').value=$('tripStartAddress').value||startAdresse();
 
-  const leistungsort=doc.ort_der_leistung||'';
+  const leistungsort=ortNormal(doc.ort_der_leistung);
   let zweck='';
 
   if(leistungsort==='Begleitung außer Haus'){
     zweck='Begleitung außer Haus';
-  }else if(leistungsort==='Wohnung Klient'){
+  }else if(leistungsort===ORT_WOHNUNG){
     zweck='Hausbesuch';
   }else if(leistungsort==='SuPA Büro'){
     zweck='Termin im SuPA Büro';
+  }else if(leistungsort==='Büro'){
+    zweck='Termin im Büro';
   }else if(leistungsort==='Telefon'){
     zweck='Telefontermin – keine Fahrt';
   }else if(leistungsort==='Online'){
@@ -4580,10 +4601,88 @@ function applyTripDocumentation(documentationId){
   }
 }
   
+
+/* ---------- Leistungsort: feste Liste, eigene Orte, „Anderes …“ ---------- */
+const ORT_WOHNUNG='Wohnung Klient*in';
+const ORT_ANDERES='__anderes';
+const ORTE_FEST=[ORT_WOHNUNG,'Begleitung außer Haus','Büro','SuPA Büro','Telefon','Online'];
+// Alte Einträge hießen „Wohnung Klient“
+function ortNormal(o){
+  const t=String(o||'').trim();
+  return t==='Wohnung Klient'?ORT_WOHNUNG:t;
+}
+function eigeneOrte(){
+  try{const l=JSON.parse((meineEinstellungen&&meineEinstellungen.eigene_orte)||'[]');return Array.isArray(l)?l.filter(Boolean):[]}
+  catch(e){return []}
+}
+function ortWahlFuellen(sel){
+  const wert=sel.value;
+  const eigene=eigeneOrte().filter(o=>!ORTE_FEST.includes(o));
+  sel.innerHTML=ORTE_FEST.concat(eigene).map(o=>'<option value="'+esc(o)+'">'+esc(o)+'</option>').join('')+
+    '<option value="'+ORT_ANDERES+'">Anderes …</option>';
+  if(wert&&wert!==ORT_ANDERES)ortWahlSetzen(sel,wert);
+  sel.dataset.vorher=sel.value;
+}
+function ortWahlenFuellen(){document.querySelectorAll('select[data-ortwahl]').forEach(ortWahlFuellen)}
+// Wert setzen; unbekannte (z. B. einmalig eingegebene) Orte werden als Eintrag ergänzt
+function ortWahlSetzen(sel,wert){
+  const w=ortNormal(wert)||ORT_WOHNUNG;
+  if(![...sel.options].some(o=>o.value===w)){
+    const o=document.createElement('option');o.value=w;o.textContent=w;
+    sel.insertBefore(o,sel.querySelector('option[value="'+ORT_ANDERES+'"]'));
+  }
+  sel.value=w;sel.dataset.vorher=w;
+}
+let ortDialogFeld=null;
+function ortGespeichertZeigen(){
+  const l=eigeneOrte();
+  $('ortGespeichert').innerHTML=l.length
+    ? '<p class="muted small" style="margin:10px 0 4px">Gespeicherte Orte:</p><div class="ort-chips">'+
+      l.map(o=>'<span class="ort-chip">'+esc(o)+'<button type="button" data-ort-weg="'+esc(o)+'" aria-label="'+esc(o)+' aus der Liste entfernen">×</button></span>').join('')+'</div>'
+    : '';
+}
+async function eigeneOrteSpeichern(liste){
+  const text=JSON.stringify(liste);
+  const {error}=await Daten.from('einstellungen').upsert({user_id:user.id,eigene_orte:text,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+  if(error){toast('Konnte nicht gespeichert werden: '+error.message);return false}
+  meineEinstellungen.eigene_orte=text;
+  ortWahlenFuellen();
+  return true;
+}
+document.addEventListener('change',e=>{
+  const sel=e.target;
+  if(!sel.matches||!sel.matches('select[data-ortwahl]'))return;
+  if(sel.value!==ORT_ANDERES){sel.dataset.vorher=sel.value;return}
+  ortDialogFeld=sel;
+  sel.value=sel.dataset.vorher||ORT_WOHNUNG;   // bis zur Eingabe beim alten Wert bleiben
+  $('ortNeu').value='';$('ortMerken').checked=true;
+  ortGespeichertZeigen();
+  $('ortDialog').showModal();
+  setTimeout(()=>$('ortNeu').focus(),50);
+});
+$('ortAbbrechen').onclick=()=>$('ortDialog').close();
+$('ortGespeichert').onclick=async e=>{
+  const b=e.target.closest('[data-ort-weg]');if(!b)return;
+  const weg=b.dataset.ortWeg;
+  if(await eigeneOrteSpeichern(eigeneOrte().filter(o=>o!==weg)))ortGespeichertZeigen();
+};
+$('ortForm').onsubmit=async e=>{
+  e.preventDefault();
+  const ort=$('ortNeu').value.replace(/\s+/g,' ').trim();
+  if(!ort)return;
+  if($('ortMerken').checked&&!ORTE_FEST.includes(ort)&&!eigeneOrte().includes(ort)){
+    await eigeneOrteSpeichern(eigeneOrte().concat(ort));
+  }
+  if(ortDialogFeld)ortWahlSetzen(ortDialogFeld,ort);
+  $('ortDialog').close();
+  if(ortDialogFeld)ortDialogFeld.dispatchEvent(new Event('change',{bubbles:true}));
+};
+ortWahlenFuellen();
+
 function fillTimeOptions(){
   const options=['<option value="">Bitte auswählen</option>'];
   for(let hour=0;hour<24;hour++){
-    for(let minute=0;minute<60;minute+=10){
+    for(let minute=0;minute<60;minute+=5){
       const value=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
       options.push(`<option value="${value}">${value}</option>`);
     }
@@ -5304,15 +5403,7 @@ function openClient(id=''){
   $('hausnummer').value=c.hausnummer||'';
   $('plz').value=c.plz||'';
   $('ort').value=c.ort||'';
-  $('kontaktperson1').value=c.kontaktperson1||'';
-  $('telefon1').value=c.telefon1||'';
-  $('kontaktperson2').value=c.kontaktperson2||'';
-  $('telefon2').value=c.telefon2||'';
-  [1,2].forEach(n=>{
-    $('kontakt'+n+'Rolle').value=c['kontakt'+n+'_rolle']||'';
-    $('kontakt'+n+'Adresse').value=c['kontakt'+n+'_adresse']||'';
-    $('kontakt'+n+'Email').value=c['kontakt'+n+'_email']||'';
-  });
+  kontakteLaden(c);
   $('bemerkungen').value=c.bemerkungen||'';
   $('clientPortrait').value=c.portrait||'';
   updatePortraitVorschau();
@@ -5322,6 +5413,7 @@ function openClient(id=''){
   $('deleteClientTop').classList.toggle('hidden',!id);
   $('dialogTitle').textContent=id?'Klient bearbeiten':'Klient anlegen';
   clientFormStand=clientFormWerte();
+  abschnitteZeigen($('clientForm'),Boolean(id));
   $('clientDialog').showModal();
 }
 
@@ -7306,7 +7398,7 @@ function openDocForm(id=''){
   $('docId').value=d.id||'';
   $('docDatum').value=d.datum||todayLocal();
   $('docLeistungsart').value=d.leistungsart||'Face-to-Face';
-  $('docOrt').value = d.ort_der_leistung || 'Wohnung Klient';
+  ortWahlSetzen($('docOrt'),d.ort_der_leistung);
 $('docKennziffer').value = d.kennziffer || '';
 updateKennzifferText();
   
@@ -7407,10 +7499,11 @@ function ortAusFahrtzweck(zweck){
 
   if(text.includes('begleitung'))return 'Begleitung außer Haus';
   if(text.includes('supa'))return 'SuPA Büro';
+  if(text.includes('büro'))return 'Büro';
   if(text.includes('telefon'))return 'Telefon';
   if(text.includes('online'))return 'Online';
 
-  return 'Wohnung Klient';
+  return ORT_WOHNUNG;
 }
 
 async function openDocFromTrip(tripId){
@@ -8273,6 +8366,9 @@ function openApprovalForm(id=''){
 
   $('deleteApproval').classList.toggle('hidden',!id);
   $('approvalDialogTitle').textContent=id?'Bewilligung bearbeiten':'Bewilligung anlegen';
+  // Ohne zugeordneten Bescheid bleibt der Abschnitt offen
+  $('approvalBescheidStatus').toggleAttribute('data-kurz-text',Boolean(bescheidAktuell));
+  abschnitteZeigen($('approvalForm'),Boolean(id));
   $('approvalFormDialog').showModal();
 }
 
@@ -8957,19 +9053,11 @@ $('clientForm').onsubmit=async e=>{
     hausnummer:$('hausnummer').value.trim()||null,
     plz:$('plz').value.trim()||null,
     ort:$('ort').value.trim()||null,
-    kontaktperson1:$('kontaktperson1').value.trim()||null,
-    telefon1:$('telefon1').value.trim()||null,
-    kontaktperson2:$('kontaktperson2').value.trim()||null,
-    telefon2:$('telefon2').value.trim()||null,
     bemerkungen:$('bemerkungen').value.trim()||null,
     portrait:$('clientPortrait').value||null,
     anrede:$('clientAnrede').value||null
   };
-  [1,2].forEach(n=>{
-    row['kontakt'+n+'_rolle']=$('kontakt'+n+'Rolle').value.trim()||null;
-    row['kontakt'+n+'_adresse']=$('kontakt'+n+'Adresse').value.trim()||null;
-    row['kontakt'+n+'_email']=$('kontakt'+n+'Email').value.trim()||null;
-  });
+  Object.assign(row,kontakteFuerSpeichern());
   const speichern=z=>id?Daten.from('clients').update(z).eq('id',id):Daten.from('clients').insert(z);
   let {error}=await speichern(row);
   // Falls die neuen Kontaktspalten noch fehlen: ohne sie speichern
@@ -10308,6 +10396,7 @@ function ausfallOhneFahrt(leistungsart){
 }
 const FAHRT_ERWARTET_BEI_ORT=[
   'Wohnung Klient',
+  'Wohnung Klient*in',
   'Begleitung außer Haus',
   'SuPA Büro'
 ];
@@ -12434,7 +12523,7 @@ async function loadEinstellungen(){
 
   const {data,error}=await Daten
     .from('einstellungen')
-    .select('auftragnehmer_name,auftragnehmer_adresse,portraits_ausgeblendet,beleg_pruefung_ignoriert')
+    .select('auftragnehmer_name,auftragnehmer_adresse,portraits_ausgeblendet,beleg_pruefung_ignoriert,eigene_orte')
     .eq('user_id',user.id)
     .maybeSingle();
 
@@ -12445,6 +12534,7 @@ async function loadEinstellungen(){
 
   meineEinstellungen=data||{};
   kopfNameZeigen();
+  ortWahlenFuellen();
 }
 
 /* Menü mit Unterseiten: zuerst eine Liste, ein Tipp öffnet das Thema */
@@ -15522,7 +15612,7 @@ async function beispieldatenLaden(){
       r=await Daten.from('dokumentationen').insert({
         id:did,user_id:user.id,client_id:cid,bewilligung_id:bid,datum,beginn,ende,
         dauer_minuten:100,fls:2,leistungsart:'Face-to-Face',
-        ort_der_leistung:begleitung?'Begleitung außer Haus':'Wohnung Klient',
+        ort_der_leistung:begleitung?'Begleitung außer Haus':'Wohnung Klient*in',
         kennziffer:(j%5)+1,dokumentation:k.texte[j],besonderheiten:null
       });
       pruefen(r,'Dokumentation');
@@ -15710,13 +15800,13 @@ async function testdatenAnlegen(){
 
     const adresse=k.strasse+' '+k.hausnummer+', '+k.plz+' '+k.ort;
     const termine=[
-      {d:'2026-09-08',b:'10:00',e:'11:40',min:100,ort:'Wohnung Klient',kz:'1',
+      {d:'2026-09-08',b:'10:00',e:'11:40',min:100,ort:'Wohnung Klient*in',kz:'1',
        t:'Besuch bei '+vorname+' '+nachname+'. Besprechung der Wochenplanung und Haushaltsorganisation.'},
       {d:'2026-09-22',b:'14:00',e:'15:40',min:100,ort:'Begleitung außer Haus',kz:'4',
        t:'Begleitung von '+k.name+' zum Arztbesuch. Fragen vorab gesammelt, Termin gut verlaufen.',fahrt:{ziel:k.arzt,km:8.4,zweck:'Klientenbesuch und Begleitung zum Arzt'},park:3.5},
       {d:'2026-10-13',b:'09:30',e:'11:10',min:100,ort:'Begleitung außer Haus',kz:'5',
        t:vorname+' wurde zum Amt begleitet, Unterlagen gemeinsam eingereicht.',fahrt:{ziel:k.amt,km:11.2,zweck:'Klientenbesuch und Behördengang'},park:4},
-      {d:'2026-10-27',b:'13:00',e:'14:40',min:100,ort:'Wohnung Klient',kz:'2',
+      {d:'2026-10-27',b:'13:00',e:'14:40',min:100,ort:'Wohnung Klient*in',kz:'2',
        t:'Tagesstruktur mit '+vorname+' besprochen, neuer Wochenplan erstellt.'}
     ];
     for(const t of termine){
@@ -16429,13 +16519,9 @@ function klientenbogenHtml(c,bewilligung){
     kbZeile('Telefon',kbTelefon(c.telefon))+
     kbZeile('Mobil',kbTelefon(c.mobil));
 
-  const kontakte=[1,2].map(n=>{
-    const name=String(c['kontaktperson'+n]||'').trim();
-    const rolle=String(c['kontakt'+n+'_rolle']||'').trim();
-    const adr=String(c['kontakt'+n+'_adresse']||'').trim();
-    const tel=c['telefon'+n];
-    const mail=c['kontakt'+n+'_email'];
-    if(!name&&!adr&&!tel&&!mail)return '';
+  const kontakte=kontakteAus(c).map((k,i)=>{
+    const n=i+1;
+    const name=k.name,rolle=k.rolle,adr=k.adresse,tel=k.telefon,mail=k.email;
     const erreichbarkeit=[kbTelefon(tel),kbEmail(mail)].filter(Boolean).join(' · ');
     return '<div class="kbo-kontakt"><span>'+esc(rolle||('Kontakt '+n))+'</span><span>'+
       (name?'<b>'+esc(name)+'</b><br>':'')+
@@ -16521,10 +16607,159 @@ async function klientenbogenOeffnen(id){
 // Merkt sich den Stand der Maske beim Öffnen, um ungespeicherte Änderungen zu erkennen
 let clientFormStand='';
 
+
+/* ---------- Klientenbogen: Kontaktpersonen / Institutionen ----------
+   Die ersten zwei liegen in den bisherigen Feldern, weitere in „kontakte_weitere“ (Liste). */
+const KONTAKT_FELDER=[['name','Name / Institution'],['rolle','Rolle'],['adresse','Adresse'],['telefon','Telefon'],['email','E-Mail']];
+let kontakte=[];
+function kontaktLeer(k){return !KONTAKT_FELDER.some(([f])=>String(k[f]||'').trim())}
+function kontakteAus(c){
+  const liste=[1,2].map(n=>({name:c['kontaktperson'+n]||'',rolle:c['kontakt'+n+'_rolle']||'',
+    adresse:c['kontakt'+n+'_adresse']||'',telefon:c['telefon'+n]||'',email:c['kontakt'+n+'_email']||''}));
+  try{
+    const w=JSON.parse(c.kontakte_weitere||'[]');
+    if(Array.isArray(w))w.forEach(k=>liste.push({name:k.name||'',rolle:k.rolle||'',adresse:k.adresse||'',telefon:k.telefon||'',email:k.email||''}));
+  }catch(e){}
+  return liste.filter(k=>!kontaktLeer(k));
+}
+function kontakteLaden(c){
+  kontakte=kontakteAus(c).map(k=>Object.assign(k,{offen:false}));
+  kontakteZeichnen();
+}
+function kontakteSauber(){
+  return kontakte.filter(k=>!kontaktLeer(k)).map(k=>{
+    const o={};KONTAKT_FELDER.forEach(([f])=>o[f]=String(k[f]||'').trim());return o;
+  });
+}
+function kontakteFuerSpeichern(){
+  const l=kontakteSauber();
+  const row={};
+  [1,2].forEach(n=>{
+    const k=l[n-1]||{};
+    row['kontaktperson'+n]=k.name||null;
+    row['telefon'+n]=k.telefon||null;
+    row['kontakt'+n+'_rolle']=k.rolle||null;
+    row['kontakt'+n+'_adresse']=k.adresse||null;
+    row['kontakt'+n+'_email']=k.email||null;
+  });
+  row.kontakte_weitere=l.length>2?JSON.stringify(l.slice(2)):null;
+  return row;
+}
+function kontakteZeichnen(){
+  const ziel=$('kontaktListe');
+  ziel.innerHTML=kontakte.map((k,i)=>{
+    if(k.offen){
+      return '<div class="kb-kontakt" data-i="'+i+'"><div class="grid">'+
+        KONTAKT_FELDER.map(([f,t])=>'<label'+(f==='adresse'?' class="span2"':'')+'>'+t+
+          '<input data-feld="'+f+'" value="'+esc(k[f]||'')+'" autocomplete="off"'+
+          (f==='telefon'?' type="tel" inputmode="tel"':f==='email'?' type="email" inputmode="email" autocapitalize="off"':'')+
+          (f==='rolle'?' placeholder="z. B. gesetzliche Betreuung, Pflegedienst"':f==='adresse'?' placeholder="Straße Nr., PLZ Ort"':'')+
+          '></label>').join('')+
+        '</div><div class="kontakt-knoepfe">'+
+        '<button type="button" class="secondary" data-aktion="fertig">Fertig</button>'+
+        '<button type="button" class="kn kn-loeschen danger kb-klein" data-aktion="weg">Entfernen</button></div></div>';
+    }
+    const zweite=[k.telefon,k.email].filter(Boolean).join(' · ');
+    return '<div class="kontakt-zeile" data-i="'+i+'"><div class="kontakt-text"><strong>'+esc(k.name||'(ohne Name)')+'</strong>'+
+      (k.rolle?' <span class="muted">· '+esc(k.rolle)+'</span>':'')+
+      (zweite?'<small>'+esc(zweite)+'</small>':'')+'</div>'+
+      '<button type="button" class="kn kn-bearbeiten secondary" data-aktion="bearbeiten">Bearbeiten</button></div>';
+  }).join('');
+}
+$('kontaktListe').addEventListener('input',e=>{
+  const f=e.target.dataset.feld;if(!f)return;
+  const i=Number(e.target.closest('[data-i]').dataset.i);
+  kontakte[i][f]=e.target.value;
+});
+$('kontaktListe').addEventListener('click',e=>{
+  const b=e.target.closest('[data-aktion]');if(!b)return;
+  const i=Number(b.closest('[data-i]').dataset.i);
+  const a=b.dataset.aktion;
+  if(a==='bearbeiten')kontakte[i].offen=true;
+  if(a==='fertig'){if(kontaktLeer(kontakte[i]))kontakte.splice(i,1);else kontakte[i].offen=false}
+  if(a==='weg'){
+    if(!kontaktLeer(kontakte[i])&&!confirm('Diesen Kontakt entfernen? Er wird beim Speichern gelöscht.'))return;
+    kontakte.splice(i,1);
+  }
+  kontakteZeichnen();
+  if(a==='bearbeiten'){const f=$('kontaktListe').querySelector('[data-i="'+i+'"] input');if(f)f.focus()}
+});
+$('kontaktNeu').onclick=()=>{
+  kontakte.forEach((k,i)=>{if(k.offen&&!kontaktLeer(k))k.offen=false});
+  kontakte=kontakte.filter(k=>!(k.offen&&kontaktLeer(k)));
+  kontakte.push({name:'',rolle:'',adresse:'',telefon:'',email:'',offen:true});
+  kontakteZeichnen();
+  const f=$('kontaktListe').querySelector('[data-i="'+(kontakte.length-1)+'"] input');
+  if(f){f.focus();f.scrollIntoView({block:'center',behavior:'smooth'})}
+};
+
+/* ---------- Formulare: ausgefüllte Abschnitte eingeklappt mit Kurzfassung ----------
+   Ein Abschnitt beginnt mit h3.kb-abschnitt und reicht bis zur nächsten Überschrift
+   bzw. den Knöpfen am Ende. */
+function abschnitteVorbereiten(form){
+  if(form.dataset.abschnitte)return;
+  form.dataset.abschnitte='1';
+  form.querySelectorAll('h3.kb-abschnitt').forEach(h=>{
+    const sek=document.createElement('section');
+    sek.className='abschnitt';
+    if(h.hasAttribute('data-immer-offen'))sek.dataset.immerOffen='1';
+    h.parentNode.insertBefore(sek,h);
+    const inhalt=document.createElement('div');inhalt.className='abschnitt-inhalt';
+    let n=h.nextSibling;
+    while(n&&!(n.nodeType===1&&(n.matches('h3.kb-abschnitt')||n.matches('.actions')))){
+      const weiter=n.nextSibling;inhalt.appendChild(n);n=weiter;
+    }
+    const titel=h.textContent.trim();
+    h.textContent='';
+    h.innerHTML='<span class="abschnitt-titel"></span><small class="abschnitt-kurz"></small>'+
+      '<button type="button" class="kn kn-bearbeiten secondary abschnitt-bearbeiten">Bearbeiten</button>';
+    h.querySelector('.abschnitt-titel').textContent=titel;
+    sek.appendChild(h);sek.appendChild(inhalt);
+    h.onclick=e=>{if(sek.classList.contains('zu')&&!e.target.closest('.abschnitt-bearbeiten'))h.querySelector('.abschnitt-bearbeiten').click()};
+    h.querySelector('.abschnitt-bearbeiten').onclick=()=>{
+      sek.classList.remove('zu');
+      const f=inhalt.querySelector('input:not([type=hidden]),select,textarea');if(f)f.focus();
+    };
+  });
+  // Pflichtfeld in einem eingeklappten Abschnitt: aufklappen, damit es gezeigt werden kann
+  form.addEventListener('invalid',e=>{const sek=e.target.closest('.abschnitt');if(sek)sek.classList.remove('zu')},true);
+}
+function feldKurz(f){
+  if(f.type==='hidden'||f.type==='checkbox'||f.closest('.hidden'))return '';
+  const v=String(f.value||'').trim();
+  if(!v)return '';
+  if(f.tagName==='SELECT'){const o=f.options[f.selectedIndex];return o?o.textContent.trim():v}
+  // Datum und Zahlen mit Beschriftung, sonst wäre unklar, was gemeint ist
+  const lab=f.closest('label');
+  const name=lab?[...lab.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim():'';
+  if(f.type==='date'&&/^\d{4}-\d\d-\d\d$/.test(v)){
+    const d=v.slice(8)+'.'+v.slice(5,7)+'.'+v.slice(0,4);
+    return name?name+' '+d:d;
+  }
+  if(f.inputMode==='decimal'&&name)return name+' '+v;
+  return v.length>50?v.slice(0,50)+' …':v;
+}
+function abschnittKurz(inhalt){
+  const teile=[...inhalt.querySelectorAll('input,select,textarea')].map(feldKurz).filter(Boolean);
+  inhalt.querySelectorAll('[data-kurz-text]').forEach(el=>{const t=el.textContent.trim();if(t&&!el.closest('.hidden'))teile.push(t)});
+  const text=teile.join(' · ');
+  return text.length>120?text.slice(0,120)+' …':text;
+}
+// bearbeiten=true: Abschnitte mit Inhalt einklappen; neu anlegen: alles offen
+function abschnitteZeigen(form,bearbeiten){
+  abschnitteVorbereiten(form);
+  form.querySelectorAll('section.abschnitt').forEach(sek=>{
+    const inhalt=sek.querySelector('.abschnitt-inhalt');
+    const kurz=abschnittKurz(inhalt);
+    sek.querySelector('.abschnitt-kurz').textContent=kurz;
+    sek.classList.toggle('zu',bearbeiten&&Boolean(kurz)&&!sek.dataset.immerOffen);
+  });
+}
+
 function clientFormWerte(){
   return JSON.stringify(
     [...document.querySelectorAll('#clientForm input,#clientForm select,#clientForm textarea')]
-      .map(f=>f.value)
+      .map(f=>f.value).concat(JSON.stringify(kontakteSauber()))
   );
 }
 
@@ -16570,6 +16805,8 @@ $('backupData').onclick=()=>einstellungenOeffnen(false,'sicherung');
 
 const KAL_ORT_SYMBOL={
   'Wohnung Klient':'🏠',
+  'Wohnung Klient*in':'🏠',
+  'Büro':'🏢',
   'Begleitung außer Haus':'🚶',
   'SuPA Büro':'🏢',
   'Telefon':'📞',
@@ -17053,7 +17290,7 @@ async function kalDokuAusTermin(t){
   $('docBeginn').value=beginn;
   ensureTimeOption($('docEnde'),ende);
   $('docEnde').value=ende;
-  $('docOrt').value=t.ort||'Wohnung Klient';
+  ortWahlSetzen($('docOrt'),t.ort);
 
   updateDocDauer();
   docEndeManuell=true;
@@ -17085,7 +17322,7 @@ function kalTerminFormular(vorgabe={},termin=null){
   $('terminBeginn').value=kalZeit(t.beginn||vorgabe.beginn||'09:00');
   $('terminEnde').value=kalZeit(t.ende||vorgabe.ende||'10:00');
   $('terminArt').value=t.leistungsart||'Face-to-Face';
-  $('terminOrt').value=t.ort||'Wohnung Klient';
+  ortWahlSetzen($('terminOrt'),t.ort);
   $('terminNotiz').value=t.notiz||'';
   $('terminWiederholung').value='0';
   $('terminBis').value='';
