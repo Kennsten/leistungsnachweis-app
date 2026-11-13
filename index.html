@@ -575,6 +575,12 @@ dialog .top{
   border-bottom:1px solid var(--line);
 }
 dialog::backdrop{background:rgba(47,58,52,.38)}
+/* Installierte App am iPhone: Fenster nicht unter Uhrzeit/Kamera-Aussparung und Home-Leiste legen,
+   damit „Schließen“ immer antippbar bleibt */
+dialog:modal{
+  inset:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) 0;
+  max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);
+}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;row-gap:4px}
 .grid label{min-width:0}
 .span2{grid-column:1/-1}
@@ -3947,7 +3953,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.7 Verkaufsversion';
+const APP_VERSION='0.26.8 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
