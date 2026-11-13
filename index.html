@@ -317,12 +317,11 @@ dialog label.tour-nicht-mehr{margin:12px 20px 16px;font-size:.9rem;color:var(--m
 .fenster-aktionen button{margin:0;min-width:0}
 @media (min-width:640px){.fenster-aktionen{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
 /* Route für Karten-App: Stopps zum Kopieren, Sicherheitshinweis mit Wegklick-Stufen */
-.jahr-box{margin:12px 0 8px;padding:14px 16px;border-radius:var(--radius-item,14px);background:var(--brand-dark);color:var(--on-brand)}
-.jahr-box .summary-row span,.jahr-box .summary-row strong{color:var(--on-brand)}
-.jahr-kopf{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.3);font-size:1.05rem;font-weight:700}
+.jahr-box{margin:12px 0 8px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius-item,14px);background:var(--accent);color:var(--ink)}
+.jahr-kopf{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--line);font-size:1.05rem;font-weight:700}
 .jahr-kopf strong{font-size:1.5rem}
 .monate-titel{margin:22px 0 8px;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.monat-karte{border:1.5px solid var(--line);border-left:5px solid var(--brand);border-radius:var(--radius-item,14px);padding:12px 14px;margin:0 0 14px;background:var(--card)}
+.monat-karte{border:1px solid var(--line);border-radius:var(--radius-item,14px);padding:12px 14px;margin:0 0 14px;background:var(--card)}
 .monat-kopf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .monat-kopf h3{margin:0;flex:1;font-size:1.05rem}
 .monat-marke{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--accent);color:var(--brand-dark)}
@@ -4082,7 +4081,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.33.0 Verkaufsversion';
+const APP_VERSION='0.33.1 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -14427,7 +14426,7 @@ function renderIncome(eintraege,jahr){
     return `
       <div class="monat-karte">
         <div class="monat-kopf"><span class="monat-marke">Monat</span><h3>${esc(monatLabel(monat))}</h3>
-          <strong class="monat-summe">${formatEuro(mEuroFls+mEuroWege)}</strong></div>
+          <strong class="monat-summe">ca. ${formatEuro(mEuroFls+mEuroWege)}</strong></div>
 
         <div class="income-table">
           ${zeilenHtml}
@@ -14448,7 +14447,7 @@ function renderIncome(eintraege,jahr){
           </div>
           <div class="summary-row">
             <span><strong>Monatssumme</strong></span>
-            <strong>${formatEuro(mEuroFls+mEuroWege)}</strong>
+            <strong>ca. ${formatEuro(mEuroFls+mEuroWege)}</strong>
           </div>
         </div>
       </div>
@@ -14468,7 +14467,7 @@ function renderIncome(eintraege,jahr){
     <div class="jahr-box">
       <div class="jahr-kopf">
         <span>Jahresübersicht ${esc(jahr)}</span>
-        <strong>${formatEuro(jahrEuroFls+jahrEuroWege)}</strong>
+        <strong>ca. ${formatEuro(jahrEuroFls+jahrEuroWege)}</strong>
       </div>
       <div class="summary-row">
         <span>Termine</span>
@@ -14484,7 +14483,7 @@ function renderIncome(eintraege,jahr){
       </div>
       <div class="summary-row">
         <span><strong>Jahressumme</strong></span>
-        <strong>${formatEuro(jahrEuroFls+jahrEuroWege)}</strong>
+        <strong>ca. ${formatEuro(jahrEuroFls+jahrEuroWege)}</strong>
       </div>
     </div>
 
