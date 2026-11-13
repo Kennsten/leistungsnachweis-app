@@ -18433,7 +18433,7 @@ init();
   const MERKER='qa-diktat-paket';
   const MIK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>';
   const STOPP='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/></svg>';
-  let worker=null,bereit=false,ladeVersprechen=null,auftragNr=0,erwartetMB=770;
+  let worker=null,bereit=false,ladeVersprechen=null,auftragNr=0,erwartetMB=770,letzteBewegung=0;
   const offen={};
   function lesen(k){try{return localStorage.getItem(k)}catch(e){return null}}
   function schreiben(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
@@ -18461,6 +18461,7 @@ init();
     worker.onmessage=e=>{
       const m=e.data||{};
       if(m.typ==='fortschritt'){
+        letzteBewegung=Date.now();
         // Die Gesamtgröße ist erst bekannt, wenn alle Dateien begonnen haben – bis dahin die Schätzung nehmen
         const gesamt=Math.max(m.gesamt,erwartetMB*1e6);
         const pz=Math.min(100,Math.round(m.geladen/gesamt*100));
@@ -18527,6 +18528,11 @@ init();
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
     $('diktatLaden').disabled=true;
     $('diktatStatus').textContent='Wird vorbereitet …';
+    letzteBewegung=Date.now();
+    // Hängt der Download (z. B. Verbindung weg), Bescheid geben statt endlos zu warten
+    const waechter=setInterval(()=>{
+      if(Date.now()-letzteBewegung>60000)$('diktatStatus').textContent='Der Download stockt – bitte Internetverbindung prüfen. Er läuft weiter, sobald die Verbindung wieder da ist.';
+    },10000);
     try{
       await laden();
       $('diktatFortschritt').classList.add('hidden');
@@ -18535,6 +18541,7 @@ init();
       $('diktatFortschritt').classList.add('hidden');
       toast('Sprachpaket konnte nicht geladen werden: '+e.message);
     }
+    clearInterval(waechter);
     $('diktatLaden').disabled=false;
     diktatSeiteZeigen();diktatStatusMenue();
   };
