@@ -1793,6 +1793,32 @@ dialog:modal{
 /* Einstellungen: Menü-Liste und Unterseiten */
 .einst-liste{display:flex;flex-direction:column;margin-top:6px;border:1px solid var(--line);
   border-radius:var(--radius-item);overflow:hidden;background:var(--card)}
+.einst-gruppe-titel{margin:18px 4px 6px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.einst-menue>.einst-gruppe-titel:first-child{margin-top:4px}
+/* Gruppen ohne sichtbare Zeile ausblenden (z. B. „Konto“ in der Vorführung) */
+.einst-liste:not(:has(.einst-zeile:not(.hidden)))
+,.einst-gruppe-titel:has(+ .einst-liste:not(:has(.einst-zeile:not(.hidden)))){display:none}
+body.vorfuehrung .einst-gruppe-titel:has(+ .einst-liste #einstKontoZeile),
+body.vorfuehrung .einst-liste:has(#einstKontoZeile){display:none}
+.einst-zeile.hidden:first-child+.einst-zeile,body.vorfuehrung .einst-zeile[data-seite="tresor"]+.einst-zeile{border-top:0}
+.einst-rechtliches{text-align:center;margin:18px 0 4px}
+/* Diktat: Mikrofon-Knopf an Textfeldern */
+.diktat-feld{position:relative;display:block;min-width:0}
+.diktat-feld>textarea{width:100%}
+body.diktat-an .diktat-feld>textarea{padding-right:52px}
+.diktat-knopf{display:none;position:absolute;right:8px;bottom:8px;width:38px;height:38px;min-height:0;margin:0;padding:0;
+  border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--brand-dark);cursor:pointer;
+  align-items:center;justify-content:center}
+body.diktat-an .diktat-knopf{display:flex}
+.diktat-knopf svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.diktat-knopf:hover,.diktat-knopf[aria-expanded="true"]{background:var(--accent);border-color:var(--brand)}
+.diktat-tipp{margin:6px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-item,12px);background:var(--accent);
+  font-weight:400;font-size:.9rem;line-height:1.45;color:var(--ink)}
+.diktat-tipp p{margin:0 0 6px}
+.diktat-tipp .link-knopf{margin-top:2px}
+.diktat-anleitung ol{margin:6px 0 10px;padding-left:1.3em;line-height:1.5}
+.diktat-anleitung li{margin:4px 0}
+.einst-rechtliches a{color:var(--muted)}
 a.einst-zeile{text-decoration:none;color:inherit}
 .einst-zeile{display:flex;align-items:center;gap:14px;width:100%;margin:0;padding:12px 14px;border:0;
   border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -2252,7 +2278,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
     <h3 class="kb-abschnitt">📝 Bemerkungen</h3>
     <div class="grid">
-      <label class="span2">Bemerkungen<textarea id="bemerkungen" rows="3"></textarea></label>
+      <label class="span2">Bemerkungen<textarea data-diktat id="bemerkungen" rows="3"></textarea></label>
     </div>
 
     <div class="actions">
@@ -2381,8 +2407,8 @@ a.einst-zeile{text-decoration:none;color:inherit}
           Bausteine verwalten
         </button>
       </div>
-      <label class="span2">Dokumentation<textarea id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
-      <label class="span2">Vereinbarungen / Besonderheiten<textarea id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
+      <label class="span2">Dokumentation<textarea data-diktat id="docText" rows="7" required placeholder="Inhalt, Verlauf und Ergebnis des Termins"></textarea></label>
+      <label class="span2">Vereinbarungen / Besonderheiten<textarea data-diktat id="docBesonderheiten" rows="3" placeholder="Optional"></textarea></label>
     </div>
     <div style="margin-bottom:10px">
       <button type="button" id="saveDocAndTrip" class="secondary" style="width:100%">
@@ -2462,7 +2488,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       </label>
       <label id="approvalLeistungstraegerNameWrap" class="hidden">Name des sonstigen Leistungsträgers<input id="approvalLeistungstraegerName" placeholder="z. B. Stadt Peine"></label>
       <label>Ansprechpartner<input id="approvalAnsprechpartner"></label>
-      <label class="span2">Bemerkungen<textarea id="approvalBemerkungen" rows="3"></textarea></label>
+      <label class="span2">Bemerkungen<textarea data-diktat id="approvalBemerkungen" rows="3"></textarea></label>
 
       <div class="span2 summary-box" style="margin:8px 0">
         <div style="font-weight:650;margin-bottom:6px">Bewilligungsbescheid (aus pCloud)</div>
@@ -2729,7 +2755,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </details>
 
   <label class="span2">Bemerkungen
-    <textarea id="tripNotes" rows="3" placeholder="Optional"></textarea>
+    <textarea data-diktat id="tripNotes" rows="3" placeholder="Optional"></textarea>
   </label>
     </div>
 
@@ -3041,72 +3067,80 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </div>
 
   <!-- Menü: eine Zeile je Thema -->
-  <nav id="settingsMenue" class="einst-liste" aria-label="Einstellungen">
-    <button type="button" class="einst-zeile" data-seite="angaben">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></span>
-      <span class="einst-text"><strong>Meine Angaben</strong><small id="einstStatusAngaben"></small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile" data-seite="tresor">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
-      <span class="einst-text"><strong>Tresor und Sicherheit</strong><small id="einstStatusTresor"></small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile" data-seite="sicherung">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 4v10M8 10l4 4 4-4"/></svg></span>
-      <span class="einst-text"><strong>Datensicherung</strong><small id="einstStatusSicherung"></small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile nur-voll" data-seite="cloud">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19H7a4 4 0 0 1-.8-7.9 5.5 5.5 0 0 1 10.6-1.4A4.7 4.7 0 0 1 17.5 19z"/></svg></span>
-      <span class="einst-text"><strong>Dokumente und Cloud</strong><small id="einstStatusCloud"></small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile" data-seite="geraet">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span>
-      <span class="einst-text"><strong>Dieses Gerät</strong><small id="einstStatusGeraet"></small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile" id="einstSteuerpaket">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3M4 13h16M11 13v2h2v-2"/></svg></span>
-      <span class="einst-text"><strong>Steuerpaket</strong><small>Fahrten, Ausgaben und Belege für die Steuerberatung</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile hidden" data-seite="beispiel" id="einstBeispielZeile">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
-      <span class="einst-text"><strong>Beispieldaten und Rundgang</strong><small>Erfundene Klient*innen laden oder entfernen, Rundgang „So hilft dir QA“</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile hidden" data-seite="verwaltung" id="einstVerwaltungZeile">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c2 .8 3.5 2.6 3.5 5.4"/></svg></span>
-      <span class="einst-text"><strong>Testkonten verwalten</strong><small>Testzugänge freischalten, verlängern, sperren</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile" data-seite="konto" id="einstKontoZeile">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>
-      <span class="einst-text"><strong>Konto und App löschen</strong><small>Konto auflösen, Daten und App entfernen</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <button type="button" class="einst-zeile" data-anleitung id="einstInstallZeile">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg></span>
-      <span class="einst-text"><strong>App installieren</strong><small>Als App aufs Gerät legen – mit Anleitung</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
-    <a class="einst-zeile" href="datenschutz.html" target="_blank" rel="noopener" id="einstDatenschutzZeile">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-      <span class="einst-text"><strong>Datenschutzerklärung</strong><small>Welche Daten die App verarbeitet und wer sie erhält</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </a>
-    <a class="einst-zeile" href="impressum.html" target="_blank" rel="noopener" id="einstImpressumZeile">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></span>
-      <span class="einst-text"><strong>Impressum</strong><small>Anbieter der App und Kontakt</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </a>
-    <button type="button" class="einst-zeile" id="einladenKnopf">
-      <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
-      <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
-      <span class="einst-pfeil" aria-hidden="true"></span>
-    </button>
+  <nav id="settingsMenue" class="einst-menue" aria-label="Einstellungen">
+    <h3 class="einst-gruppe-titel">Meine Arbeit</h3>
+    <div class="einst-liste">
+      <button type="button" class="einst-zeile" data-seite="angaben">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></span>
+        <span class="einst-text"><strong>Meine Angaben</strong><small id="einstStatusAngaben"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile" data-seite="diktat">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></span>
+        <span class="einst-text"><strong>Schreiben und Diktieren</strong><small id="einstStatusDiktat"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile" id="einstSteuerpaket">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3M4 13h16M11 13v2h2v-2"/></svg></span>
+        <span class="einst-text"><strong>Steuerpaket</strong><small>Fahrten, Ausgaben und Belege für die Steuerberatung</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+    </div>
+    <h3 class="einst-gruppe-titel">Sicherheit und Daten</h3>
+    <div class="einst-liste">
+      <button type="button" class="einst-zeile" data-seite="tresor">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+        <span class="einst-text"><strong>Tresor und Sicherheit</strong><small id="einstStatusTresor"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile" data-seite="sicherung">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 4v10M8 10l4 4 4-4"/></svg></span>
+        <span class="einst-text"><strong>Datensicherung</strong><small id="einstStatusSicherung"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile nur-voll" data-seite="cloud">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19H7a4 4 0 0 1-.8-7.9 5.5 5.5 0 0 1 10.6-1.4A4.7 4.7 0 0 1 17.5 19z"/></svg></span>
+        <span class="einst-text"><strong>Dokumente und Cloud</strong><small id="einstStatusCloud"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile" data-seite="geraet">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span>
+        <span class="einst-text"><strong>Dieses Gerät</strong><small id="einstStatusGeraet"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+    </div>
+    <h3 class="einst-gruppe-titel">Hilfe und Weitergeben</h3>
+    <div class="einst-liste">
+      <button type="button" class="einst-zeile hidden" data-seite="beispiel" id="einstBeispielZeile">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
+        <span class="einst-text"><strong>Beispieldaten und Rundgang</strong><small>Erfundene Klient*innen laden oder entfernen, Rundgang „So hilft dir QA“</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile" data-anleitung id="einstInstallZeile">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg></span>
+        <span class="einst-text"><strong>App installieren</strong><small>Als App aufs Gerät legen – mit Anleitung</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile" id="einladenKnopf">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M19 8v6M16 11h6"/></svg></span>
+        <span class="einst-text"><strong>Kolleg*innen einladen</strong><small>QR-Code und Link zur App</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="einst-zeile hidden" data-seite="verwaltung" id="einstVerwaltungZeile">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c2 .8 3.5 2.6 3.5 5.4"/></svg></span>
+        <span class="einst-text"><strong>Testkonten verwalten</strong><small>Testzugänge freischalten, verlängern, sperren</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+    </div>
+    <h3 class="einst-gruppe-titel">Konto</h3>
+    <div class="einst-liste">
+      <button type="button" class="einst-zeile" data-seite="konto" id="einstKontoZeile">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>
+        <span class="einst-text"><strong>Konto und App löschen</strong><small>Konto auflösen, Daten und App entfernen</small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
+    </div>
+    <p class="einst-rechtliches small"><a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a> · <a href="impressum.html" target="_blank" rel="noopener">Impressum</a></p>
   </nav>
 
   <!-- Seite: Beispieldaten (Testversion und Verwaltung) -->
@@ -3292,6 +3326,20 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <div class="actions">
       <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
       <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
+    </div>
+  </section>
+
+  <!-- Seite: Schreiben und Diktieren -->
+  <section class="einst-seite hidden" data-seite="diktat" data-titel="Schreiben und Diktieren">
+    <p class="muted small">Statt zu tippen kannst du Texte einsprechen – mit der Diktierfunktion deines Geräts. Das geht in jedem Textfeld. Mit dem Mikrofon-Knopf findest du sie schneller und bekommst die passende Anleitung.</p>
+    <label class="sicherung-haken"><input type="checkbox" id="diktatAn"><span>Mikrofon-Knopf in Textfeldern anzeigen<small class="muted" style="display:block;font-weight:400">bei Dokumentation, Bemerkungen, Notizen und Textbausteinen</small></span></label>
+    <h3>So diktierst du auf diesem Gerät</h3>
+    <div id="diktatAnleitung" class="diktat-anleitung"></div>
+    <h3>Datenschutz beim Diktieren</h3>
+    <div id="diktatDatenschutz" class="sich-hinweis"></div>
+    <p class="muted small">Tipp: Sprich statt voller Namen nur Kürzel oder Vornamen ein – so gelangen auch bei einer Erkennung im Internet keine eindeutigen Angaben nach außen.</p>
+    <div class="actions">
+      <button type="button" id="diktatTippZurueck" class="secondary">Kurzanleitung am Mikrofon wieder anzeigen</button>
     </div>
   </section>
 </dialog>
@@ -3529,7 +3577,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     </label>
 
     <label>Text
-      <textarea id="snippetText" rows="5" required
+      <textarea data-diktat id="snippetText" rows="5" required
         placeholder="Der Text, der eingefügt werden soll"></textarea>
     </label>
 
@@ -3813,7 +3861,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       </label>
 
       <label class="span2">Bemerkungen
-        <textarea id="expenseNotes" rows="2" placeholder="Optional"></textarea>
+        <textarea data-diktat id="expenseNotes" rows="2" placeholder="Optional"></textarea>
       </label>
 
       <div class="span2 summary-box" id="expenseBelegBox" style="margin:8px 0">
@@ -3945,7 +3993,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <div id="terminSerieInfo" class="kennziffer-text span2 hidden"></div>
 
       <label class="span2">Notiz
-        <textarea id="terminNotiz" rows="2" placeholder="Optional"></textarea>
+        <textarea data-diktat id="terminNotiz" rows="2" placeholder="Optional"></textarea>
       </label>
     </div>
 
@@ -3981,7 +4029,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.27.1 Verkaufsversion';
+const APP_VERSION='0.28.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -12413,6 +12461,7 @@ function einstellungenSeite(name){
   if(name==='sicherung'&&IST_VORFUEHRUNG&&typeof nurVollversion==='function'&&
      nurVollversion('Die Datensicherung'))return;
   if(name==='sicherung')sicherungZieleZeigen();
+  if(name==='diktat'&&typeof diktatSeiteZeigen==='function')diktatSeiteZeigen();
   const menue=name==='menue';
   einstAktuelleSeite=name;
   $('settingsMenue').classList.toggle('hidden',!menue);
@@ -12437,6 +12486,7 @@ function einstellungenStatusZeigen(){
   const name=auftragnehmerName();
   $('einstStatusAngaben').textContent=name||'Bitte ausfüllen';
   $('einstStatusTresor').textContent='Sperrt nach 30 Minuten';
+  if(typeof diktatStatusText==='function')$('einstStatusDiktat').textContent=diktatStatusText();
 
   let sicherung='noch keine Sicherung';
   let sicherungLang='Noch keine Sicherung vorhanden.';
@@ -18108,6 +18158,126 @@ init();
         });
       }
     </script>
+<script>
+/* ---------- Diktieren: Mikrofon-Knopf an Textfeldern (Diktierfunktion des Geräts) ----------
+   Eine Webseite darf die Diktierfunktion nicht selbst starten. Der Knopf setzt den Cursor ins Feld
+   (Tastatur geht auf) und zeigt, wie das Diktat auf diesem Gerät startet. */
+(function(){
+  const MIK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>';
+  const ua=navigator.userAgent;
+  const art=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?'ios'
+    :/Android/.test(ua)?'android':/Macintosh/.test(ua)?'mac':/Windows/.test(ua)?'windows':'andere';
+  const SATZ='Satzzeichen sprichst du mit: „Punkt“, „Komma“, „Fragezeichen“, „neue Zeile“.';
+  const TEXTE={
+    ios:{
+      kurz:'Tippe auf der Tastatur auf das Mikrofon 🎤 und sprich. '+SATZ,
+      schritte:['Tippe ins Textfeld – die Tastatur erscheint.','Tippe auf der Tastatur auf das Mikrofon 🎤 (unten, neben der Leertaste).','Sprich deinen Text. '+SATZ,'Zum Beenden noch einmal auf das Mikrofon tippen.'],
+      fehlt:'Kein Mikrofon auf der Tastatur? Einstellungen → Allgemein → Tastatur → „Diktierfunktion“ einschalten.',
+      schutz:'Neuere iPhones und iPads erkennen Deutsch in der Regel direkt auf dem Gerät. Bei älteren Geräten kann das Gesprochene an Apple gesendet werden.',
+      probe:'So prüfst du es: Flugmodus einschalten und diktieren. Klappt es weiter, bleibt alles auf dem Gerät.'
+    },
+    android:{
+      kurz:'Tippe auf der Tastatur auf das Mikrofon 🎤 und sprich. '+SATZ,
+      schritte:['Tippe ins Textfeld – die Tastatur erscheint.','Tippe auf der Tastatur auf das Mikrofon 🎤 (bei der Google-Tastatur „Gboard“ oben rechts).','Sprich deinen Text. '+SATZ,'Zum Beenden noch einmal auf das Mikrofon tippen.'],
+      fehlt:'Kein Mikrofon? In den Einstellungen der Tastatur die „Spracheingabe“ einschalten.',
+      schutz:'Die Google-Tastatur erkennt Sprache nur dann auf dem Gerät, wenn das deutsche Sprachpaket geladen ist – sonst geht das Gesprochene an Google. Das Sprachpaket findest du in den Gboard-Einstellungen unter „Spracheingabe“ (je nach Version „Offline-Spracherkennung“ oder „Sprachen“) → Deutsch herunterladen.',
+      probe:'So prüfst du es: Flugmodus einschalten und diktieren. Klappt es weiter, bleibt alles auf dem Gerät.'
+    },
+    mac:{
+      kurz:'Drücke jetzt zweimal kurz die Taste „fn“ (oder die Mikrofon-Taste 🎤) und sprich. Beenden mit „fn“ oder Esc.',
+      schritte:['Klicke ins Textfeld.','Drücke zweimal kurz die Taste „fn“ – oder die Mikrofon-Taste 🎤 oben auf der Tastatur.','Sprich deinen Text. '+SATZ,'Zum Beenden „fn“ oder Esc drücken.'],
+      fehlt:'Passiert nichts? Systemeinstellungen → Tastatur → „Diktierfunktion“ einschalten.',
+      schutz:'Macs mit Apple-Chip (ab Ende 2020) erkennen Deutsch direkt auf dem Gerät. Ältere Macs mit Intel-Chip können das Gesprochene an Apple senden.',
+      probe:'So prüfst du es: WLAN ausschalten und diktieren. Klappt es weiter, bleibt alles auf dem Gerät.'
+    },
+    windows:{
+      kurz:'Drücke jetzt die Windows-Taste + H und sprich. Achtung: Die Erkennung läuft über Server von Microsoft – keine vollen Namen einsprechen.',
+      schritte:['Klicke ins Textfeld.','Drücke die Windows-Taste ⊞ und gleichzeitig die Taste H.','Sprich deinen Text. '+SATZ,'Zum Beenden auf das Mikrofon im Diktierfenster klicken.'],
+      fehlt:'Kommt eine Meldung zur „Online-Spracherkennung“? Die muss in Windows dafür eingeschaltet sein.',
+      schutz:'Achtung: Die Windows-Spracheingabe nutzt die Online-Spracherkennung von Microsoft. Das Gesprochene wird dabei an Server von Microsoft übertragen. Für Klientendaten diktierst du besser am Handy oder Tablet – oder sprichst nur Kürzel ein.',
+      probe:'',warn:true
+    },
+    andere:{
+      kurz:'Auf diesem Gerät gibt es meist keine eingebaute Diktierfunktion. Am Handy oder Tablet klappt es.',
+      schritte:['Auf diesem Gerät (z. B. Linux) gibt es meist keine eingebaute Diktierfunktion.','Am Handy oder Tablet geht es mit dem Mikrofon auf der Tastatur.'],
+      fehlt:'',schutz:'Wie die Sprache erkannt wird, hängt vom Programm ab, das du dafür nutzt.',probe:''
+    }
+  };
+  const T=TEXTE[art];
+  function lesen(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function schreiben(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  const istAn=()=>lesen('qa-diktat-an')==='1';
+  const tippAus=()=>lesen('qa-diktat-tipp-aus')==='1';
+  function anwenden(){document.body.classList.toggle('diktat-an',istAn())}
+
+  function tippSchliessen(feld){
+    const h=feld.closest('.diktat-feld');const t=h&&h.nextElementSibling;
+    if(t&&t.classList.contains('diktat-tipp'))t.remove();
+    const k=h&&h.querySelector('.diktat-knopf');if(k)k.setAttribute('aria-expanded','false');
+  }
+  function tippZeigen(feld,knopf){
+    const huelle=feld.closest('.diktat-feld');
+    const t=document.createElement('div');
+    t.className='diktat-tipp';t.setAttribute('role','status');
+    t.innerHTML='<p></p><button type="button" class="link-knopf">Nicht mehr anzeigen</button>';
+    t.querySelector('p').textContent=T.kurz;
+    t.querySelector('button').addEventListener('pointerdown',e=>e.preventDefault());
+    t.querySelector('button').onclick=()=>{schreiben('qa-diktat-tipp-aus','1');tippSchliessen(feld);feld.focus()};
+    huelle.after(t);
+    knopf.setAttribute('aria-expanded','true');
+  }
+  function ausstatten(feld){
+    if(feld.dataset.diktatFertig)return;
+    feld.dataset.diktatFertig='1';
+    const huelle=document.createElement('span');
+    huelle.className='diktat-feld';
+    feld.parentNode.insertBefore(huelle,feld);
+    huelle.appendChild(feld);
+    const knopf=document.createElement('button');
+    knopf.type='button';knopf.className='diktat-knopf';
+    knopf.setAttribute('aria-label','Diktieren: Text einsprechen');knopf.title='Diktieren';
+    knopf.setAttribute('aria-expanded','false');
+    knopf.innerHTML=MIK;
+    // Fokus im Feld lassen, damit die Tastatur offen bleibt
+    knopf.addEventListener('pointerdown',e=>e.preventDefault());
+    knopf.addEventListener('click',()=>{
+      const offen=knopf.getAttribute('aria-expanded')==='true';
+      feld.focus();
+      try{const n=feld.value.length;feld.setSelectionRange(n,n)}catch(e){}
+      if(offen){tippSchliessen(feld);return}
+      if(!tippAus())tippZeigen(feld,knopf);
+      else if((art==='mac'||art==='windows'||art==='andere')&&typeof toast==='function')toast(T.kurz);
+    });
+    feld.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==feld)tippSchliessen(feld)},200));
+    huelle.appendChild(knopf);
+  }
+  document.querySelectorAll('textarea[data-diktat]').forEach(ausstatten);
+  anwenden();
+
+  // Einstellungsseite „Schreiben und Diktieren“
+  window.diktatSeiteZeigen=function(){
+    document.getElementById('diktatAn').checked=istAn();
+    const a=document.getElementById('diktatAnleitung');
+    a.innerHTML='<ol></ol><p class="muted small"></p>';
+    T.schritte.forEach(x=>{const li=document.createElement('li');li.textContent=x;a.querySelector('ol').appendChild(li)});
+    a.querySelector('p').textContent=T.fehlt;
+    const d=document.getElementById('diktatDatenschutz');
+    d.innerHTML='<p></p>'+(T.probe?'<p></p>':'');
+    d.querySelectorAll('p')[0].textContent=T.schutz;
+    if(T.probe)d.querySelectorAll('p')[1].textContent=T.probe;
+    document.getElementById('diktatTippZurueck').classList.toggle('hidden',!tippAus());
+  };
+  window.diktatStatusText=()=>istAn()?'Mikrofon-Knopf an':'Texte einsprechen statt tippen';
+  document.getElementById('diktatAn').onchange=e=>{
+    schreiben('qa-diktat-an',e.target.checked?'1':null);anwenden();
+    const st=document.getElementById('einstStatusDiktat');if(st)st.textContent=window.diktatStatusText();
+  };
+  document.getElementById('diktatTippZurueck').onclick=()=>{
+    schreiben('qa-diktat-tipp-aus',null);window.diktatSeiteZeigen();
+    if(typeof toast==='function')toast('Die Kurzanleitung erscheint wieder am Mikrofon-Knopf.');
+  };
+})();
+</script>
 <script>
 /* Jedes Passwortfeld bekommt einen Knopf „Anzeigen“ – auch Felder, die später erscheinen (z. B. Tresor) */
 (function(){
