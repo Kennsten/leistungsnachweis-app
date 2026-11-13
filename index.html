@@ -1607,6 +1607,14 @@ dialog::backdrop{background:rgba(47,58,52,.38)}
 
 /* ---------- Textbausteine zusammensetzen ---------- */
 .tb-gruppe{margin-top:14px}
+/* Textbausteine einfügen: Vorschau und Übernehmen immer sichtbar am unteren Rand */
+.tb-neu-zeile{margin:10px 0 4px;text-align:center}
+.tb-fuss{position:sticky;bottom:-22px;margin:12px -22px -22px;padding:12px 22px 22px;background:var(--card);border-top:2px solid var(--brand);box-shadow:0 -10px 24px rgba(47,58,52,.12);z-index:2}
+.tb-vorschau-kopf{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tb-vorschau-kopf h3{margin:0;font-size:1.05rem;color:var(--brand-dark)}
+.tb-fuss .tb-vorschau{margin-top:8px;max-height:28vh;overflow:auto;border:2px solid var(--brand);border-style:solid;color:var(--ink);font-size:1rem}
+.tb-fuss .tb-vorschau.muted{color:var(--muted)}
+.tb-fuss .actions{margin-top:10px}
 .tb-gruppe h3{margin:0 0 6px;font-size:.95rem}
 .tb-chips{display:flex;flex-wrap:wrap;gap:8px}
 .tb-chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;text-align:left}
@@ -3529,18 +3537,19 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </div>
   <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
   <div id="snippetPickerList"></div>
-  <div style="margin-top:10px">
-    <button type="button" id="snippetPickerNew" class="kn kn-neu secondary" style="width:100%">
-      Textbaustein erstellen
-    </button>
-  </div>
-  <div class="tb-gruppe">
-    <h3>Vorschau</h3>
+  <p class="tb-neu-zeile">
+    <button type="button" id="snippetPickerNew" class="link-knopf">+ Neuen eigenen Textbaustein erstellen</button>
+  </p>
+  <div class="tb-fuss">
+    <div class="tb-vorschau-kopf">
+      <h3>Vorschau</h3>
+      <span class="muted small">So wird der Text in die Dokumentation übernommen</span>
+    </div>
     <div id="snippetPreview" class="tb-vorschau muted">Noch nichts ausgewählt.</div>
-  </div>
-  <div class="actions" style="margin-top:14px">
-    <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
-    <button type="button" id="snippetPickerInsert" class="kn kn-speichern primary">Text übernehmen</button>
+    <div class="actions">
+      <button type="button" id="snippetPickerReset" class="secondary">Auswahl leeren</button>
+      <button type="button" id="snippetPickerInsert" class="kn kn-speichern primary">Text übernehmen</button>
+    </div>
   </div>
 </dialog>
 
@@ -3933,7 +3942,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.1 Verkaufsversion';
+const APP_VERSION='0.26.2 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
