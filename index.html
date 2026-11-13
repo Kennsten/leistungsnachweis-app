@@ -124,6 +124,9 @@ input[type="time"]{
 }
 
 textarea{resize:vertical}
+/* iPhone/iPad zoomen automatisch hinein, wenn ein Eingabefeld kleiner als 16 px beschriftet ist.
+   Auf Touch-Geräten deshalb mindestens 16 px, damit Fenster nicht aus dem Bild rutschen. */
+@media (pointer:coarse){input,select,textarea{font-size:max(16px,1em)!important}}
 textarea.mitwachsen{resize:none;overflow:hidden;line-height:1.35;min-height:48px}
 /* Zwischenstopps: eine Zeile pro Stopp, mit Linien zur Orientierung */
 textarea.stopp-feld{line-height:28px;padding-top:10px;padding-bottom:10px;
@@ -3943,7 +3946,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.5 Verkaufsversion';
+const APP_VERSION='0.26.6 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
