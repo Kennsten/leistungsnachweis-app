@@ -1804,6 +1804,13 @@ body.vorfuehrung .einst-liste:has(#einstKontoZeile){display:none}
 .einst-rechtliches{text-align:center;margin:18px 0 4px}
 
 .einst-rechtliches a{color:var(--muted)}
+/* Erklärtexte: wegklickbar, in den Einstellungen wieder einschaltbar */
+.erkl{position:relative;padding-right:30px!important}
+.erkl-weg{position:absolute;top:0;right:0;width:28px;height:28px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;
+  background:transparent;color:var(--muted);font-size:1.05rem;line-height:1;cursor:pointer;opacity:.75}
+.erkl-weg:hover{background:var(--accent);opacity:1}
+.verschl-hinweis.erkl .erkl-weg,.portrait-hinweis.erkl .erkl-weg{top:4px;right:4px}
+[data-erklaerung].erkl-aus,body.erklaerungen-aus [data-erklaerung]{display:none!important}
 a.einst-zeile{text-decoration:none;color:inherit}
 .einst-zeile{display:flex;align-items:center;gap:14px;width:100%;margin:0;padding:12px 14px;border:0;
   border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -2127,7 +2134,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     </button>
   </div>
 
-  <div class="verschl-hinweis">
+  <div class="verschl-hinweis" data-erklaerung>
     <span class="verschl-ico" aria-hidden="true"></span>
     <p><strong>Deine Daten sind verschlüsselt.</strong> Auf dem Server in Deutschland liegen nur unlesbare Kopien, damit du auf mehreren Geräten arbeiten kannst. Den Schlüssel hast nur du.</p>
   </div>
@@ -2209,7 +2216,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       </label>
       <label>Geburtstag<input id="geburtstag" type="date"></label>
       <label>Kennung (Klienten-ID)<input id="clientCode" required placeholder="K001"></label>
-      <p class="muted small" style="grid-column:1/-1;margin:-.2em 0 .4em">Bitte immer eine Kennung vergeben (K001, K002, K003 …). Nur damit können Fahrten, Abrechnung und Steuerunterlagen ohne den Namen des Klienten verarbeitet werden. Die Kennung steht auch auf neutralen Ordnern und Dateien.</p>
+      <p class="muted small" data-erklaerung style="grid-column:1/-1;margin:-.2em 0 .4em">Bitte immer eine Kennung vergeben (K001, K002, K003 …). Nur damit können Fahrten, Abrechnung und Steuerunterlagen ohne den Namen des Klienten verarbeitet werden. Die Kennung steht auch auf neutralen Ordnern und Dateien.</p>
       <label>Aktenzeichen<input id="aktenzeichen"></label>
     </div>
 
@@ -2257,7 +2264,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
           </div>
         </div>
         <p class="muted small" id="portraitName"></p>
-        <p class="muted small">Das Porträt wird im Design „Comic“ angezeigt, in den anderen Designs die Initialen.</p>
+        <p class="muted small" data-erklaerung>Das Porträt wird im Design „Comic“ angezeigt, in den anderen Designs die Initialen.</p>
       </div>
     </div>
 
@@ -2282,12 +2289,12 @@ a.einst-zeile{text-decoration:none;color:inherit}
     </div>
     <button autofocus type="button" id="closePortraitPicker" class="kn kn-schliessen secondary">Schließen</button>
   </div>
-  <p class="muted small">Ein Bild antippen, dann wird es übernommen. Mit dem × entfernst du ein Bild aus der Auswahl.</p>
+  <p class="muted small" data-erklaerung>Ein Bild antippen, dann wird es übernommen. Mit dem × entfernst du ein Bild aus der Auswahl.</p>
   <div id="portraitGrid" class="portrait-grid"></div>
   <div id="portraitAlleWeg" style="margin-top:10px"></div>
 
   <h3 class="kb-abschnitt">Eigene Bilder</h3>
-  <div class="portrait-hinweis">
+  <div class="portrait-hinweis" data-erklaerung>
     <strong>Bitte keine echten Fotos von Klient*innen hochladen.</strong>
     Das schützt ihre Daten. Nimm lieber Zeichnungen oder Bilder, auf denen niemand zu erkennen ist.
     Hochgeladene Bilder werden verkleinert und wie alle deine Daten auf deinem Gerät verschlüsselt, bevor sie abgeglichen werden.
@@ -2613,7 +2620,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     </div>
     <button autofocus type="button" id="closeKarte" class="kn kn-schliessen secondary">Schließen</button>
   </div>
-  <p id="karteTipp" class="muted small karte-tipp">✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die farbige Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen.</p>
+  <p id="karteTipp" class="muted small karte-tipp" data-erklaerung>✋ Weicht die Strecke vom tatsächlichen Weg ab? Auf die farbige Linie tippen und den weißen Punkt auf die gefahrene Straße ziehen. Einen weißen Punkt antippen, um ihn zu entfernen.</p>
   <div id="karteEtappen" class="karte-etappen hidden" role="group" aria-label="Abschnitte der Strecke"></div>
   <div id="karteAnpassung" class="karte-anpassung hidden">
     <span id="karteAnpassungText"></span>
@@ -2888,7 +2895,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </div>
 
   <div id="whAuswahl">
-    <p class="muted small">Wähle eine Sicherung. Vor dem Wiederherstellen siehst du, was sie enthält, und musst noch einmal bestätigen.</p>
+    <p class="muted small" data-erklaerung>Wähle eine Sicherung. Vor dem Wiederherstellen siehst du, was sie enthält, und musst noch einmal bestätigen.</p>
     <h3>Gespeicherte Sicherungen</h3>
     <div id="whListe" class="wh-liste"><p class="muted">Wird geladen …</p></div>
     <h3 style="margin-top:18px">Datei von diesem Gerät</h3>
@@ -2936,7 +2943,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
   <p id="sicherungGeraetText"></p>
   <p><strong>Möchtest du die Sicherungsdatei auch auf diesem Gerät speichern?</strong></p>
   <label class="sicherung-haken"><input type="checkbox" id="sicherungGeraetMerken"> Nicht mehr fragen, meine Antwort merken</label>
-  <p class="muted small">Ändern kannst du das später in den Einstellungen unter „Datensicherung“.</p>
+  <p class="muted small" data-erklaerung>Ändern kannst du das später in den Einstellungen unter „Datensicherung“.</p>
   <div class="actions" style="margin-top:14px">
     <button type="button" id="sicherungGeraetNein" class="secondary">Nein</button>
     <button type="button" id="sicherungGeraetJa" class="kn kn-speichern primary">Ja, auf dem Gerät speichern</button>
@@ -2971,7 +2978,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </div>
   <div id="installDialogInhalt"></div>
   <div id="installDialogFuss" class="install-fuss hidden">
-    <p class="muted small">Du kannst die App jederzeit später installieren: <strong>Einstellungen → App installieren</strong>.</p>
+    <p class="muted small" data-erklaerung>Du kannst die App jederzeit später installieren: <strong>Einstellungen → App installieren</strong>.</p>
     <div class="actions"><button type="button" id="installImBrowser" class="secondary">Im Browser weiter</button></div>
   </div>
 </dialog>
@@ -2995,7 +3002,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <button type="button" id="einladenTeilen" class="primary">Link teilen</button>
     <button type="button" id="einladenKopieren" class="secondary">Link kopieren</button>
   </div>
-  <p class="muted small">Tipp beim Verschicken: Der Link sollte in Safari (iPhone/iPad) oder Chrome (Android) geöffnet werden, nicht direkt in WhatsApp oder Mail.</p>
+  <p class="muted small" data-erklaerung>Tipp beim Verschicken: Der Link sollte in Safari (iPhone/iPad) oder Chrome (Android) geöffnet werden, nicht direkt in WhatsApp oder Mail.</p>
 </dialog>
 
 <dialog id="kontoSperreDialog" class="konto-sperre">
@@ -3096,6 +3103,11 @@ a.einst-zeile{text-decoration:none;color:inherit}
         <span class="einst-text"><strong>Beispieldaten und Rundgang</strong><small>Erfundene Klient*innen laden oder entfernen, Rundgang „So hilft dir QA“</small></span>
         <span class="einst-pfeil" aria-hidden="true"></span>
       </button>
+      <button type="button" class="einst-zeile" data-seite="erklaerungen">
+        <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5"/></svg></span>
+        <span class="einst-text"><strong>Hinweise und Erklärungen</strong><small id="einstStatusErklaerungen"></small></span>
+        <span class="einst-pfeil" aria-hidden="true"></span>
+      </button>
       <button type="button" class="einst-zeile" data-anleitung id="einstInstallZeile">
         <span class="einst-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg></span>
         <span class="einst-text"><strong>App installieren</strong><small>Als App aufs Gerät legen – mit Anleitung</small></span>
@@ -3125,7 +3137,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <!-- Seite: Beispieldaten (Testversion und Verwaltung) -->
   <section class="einst-seite hidden" data-seite="beispiel" data-titel="Beispieldaten und Rundgang">
-    <p class="muted small">Drei erfundene Klient*innen (Kennungen B901 bis B903, Namen mit „(Beispiel)“) mit Bewilligungen, Dokumentationen, Fahrten und Belegen der letzten Wochen. So siehst du sofort, wie Kalender, Leistungsnachweis, Fahrtenbuch und Steuerpaket aussehen. Deine eigenen Einträge bleiben unverändert.</p>
+    <p class="muted small" data-erklaerung>Drei erfundene Klient*innen (Kennungen B901 bis B903, Namen mit „(Beispiel)“) mit Bewilligungen, Dokumentationen, Fahrten und Belegen der letzten Wochen. So siehst du sofort, wie Kalender, Leistungsnachweis, Fahrtenbuch und Steuerpaket aussehen. Deine eigenen Einträge bleiben unverändert.</p>
     <p id="beispielStand" class="einst-status"></p>
     <div class="actions">
       <button type="button" id="beispielLaden" class="primary">Beispieldaten laden</button>
@@ -3199,12 +3211,12 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <label>Name (Nachname, Vorname)
         <input id="settingsName" required placeholder="z. B. Muster, Maria" autocomplete="name">
       </label>
-      <p class="muted small">Erscheint im Leistungsnachweis als Auftragnehmer*in.</p>
+      <p class="muted small" data-erklaerung>Erscheint im Leistungsnachweis als Auftragnehmer*in.</p>
 
       <label>Meine Adresse (Start und Ziel der Fahrten)
         <input id="settingsAdresse" required placeholder="z. B. Musterstraße 1, 30159 Hannover" autocomplete="street-address">
       </label>
-      <p class="muted small">Wird bei neuen Fahrten automatisch als Start und Ziel eingetragen.</p>
+      <p class="muted small" data-erklaerung>Wird bei neuen Fahrten automatisch als Start und Ziel eingetragen.</p>
 
       <div class="actions">
         <button type="submit" id="settingsSave" class="kn kn-speichern primary">Speichern</button>
@@ -3214,7 +3226,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <!-- Seite: Tresor und Sicherheit -->
   <section class="einst-seite hidden" data-seite="tresor" data-titel="Tresor und Sicherheit">
-    <p class="muted small">Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
+    <p class="muted small" data-erklaerung>Schützt deine Klientendaten mit dem Tresor-Passwort. Die App sperrt sich nach 30 Minuten ohne Bedienung.</p>
     <p class="muted small" id="tresorPasskeyHinweis"></p>
     <div class="actions">
       <button type="button" id="tresorSperren" class="secondary">Jetzt sperren</button>
@@ -3264,7 +3276,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <!-- Seite: Dokumente und Cloud -->
   <section class="einst-seite hidden" data-seite="cloud" data-titel="Dokumente und Cloud">
-    <p class="muted small">Klientendokumente, Belege und Sicherungen liegen in deinem eigenen pCloud-Speicher. Die Verbindung gilt für dieses Gerät.</p>
+    <p class="muted small" data-erklaerung>Klientendokumente, Belege und Sicherungen liegen in deinem eigenen pCloud-Speicher. Die Verbindung gilt für dieses Gerät.</p>
     <div class="summary-box">
       <p style="margin:0"><strong>Alles wird verschlüsselt, bevor es dein Gerät verlässt.</strong> Der Anbieter sieht nur unlesbare Dateien.</p>
     </div>
@@ -3285,7 +3297,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <!-- Seite: Dieses Gerät -->
   <section class="einst-seite hidden" data-seite="geraet" data-titel="Dieses Gerät">
-    <p class="muted small">Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
+    <p class="muted small" data-erklaerung>Deine Daten liegen verschlüsselt auf diesem Gerät und werden mit deinen anderen Geräten abgeglichen. Bei einem fremden oder abgegebenen Gerät kannst du sie hier entfernen; sie bleiben auf deinen anderen Geräten und auf dem Server.</p>
     <h3>Kilometer-Berechnung</h3>
     <label>Wie sollen Kilometer berechnet werden?
       <select id="kmModusSelect">
@@ -3294,18 +3306,21 @@ a.einst-zeile{text-decoration:none;color:inherit}
       </select>
     </label>
     <div id="kmPaketBox" class="km-paket-box">
-      <p class="muted small">Für die Berechnung auf dem Gerät braucht die App einmalig ein <strong>Kartenpaket</strong> (Straßen und Adressen aus OpenStreetMap). Es wird von der App-Adresse geladen und bleibt auf diesem Gerät. Danach verlassen keine Adressen das Gerät – die Berechnung klappt auch ohne Internet. Am besten im WLAN herunterladen.</p>
+      <p class="muted small" data-erklaerung>Für die Berechnung auf dem Gerät braucht die App einmalig ein <strong>Kartenpaket</strong> (Straßen und Adressen aus OpenStreetMap). Es wird von der App-Adresse geladen und bleibt auf diesem Gerät. Danach verlassen keine Adressen das Gerät – die Berechnung klappt auch ohne Internet. Am besten im WLAN herunterladen.</p>
       <div id="kmPakete" class="km-pakete"><p class="muted small">Kartenpakete werden geprüft …</p></div>
     </div>
-    <p class="muted small">Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen.</p>
-    <h3>Sicherheitshinweise</h3>
-    <p class="muted small">Weggeklickte Hinweise erscheinen wieder.</p>
-    <div class="actions">
-      <button type="button" id="hinweiseZuruecksetzen" class="secondary">Alle Sicherheitshinweise wieder anzeigen</button>
-    </div>
+    <p class="muted small" data-erklaerung>Die Kilometer kannst du jederzeit von Hand eintragen. Bereits gespeicherte Strecken werden immer zuerst verwendet, dafür wird nichts übertragen.</p>
     <div class="actions">
       <button type="button" id="abgleichPruefenEinst" class="secondary hidden">Abgleich prüfen</button>
       <button type="button" id="geraetLeeren" class="kn kn-loeschen danger">Daten von diesem Gerät entfernen</button>
+    </div>
+  </section>
+
+  <!-- Seite: Hinweise und Erklärungen -->
+  <section class="einst-seite hidden" data-seite="erklaerungen" data-titel="Hinweise und Erklärungen">
+    <label class="sicherung-haken"><input type="checkbox" id="erklaerungenAn"> Erklärtexte anzeigen</label>
+    <div class="actions">
+      <button type="button" id="hinweiseZuruecksetzen" class="secondary">Alles Weggeklickte wieder anzeigen</button>
     </div>
   </section>
 </dialog>
@@ -3326,7 +3341,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
       <button type="button" id="routeKopieHinweisWeg" class="link-knopf">Ausblenden</button>
     </div>
   </div>
-  <p class="muted small">Ohne Hausnummern. Kopiere die Stopps nacheinander und füge sie in der Karten-App ein – in Google Maps jeden Stopp in ein eigenes Feld („Stopp hinzufügen“).</p>
+  <p class="muted small" data-erklaerung>Ohne Hausnummern. Kopiere die Stopps nacheinander und füge sie in der Karten-App ein – in Google Maps jeden Stopp in ein eigenes Feld („Stopp hinzufügen“).</p>
   <ol id="routeKopieListe" class="route-kopie-liste"></ol>
   <div class="fenster-aktionen">
     <button type="button" id="routeKopieGoogle" class="secondary">Google Maps leer öffnen</button>
@@ -3356,7 +3371,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <button autofocus type="button" id="spZu" class="kn kn-schliessen secondary">Schließen</button>
   </div>
 
-  <p class="muted small">Eine ZIP-Datei für die Steuerberatung: Fahrtenbuch, Betriebsausgaben, Bewirtungen und die Belege als normale Dateien (entschlüsselt). Keine Klientendokumente und Bescheide.</p>
+  <p class="muted small" data-erklaerung>Eine ZIP-Datei für die Steuerberatung: Fahrtenbuch, Betriebsausgaben, Bewirtungen und die Belege als normale Dateien (entschlüsselt). Keine Klientendokumente und Bescheide.</p>
 
   <div class="grid">
     <label>Jahr
@@ -3569,11 +3584,11 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <button type="button" id="snippetStartliste" class="secondary" style="width:100%">
       Vorgefertigte Bausteine wiederherstellen
     </button>
-    <p class="muted small">Holt gelöschte Bausteine aus der mitgelieferten Sammlung zurück. Vorhandene bleiben unverändert.</p>
+    <p class="muted small" data-erklaerung>Holt gelöschte Bausteine aus der mitgelieferten Sammlung zurück. Vorhandene bleiben unverändert.</p>
     <button type="button" id="snippetDoppelte" class="secondary" style="width:100%;margin-top:8px">
       Doppelte Bausteine entfernen
     </button>
-    <p class="muted small">Entfernt Bausteine mit gleicher Art, gleichem Titel und gleichem Text. Der älteste bleibt jeweils erhalten.</p>
+    <p class="muted small" data-erklaerung>Entfernt Bausteine mit gleicher Art, gleichem Titel und gleichem Text. Der älteste bleibt jeweils erhalten.</p>
   </div>
 
   <div id="snippetList"></div>
@@ -3587,7 +3602,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
     </div>
     <button autofocus type="button" id="closeSnippetPicker" class="kn kn-schliessen secondary">Schließen</button>
   </div>
-  <p class="muted small">Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
+  <p class="muted small" data-erklaerung>Bausteine antippen. Die Zahl zeigt die Reihenfolge innerhalb einer Gruppe. Nochmals antippen entfernt den Baustein.</p>
   <div id="snippetPickerList"></div>
   <p class="tb-neu-zeile">
     <button type="button" id="snippetPickerNew" class="link-knopf">+ Neuen eigenen Textbaustein erstellen</button>
@@ -3644,7 +3659,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
   <details id="rateNeu" class="satz-neu">
     <summary><span class="satz-neu-pfeil" aria-hidden="true"></span><span><strong>Neuen Satz eintragen</strong><small>z. B. wenn sich ab einem Datum ein Betrag ändert</small></span></summary>
     <form id="rateForm">
-      <p class="muted small">Es gibt <strong>zwei verschiedene Sätze</strong>. Trag jeweils den <strong>Betrag</strong> und das Datum ein, <strong>ab dem er gilt</strong>. Ändert sich nur ein Satz, lass den anderen Kasten leer – dann bleibt er unverändert.</p>
+      <p class="muted small" data-erklaerung>Es gibt <strong>zwei verschiedene Sätze</strong>. Trag jeweils den <strong>Betrag</strong> und das Datum ein, <strong>ab dem er gilt</strong>. Ändert sich nur ein Satz, lass den anderen Kasten leer – dann bleibt er unverändert.</p>
 
       <div class="satz-felder">
         <label class="satz-feld satz-fls">
@@ -3665,7 +3680,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
           <span class="feld-hinweis" id="rateWegeAktuell"></span>
         </label>
       </div>
-      <p class="muted small">Die blassen Zahlen in den Feldern (20,50 € und 8,00 €) sind nur Beispiele und entsprechen keinen echten Sätzen. Bitte deine vereinbarten Beträge eintragen.</p>
+      <p class="muted small" data-erklaerung>Die blassen Zahlen in den Feldern (20,50 € und 8,00 €) sind nur Beispiele und entsprechen keinen echten Sätzen. Bitte deine vereinbarten Beträge eintragen.</p>
 
       <label>Bemerkung (freiwillig)
         <input id="rateNote" placeholder="z. B. Vereinbarung 2026">
@@ -3995,7 +4010,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.28.2 Verkaufsversion';
+const APP_VERSION='0.29.0 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -6565,7 +6580,8 @@ function alleSicherheitshinweiseZuruecksetzen(){
       .forEach(k=>localStorage.removeItem(k));
   }catch(e){}
   dienstEinstellungenZeigen();
-  toast('Alle Sicherheitshinweise werden wieder angezeigt.');
+  if(typeof erklaerungenZuruecksetzen==='function')erklaerungenZuruecksetzen();
+  toast('Alle Hinweise und Erklärungen werden wieder angezeigt.');
 }
 $('hinweiseZuruecksetzen').onclick=alleSicherheitshinweiseZuruecksetzen;
 
@@ -12427,6 +12443,7 @@ function einstellungenSeite(name){
   if(name==='sicherung'&&IST_VORFUEHRUNG&&typeof nurVollversion==='function'&&
      nurVollversion('Die Datensicherung'))return;
   if(name==='sicherung')sicherungZieleZeigen();
+  if(name==='erklaerungen'&&typeof erklaerungenSeiteZeigen==='function')erklaerungenSeiteZeigen();
   const menue=name==='menue';
   einstAktuelleSeite=name;
   $('settingsMenue').classList.toggle('hidden',!menue);
@@ -12451,6 +12468,7 @@ function einstellungenStatusZeigen(){
   const name=auftragnehmerName();
   $('einstStatusAngaben').textContent=name||'Bitte ausfüllen';
   $('einstStatusTresor').textContent='Sperrt nach 30 Minuten';
+  if(typeof erklaerungenStatus==='function')$('einstStatusErklaerungen').textContent=erklaerungenStatus();
 
   let sicherung='noch keine Sicherung';
   let sicherungLang='Noch keine Sicherung vorhanden.';
@@ -18122,6 +18140,51 @@ init();
         });
       }
     </script>
+<script>
+/* ---------- Erklärtexte: mit × wegklicken, in Einstellungen wieder einschalten ---------- */
+(function(){
+  const AUS='qa-erklaerungen-weg', ALLE='qa-erklaerungen-aus';
+  function lesen(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function schreiben(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function weg(){try{return JSON.parse(lesen(AUS)||'[]')}catch(e){return []}}
+  function schluessel(el){
+    const t=(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,80);
+    let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;
+    return 'e'+(h>>>0).toString(36);
+  }
+  const alle=[...document.querySelectorAll('[data-erklaerung]')];
+  alle.forEach(el=>{
+    const k=schluessel(el);el.dataset.erklaerung=k;
+    el.classList.add('erkl');
+    const b=document.createElement('button');
+    b.type='button';b.className='erkl-weg';b.textContent='×';
+    b.setAttribute('aria-label','Erklärung ausblenden');b.title='Ausblenden';
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const liste=weg();if(!liste.includes(k))liste.push(k);
+      schreiben(AUS,JSON.stringify(liste));el.classList.add('erkl-aus');
+      if(!lesen('qa-erklaerungen-tipp')&&typeof toast==='function'){
+        schreiben('qa-erklaerungen-tipp','1');
+        toast('Ausgeblendet. Zurückholen: Einstellungen → Hinweise und Erklärungen.');
+      }
+    };
+    el.appendChild(b);
+  });
+  function anwenden(){
+    const liste=weg();
+    alle.forEach(el=>el.classList.toggle('erkl-aus',liste.includes(el.dataset.erklaerung)));
+    document.body.classList.toggle('erklaerungen-aus',lesen(ALLE)==='1');
+  }
+  anwenden();
+  window.erklaerungenZuruecksetzen=()=>{schreiben(AUS,null);schreiben(ALLE,null);anwenden();erklaerungenSeiteZeigen()};
+  window.erklaerungenStatus=()=>lesen(ALLE)==='1'?'Erklärtexte ausgeblendet':'Erklärtexte wegklicken oder zurückholen';
+  window.erklaerungenSeiteZeigen=()=>{document.getElementById('erklaerungenAn').checked=lesen(ALLE)!=='1'};
+  document.getElementById('erklaerungenAn').onchange=e=>{
+    schreiben(ALLE,e.target.checked?null:'1');anwenden();
+    const st=document.getElementById('einstStatusErklaerungen');if(st)st.textContent=erklaerungenStatus();
+  };
+})();
+</script>
 <script>
 /* Jedes Passwortfeld bekommt einen Knopf „Anzeigen“ – auch Felder, die später erscheinen (z. B. Tresor) */
 (function(){
