@@ -3087,7 +3087,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <!-- Seite: Beispieldaten (Testversion und Verwaltung) -->
   <section class="einst-seite hidden" data-seite="beispiel" data-titel="Beispieldaten und Rundgang">
-    <p class="muted small">Drei erfundene Klient*innen (Kennungen B901 bis B903, Namen mit „(Beispiel)“) mit Bewilligungen, Dokumentationen, Fahrten, Terminen und Belegen der letzten Wochen. So siehst du sofort, wie Kalender, Leistungsnachweis, Fahrtenbuch und Steuerpaket aussehen. Deine eigenen Einträge bleiben unverändert.</p>
+    <p class="muted small">Drei erfundene Klient*innen (Kennungen B901 bis B903, Namen mit „(Beispiel)“) mit Bewilligungen, Dokumentationen, Fahrten und Belegen der letzten Wochen. So siehst du sofort, wie Kalender, Leistungsnachweis, Fahrtenbuch und Steuerpaket aussehen. Deine eigenen Einträge bleiben unverändert.</p>
     <p id="beispielStand" class="einst-status"></p>
     <div class="actions">
       <button type="button" id="beispielLaden" class="primary">Beispieldaten laden</button>
@@ -3942,7 +3942,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.2 Verkaufsversion';
+const APP_VERSION='0.26.3 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -15076,7 +15076,7 @@ $('vollversionZu').onclick=()=>$('vollversionDialog').close();
 
 /* ----- Rundgang „So hilft dir QA“ (zeigt die Vorzüge) ----- */
 const TOUR=[
-  {t:'Willkommen bei QA',x:'<p>Weniger Papierkram, mehr Zeit für deine Klient*innen: Dokumentation, Fahrten, Abrechnung und Steuer in einer App – für freiberufliche Fachkräfte der Qualifizierten Assistenz.</p><p>In der Testversion kannst du <strong>Beispieldaten</strong> laden: drei erfundene Klient*innen mit Terminen, Dokumentationen, Fahrten und Belegen. So siehst du sofort, wie alles zusammenspielt.</p>',
+  {t:'Willkommen bei QA',x:'<p>Weniger Papierkram, mehr Zeit für deine Klient*innen: Dokumentation, Fahrten, Abrechnung und Steuer in einer App – für freiberufliche Fachkräfte der Qualifizierten Assistenz.</p><p>In der Testversion kannst du <strong>Beispieldaten</strong> laden: drei erfundene Klient*innen mit Dokumentationen, Fahrten und Belegen der letzten Wochen. So siehst du sofort, wie alles zusammenspielt.</p>',
    k:'Beispieldaten laden',a:()=>einstellungenOeffnen(false,'beispiel')},
   {t:'Dokumentieren in Minuten',x:'<p>Tägliche Einträge mit <strong>Textbausteinen</strong>, Kalender und Terminen. Ausfälle mit und ohne Fahrt werden richtig gezählt, die Fachleistungsstunden rechnet die App selbst.</p>'},
   {t:'Bewilligungen im Blick',x:'<p>Kontingente, verbrauchte Stunden, fällige Verlaufsberichte und die Fortschreibung des Gesamtplans – je Klient*in auf einen Blick. Die App erinnert dich, bevor ein Bericht fällig wird.</p>'},
@@ -15233,15 +15233,7 @@ async function beispieldatenLaden(){
           beleg_vorhanden:false,beleg_jahr:jahr});
       }
     }
-    // Zwei kommende Termine
-    for(let j=0;j<2;j++){
-      r=await Daten.from('termine').insert({
-        id:uid(),user_id:user.id,client_id:cid,datum:beispielTag(2+i+j*7),
-        beginn:['09:00','10:30','14:00'][i],ende:['10:40','12:10','15:40'][i],
-        leistungsart:'Face-to-Face',ort:'Wohnung Klient',notiz:'Beispieltermin '+BEISPIEL_MARKE
-      });
-      pruefen(r,'Termin');
-    }
+    // Keine geplanten Termine: die verwirren beim ersten Ansehen nur
   }
   // Allgemeine Fahrt und allgemeine Ausgaben
   let r=await Daten.from('trip_entries').insert({
@@ -15264,7 +15256,7 @@ async function beispieldatenLaden(){
     pruefen(r,'Ausgabe');
   }
   await loadClients();
-  toast('Beispieldaten geladen: 3 erfundene Klient*innen mit Terminen, Dokumentationen, Fahrten und Belegen.');
+  toast('Beispieldaten geladen: 3 erfundene Klient*innen mit Dokumentationen, Fahrten und Belegen.');
 }
 async function beispieldatenEntfernen(){
   const klienten=await beispielStand();
