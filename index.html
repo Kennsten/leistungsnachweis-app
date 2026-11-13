@@ -3331,13 +3331,18 @@ a.einst-zeile{text-decoration:none;color:inherit}
 
   <!-- Seite: Schreiben und Diktieren -->
   <section class="einst-seite hidden" data-seite="diktat" data-titel="Schreiben und Diktieren">
-    <p class="muted small">Statt zu tippen kannst du Texte einsprechen – mit der Diktierfunktion deines Geräts. Das geht in jedem Textfeld. Mit dem Mikrofon-Knopf findest du sie schneller und bekommst die passende Anleitung.</p>
-    <label class="sicherung-haken"><input type="checkbox" id="diktatAn"><span>Mikrofon-Knopf in Textfeldern anzeigen<small class="muted" style="display:block;font-weight:400">bei Dokumentation, Bemerkungen, Notizen und Textbausteinen</small></span></label>
+    <p class="muted small">Statt zu tippen kannst du Texte einsprechen – mit der Diktierfunktion deines Geräts. Für Klientendaten ist das nur erlaubt, wenn die Sprache <strong>auf dem Gerät</strong> erkannt und nicht an Apple, Google oder Microsoft übertragen wird. Deshalb gibt die App den Mikrofon-Knopf erst nach einer Prüfung frei.</p>
     <h3>So diktierst du auf diesem Gerät</h3>
     <div id="diktatAnleitung" class="diktat-anleitung"></div>
     <h3>Datenschutz beim Diktieren</h3>
     <div id="diktatDatenschutz" class="sich-hinweis"></div>
-    <p class="muted small">Tipp: Sprich statt voller Namen nur Kürzel oder Vornamen ein – so gelangen auch bei einer Erkennung im Internet keine eindeutigen Angaben nach außen.</p>
+    <h3>Mikrofon-Knopf freigeben</h3>
+    <div id="diktatFreigabe">
+      <label class="sicherung-haken"><input type="checkbox" id="diktatGeprueft"><span>Ich habe es geprüft: Das Diktat funktioniert auf diesem Gerät auch <strong>ohne Internet</strong> (Flugmodus bzw. WLAN aus).<small class="muted" style="display:block;font-weight:400">Damit ist sicher, dass die Sprache auf dem Gerät bleibt.</small></span></label>
+      <label class="sicherung-haken"><input type="checkbox" id="diktatAn"><span>Mikrofon-Knopf in Textfeldern anzeigen<small class="muted" style="display:block;font-weight:400">bei Dokumentation, Bemerkungen, Notizen und Textbausteinen</small></span></label>
+    </div>
+    <p id="diktatGesperrt" class="sich-hinweis hidden"></p>
+    <p class="muted small">Wichtig: Die App kann die Diktierfunktion der Tastatur nicht abschalten – das Mikrofon auf der Tastatur bleibt immer sichtbar. Auf Geräten, bei denen die Sprache ins Internet geht, bitte nicht diktieren oder nur Kürzel statt Namen einsprechen.</p>
     <div class="actions">
       <button type="button" id="diktatTippZurueck" class="secondary">Kurzanleitung am Mikrofon wieder anzeigen</button>
     </div>
@@ -4029,7 +4034,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.28.0 Verkaufsversion';
+const APP_VERSION='0.28.1 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -18192,9 +18197,9 @@ init();
     },
     windows:{
       kurz:'Drücke jetzt die Windows-Taste + H und sprich. Achtung: Die Erkennung läuft über Server von Microsoft – keine vollen Namen einsprechen.',
-      schritte:['Klicke ins Textfeld.','Drücke die Windows-Taste ⊞ und gleichzeitig die Taste H.','Sprich deinen Text. '+SATZ,'Zum Beenden auf das Mikrofon im Diktierfenster klicken.'],
-      fehlt:'Kommt eine Meldung zur „Online-Spracherkennung“? Die muss in Windows dafür eingeschaltet sein.',
-      schutz:'Achtung: Die Windows-Spracheingabe nutzt die Online-Spracherkennung von Microsoft. Das Gesprochene wird dabei an Server von Microsoft übertragen. Für Klientendaten diktierst du besser am Handy oder Tablet – oder sprichst nur Kürzel ein.',
+      schritte:['Die Spracheingabe von Windows (Windows-Taste + H) überträgt das Gesprochene an Server von Microsoft.','Für Klientendaten bitte deshalb nicht am Windows-Computer diktieren.','Diktiere stattdessen am Handy, Tablet oder Mac – nach dem Test ohne Internet.'],
+      fehlt:'',
+      schutz:'Achtung: Die Windows-Spracheingabe nutzt die Online-Spracherkennung von Microsoft. Das Gesprochene wird dabei an Server von Microsoft übertragen. Für Klientendaten bitte nicht am Windows-Computer diktieren.',
       probe:'',warn:true
     },
     andere:{
@@ -18206,7 +18211,10 @@ init();
   const T=TEXTE[art];
   function lesen(k){try{return localStorage.getItem(k)}catch(e){return null}}
   function schreiben(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
-  const istAn=()=>lesen('qa-diktat-an')==='1';
+  // Windows schickt die Sprache an Microsoft; andere Systeme haben meist keine Diktierfunktion
+  const GESPERRT=art==='windows'||art==='andere';
+  const geprueft=()=>lesen('qa-diktat-geprueft')==='1';
+  const istAn=()=>!GESPERRT&&geprueft()&&lesen('qa-diktat-an')==='1';
   const tippAus=()=>lesen('qa-diktat-tipp-aus')==='1';
   function anwenden(){document.body.classList.toggle('diktat-an',istAn())}
 
@@ -18257,6 +18265,14 @@ init();
   // Einstellungsseite „Schreiben und Diktieren“
   window.diktatSeiteZeigen=function(){
     document.getElementById('diktatAn').checked=istAn();
+    document.getElementById('diktatGeprueft').checked=!GESPERRT&&geprueft();
+    document.getElementById('diktatAn').disabled=GESPERRT||!geprueft();
+    document.getElementById('diktatFreigabe').classList.toggle('hidden',GESPERRT);
+    const sp=document.getElementById('diktatGesperrt');
+    sp.classList.toggle('hidden',!GESPERRT);
+    sp.textContent=art==='windows'
+      ? 'Auf Windows-Computern ist der Mikrofon-Knopf gesperrt: Die Spracheingabe von Windows überträgt das Gesprochene an Microsoft. Diktiere Dokumentationen am Handy oder Tablet.'
+      : 'Auf diesem Gerät ist der Mikrofon-Knopf gesperrt, weil es keine geprüfte Diktierfunktion auf dem Gerät gibt. Diktiere am Handy oder Tablet.';
     const a=document.getElementById('diktatAnleitung');
     a.innerHTML='<ol></ol><p class="muted small"></p>';
     T.schritte.forEach(x=>{const li=document.createElement('li');li.textContent=x;a.querySelector('ol').appendChild(li)});
@@ -18267,7 +18283,13 @@ init();
     if(T.probe)d.querySelectorAll('p')[1].textContent=T.probe;
     document.getElementById('diktatTippZurueck').classList.toggle('hidden',!tippAus());
   };
-  window.diktatStatusText=()=>istAn()?'Mikrofon-Knopf an':'Texte einsprechen statt tippen';
+  window.diktatStatusText=()=>GESPERRT?'Auf diesem Gerät gesperrt (Datenschutz)':istAn()?'Mikrofon-Knopf an':'Texte einsprechen statt tippen';
+  document.getElementById('diktatGeprueft').onchange=e=>{
+    schreiben('qa-diktat-geprueft',e.target.checked?'1':null);
+    if(!e.target.checked)schreiben('qa-diktat-an',null);
+    anwenden();window.diktatSeiteZeigen();
+    const st=document.getElementById('einstStatusDiktat');if(st)st.textContent=window.diktatStatusText();
+  };
   document.getElementById('diktatAn').onchange=e=>{
     schreiben('qa-diktat-an',e.target.checked?'1':null);anwenden();
     const st=document.getElementById('einstStatusDiktat');if(st)st.textContent=window.diktatStatusText();
