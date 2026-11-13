@@ -4074,7 +4074,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.31.2 Verkaufsversion';
+const APP_VERSION='0.31.3 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -18486,13 +18486,7 @@ init();
     return worker;
   }
   const STUFEN=['gpu','gemischt','cpu'];
-  // iPad/iPhone geben Speicher schlecht frei: nach jedem Diktat den Helfer neu starten
-  const APPLE_MOBIL=/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
-  function aufraeumen(){
-    if(!APPLE_MOBIL||!worker)return;
-    worker.terminate();worker=null;bereit=false;
-    setTimeout(()=>{laden().catch(()=>{})},800);   // für den nächsten Satz schon wieder bereitmachen
-  }
+
   function ladenEinmal(modus){
     const v={};v.p=new Promise((ok,nein)=>{v.ok=ok;v.nein=nein});
     ladeVersprechen=v;
@@ -18538,7 +18532,8 @@ init();
     const da=paketDa();
     if(!ladeLauf)$('diktatFortschritt').classList.add('hidden');
     $('diktatStatus').textContent=da
-      ? '✓ Sprachpaket ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')
+      ? '✓ Sprachpaket ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')+
+        ({gpu:' Stufe 1 (Grafik).',gemischt:' Stufe 2 (gemischt).',cpu:' Stufe 3 (Prozessor).'}[lesen('qa-diktat-modus')]||'')
       : 'Noch nicht geladen. Größe: ca. '+g.mb+' MB.';
     $('diktatLaden').classList.toggle('hidden',da);
     $('diktatLaden').textContent='Sprachpaket laden (ca. '+g.mb+' MB)';
@@ -18632,7 +18627,6 @@ init();
         await laden();
         const text=await umwandeln(audio);
         einfuegen(feld,text);
-        aufraeumen();
         hinweis(feld,text?'':'Es wurde kein Text erkannt.');
         if(text)setTimeout(()=>hinweis(feld,''),400);
       }catch(e){hinweis(feld,'Umwandeln fehlgeschlagen: '+e.message)}
