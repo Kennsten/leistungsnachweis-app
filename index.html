@@ -3602,7 +3602,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
         <label class="satz-feld satz-fls">
           <span class="satz-feld-kopf"><span class="satz-symbol" aria-hidden="true">🕒</span><span><strong>Fachleistungsstunde (FLS)</strong><small>je Stunde</small></span></span>
           <span class="satz-feld-zeile">
-            <span class="satz-feld-teil">Betrag in Euro<input id="rateFls" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 62,50"></span>
+            <span class="satz-feld-teil">Betrag in Euro<input id="rateFls" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 20,50"></span>
             <span class="satz-feld-teil">gültig ab<input id="rateFlsAb" type="date"></span>
           </span>
           <span class="feld-hinweis" id="rateFlsAktuell"></span>
@@ -3617,6 +3617,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
           <span class="feld-hinweis" id="rateWegeAktuell"></span>
         </label>
       </div>
+      <p class="muted small">Die blassen Zahlen in den Feldern (20,50 € und 8,00 €) sind nur Beispiele und entsprechen keinen echten Sätzen. Bitte deine vereinbarten Beträge eintragen.</p>
 
       <label>Bemerkung (freiwillig)
         <input id="rateNote" placeholder="z. B. Vereinbarung 2026">
@@ -3946,7 +3947,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.6 Verkaufsversion';
+const APP_VERSION='0.26.7 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -13948,7 +13949,8 @@ function renderRates(){
   );
   document.querySelectorAll('.editRate').forEach(
     b=>b.onclick=()=>{satzInBearbeitung=b.dataset.id;renderRates();
-      const feld=document.querySelector('.satz-bearbeiten .satzAbNeu');if(feld)feld.focus()}
+      // Kein Feld vorauswählen: sonst springt am iPhone sofort der Kalender auf
+      const zeile=document.querySelector('.satz-bearbeiten');if(zeile)zeile.scrollIntoView({block:'nearest'})}
   );
   const zeile=document.querySelector('.satz-bearbeiten');
   if(zeile){
