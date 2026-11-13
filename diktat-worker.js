@@ -48,6 +48,8 @@ function bereitmachen(modus) {
     erkenner = await pipeline('automatic-speech-recognition', MODELL, {
       device: wahl.device,
       dtype: wahl.dtype,
+      // Kein wachsender Vorrats-Speicher: sonst stürzt Safari auf dem iPad beim zweiten Satz ab
+      session_options: { enableCpuMemArena: false, enableMemPattern: false },
       progress_callback: (p) => {
         if (p.status !== 'progress' || !p.total) return;
         stand[p.file] = [p.loaded, p.total];
