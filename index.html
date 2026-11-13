@@ -4074,7 +4074,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.31.0 Verkaufsversion';
+const APP_VERSION='0.31.1 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -18470,6 +18470,7 @@ init();
         $('diktatStatus').textContent='Wird geladen … '+Math.round(m.geladen/1e6)+' von ca. '+Math.round(gesamt/1e6)+' MB ('+pz+' %)';
       }else if(m.typ==='bereit'){
         bereit=true;schreiben(MERKER,'1');anwenden();
+        if(m.modus)schreiben('qa-diktat-modus',m.modus);
         if(ladeVersprechen&&ladeVersprechen.ok)ladeVersprechen.ok(m);
       }else if(m.typ==='text'||m.typ==='fehler'){
         if(m.id&&offen[m.id]){offen[m.id](m);delete offen[m.id];return}
@@ -18484,21 +18485,40 @@ init();
     };
     return worker;
   }
+  const STUFEN=['gpu','gemischt','cpu'];
+  function ladenEinmal(modus){
+    const v={};v.p=new Promise((ok,nein)=>{v.ok=ok;v.nein=nein});
+    ladeVersprechen=v;
+    helfer().postMessage({typ:'laden',modus});
+    return v.p.finally(()=>{if(ladeVersprechen===v)ladeVersprechen=null});
+  }
+  // Probiert die Stufen nacheinander; die erste, die klappt, wird für dieses Gerät gemerkt
+  let ladeLauf=null;
   function laden(){
     if(bereit)return Promise.resolve();
-    if(ladeVersprechen)return ladeVersprechen.p;
-    const v={};v.p=new Promise((ok,nein)=>{v.ok=ok;v.nein=nein});
-    v.p.catch(()=>{}).then(()=>{});
-    ladeVersprechen=v;
-    helfer().postMessage({typ:'laden'});
-    v.p.then(()=>{ladeVersprechen=null},()=>{ladeVersprechen=null});
-    return v.p;
+    if(ladeLauf)return ladeLauf;
+    ladeLauf=(async()=>{
+      const start=Math.max(0,STUFEN.indexOf(lesen('qa-diktat-modus')||'gpu'));
+      let letzter=null;
+      for(const modus of STUFEN.slice(start)){
+        try{await ladenEinmal(modus);return}
+        catch(e){
+          letzter=e;
+          if(worker){worker.terminate();worker=null}
+          bereit=false;
+          const st=$('diktatStatus');
+          if(st&&modus!=='cpu')st.textContent='Der Grafik-Speicher reicht nicht – die App versucht es auf anderem Weg …';
+        }
+      }
+      throw letzter||new Error('Sprachpaket startet nicht.');
+    })().finally(()=>{ladeLauf=null});
+    return ladeLauf;
   }
   function umwandeln(audio){
     const id=++auftragNr;
     return new Promise((ok,nein)=>{
       offen[id]=m=>m.typ==='text'?ok(m.text):nein(new Error(m.meldung));
-      helfer().postMessage({typ:'umwandeln',id,audio},[audio.buffer]);
+      helfer().postMessage({typ:'umwandeln',id,audio,modus:lesen('qa-diktat-modus')||'gpu'},[audio.buffer]);
     });
   }
 
@@ -18509,6 +18529,7 @@ init();
     const c=await cacheGroesse();
     if(paketDa()&&!c.onnx){schreiben(MERKER,null);anwenden()}   // vom Browser gelöscht
     const da=paketDa();
+    if(!ladeLauf)$('diktatFortschritt').classList.add('hidden');
     $('diktatStatus').textContent=da
       ? '✓ Sprachpaket ist auf diesem Gerät'+(c.mb?' ('+c.mb+' MB)':'')+'.'+(g.schnell?'':' Ohne Grafik-Beschleunigung dauert das Umwandeln länger.')
       : 'Noch nicht geladen. Größe: ca. '+g.mb+' MB.';
@@ -18552,7 +18573,7 @@ init();
       for(const k of await c.keys())if(k.url.includes(MODELL))await c.delete(k);
     }catch(e){}
     if(worker){worker.terminate();worker=null}
-    bereit=false;schreiben(MERKER,null);anwenden();
+    bereit=false;schreiben(MERKER,null);schreiben('qa-diktat-modus',null);anwenden();
     diktatSeiteZeigen();diktatStatusMenue();
     toast('Sprachpaket gelöscht.');
   };
@@ -18601,6 +18622,7 @@ init();
       try{
         const audio=await zu16k(new Blob(teile,{type:rec.mimeType||'audio/webm'}));
         if(audio.length<16000*0.4)throw new Error('Die Aufnahme war zu kurz.');
+        await laden();
         const text=await umwandeln(audio);
         einfuegen(feld,text);
         hinweis(feld,text?'':'Es wurde kein Text erkannt.');

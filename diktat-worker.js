@@ -12,29 +12,42 @@ env.backends.onnx.wasm.wasmPaths = new URL('./lib/diktat/', self.location.href).
 
 let erkenner = null;
 let laden = null;
-let geraetArt = '';
 
-async function geraetWaehlen() {
+async function grafik() {
   try {
     if (self.navigator && navigator.gpu) {
       const adapter = await navigator.gpu.requestAdapter();
-      if (adapter) {
-        return { device: 'webgpu', dtype: adapter.features.has('shader-f16') ? 'q4f16' : 'q4' };
-      }
+      if (adapter) return { f16: adapter.features.has('shader-f16') };
     }
-  } catch (e) { /* kein WebGPU */ }
-  return { device: 'wasm', dtype: 'q4' };
+  } catch (e) { /* keine Grafik-Beschleunigung */ }
+  return null;
 }
 
-function bereitmachen() {
+// Drei Stufen: „gpu“ (alles Grafik), „gemischt“ (großer Teil Prozessor, kleiner Teil Grafik),
+// „cpu“ (alles Prozessor). Manche Geräte (z. B. iPad) erlauben der Grafik nicht genug Speicher.
+async function einstellungen(modus) {
+  const g = await grafik();
+  if (!g) modus = 'cpu';
+  const q = g && g.f16 ? 'q4f16' : 'q4';
+  if (modus === 'gpu') return { modus, device: 'webgpu', dtype: { encoder_model: q, decoder_model_merged: q } };
+  if (modus === 'gemischt') {
+    return {
+      modus,
+      device: { encoder_model: 'wasm', decoder_model_merged: 'webgpu' },
+      dtype: { encoder_model: 'q4', decoder_model_merged: q }
+    };
+  }
+  return { modus: 'cpu', device: 'wasm', dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' } };
+}
+
+function bereitmachen(modus) {
   if (laden) return laden;
   laden = (async () => {
-    const wahl = await geraetWaehlen();
-    geraetArt = wahl.device;
+    const wahl = await einstellungen(modus || 'gpu');
     const stand = {};
     erkenner = await pipeline('automatic-speech-recognition', MODELL, {
       device: wahl.device,
-      dtype: { encoder_model: wahl.dtype, decoder_model_merged: wahl.dtype },
+      dtype: wahl.dtype,
       progress_callback: (p) => {
         if (p.status !== 'progress' || !p.total) return;
         stand[p.file] = [p.loaded, p.total];
@@ -43,7 +56,7 @@ function bereitmachen() {
         self.postMessage({ typ: 'fortschritt', geladen, gesamt });
       }
     });
-    self.postMessage({ typ: 'bereit', geraet: geraetArt, dtype: wahl.dtype });
+    self.postMessage({ typ: 'bereit', modus: wahl.modus });
   })().catch((e) => {
     laden = null;
     throw e;
@@ -55,9 +68,9 @@ self.onmessage = async (e) => {
   const auftrag = e.data || {};
   try {
     if (auftrag.typ === 'laden') {
-      await bereitmachen();
+      await bereitmachen(auftrag.modus);
     } else if (auftrag.typ === 'umwandeln') {
-      await bereitmachen();
+      await bereitmachen(auftrag.modus);
       const ergebnis = await erkenner(auftrag.audio, {
         language: 'german',
         task: 'transcribe',
