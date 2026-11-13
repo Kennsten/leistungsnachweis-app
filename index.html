@@ -4011,7 +4011,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.29.2 Verkaufsversion';
+const APP_VERSION='0.29.3 Verkaufsversion';
 const APP_STAND='13.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -15291,7 +15291,8 @@ function kontoAnwenden(){
   const test=istTest();
   document.body.classList.toggle('testversion',test);
   const bsp=$('einstBeispielZeile'),verw=$('einstVerwaltungZeile');
-  if(bsp)bsp.classList.toggle('hidden',!(test||(konto&&konto.verwaltung)));
+  // Beispieldaten nur im 7-Tage-Test – in der Vollversion stehen echte Daten (Vorführung: ?vorfuehrung)
+  if(bsp)bsp.classList.toggle('hidden',!test);
   if(verw)verw.classList.toggle('hidden',!(konto&&(konto.verwaltung||konto.verwaltung_frei)));
   testBandZeichnen();
   if(typeof cloudBandZeichnen==='function')cloudBandZeichnen();
