@@ -3943,7 +3943,7 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.26.4 Verkaufsversion';
+const APP_VERSION='0.26.5 Verkaufsversion';
 const APP_STAND='10.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
@@ -14005,9 +14005,10 @@ $('openRates').onclick=async()=>{
   await loadVerguetungssaetze();
 
   satzInBearbeitung=null;
-  const monatsanfang=todayIso().slice(0,8)+'01';
-  $('rateFlsAb').value=monatsanfang;
-  $('rateWegeAb').value=monatsanfang;
+  // Voreinstellung: 1. Januar des laufenden Jahres, damit die Sätze für das ganze Jahr gelten
+  const jahresanfang=todayIso().slice(0,4)+'-01-01';
+  $('rateFlsAb').value=jahresanfang;
+  $('rateWegeAb').value=jahresanfang;
   $('rateFls').value='';
   $('rateWege').value='';
   $('rateNote').value='';
@@ -14065,7 +14066,7 @@ $('rateForm').onsubmit=async e=>{
   $('rateFls').value='';
   $('rateWege').value='';
   $('rateNote').value='';
-  $('rateFlsAb').value=$('rateWegeAb').value=todayIso().slice(0,8)+'01';
+  $('rateFlsAb').value=$('rateWegeAb').value=todayIso().slice(0,4)+'-01-01';
 
   await loadVerguetungssaetze();
   renderRates();
