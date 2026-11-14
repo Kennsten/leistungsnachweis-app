@@ -104,8 +104,10 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   nicht mehr gebraucht (`pcloud-link` braucht kein Secret); die „Default secrets“ von Supabase bleiben.
   **14.11.2026: beide Secrets von Olli gelöscht.** Netlify per Foto geprüft (14.11.2026):
   einzige Umgebungsvariable im App-Projekt ist `ORS_API_KEY` (alle Kontexte, 18 Tage alt) – kein Code liest sie
-  mehr. **14.11.2026: von Olli gelöscht** – das App-Projekt hat keine Umgebungsvariablen mehr. Noch zu tun:
-  Geoapify-Konto bzw. -Schlüssel löschen (Anleitung `supabase/LIESMICH.md`).
+  mehr. **14.11.2026: von Olli gelöscht** – das App-Projekt hat keine Umgebungsvariablen mehr.
+  Geoapify per Foto geprüft (14.11.2026): Projekt „QA“ (angelegt 10.11.2026) bei myprojects.geoapify.com,
+  kein Code nutzt Geoapify mehr. Noch zu tun: Projekt „QA“ löschen (Project settings → Delete project),
+  danach ggf. das Geoapify-Konto selbst.
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
 - IONOS: TXT-Eintrag `subdomain-owner-verification` optional löschen.
