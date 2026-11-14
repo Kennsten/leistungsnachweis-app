@@ -102,7 +102,9 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   gelöscht; `pcloud-link` bleibt (wird gebraucht). Secrets per Foto geprüft (14.11.2026): unter
   „Custom secrets“ stehen noch `ORS_API_KEY` (08.11.2026) und `GEOAPIFY_API_KEY` (10.11.2026) – beide
   nicht mehr gebraucht (`pcloud-link` braucht kein Secret); die „Default secrets“ von Supabase bleiben.
-  **14.11.2026: beide Secrets von Olli gelöscht.** Noch zu tun: Netlify-Variable `ORS_API_KEY` löschen;
+  **14.11.2026: beide Secrets von Olli gelöscht.** Netlify per Foto geprüft (14.11.2026):
+  einzige Umgebungsvariable im App-Projekt ist `ORS_API_KEY` (alle Kontexte, 18 Tage alt) – kein Code liest sie
+  mehr. Noch zu tun: diese Netlify-Variable löschen;
   Geoapify-Konto bzw. -Schlüssel löschen (Anleitung `supabase/LIESMICH.md`).
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
