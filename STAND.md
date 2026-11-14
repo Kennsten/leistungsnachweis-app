@@ -98,7 +98,9 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   Ollis „Ja“ entfernt werden.
 
 ## Offen
-- **Geoapify/HeiGIT aufräumen** (Stand unbekannt, Olli prüft per Foto): Supabase → Edge Functions
+- **Geoapify/HeiGIT aufräumen** – **14.11.2026 per Foto geprüft:** Supabase → Edge Functions zeigt noch
+  `pcloud-link` (wird gebraucht), `route-km` und `route-km-geo` (nicht mehr gebraucht, noch nicht gelöscht).
+  Secrets noch nicht geprüft. Zu tun: Supabase → Edge Functions
   `route-km-geo`/`route-km` und Secrets `GEOAPIFY_API_KEY`/`ORS_API_KEY` löschen; Netlify-Variable
   `ORS_API_KEY` löschen; Geoapify-Konto bzw. -Schlüssel löschen (Anleitung `supabase/LIESMICH.md`).
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
