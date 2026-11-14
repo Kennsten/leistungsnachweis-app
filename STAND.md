@@ -99,8 +99,10 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
 
 ## Offen
 - **Geoapify/HeiGIT aufräumen** – **14.11.2026 (Olli):** Edge Functions `route-km` und `route-km-geo`
-  gelöscht; `pcloud-link` bleibt (wird gebraucht). Noch zu tun (nicht bestätigt): Secrets
-  `GEOAPIFY_API_KEY`/`ORS_API_KEY` bei Supabase löschen; Netlify-Variable `ORS_API_KEY` löschen;
+  gelöscht; `pcloud-link` bleibt (wird gebraucht). Secrets per Foto geprüft (14.11.2026): unter
+  „Custom secrets“ stehen noch `ORS_API_KEY` (08.11.2026) und `GEOAPIFY_API_KEY` (10.11.2026) – beide
+  nicht mehr gebraucht (`pcloud-link` braucht kein Secret); die „Default secrets“ von Supabase bleiben.
+  Noch zu tun: diese zwei Secrets bei Supabase löschen; Netlify-Variable `ORS_API_KEY` löschen;
   Geoapify-Konto bzw. -Schlüssel löschen (Anleitung `supabase/LIESMICH.md`).
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
