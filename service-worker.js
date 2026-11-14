@@ -13,7 +13,7 @@
 //
 // Bei jeder Lieferung CACHE_NAME erhöhen, dann wird alles neu geladen.
 
-const CACHE_NAME = 'qa-produkt-0.33.1';
+const CACHE_NAME = 'qa-produkt-0.33.2';
 const NETZ_WARTEZEIT_MS = 4000;
 
 const APP_DATEIEN = [
@@ -52,33 +52,6 @@ const APP_DATEIEN = [
   './icons/icon-192-maskable.png',
   './icons/icon-512-maskable.png',
   './bilder/hintergrund.jpg',
-  './bilder/portrait-1.jpg',
-  './bilder/portrait-2.jpg',
-  './bilder/portrait-3.jpg',
-  './bilder/portrait-4.jpg',
-  './bilder/portrait-5.jpg',
-  './bilder/portrait-6.jpg',
-  './bilder/portrait-7.jpg',
-  './bilder/portrait-8.jpg',
-  './bilder/portrait-9.jpg',
-  './bilder/portrait-10.jpg',
-  './bilder/portrait-11.jpg',
-  './bilder/portrait-12.jpg',
-  './bilder/portrait-13.jpg',
-  './bilder/portrait-14.jpg',
-  './bilder/portrait-15.jpg',
-  './bilder/portrait-16.jpg',
-  './bilder/portrait-17.jpg',
-  './bilder/portrait-18.jpg',
-  './bilder/portrait-19.jpg',
-  './bilder/portrait-20.jpg',
-  './bilder/portrait-21.jpg',
-  './bilder/portrait-22.jpg',
-  './bilder/portrait-23.jpg',
-  './bilder/portrait-24.jpg',
-  './bilder/portrait-25.jpg',
-  './bilder/portrait-26.jpg',
-  './bilder/portrait-27.jpg',
   './schriften/bangers.woff'
 ];
 

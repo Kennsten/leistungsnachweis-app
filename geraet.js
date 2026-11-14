@@ -109,6 +109,8 @@
       ["kontakt2_adresse", "text", false, null],
       ["kontakt2_email", "text", false, null],
       ["kontakte_weitere", "text", false, null],
+      ["avatar_farbe", "text", false, null],
+      ["avatar_muster", "text", false, null],
     ],
     dokumentationen: [
       ["id", "uuid", true, "gen_random_uuid()"],

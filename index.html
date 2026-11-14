@@ -374,45 +374,20 @@ dialog button:focus-visible{outline:3px solid #1f6fd6;outline-offset:2px}
   letter-spacing:.5px;
 }
 
-.portrait-preview{
-  margin-top:8px;
-  width:72px;
-  height:72px;
-  border-radius:50%;
-  overflow:hidden;
-  border:1px solid var(--line);
+.avatar-wahl-zeile{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px}
+.client-avatar.avatar-vorschau{flex:0 0 72px;width:72px;height:72px;font-size:30px;cursor:default}
+.avatar-wahl-titel{font-weight:600;margin:14px 0 2px}
+.avatar-wahl{display:flex;flex-wrap:wrap;gap:6px 4px;margin-top:6px}
+.avatar-wahl .avatar-feld{
+  display:flex;flex-direction:column;align-items:center;gap:4px;width:58px;min-width:0;min-height:0;
+  padding:5px 0 4px;border:2px solid transparent;border-radius:14px;background:transparent;
+  color:var(--ink);font:inherit;font-size:.74rem;font-weight:500;line-height:1.15;cursor:pointer;box-shadow:none;
 }
-
-.portrait-preview img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
+.avatar-wahl .avatar-feld .rund{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;
 }
-
-.portrait-zeile{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
-.portrait-zeile .portrait-preview{margin-top:0;width:84px;height:84px;flex:0 0 auto}
-.portrait-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
-.portrait-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px;margin-top:10px}
-.portrait-kachel{position:relative}
-.portrait-kachel .wahl{
-  display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;
-  min-height:0;padding:6px;border:2px solid transparent;border-radius:16px;
-  background:transparent;color:var(--ink);font:inherit;cursor:pointer;
-}
-.portrait-kachel .rund{
-  width:76px;height:76px;border-radius:50%;overflow:hidden;
-  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
-  background:var(--accent);color:var(--brand-dark);font-weight:700;font-size:1.1rem;
-}
-.portrait-kachel .rund img{width:100%;height:100%;object-fit:cover;display:block}
-.portrait-kachel .nr{font-size:.78rem;color:var(--muted,inherit)}
-.portrait-kachel .wahl.aktiv{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--card))}
-.portrait-kachel .weg{
-  position:absolute;top:0;right:2px;width:28px;height:28px;min-height:0;min-width:0;padding:0;
-  border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--danger);
-  font-size:18px;line-height:1;cursor:pointer;
-}
+.avatar-wahl .avatar-feld.aktiv{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--card))}
 .beleg-pruefung{
   margin:10px 0 12px;padding:12px 14px;border-radius:12px;font-size:.92rem;line-height:1.45;
   border:1px solid var(--line);border-left:4px solid var(--warn,#b8742a);
@@ -420,13 +395,6 @@ dialog button:focus-visible{outline:3px solid #1f6fd6;outline-offset:2px}
 }
 .beleg-pruefung ul{margin:6px 0 8px 18px;padding:0}
 .beleg-pruefung .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.portrait-hinweis{
-  margin:6px 0 4px;padding:10px 12px;border-radius:12px;font-size:.9rem;line-height:1.4;
-  border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 8%,var(--card));
-}
-.portrait-entfernt{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
-.portrait-entfernt summary{cursor:pointer;font-weight:600;color:var(--brand-dark)}
-.portrait-entfernt .portrait-kachel .wahl{opacity:.75}
 
 dialog label.sicherung-haken{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;font-weight:500;margin-top:6px;text-align:left}
 dialog label.sicherung-haken input[type="checkbox"]{width:22px;min-width:22px;height:22px;min-height:0;margin:0;padding:0;flex:0 0 auto}
@@ -437,434 +405,6 @@ dialog label.sicherung-haken input[type="checkbox"]{width:22px;min-width:22px;he
 .wh-tabelle th,.wh-tabelle td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
 .wh-tabelle td:nth-child(n+2),.wh-tabelle th:nth-child(n+2){text-align:right}
 
-.client-avatar img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-
-.client-name{
-  min-width:0;
-}
-
-.client-name h3{
-  margin:0 0 2px;
-  overflow-wrap:anywhere;
-}
-
-.client-name-row{
-  display:flex;
-  align-items:baseline;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-bottom:2px;
-}
-
-.client-name-row h3{
-  margin:0;
-}
-
-.name-edit{
-  flex:0 0 auto;
-  padding:5px 12px;
-  font-size:.8rem;
-  border-radius:10px;
-}
-
-.closing-alert{
-  margin:10px 0;
-  padding:12px 14px;
-  background:var(--danger-bg);
-  border:1px solid var(--danger);
-  border-radius:16px;
-  font-size:.9rem;
-  line-height:1.4;
-  color:var(--ink);
-}
-
-.income-table{
-  margin-top:6px;
-}
-
-.income-row{
-  display:grid;
-  grid-template-columns:minmax(70px,1fr) auto auto minmax(80px,auto);
-  align-items:baseline;
-  gap:10px;
-  padding:6px 0;
-  font-size:.9rem;
-  border-bottom:1px solid var(--line);
-}
-
-.income-row:last-child{
-  border-bottom:0;
-}
-
-.income-row span:not(.income-key){
-  color:var(--muted);
-  text-align:right;
-  white-space:nowrap;
-}
-
-.income-row strong{
-  text-align:right;
-  white-space:nowrap;
-}
-
-.income-key{
-  font-weight:700;
-}
-
-@media(max-width:520px){
-  .income-row{
-    grid-template-columns:1fr auto;
-    row-gap:2px;
-  }
-
-  .income-key{
-    grid-column:1 / -1;
-  }
-}
-
-.cloud-open-link{
-  display:inline-block;
-  padding:13px 17px;
-  border-radius:var(--radius-control);
-  background:var(--brand);
-  color:var(--on-brand);
-  font-weight:600;
-  text-align:center;
-  text-decoration:none;
-  flex:1;
-}
-
-.closing-alert strong{
-  display:block;
-  margin-bottom:4px;
-  color:var(--danger);
-}
-
-.report-status{
-  font-weight:600;
-  color:var(--ink);
-}
-
-.former-heading{
-  margin-top:22px;
-  padding:10px 0 6px;
-  border-top:2px solid var(--line);
-  font-weight:700;
-  font-size:.95rem;
-  color:var(--muted);
-}
-
-.client-former{
-  opacity:.55;
-}
-
-.client-former:hover{
-  opacity:.85;
-}
-
-.client-buttons{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(152px,1fr));
-  gap:8px;
-}
-
-.client-buttons button{
-  padding:11px 10px;
-  font-size:.92rem;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.meta{font-size:.9rem;color:var(--muted)}
-dialog{width:min(94vw,700px);max-height:92vh;max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:0;border-radius:24px;padding:0 22px 22px;background:var(--card);box-shadow:0 20px 50px rgba(47,58,52,.22)}
-
-dialog .top{
-  position:sticky;
-  top:0;
-  z-index:5;
-  margin:0 -22px 4px;
-  padding:16px 22px 12px;
-  background:var(--card);
-  border-bottom:1px solid var(--line);
-}
-dialog::backdrop{background:rgba(47,58,52,.38)}
-/* Installierte App am iPhone: Fenster nicht unter Uhrzeit/Kamera-Aussparung und Home-Leiste legen,
-   damit „Schließen“ immer antippbar bleibt */
-dialog:modal{
-  inset:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) 0;
-  max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);
-}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;row-gap:4px}
-.grid label{min-width:0}
-.span2{grid-column:1/-1}
-#docForm .grid{grid-template-columns:1fr}
-#docForm .span2{grid-column:auto}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:11px 15px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;z-index:99;max-width:min(90vw,700px);text-align:center}
-.toast[popover]{inset:auto auto 24px 50%;margin:0;border:0;overflow:visible}
-.toast.show{opacity:1}
-.approval,.doc-item{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);padding:16px;margin-top:12px;background:var(--card);box-shadow:var(--frame-inset)}
-.approval-head,.doc-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.approval-hours{font-weight:750;color:var(--success)}
-.doc-text{white-space:pre-wrap;margin:.7rem 0 0}
-.doc-time{font-weight:750}
-.fls-value{font-weight:750;color:var(--success)}
-.summary-box{border:var(--card-border-width) solid var(--line);border-radius:var(--radius-item);padding:16px;margin:12px 0;background:var(--accent);box-shadow:var(--frame-inset)}
-.summary-row{display:flex;justify-content:space-between;gap:12px;margin:5px 0}
-.summary-row strong{text-align:right}
-/* Dokumentationen: kompakte Zusammenfassung */
-.doc-kurz{margin:10px 0 0;padding:9px 12px;background:var(--accent);border:1px solid var(--line);border-radius:12px;font-size:.85rem;color:var(--muted)}
-.dk-titel{font-size:.78rem;font-weight:700;margin-bottom:5px}
-.dk-zahlen{display:flex;flex-wrap:wrap;gap:4px 16px}
-.dk-zahlen span{white-space:nowrap}
-.dk-rest{padding-left:12px;border-left:2px solid var(--line)}
-.dk-minus strong{color:#b3261e}
-.doc-kurz strong{color:var(--ink)}
-/* Dokumentationen, Ansicht „Liste“: eine Zeile je Eintrag mit Öffnen-Knopf */
-.doc-zeile{display:none}
-.doc-liste .doc-item{padding:0;margin-top:8px}
-.doc-liste .doc-zeile{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:0;padding:11px 14px;
-  background:none;border:0;border-radius:0;box-shadow:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
-.dz-text{display:flex;flex-direction:column;min-width:0}
-.dz-titel{font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dz-sub{font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dz-fls{color:var(--success);font-weight:700}
-.dz-knopf{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.9rem;color:var(--brand-dark);
-  border:var(--kn-rand,1.5px) solid var(--brand);border-radius:var(--radius-control);padding:7px 11px}
-.dz-wort::after{content:"Öffnen"}
-.doc-zeile[aria-expanded="true"] .dz-wort::after{content:"Schließen"}
-.dz-knopf::after{content:"";width:.8em;height:.8em;background:currentColor;transform:rotate(90deg);transition:transform .2s;
-  -webkit-mask:var(--kn-ico-pfeil) center/contain no-repeat;mask:var(--kn-ico-pfeil) center/contain no-repeat}
-.doc-zeile[aria-expanded="true"] .dz-knopf::after{transform:rotate(-90deg)}
-.doc-liste .doc-item.offen{overflow:hidden;border:2px solid var(--brand);box-shadow:0 2px 10px rgba(0,0,0,.08);margin:12px 0}
-.doc-liste .doc-item.offen .doc-zeile{background:var(--accent)}
-.doc-liste .doc-item.offen .dz-knopf{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
-.doc-liste .doc-head{display:none;padding:0 14px 14px;border-top:1px solid var(--line);padding-top:12px}
-.doc-liste .doc-item.offen .doc-head{display:flex}
-.doc-liste .doc-head h3,.doc-liste .doc-head .doc-time,.doc-liste .doc-head .fls-value{display:none}
-@media (max-width:480px){.doc-liste .doc-zeile{padding:10px 12px}.dz-knopf{padding:6px 9px;font-size:.85rem}}
-  .approval-progress{
-  margin-top:8px;
-  height:10px;
-  background:var(--track);
-  border-radius:999px;
-  overflow:hidden;
-}
-.approval-progress-fill{
-  height:100%;
-  width:var(--progress,0%);
-  background:var(--progress-color,var(--success));
-  transition:width .25s ease;
-}
-
-.small{font-size:.88rem}
-.version{font-size:.78rem;color:var(--muted);margin-top:4px}
-@media(max-width:650px){
-  .grid{grid-template-columns:1fr}
-  .span2{grid-column:auto}
-  .approval-head,.doc-head{flex-direction:column}
-  .approval-head .actions,.doc-head .actions{width:100%}
-  .client-buttons{grid-template-columns:1fr 1fr}
-}
-/* Helle Designs: Browser (z. B. Samsung Internet im Dunkelmodus) dürfen die Seite nicht selbst umfärben */
-:root{color-scheme:only light}
-/* ---------- Dunkles Design ---------- */
-[data-theme="dunkel"]{
-  color-scheme:dark;
-  --ink:#e4e7e2;
-  --muted:#98a39b;
-  --line:#2c332e;
-  --bg:#0b0d0c;
-  --card:#161a17;
-  --accent:#20261f;
-  --brand:#86a98a;
-  --brand-dark:#a7c6aa;
-  --danger:#e3907f;
-  --success:#8cc79a;
-  --on-brand:#0b0d0c;
-  --field:#111412;
-  --danger-bg:#3a201b;
-  --track:#262c27;
-  --warn:#f0a46a;
-  --warn-soft:#e0a070;
-  --ok:#8cc79a;
-  --detail-ink:#d8c2b0;
-  --card-shadow:none;
-}
-[data-theme="dunkel"] dialog{box-shadow:0 20px 50px rgba(0,0,0,.6);border:1px solid var(--line)}
-[data-theme="dunkel"] .card{border-color:var(--line)}
-[data-theme="dunkel"] input,
-[data-theme="dunkel"] textarea,
-[data-theme="dunkel"] select{background:var(--field);color:var(--ink);border-color:var(--line)}
-[data-theme="dunkel"] #backupData.sicherung-faellig{background:#3a2a10;color:#ffd58a;border-color:#c98a1a;box-shadow:0 0 10px 2px rgba(201,138,26,.45)}
-
-/* ---------- Sommer-Design (interner Name „blumen“, damit die gespeicherte Auswahl erhalten bleibt) ---------- */
-[data-theme="blumen"]{
-  --ink:#3a2f1e;
-  --muted:#7d6f55;
-  --line:#f1e0b8;
-  --bg:#fff7e3;
-  --card:#ffffff;
-  --accent:#ffe9b0;
-  --brand:#c2570c;
-  --brand-dark:#9a430a;
-  --danger:#c8402f;
-  --success:#3f8a2c;
-  --on-brand:#ffffff;
-  --field:#fffdf6;
-  --danger-bg:#fbe3dc;
-  --track:#f7ebc8;
-  --warn:#b8560f;
-  --warn-soft:#a35a1f;
-  --ok:#3f8a2c;
-  --detail-ink:#5e4a2a;
-  --radius-card:28px;
-  --radius-item:22px;
-  --radius-control:999px;
-  --card-shadow:0 6px 22px rgba(120,150,40,.12);
-  --heading-font:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;
-}
-[data-theme="blumen"] body{
-  font-family:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,sans-serif;
-  background:linear-gradient(180deg,#4fb0ee 0%,#9ad5f8 38%,#d3eefc 60%,#fff0c6 84%) fixed;
-  background-color:#9ad5f8;
-}
-/* Landschaft: Sommersonne mit Strahlen, Wolken am Himmel, Wiese mit Blumen unten */
-[data-theme="blumen"] body::before{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background-image:var(--blumen-sonne),var(--blumen-wolken),var(--blumen-wiese);
-  background-repeat:no-repeat,repeat-x,repeat-x;
-  background-position:right 3% top 2%,left top 4%,left bottom;
-  background-size:180px 180px,600px 200px,480px 260px;
-}
-[data-theme="blumen"] .card{background:rgba(255,255,255,.9)}
-[data-theme="blumen"] dialog{background:#ffffff}
-[data-theme="blumen"] .card{position:relative;overflow:visible;border-color:var(--line)}
-[data-theme="blumen"] .card::after{
-  content:"";position:absolute;top:-18px;right:-12px;width:74px;height:74px;
-  background-image:var(--blumen-ecke);background-size:contain;background-repeat:no-repeat;
-  pointer-events:none;
-}
-[data-theme="blumen"] .secondary{background:var(--accent);color:var(--ink)}
-[data-theme="blumen"] h1{color:var(--brand-dark)}
-[data-theme="blumen"] .client+.client{border-top:2px dotted #f3d9a0}
-[data-theme="blumen"] .primary{box-shadow:0 3px 10px rgba(194,87,12,.25)}
-[data-theme="blumen"] #backupData.sicherung-faellig{background:#ffd8a8;color:#7a3a00;border-color:#f08c00;box-shadow:0 0 12px 3px rgba(240,140,0,.45)}
-/* Dunkel: Elemente mit festen hellen Farben anpassen */
-[data-theme="dunkel"] .kachel-symbol[data-art]{background:#232a25}
-[data-theme="dunkel"] .termin-bald{border-color:#5b9bd0}
-[data-theme="dunkel"] .termin-bald .termin-marke{background:#1d3347;color:#a9d1f2}
-[data-theme="dunkel"] .termin-nah .termin-marke{background:#1f2c38;color:#a3c2dc}
-[data-theme="dunkel"] .tb-chip.tb-an{color:var(--on-brand)}
-[data-theme="dunkel"] .busy-bar.busy-save .busy-fill{background:var(--brand)}
-[data-theme="dunkel"] dialog::backdrop{background:rgba(0,0,0,.6)}
-/* Sommer: Kalendermarken und Vorschau passend */
-[data-theme="blumen"] .tb-vorschau{background:#fff7e3}
-[data-theme="blumen"]{
-  --blumen-wiese:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27480%27%20height%3D%27260%27%20viewBox%3D%270%200%20480%20260%27%3E%3Cpath%20d%3D%27M0%2070%20C%2080%2040%20160%2040%20240%2062%20S%20400%2090%20480%2070%20L480%20260%20L0%20260%20Z%27%20fill%3D%27%238fd468%27%2F%3E%3Cpath%20d%3D%27M0%20120%20C%20100%2095%20200%20100%20260%20118%20S%20420%20140%20480%20120%20L480%20260%20L0%20260%20Z%27%20fill%3D%27%236cc04a%27%2F%3E%3Cpath%20d%3D%27M0%20180%20C%20120%20160%20240%20170%20300%20182%20S%20430%20196%20480%20180%20L480%20260%20L0%20260%20Z%27%20fill%3D%27%2356ad38%27%2F%3E%3Cpath%20d%3D%27M114%20178%20l%200.6%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M300%2092%20l%202.0%20-8%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M124%20122%20l%20-0.2%20-16%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M402%20166%20l%20-2.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M305%20236%20l%201.4%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M322%2092%20l%200.5%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M145%2086%20l%20-0.2%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M345%20238%20l%202.5%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M190%20224%20l%202.6%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M422%2098%20l%20-1.7%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M463%20159%20l%20-1.2%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M243%20149%20l%200.5%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M280%20243%20l%202.6%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M411%20258%20l%20-2.0%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M413%20254%20l%200.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M343%20118%20l%200.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M137%2091%20l%202.9%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M42%20224%20l%20-2.1%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M141%20218%20l%20-2.7%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M295%2088%20l%20-1.0%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M423%20257%20l%203.0%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M149%2094%20l%20-2.8%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M95%20153%20l%20-2.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M20%20236%20l%202.8%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M430%20148%20l%200.1%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M309%20187%20l%200.7%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M451%20171%20l%201.3%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M114%20134%20l%200.1%20-16%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M263%2082%20l%200.5%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M10%20191%20l%20-2.6%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M301%20164%20l%20-0.9%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M339%20213%20l%20-2.6%20-8%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M324%20253%20l%20-0.3%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M284%20138%20l%20-1.1%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M177%20187%20l%20-0.7%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M371%2085%20l%201.4%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M149%20120%20l%20-1.6%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M90%20158%20l%20-2.4%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M155%20140%20l%20-0.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M411%20110%20l%200.9%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M425%20161%20l%20-2.3%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M254%20114%20l%202.0%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M88%20130%20l%200.9%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M387%20142%20l%20-1.2%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M381%20129%20l%20-0.5%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M201%20154%20l%20-2.1%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M2%20250%20l%202.9%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M208%20251%20l%20-1.7%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M358%20231%20l%200.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M139%20141%20l%20-2.6%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M283%20132%20l%20-2.7%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M434%20205%20l%202.4%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M432%20184%20l%201.5%20-8%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M82%20134%20l%200.1%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M199%20249%20l%20-1.0%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M121%20235%20l%201.7%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M169%20116%20l%201.9%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M82%20223%20l%201.8%20-15%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M395%2081%20l%202.2%20-13%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M24%20129%20l%200.2%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M203%20165%20l%20-3.0%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M26%20103%20l%20-2.6%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M468%20234%20l%200.0%20-9%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M152%20137%20l%200.9%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M282%20145%20l%20-1.0%20-10%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M59%20180%20l%20-0.7%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M38%20112%20l%200.6%20-11%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M376%20148%20l%200.7%20-14%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M207%20147%20l%201.2%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M202%20205%20l%20-1.5%20-12%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.6%27%2F%3E%3Cpath%20d%3D%27M256%20196%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2856%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28128%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28200%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28272%20256%20196%29%27%2F%3E%3Cellipse%20cx%3D%27256%27%20cy%3D%27188%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28344%20256%20196%29%27%2F%3E%3Ccircle%20cx%3D%27256%27%20cy%3D%27196%27%20r%3D%273.6%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M113%20106%20q%203%204%200%208%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2866%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28138%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28210%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28282%20113%20106%29%27%2F%3E%3Cellipse%20cx%3D%27113%27%20cy%3D%27101%27%20rx%3D%272.8%27%20ry%3D%274.8%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28354%20113%20106%29%27%2F%3E%3Ccircle%20cx%3D%27113%27%20cy%3D%27106%27%20r%3D%272.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M182%20229%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%2861%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28133%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28205%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28277%20182%20229%29%27%2F%3E%3Cellipse%20cx%3D%27182%27%20cy%3D%27219%27%20rx%3D%275.4%27%20ry%3D%279.3%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28349%20182%20229%29%27%2F%3E%3Ccircle%20cx%3D%27182%27%20cy%3D%27229%27%20r%3D%274.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M66%20195%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%2851%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28123%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28195%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28267%2066%20195%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27187%27%20rx%3D%274.7%27%20ry%3D%278.1%27%20fill%3D%27%23ffffff%27%20transform%3D%27rotate%28339%2066%20195%29%27%2F%3E%3Ccircle%20cx%3D%2766%27%20cy%3D%27195%27%20r%3D%273.6%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M401%20170%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2847%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28119%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28191%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28263%20401%20170%29%27%2F%3E%3Cellipse%20cx%3D%27401%27%20cy%3D%27162%27%20rx%3D%274.1%27%20ry%3D%277.1%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28335%20401%20170%29%27%2F%3E%3Ccircle%20cx%3D%27401%27%20cy%3D%27170%27%20r%3D%273.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M348%20175%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2857%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28129%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28201%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28273%20348%20175%29%27%2F%3E%3Cellipse%20cx%3D%27348%27%20cy%3D%27168%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28345%20348%20175%29%27%2F%3E%3Ccircle%20cx%3D%27348%27%20cy%3D%27175%27%20r%3D%273.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M340%20161%20q%203%206%200%2011%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%2854%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28126%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28198%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28270%20340%20161%29%27%2F%3E%3Cellipse%20cx%3D%27340%27%20cy%3D%27154%27%20rx%3D%273.9%27%20ry%3D%276.8%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28342%20340%20161%29%27%2F%3E%3Ccircle%20cx%3D%27340%27%20cy%3D%27161%27%20r%3D%273.0%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M30%20100%20q%203%204%200%208%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2846%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28118%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28190%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28262%2030%20100%29%27%2F%3E%3Cellipse%20cx%3D%2730%27%20cy%3D%2795%27%20rx%3D%272.6%27%20ry%3D%274.5%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28334%2030%20100%29%27%2F%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%27100%27%20r%3D%272.0%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M183%20216%20q%203%207%200%2015%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%2859%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28131%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28203%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28275%20183%20216%29%27%2F%3E%3Cellipse%20cx%3D%27183%27%20cy%3D%27207%27%20rx%3D%275.1%27%20ry%3D%278.8%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28347%20183%20216%29%27%2F%3E%3Ccircle%20cx%3D%27183%27%20cy%3D%27216%27%20r%3D%273.9%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M66%20220%20q%203%208%200%2015%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%2834%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28106%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28178%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28250%2066%20220%29%27%2F%3E%3Cellipse%20cx%3D%2766%27%20cy%3D%27211%27%20rx%3D%275.2%27%20ry%3D%279.0%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28322%2066%20220%29%27%2F%3E%3Ccircle%20cx%3D%2766%27%20cy%3D%27220%27%20r%3D%274.0%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M330%20131%20q%203%205%200%2010%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%2856%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28128%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28200%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28272%20330%20131%29%27%2F%3E%3Cellipse%20cx%3D%27330%27%20cy%3D%27125%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%23b05cf0%27%20transform%3D%27rotate%28344%20330%20131%29%27%2F%3E%3Ccircle%20cx%3D%27330%27%20cy%3D%27131%27%20r%3D%272.5%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M27%20208%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2837%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28109%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28181%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28253%2027%20208%29%27%2F%3E%3Cellipse%20cx%3D%2727%27%20cy%3D%27199%27%20rx%3D%274.9%27%20ry%3D%278.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28325%2027%20208%29%27%2F%3E%3Ccircle%20cx%3D%2727%27%20cy%3D%27208%27%20r%3D%273.8%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M120%20174%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2865%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28137%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28209%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28281%20120%20174%29%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%27166%27%20rx%3D%274.2%27%20ry%3D%277.3%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28353%20120%20174%29%27%2F%3E%3Ccircle%20cx%3D%27120%27%20cy%3D%27174%27%20r%3D%273.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M38%20137%20q%203%205%200%2010%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2813%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2885%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28157%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28229%2038%20137%29%27%2F%3E%3Cellipse%20cx%3D%2738%27%20cy%3D%27131%27%20rx%3D%273.4%27%20ry%3D%275.9%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28301%2038%20137%29%27%2F%3E%3Ccircle%20cx%3D%2738%27%20cy%3D%27137%27%20r%3D%272.6%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M46%20245%20q%203%208%200%2017%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%2817%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%2889%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28161%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28233%2046%20245%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%27234%27%20rx%3D%275.7%27%20ry%3D%279.9%27%20fill%3D%27%23ffd43b%27%20transform%3D%27rotate%28305%2046%20245%29%27%2F%3E%3Ccircle%20cx%3D%2746%27%20cy%3D%27245%27%20r%3D%274.4%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M293%20206%20q%203%207%200%2014%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2818%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2890%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28162%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28234%20293%20206%29%27%2F%3E%3Cellipse%20cx%3D%27293%27%20cy%3D%27197%27%20rx%3D%274.9%27%20ry%3D%278.4%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28306%20293%20206%29%27%2F%3E%3Ccircle%20cx%3D%27293%27%20cy%3D%27206%27%20r%3D%273.7%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M286%20235%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2829%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28101%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28173%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28245%20286%20235%29%27%2F%3E%3Cellipse%20cx%3D%27286%27%20cy%3D%27225%27%20rx%3D%275.5%27%20ry%3D%279.5%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28317%20286%20235%29%27%2F%3E%3Ccircle%20cx%3D%27286%27%20cy%3D%27235%27%20r%3D%274.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M48%20165%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2859%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28131%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28203%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28275%2048%20165%29%27%2F%3E%3Cellipse%20cx%3D%2748%27%20cy%3D%27158%27%20rx%3D%274.0%27%20ry%3D%276.9%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28347%2048%20165%29%27%2F%3E%3Ccircle%20cx%3D%2748%27%20cy%3D%27165%27%20r%3D%273.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M455%20151%20q%203%205%200%2011%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2853%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28125%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28197%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28269%20455%20151%29%27%2F%3E%3Cellipse%20cx%3D%27455%27%20cy%3D%27145%27%20rx%3D%273.7%27%20ry%3D%276.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28341%20455%20151%29%27%2F%3E%3Ccircle%20cx%3D%27455%27%20cy%3D%27151%27%20r%3D%272.8%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M320%20168%20q%203%206%200%2012%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2811%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%2883%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28155%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28227%20320%20168%29%27%2F%3E%3Cellipse%20cx%3D%27320%27%20cy%3D%27160%27%20rx%3D%274.1%27%20ry%3D%277.0%27%20fill%3D%27%23ff8a1f%27%20transform%3D%27rotate%28299%20320%20168%29%27%2F%3E%3Ccircle%20cx%3D%27320%27%20cy%3D%27168%27%20r%3D%273.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M194%20227%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%287%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%2879%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28151%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28223%20194%20227%29%27%2F%3E%3Cellipse%20cx%3D%27194%27%20cy%3D%27217%27%20rx%3D%275.3%27%20ry%3D%279.2%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28295%20194%20227%29%27%2F%3E%3Ccircle%20cx%3D%27194%27%20cy%3D%27227%27%20r%3D%274.1%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cpath%20d%3D%27M354%20232%20q%203%208%200%2016%27%20stroke%3D%27%233f9a2a%27%20stroke-width%3D%272.5%27%20fill%3D%27none%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%2867%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28139%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28211%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28283%20354%20232%29%27%2F%3E%3Cellipse%20cx%3D%27354%27%20cy%3D%27222%27%20rx%3D%275.4%27%20ry%3D%279.4%27%20fill%3D%27%23ff7eb6%27%20transform%3D%27rotate%28355%20354%20232%29%27%2F%3E%3Ccircle%20cx%3D%27354%27%20cy%3D%27232%27%20r%3D%274.2%27%20fill%3D%27%23ffd43b%27%2F%3E%3C%2Fsvg%3E");
-  --blumen-wolken:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27600%27%20height%3D%27200%27%3E%3Cg%20fill%3D%27%23ffffff%27%20opacity%3D%27.9%27%3E%3Cellipse%20cx%3D%2790%27%20cy%3D%2770%27%20rx%3D%2746%27%20ry%3D%2718%27%2F%3E%3Cellipse%20cx%3D%27120%27%20cy%3D%2756%27%20rx%3D%2730%27%20ry%3D%2722%27%2F%3E%3Cellipse%20cx%3D%2770%27%20cy%3D%2760%27%20rx%3D%2722%27%20ry%3D%2716%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%23ffffff%27%20opacity%3D%27.8%27%3E%3Cellipse%20cx%3D%27400%27%20cy%3D%27120%27%20rx%3D%2756%27%20ry%3D%2718%27%2F%3E%3Cellipse%20cx%3D%27430%27%20cy%3D%27104%27%20rx%3D%2732%27%20ry%3D%2722%27%2F%3E%3Cellipse%20cx%3D%27378%27%20cy%3D%27110%27%20rx%3D%2724%27%20ry%3D%2716%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  --blumen-sonne:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cg%20stroke%3D%27%23ffc83d%27%20stroke-width%3D%277%27%20stroke-linecap%3D%27round%27%20opacity%3D%27.9%27%3E%3Cline%20x1%3D%27144.1%27%20y1%3D%27104.5%27%20x2%3D%27165.3%27%20y2%3D%27110.2%27%2F%3E%3Cline%20x1%3D%27129.6%27%20y1%3D%27129.6%27%20x2%3D%27145.2%27%20y2%3D%27145.2%27%2F%3E%3Cline%20x1%3D%27104.5%27%20y1%3D%27144.1%27%20x2%3D%27110.2%27%20y2%3D%27165.3%27%2F%3E%3Cline%20x1%3D%2775.5%27%20y1%3D%27144.1%27%20x2%3D%2769.8%27%20y2%3D%27165.3%27%2F%3E%3Cline%20x1%3D%2750.4%27%20y1%3D%27129.6%27%20x2%3D%2734.8%27%20y2%3D%27145.2%27%2F%3E%3Cline%20x1%3D%2735.9%27%20y1%3D%27104.5%27%20x2%3D%2714.7%27%20y2%3D%27110.2%27%2F%3E%3Cline%20x1%3D%2735.9%27%20y1%3D%2775.5%27%20x2%3D%2714.7%27%20y2%3D%2769.8%27%2F%3E%3Cline%20x1%3D%2750.4%27%20y1%3D%2750.4%27%20x2%3D%2734.8%27%20y2%3D%2734.8%27%2F%3E%3Cline%20x1%3D%2775.5%27%20y1%3D%2735.9%27%20x2%3D%2769.8%27%20y2%3D%2714.7%27%2F%3E%3Cline%20x1%3D%27104.5%27%20y1%3D%2735.9%27%20x2%3D%27110.2%27%20y2%3D%2714.7%27%2F%3E%3Cline%20x1%3D%27129.6%27%20y1%3D%2750.4%27%20x2%3D%27145.2%27%20y2%3D%2734.8%27%2F%3E%3Cline%20x1%3D%27144.1%27%20y1%3D%2775.5%27%20x2%3D%27165.3%27%20y2%3D%2769.8%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2790%27%20cy%3D%2790%27%20r%3D%2752%27%20fill%3D%27%23ffe066%27%20opacity%3D%27.35%27%2F%3E%3Ccircle%20cx%3D%2790%27%20cy%3D%2790%27%20r%3D%2740%27%20fill%3D%27%23ffd23f%27%2F%3E%3Ccircle%20cx%3D%2778%27%20cy%3D%2778%27%20r%3D%2714%27%20fill%3D%27%23fff3b0%27%20opacity%3D%27.6%27%2F%3E%3C%2Fsvg%3E");
-  --blumen-ecke:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2774%27%20height%3D%2774%27%3E%3Cellipse%20cx%3D%2718%27%20cy%3D%2756%27%20rx%3D%276.0%27%20ry%3D%2713.2%27%20fill%3D%27%235cb83a%27%20transform%3D%27rotate%28-40%2018%2056%29%27%2F%3E%3Cellipse%20cx%3D%2746%27%20cy%3D%2762%27%20rx%3D%276.0%27%20ry%3D%2713.2%27%20fill%3D%27%237bc95a%27%20transform%3D%27rotate%2845%2046%2062%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%280%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%2830%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%2860%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%2890%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28120%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28150%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28180%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28210%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28240%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28270%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28300%2034%2034%29%27%2F%3E%3Cellipse%20cx%3D%2734%27%20cy%3D%2717%27%20rx%3D%275.4%27%20ry%3D%2713.6%27%20fill%3D%27%23ffc61a%27%20transform%3D%27rotate%28330%2034%2034%29%27%2F%3E%3Ccircle%20cx%3D%2734%27%20cy%3D%2734%27%20r%3D%279.4%27%20fill%3D%27%238a5a1c%27%2F%3E%3Ccircle%20cx%3D%2734%27%20cy%3D%2734%27%20r%3D%275.1%27%20fill%3D%27%236b4212%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2815%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%2887%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28159%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28231%2060%2016%29%27%2F%3E%3Cellipse%20cx%3D%2760%27%20cy%3D%278%27%20rx%3D%274.4%27%20ry%3D%277.6%27%20fill%3D%27%23ff5a5f%27%20transform%3D%27rotate%28303%2060%2016%29%27%2F%3E%3Ccircle%20cx%3D%2760%27%20cy%3D%2716%27%20r%3D%273.4%27%20fill%3D%27%23ffd43b%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%280%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%2872%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28144%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28216%2012%2018%29%27%2F%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%2712%27%20rx%3D%273.3%27%20ry%3D%275.7%27%20fill%3D%27%234dabf7%27%20transform%3D%27rotate%28288%2012%2018%29%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2718%27%20r%3D%272.5%27%20fill%3D%27%23ffd43b%27%2F%3E%3C%2Fsvg%3E");
-}
-
-/* ---------- Comic-Design (interner Name „moebius“, damit die gespeicherte Auswahl erhalten bleibt) ---------- */
-/* Comic-Schrift „Bangers“ (SIL Open Font License) liegt im Ordner schriften/ –
-   kein Laden von Google, funktioniert auch ohne Internet. */
-@font-face{
-  font-family:"Bangers";
-  src:url("schriften/bangers.woff") format("woff");
-  font-weight:400;
-  font-style:normal;
-  font-display:swap;
-}
-
-[data-theme="moebius"] body{
-  background:
-    repeating-linear-gradient(
-      180deg,
-      rgba(200,160,110,.055) 0 1px,
-      transparent 1px 7px
-    ),
-    var(--bg);
-}
-
-[data-theme="moebius"] body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  z-index:-1;
-  background-image:url("bilder/hintergrund.jpg");
-  background-size:cover;
-  background-position:center top;
-  background-repeat:no-repeat;
-  opacity:.4;
-  pointer-events:none;
-}
-
-[data-theme="moebius"] .card,
-[data-theme="moebius"] dialog{
-  background:rgba(250,243,230,.94);
-}
-
-[data-theme="moebius"] h1,
-[data-theme="moebius"] h2,
-[data-theme="moebius"] h3{
-  color:#22304a;
-  font-family:"Bangers","Chalkboard SE","Comic Sans MS",cursive;
-  font-weight:400;
-  letter-spacing:.045em;
-  line-height:1.1;
-}
-/* Comic-Effekt: versetzter Schatten in Orange wie bei gedruckten Heften */
-[data-theme="moebius"] h1{
-  font-size:2.3rem;
-  text-shadow:3px 3px 0 var(--brand),4px 4px 0 #22304a;
-}
-[data-theme="moebius"] h2{
-  font-size:1.75rem;
-  text-shadow:2px 2px 0 var(--brand);
-}
-[data-theme="moebius"] h3{
-  font-size:1.2rem;
-  letter-spacing:.05em;
-  text-shadow:1px 1px 0 rgba(192,112,64,.55);
-}
-
-[data-theme="moebius"] .card{
-  position:relative;
-}
-
-[data-theme="moebius"] .card::before{
-  content:"";
-  position:absolute;
-  inset:5px;
-  border:1px solid var(--line);
-  border-radius:3px;
-  pointer-events:none;
-}
-
-[data-theme="moebius"] .card > *{
-  position:relative;
-}
-
-[data-theme="moebius"] .secondary{
-  border:1px solid var(--line);
-  background:var(--accent);
-}
-
-[data-theme="moebius"] .primary{
-  border:1px solid var(--brand-dark);
-}
-
-[data-theme="moebius"] .danger{
-  border:1px solid var(--danger);
-}
-
-[data-theme="moebius"] input,
 [data-theme="moebius"] textarea,
 [data-theme="moebius"] select{
   border-color:var(--line);
@@ -1841,7 +1381,7 @@ body.diktat-bereit .diktat-knopf{display:flex}
 .erkl-weg{position:absolute;top:0;right:0;width:28px;height:28px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;
   background:transparent;color:var(--muted);font-size:1.05rem;line-height:1;cursor:pointer;opacity:.75}
 .erkl-weg:hover{background:var(--accent);opacity:1}
-.verschl-hinweis.erkl .erkl-weg,.portrait-hinweis.erkl .erkl-weg{top:4px;right:4px}
+.verschl-hinweis.erkl .erkl-weg{top:4px;right:4px}
 [data-erklaerung].erkl-aus,body.erklaerungen-aus [data-erklaerung]{display:none!important}
 a.einst-zeile{text-decoration:none;color:inherit}
 .einst-zeile{display:flex;align-items:center;gap:14px;width:100%;margin:0;padding:12px 14px;border:0;
@@ -2293,19 +1833,19 @@ a.einst-zeile{text-decoration:none;color:inherit}
     <div id="kontaktListe" class="kontakt-liste"></div>
     <button type="button" id="kontaktNeu" class="secondary kontakt-neu">+ Kontaktperson / Institution hinzufügen</button>
 
-    <h3 class="kb-abschnitt">🖼 Porträt</h3>
+    <h3 class="kb-abschnitt">🎨 Farbe und Muster</h3>
     <div class="grid">
       <div class="span2">
-        <input type="hidden" id="clientPortrait">
-        <div class="portrait-zeile">
-          <div id="portraitVorschau" class="portrait-preview hidden"></div>
-          <div class="portrait-knoepfe">
-            <button type="button" id="portraitWaehlen" class="kn kn-bearbeiten secondary">Porträt wählen</button>
-            <button type="button" id="portraitEntfernen" class="secondary hidden">Initialen verwenden</button>
-          </div>
+        <input type="hidden" id="clientAvatarFarbe">
+        <input type="hidden" id="clientAvatarMuster">
+        <div class="avatar-wahl-zeile">
+          <div id="avatarVorschau" class="client-avatar avatar-vorschau" aria-hidden="true"></div>
+          <p class="muted small" style="flex:1 1 180px;margin:0" data-erklaerung>So erscheinen die Initialen in der Klientenliste. Die Farbe gilt auch im Kalender.</p>
         </div>
-        <p class="muted small" id="portraitName" data-kurz-text></p>
-        <p class="muted small" data-erklaerung>Das Porträt wird im Design „Comic“ angezeigt, in den anderen Designs die Initialen.</p>
+        <div class="avatar-wahl-titel" id="avatarFarbeTitel">Farbe</div>
+        <div id="avatarFarbWahl" class="avatar-wahl" role="group" aria-labelledby="avatarFarbeTitel"></div>
+        <div class="avatar-wahl-titel" id="avatarMusterTitel">Muster</div>
+        <div id="avatarMusterWahl" class="avatar-wahl" role="group" aria-labelledby="avatarMusterTitel"></div>
       </div>
     </div>
 
@@ -2322,33 +1862,6 @@ a.einst-zeile{text-decoration:none;color:inherit}
   </form>
 </dialog>
 
-<dialog id="portraitPickerDialog">
-  <div class="top">
-    <div>
-      <div class="muted">Klient</div>
-      <h2>Porträt wählen</h2>
-    </div>
-    <button autofocus type="button" id="closePortraitPicker" class="kn kn-schliessen secondary">Schließen</button>
-  </div>
-  <p class="muted small" data-erklaerung>Ein Bild antippen, dann wird es übernommen. Mit dem × entfernst du ein Bild aus der Auswahl.</p>
-  <div id="portraitGrid" class="portrait-grid"></div>
-  <div id="portraitAlleWeg" style="margin-top:10px"></div>
-
-  <h3 class="kb-abschnitt">Eigene Bilder</h3>
-  <div class="portrait-hinweis" data-erklaerung>
-    <strong>Bitte keine echten Fotos von Klient*innen hochladen.</strong>
-    Das schützt ihre Daten. Nimm lieber Zeichnungen oder Bilder, auf denen niemand zu erkennen ist.
-    Hochgeladene Bilder werden verkleinert und wie alle deine Daten auf deinem Gerät verschlüsselt, bevor sie abgeglichen werden.
-  </div>
-  <div id="portraitEigen" class="portrait-grid"></div>
-  <div id="portraitEigeneAlle" style="margin-top:10px"></div>
-  <div style="margin-top:10px">
-    <input type="file" id="portraitDatei" accept="image/*" class="hidden">
-    <button type="button" id="portraitHochladen" class="kn kn-neu secondary" style="width:100%">Eigenes Bild hochladen</button>
-  </div>
-
-  <div id="portraitEntfernt"></div>
-</dialog>
 
 <dialog id="docsDialog">
   <div class="top">
@@ -4081,8 +3594,8 @@ a.einst-zeile{text-decoration:none;color:inherit}
 <script>
 /* ---------- Versionsnummer: nur hier ändern ----------
    Zweite Zahl bei jeder Lieferung erhöhen, erste Zahl bei großen Umbauten. */
-const APP_VERSION='0.33.1 Verkaufsversion';
-const APP_STAND='13.11.2026';
+const APP_VERSION='0.33.2 Verkaufsversion';
+const APP_STAND='14.11.2026';
 document.querySelectorAll('.version').forEach(
   el=>el.textContent='Version '+APP_VERSION+' · '+APP_STAND
 );
@@ -4804,8 +4317,7 @@ function nachFremdAenderung(tabellen){
     if(['dokumentationen','termine','trip_entries'].some(t=>tabellen.includes(t))){
       await verknuepfungenPruefen();
     }
-    if(tabellen.includes('portraits'))await loadPortraits();
-    if(tabellen.includes('clients')||tabellen.includes('bewilligungen')||tabellen.includes('portraits'))await loadClients();
+    if(tabellen.includes('clients')||tabellen.includes('bewilligungen'))await loadClients();
     if(tabellen.includes('textbausteine'))await loadTextbausteine();
     if(tabellen.includes('einstellungen'))await loadEinstellungen();
     // Offene Listen neu zeichnen, damit Einträge vom anderen Gerät sofort zu sehen sind
@@ -5022,7 +4534,6 @@ $('konfliktListe').onclick=async(e)=>{
     const {error}=await Geraet.konfliktUebernehmen(Number(uebernehmen.dataset.uebernehmen));
     if(error){toast('Übernehmen nicht möglich: '+error.message);return}
     toast('Kopie übernommen.');
-    await loadPortraits();
     await loadClients();
     await loadTextbausteine();
     await loadEinstellungen();
@@ -5110,7 +4621,6 @@ async function vorfuehrungStarten(){
   await loadEinstellungen();
   showApp(true);
   try{await beispieldatenLaden()}catch(e){console.error(e)}
-  await loadPortraits();
   await loadClients();
   await loadTextbausteine();
   appBereit=true;
@@ -5173,7 +4683,6 @@ async function init(){
     setTimeout(pcloudAlteVerbindungPruefen,2500);
 
     showApp(true);
-    await loadPortraits();
     await loadClients();
     await loadTextbausteine();
     await aktualisiereSicherungsKnopf();
@@ -5349,7 +4858,7 @@ function renderClients(){
 
   const clientBlock=c=>{
     const ampel=berichtAmpel(c.id);
-    const farben=avatarFarbe(c.client_code||c.name);
+    const avatar=avatarStil(c);
 
     return `
       <div class="client${istEhemalig(c.id)?' client-former':''}">
@@ -5360,13 +4869,8 @@ function renderClients(){
             role="button"
             tabindex="0"
             aria-label="Klientenbogen öffnen"
-            style="--avatar-bg:${farben.bg};--avatar-ink:${farben.ink}">
-            ${
-              portraitQuelle(c.portrait) &&
-              document.documentElement.getAttribute('data-theme')==='moebius'
-                ? '<img src="'+esc(portraitQuelle(c.portrait))+'" alt="">'
-                : esc(clientInitialen(c.name))
-            }
+            style="${avatar.stil}">
+            ${esc(clientInitialen(c.name))}
           </div>
 
           <div class="client-name">
@@ -5443,8 +4947,9 @@ function openClient(id=''){
   $('ort').value=c.ort||'';
   kontakteLaden(c);
   $('bemerkungen').value=c.bemerkungen||'';
-  $('clientPortrait').value=c.portrait||'';
-  updatePortraitVorschau();
+  $('clientAvatarFarbe').value=AVATAR_FARBTOENE[c.avatar_farbe]?c.avatar_farbe:'';
+  $('clientAvatarMuster').value=AVATAR_MUSTER[c.avatar_muster]?c.avatar_muster:'';
+  avatarWahlZeigen();
   $('deleteClient').classList.toggle('hidden',!id);
   $('clientToSheet').classList.toggle('hidden',!id);
   $('clientToSheetTop').classList.toggle('hidden',!id);
@@ -8785,293 +8290,128 @@ $('docsList').addEventListener('click',e=>{
   zeile.setAttribute('aria-expanded',offen?'true':'false');
 });
 
-/* ---------- Porträt-Auswahl ----------
-   Mitgelieferte Bilder: Datei in bilder/ ablegen und hier eine Zeile ergänzen.
-   Eigene Bilder liegen in der Tabelle „portraits“ (verschlüsselt wie alle Daten);
-   beim Klienten steht dann „eigen:“ plus die Nummer des Bildes.
-   Entfernte mitgelieferte Bilder merkt sich die App in den Einstellungen. */
-const PORTRAITS=[
-  {datei:'portrait-1.jpg',nr:1,name:'Mann, schwarze Locken'},
-  {datei:'portrait-2.jpg',nr:2,name:'Frau, schwarze Wellen, Stirnreif'},
-  {datei:'portrait-3.jpg',nr:3,name:'Mann, schwarze Haare, Stehkragen'},
-  {datei:'portrait-4.jpg',nr:4,name:'Frau, schwarze Wellen, Ohrringe'},
-  {datei:'portrait-5.jpg',nr:5,name:'Mann, Schutzbrille, Bart'},
-  {datei:'portrait-6.jpg',nr:6,name:'Frau, lange schwarze Haare, Mondkette'},
-  {datei:'portrait-7.jpg',nr:7,name:'Mann, lachend, Vollbart, Pelzkragen'},
-  {datei:'portrait-8.jpg',nr:8,name:'Frau, Hochsteckfrisur, rotes Samtkleid'},
-  {datei:'portrait-9.jpg',nr:9,name:'Mann, Stirnband, lila Tuch'},
-  {datei:'portrait-10.jpg',nr:10,name:'Ältere Frau, Rundbrille, blaues Kleid'},
-  {datei:'portrait-11.jpg',nr:11,name:'Frau, Schutzbrille, grünes Fläschchen'},
-  {datei:'portrait-12.jpg',nr:12,name:'Mann, Elf, Stirnreif'},
-  {datei:'portrait-13.jpg',nr:13,name:'Mann, braune Locken, Fliege'},
-  {datei:'portrait-14.jpg',nr:14,name:'Mann, Ritterrüstung, Narbe'},
-  {datei:'portrait-15.jpg',nr:15,name:'Ältere Dame, Pfauenfeder'},
-  {datei:'portrait-16.jpg',nr:16,name:'Mann, Cowboyhut, Zigarre'},
-  {datei:'portrait-17.jpg',nr:17,name:'Junge, rote Stachelhaare, Brot'},
-  {datei:'portrait-18.jpg',nr:18,name:'Frau, rote Wellen, Sommersprossen'},
-  {datei:'portrait-19.jpg',nr:19,name:'Älterer Mann, weiße Haare'},
-  {datei:'portrait-20.jpg',nr:20,name:'Frau, blonder Bob'},
-  {datei:'portrait-21.jpg',nr:21,name:'Ältere Frau, Dutt, Brille'},
-  {datei:'portrait-22.jpg',nr:22,name:'Mann, braune Locken, Dreitagebart'},
-  {datei:'portrait-23.jpg',nr:23,name:'Frau, lange lila Haare, Ohrring'},
-  {datei:'portrait-24.jpg',nr:24,name:'Mann, grauer Bart, Sakko'},
-  {datei:'portrait-25.jpg',nr:25,name:'Frau, blaue Haare, Rundbrille'},
-  {datei:'portrait-26.jpg',nr:26,name:'Älterer Mann, graue Haare, Uniform'},
-  {datei:'portrait-27.jpg',nr:27,name:'Frau, rote Haare, Schutzbrille, Lederjacke'}
+/* ---------- Farbe und Muster der Initialen ----------
+   Beim Klienten stehen nur Namen (avatar_farbe, avatar_muster); die Töne
+   kommen je Design aus avatarFarbeBenannt(). Ohne Farbe wählt die App wie
+   bisher selbst (avatarFarbe). Muster sind reine CSS-Verläufe aus zwei Tönen. */
+const AVATAR_FARBTOENE={
+  blau:[212,1],tuerkis:[182,1],gruen:[135,1],oliv:[72,1],gelb:[46,1],
+  orange:[26,1],rot:[4,1],rosa:[330,1],violett:[268,1],grau:[215,.12]
+};
+const AVATAR_FARBNAMEN=[
+  ['blau','Blau'],['tuerkis','Türkis'],['gruen','Grün'],['oliv','Oliv'],['gelb','Gelb'],
+  ['orange','Orange'],['rot','Rot'],['rosa','Rosa'],['violett','Violett'],['grau','Grau']
 ];
-const EIGENE_PORTRAITS_MAX=40;
-const PORTRAIT_KANTE=240;
-let eigenePortraits=[];
-
-async function loadPortraits(){
-  const {data,error}=await Daten.from('portraits').select('id,bild,created_at').order('created_at');
-  eigenePortraits=error?[]:(data||[]);
-}
-
-/* Bildadresse zu dem, was beim Klienten gespeichert ist ('' = Initialen zeigen) */
-function portraitQuelle(wert){
-  if(!wert)return '';
-  const text=String(wert);
-  if(text.startsWith('eigen:')){
-    const e=eigenePortraits.find(x=>String(x.id)===text.slice(6));
-    return e?e.bild:'';
-  }
-  return 'bilder/'+text;
-}
-
-function portraitsAusgeblendet(){
-  try{
-    const liste=JSON.parse(meineEinstellungen.portraits_ausgeblendet||'[]');
-    return Array.isArray(liste)?liste:[];
-  }catch(e){return [];}
-}
-
-async function portraitsAusgeblendetSpeichern(liste){
-  const text=JSON.stringify(liste);
-  const {error}=await Daten.from('einstellungen').upsert({
-    user_id:user.id,
-    portraits_ausgeblendet:text,
-    updated_at:new Date().toISOString()
-  },{onConflict:'user_id'});
-  if(error){toast('Konnte nicht gespeichert werden: '+error.message);return false;}
-  meineEinstellungen.portraits_ausgeblendet=text;
-  return true;
-}
-
-function updatePortraitVorschau(){
-  const feld=$('portraitVorschau');
-  const wert=$('clientPortrait').value;
-  const quelle=portraitQuelle(wert);
-  const eintrag=PORTRAITS.find(x=>x.datei===wert);
-
-  $('portraitEntfernen').classList.toggle('hidden',!wert);
-  $('portraitWaehlen').textContent=wert?'Anderes Porträt wählen':'Porträt wählen';
-  $('portraitName').textContent=eintrag?('Porträt '+eintrag.nr+' · '+eintrag.name):(quelle?'Eigenes Bild':'');
-
-  if(!quelle){
-    feld.classList.add('hidden');
-    feld.innerHTML='';
-    return;
-  }
-
-  feld.classList.remove('hidden');
-  feld.innerHTML='<img src="'+esc(quelle)+'" alt="">';
-}
-
-/* art: 'sichtbar' (mitgeliefert), 'entfernt' (zurückholen) oder 'eigen' (löschen) */
-function portraitKachelHtml(datei,quelle,beschriftung,beschreibung,aktiv,art){
-  const aktion=art==='entfernt'?'zurueck':'waehlen';
-  const knopf=art==='entfernt'?'':
-    '<button type="button" class="weg" data-aktion="'+(art==='eigen'?'loeschen':'entfernen')+'" data-datei="'+esc(datei)+'" aria-label="'+esc(beschreibung)+(art==='eigen'?' löschen':' entfernen')+'">×</button>';
-  return '<div class="portrait-kachel">'+
-    '<button type="button" class="wahl'+(aktiv?' aktiv':'')+'" data-aktion="'+aktion+'" data-datei="'+esc(datei)+'" aria-label="'+esc(beschreibung)+(art==='entfernt'?' – zurückholen':'')+'">'+
-      '<span class="rund"><img src="'+esc(quelle)+'" alt="" loading="lazy"></span>'+
-      '<span class="nr">'+esc(beschriftung)+'</span></button>'+
-    knopf+
-  '</div>';
-}
-
-function portraitGridBauen(){
-  const aktuell=$('clientPortrait').value;
-  const weg=portraitsAusgeblendet();
-  const sichtbar=PORTRAITS.filter(p=>!weg.includes(p.datei));
-  const entfernt=PORTRAITS.filter(p=>weg.includes(p.datei));
-  $('portraitAlleWeg').innerHTML=sichtbar.length
-    ? '<button type="button" class="kn kn-loeschen secondary" data-aktion="alle-entfernen">Alle Porträts entfernen</button>'
-    : '<p class="muted small">Alle mitgelieferten Porträts sind entfernt. Du findest sie unten unter „Entfernte Porträts“.</p>';
-  const warOffen=!!$('portraitEntfernt').querySelector('details[open]');
-
-  $('portraitGrid').innerHTML=
-    '<div class="portrait-kachel"><button type="button" class="wahl'+(aktuell?'':' aktiv')+'" data-aktion="waehlen" data-datei="">'+
-      '<span class="rund">'+esc(clientInitialen($('clientName').value)||'AB')+'</span>'+
-      '<span class="nr">Initialen</span></button></div>'+
-    sichtbar.map(p=>portraitKachelHtml(p.datei,'bilder/'+p.datei,String(p.nr),'Porträt '+p.nr+': '+p.name,p.datei===aktuell,'sichtbar')).join('');
-
-  $('portraitEigen').innerHTML=eigenePortraits.length
-    ? eigenePortraits.map((e,i)=>portraitKachelHtml('eigen:'+e.id,e.bild,'Eigenes '+(i+1),'Eigenes Bild '+(i+1),('eigen:'+e.id)===aktuell,'eigen')).join('')
-    : '<p class="muted small" style="grid-column:1/-1">Noch keine eigenen Bilder.</p>';
-
-  $('portraitEigeneAlle').innerHTML=eigenePortraits.length>1
-    ? '<button type="button" class="kn kn-loeschen secondary" data-aktion="eigene-loeschen">Alle eigenen Bilder löschen</button>'
-    : '';
-
-  $('portraitEntfernt').innerHTML=entfernt.length
-    ? '<details class="portrait-entfernt"'+(warOffen?' open':'')+'>'+
-        '<summary>Entfernte Porträts ('+entfernt.length+')</summary>'+
-        '<p class="muted small">Ein Bild antippen, dann ist es wieder in der Auswahl.</p>'+
-        '<div class="portrait-grid">'+entfernt.map(p=>portraitKachelHtml(p.datei,'bilder/'+p.datei,String(p.nr),'Porträt '+p.nr+': '+p.name,false,'entfernt')).join('')+'</div>'+
-        '<div style="margin-top:10px"><button type="button" class="secondary" data-aktion="alle-zurueck">Alle zurückholen</button></div>'+
-      '</details>'
-    : '';
-}
-
-/* Hochgeladenes Bild: quadratisch zuschneiden (bei Hochformat etwas oberhalb der Mitte,
-   weil dort meist das Gesicht ist), auf 240 Pixel verkleinern, als JPEG speichern */
-async function portraitVerkleinern(datei){
-  const url=URL.createObjectURL(datei);
-  try{
-    const bild=await new Promise((ok,nein)=>{
-      const i=new Image();
-      i.onload=()=>ok(i);
-      i.onerror=()=>nein(new Error('Bild nicht lesbar'));
-      i.src=url;
-    });
-    const b=bild.naturalWidth,h=bild.naturalHeight,kante=Math.min(b,h);
-    if(!kante)throw new Error('Bild nicht lesbar');
-    const sx=Math.round((b-kante)/2);
-    const sy=h>b?Math.round((h-kante)*0.15):Math.round((h-kante)/2);
-    const feld=document.createElement('canvas');
-    feld.width=feld.height=PORTRAIT_KANTE;
-    const g=feld.getContext('2d');
-    g.imageSmoothingQuality='high';
-    g.fillStyle='#ffffff';
-    g.fillRect(0,0,PORTRAIT_KANTE,PORTRAIT_KANTE);
-    g.drawImage(bild,sx,sy,kante,kante,0,0,PORTRAIT_KANTE,PORTRAIT_KANTE);
-    return feld.toDataURL('image/jpeg',0.82);
-  }finally{
-    URL.revokeObjectURL(url);
-  }
-}
-
-$('portraitWaehlen').onclick=()=>{
-  portraitGridBauen();
-  $('portraitPickerDialog').showModal();
-};
-$('portraitEntfernen').onclick=()=>{
-  $('clientPortrait').value='';
-  updatePortraitVorschau();
-};
-$('closePortraitPicker').onclick=()=>$('portraitPickerDialog').close();
-$('portraitHochladen').onclick=()=>{
-  if(eigenePortraits.length>=EIGENE_PORTRAITS_MAX){
-    toast('Es können höchstens '+EIGENE_PORTRAITS_MAX+' eigene Bilder gespeichert werden. Bitte zuerst eines löschen.');
-    return;
-  }
-  $('portraitDatei').click();
-};
-$('portraitDatei').onchange=async()=>{
-  const datei=$('portraitDatei').files[0];
-  $('portraitDatei').value='';
-  if(!datei)return;
-  if(!/^image\//.test(datei.type)){toast('Bitte ein Bild auswählen.');return;}
-
-  let bild;
-  try{bild=await portraitVerkleinern(datei);}
-  catch(e){toast('Das Bild konnte nicht gelesen werden.');return;}
-
-  const {data,error}=await Daten.from('portraits').insert({bild}).select('id,bild,created_at').single();
-  if(error){toast('Speichern fehlgeschlagen: '+error.message);return;}
-
-  eigenePortraits.push(data);
-  $('clientPortrait').value='eigen:'+data.id;
-  updatePortraitVorschau();
-  $('portraitPickerDialog').close();
-  toast('Bild gespeichert und ausgewählt');
-};
-$('portraitPickerDialog').onclick=async e=>{
-  const b=e.target.closest('[data-aktion]');
-  if(!b)return;
-  const aktion=b.dataset.aktion;
-  const datei=b.dataset.datei||'';
-
-  if(aktion==='waehlen'){
-    $('clientPortrait').value=datei;
-    updatePortraitVorschau();
-    $('portraitPickerDialog').close();
-    return;
-  }
-
-  if(aktion==='loeschen'){
-    const verwendet=clients.filter(c=>c.portrait===datei).length;
-    if(!confirm('Dieses eigene Bild endgültig löschen?'+(verwendet
-      ?'\n\nEs wird bei '+verwendet+' Klient*in(nen) verwendet. Diese zeigen danach wieder die Initialen.'
-      :'')))return;
-    if(verwendet){
-      const {error:f1}=await Daten.from('clients').update({portrait:null}).eq('portrait',datei);
-      if(f1){toast('Löschen fehlgeschlagen: '+f1.message);return;}
+const AVATAR_MUSTER={
+  halbiert:(a,b)=>'linear-gradient(135deg,'+a+' 50%,'+b+' 50%)',
+  quer:(a,b)=>'repeating-linear-gradient(180deg,'+a+' 0 12.5%,'+b+' 12.5% 25%)',
+  schraeg:(a,b)=>'repeating-linear-gradient(135deg,'+a+' 0 10%,'+b+' 10% 20%)',
+  kreise:(a,b)=>'radial-gradient(circle closest-side,'+b+' 0 56%,transparent 62%) 0 0/25% 25%,'+a,
+  blume:(a,b)=>{
+    const teile=['radial-gradient(16% 16% at 50% 50%,'+a+' 0 94%,transparent 100%)'];
+    for(let i=0;i<6;i++){
+      const w=i*Math.PI/3;
+      const x=(50+25*Math.sin(w)).toFixed(1),y=(50-25*Math.cos(w)).toFixed(1);
+      teile.push('radial-gradient(19% 19% at '+x+'% '+y+'%,'+b+' 0 94%,transparent 100%)');
     }
-    const {error}=await Daten.from('portraits').delete().eq('id',datei.slice(6));
-    if(error){toast('Löschen fehlgeschlagen: '+error.message);return;}
-    eigenePortraits=eigenePortraits.filter(x=>'eigen:'+x.id!==datei);
-    if($('clientPortrait').value===datei){
-      $('clientPortrait').value='';
-      updatePortraitVorschau();
-    }
-    if(verwendet)await loadClients();
-    portraitGridBauen();
-    return;
-  }
-
-  if(aktion==='eigene-loeschen'){
-    const dateien=eigenePortraits.map(x=>'eigen:'+x.id);
-    const verwendet=clients.filter(c=>dateien.includes(c.portrait)).length;
-    if(!confirm('Alle '+dateien.length+' eigenen Bilder endgültig löschen?'+(verwendet
-      ?'\n\n'+verwendet+' Klient*in(nen) nutzen eines davon und zeigen danach wieder die Initialen.'
-      :'')+'\n\nDas lässt sich nicht rückgängig machen.'))return;
-    for(const d of dateien){
-      if(!clients.some(c=>c.portrait===d))continue;
-      const {error}=await Daten.from('clients').update({portrait:null}).eq('portrait',d);
-      if(error){toast('Löschen fehlgeschlagen: '+error.message);return;}
-    }
-    for(const e of [...eigenePortraits]){
-      const {error}=await Daten.from('portraits').delete().eq('id',e.id);
-      if(error){toast('Löschen fehlgeschlagen: '+error.message);await loadPortraits();portraitGridBauen();return;}
-      eigenePortraits=eigenePortraits.filter(x=>x.id!==e.id);
-    }
-    if(String($('clientPortrait').value).startsWith('eigen:')){
-      $('clientPortrait').value='';
-      updatePortraitVorschau();
-    }
-    if(verwendet)await loadClients();
-    portraitGridBauen();
-    toast('Eigene Bilder gelöscht');
-    return;
-  }
-
-  const weg=portraitsAusgeblendet();
-
-  if(aktion==='entfernen'){
-    const eintrag=PORTRAITS.find(x=>x.datei===datei);
-    if(!confirm('Porträt '+(eintrag?eintrag.nr:'')+' aus der Auswahl entfernen?\n\nDu kannst es unten unter „Entfernte Porträts“ jederzeit zurückholen. Klient*innen, die dieses Porträt schon haben, behalten es.'))return;
-    if(await portraitsAusgeblendetSpeichern([...weg,datei]))portraitGridBauen();
-    return;
-  }
-
-  if(aktion==='zurueck'){
-    if(await portraitsAusgeblendetSpeichern(weg.filter(x=>x!==datei)))portraitGridBauen();
-    return;
-  }
-
-  if(aktion==='alle-entfernen'){
-    if(!confirm('Alle mitgelieferten Porträts aus der Auswahl entfernen?\n\nDu kannst sie unten unter „Entfernte Porträts“ jederzeit zurückholen. Klient*innen, die schon ein Porträt haben, behalten es.'))return;
-    if(await portraitsAusgeblendetSpeichern(PORTRAITS.map(p=>p.datei)))portraitGridBauen();
-    return;
-  }
-
-  if(aktion==='alle-zurueck'){
-    if(await portraitsAusgeblendetSpeichern([]))portraitGridBauen();
-  }
+    return teile.join(',')+','+a;
+  },
+  ringe:(a,b)=>'radial-gradient(circle closest-side,'+a+' 0 30%,'+b+' 32% 48%,'+a+' 50% 66%,'+b+' 68% 84%,'+a+' 86%)',
+  karo:(a,b)=>'conic-gradient('+b+' 25%,'+a+' 0 50%,'+b+' 0 75%,'+a+' 0) 0 0/50% 50%'
 };
+const AVATAR_MUSTERNAMEN=[
+  ['','Einfarbig'],['halbiert','Halbiert'],['quer','Quer'],['schraeg','Schräg'],
+  ['kreise','Kreise'],['blume','Blume'],['ringe','Ringe'],['karo','Karo']
+];
+
+function avatarHex(h,s,l){
+  s/=100;l/=100;
+  const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l);
+  const f=n=>Math.round(255*(l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1)))).toString(16).padStart(2,'0');
+  return '#'+f(0)+f(8)+f(4);
+}
+
+/* Mischt zwei Hex-Farben; anteil = Gewicht der zweiten Farbe (0 bis 1) */
+function avatarMischen(a,b,anteil){
+  const z=(t,i)=>parseInt(t.slice(1+i*2,3+i*2),16);
+  let aus='#';
+  for(let i=0;i<3;i++)aus+=Math.round(z(a,i)*(1-anteil)+z(b,i)*anteil).toString(16).padStart(2,'0');
+  return aus;
+}
+
+function avatarFarbeBenannt(name,design){
+  const [h,k]=AVATAR_FARBTOENE[name];
+  const s=x=>x*k;
+  if(design==='dunkel')return {bg:avatarHex(h,s(36),24),ink:avatarHex(h,s(60),82)};
+  if(design==='blumen')return {bg:avatarHex(h,s(95),85),ink:avatarHex(h,s(70),28)};
+  if(design==='moebius')return {bg:avatarHex(h,s(48),83),ink:avatarHex(h,s(48),29)};
+  return {bg:avatarHex(h,s(58),86),ink:avatarHex(h,s(48),28)};
+}
+
+/* Farbe eines Klienten: gewählte Farbe oder wie bisher automatisch.
+   design nur angeben, wenn nicht das aktuelle Design gemeint ist (Klientenbogen: 'hell'). */
+function klientFarbe(c,design){
+  const d=design||document.documentElement.getAttribute('data-theme');
+  if(c&&AVATAR_FARBTOENE[c.avatar_farbe])return avatarFarbeBenannt(c.avatar_farbe,d);
+  const text=c?(c.client_code||c.name):'';
+  if(design==='hell'){
+    return AVATAR_FARBEN[String(text||'').split('').reduce((s,z)=>s+z.charCodeAt(0),0)%AVATAR_FARBEN.length];
+  }
+  return avatarFarbe(text);
+}
+
+/* Hintergrund (Farbe oder Muster) und Schriftfarbe für den Initialen-Kreis */
+function avatarStil(c){
+  const f=klientFarbe(c);
+  const muster=c&&AVATAR_MUSTER[c.avatar_muster];
+  const grund=muster?muster(f.bg,avatarMischen(f.bg,f.ink,.24)):f.bg;
+  return {bg:f.bg,ink:f.ink,grund,stil:'--avatar-ink:'+f.ink+';background:'+grund};
+}
+
+function avatarWahlZeigen(){
+  const c={
+    client_code:$('clientCode').value.trim(),
+    name:$('clientName').value.trim(),
+    avatar_farbe:$('clientAvatarFarbe').value,
+    avatar_muster:$('clientAvatarMuster').value
+  };
+  const stil=avatarStil(c);
+  const vorschau=$('avatarVorschau');
+  vorschau.style.cssText=stil.stil;
+  vorschau.textContent=clientInitialen(c.name||'A, B');
+
+  const design=document.documentElement.getAttribute('data-theme');
+  const feld=(art,wert,name,grund,ink,inhalt)=>
+    '<button type="button" class="avatar-feld'+((art==='farbe'?c.avatar_farbe:c.avatar_muster)===wert?' aktiv':'')+
+    '" data-art="'+art+'" data-wert="'+wert+'" title="'+esc(name==='Auto'?'Automatisch: die App wählt die Farbe':name)+'" aria-pressed="'+((art==='farbe'?c.avatar_farbe:c.avatar_muster)===wert)+'">'+
+    '<span class="rund" style="background:'+grund+';color:'+ink+'">'+inhalt+'</span>'+esc(name)+'</button>';
+
+  const auto=klientFarbe({client_code:c.client_code,name:c.name});
+  $('avatarFarbWahl').innerHTML=
+    feld('farbe','','Auto',auto.bg,auto.ink,'')+
+    AVATAR_FARBNAMEN.map(([wert,name])=>{
+      const f=avatarFarbeBenannt(wert,design);
+      return feld('farbe',wert,name,f.bg,f.ink,'');
+    }).join('');
+
+  $('avatarMusterWahl').innerHTML=AVATAR_MUSTERNAMEN.map(([wert,name])=>{
+    const grund=wert?AVATAR_MUSTER[wert](stil.bg,avatarMischen(stil.bg,stil.ink,.24)):stil.bg;
+    return feld('muster',wert,name,grund,stil.ink,'');
+  }).join('');
+}
+
+function avatarWahlKlick(e){
+  const knopf=e.target.closest('.avatar-feld');
+  if(!knopf)return;
+  $(knopf.dataset.art==='farbe'?'clientAvatarFarbe':'clientAvatarMuster').value=knopf.dataset.wert;
+  avatarWahlZeigen();
+  const neu=e.currentTarget.querySelector('.avatar-feld.aktiv');
+  if(neu)neu.focus();
+}
+$('avatarFarbWahl').onclick=avatarWahlKlick;
+$('avatarMusterWahl').onclick=avatarWahlKlick;
+$('clientName').addEventListener('input',avatarWahlZeigen);
+$('clientCode').addEventListener('input',avatarWahlZeigen);
 
 $('newClient').onclick=()=>openClient();
 $('closeDialog').onclick=()=>$('clientDialog').close();
@@ -9092,7 +8432,8 @@ $('clientForm').onsubmit=async e=>{
     plz:$('plz').value.trim()||null,
     ort:$('ort').value.trim()||null,
     bemerkungen:$('bemerkungen').value.trim()||null,
-    portrait:$('clientPortrait').value||null,
+    avatar_farbe:$('clientAvatarFarbe').value||null,
+    avatar_muster:$('clientAvatarMuster').value||null,
     anrede:$('clientAnrede').value||null
   };
   Object.assign(row,kontakteFuerSpeichern());
@@ -15375,7 +14716,6 @@ async function whStarten(){
     // 4. Alles neu laden
     sicherungFingerabdruckMerken(null);
     await loadEinstellungen();
-    await loadPortraits();
     await loadClients();
     await loadTextbausteine();
     $('wiederherstellenDialog').close();
@@ -16537,13 +15877,8 @@ function kbAbschnitt(titel,inhaltHtml){
 }
 
 function klientenbogenHtml(c,bewilligung){
-  const farben=AVATAR_FARBEN[
-    String(c.client_code||c.name||'').split('').reduce((s,z)=>s+z.charCodeAt(0),0)%AVATAR_FARBEN.length
-  ];
-  const mitBild=portraitQuelle(c.portrait)&&document.documentElement.getAttribute('data-theme')==='moebius';
-  const avatar=mitBild
-    ? '<img src="'+esc(portraitQuelle(c.portrait))+'" alt="">'
-    : esc(clientInitialen(c.name));
+  const farben=klientFarbe(c,'hell');
+  const avatar=esc(clientInitialen(c.name));
 
   const alter=kbAlter(c.geburtstag);
   const unterzeile=[
@@ -16909,7 +16244,7 @@ function kalKurzname(c){
 }
 
 function kalFarbe(c){
-  return avatarFarbe(c?(c.client_code||c.name):'');
+  return klientFarbe(c);
 }
 
 function kalTagText(iso){
