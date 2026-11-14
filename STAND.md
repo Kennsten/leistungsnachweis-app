@@ -19,6 +19,9 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   - Vorschau: `vorschau-km-offline--eloquent-griffin-7c2566.netlify.app` (Branch deploy im selben Projekt).
     **14.11.2026:** auf den Stand von `produkt` gebracht (App 0.33.5; erst auf den App-Stand 02f2c2f
     geschoben, damit Netlify baut, dann auf den neuesten Stand – Commits mit `[skip netlify]` lösen keinen Bau aus).
+    **Wichtig:** Vorschau und Haupt-App nutzen dieselbe Datenbank (Supabase Frankfurt, feste Adresse im Code).
+    Mit Ollis echtem Konto zeigt die Vorschau seine echten Daten, und Änderungen dort gelten überall.
+    Zum Testen in der Vorschau das Testkonto oder `?vorfuehrung` nutzen (Olli am 14.11.2026 so empfohlen).
   - DNS bei IONOS funktioniert (Eintrag für `app`).
 - Werbeseite: eigenes Netlify-Projekt `qualifizierte-assistenz` (Zweig `webseite`),
   `qualifizierte-assistenz.de` (primär) und `www.` – nicht anfassen.
