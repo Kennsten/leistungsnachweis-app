@@ -17,6 +17,8 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
     HTTPS (Let's Encrypt) seit 13.11.2026, erneuert sich automatisch.
   - Alte Adresse `produkt--eloquent-griffin-7c2566.netlify.app` läuft parallel weiter.
   - Vorschau: `vorschau-km-offline--eloquent-griffin-7c2566.netlify.app` (Branch deploy im selben Projekt).
+    **14.11.2026:** auf den Stand von `produkt` gebracht (App 0.33.5; erst auf den App-Stand 02f2c2f
+    geschoben, damit Netlify baut, dann auf den neuesten Stand – Commits mit `[skip netlify]` lösen keinen Bau aus).
   - DNS bei IONOS funktioniert (Eintrag für `app`).
 - Werbeseite: eigenes Netlify-Projekt `qualifizierte-assistenz` (Zweig `webseite`),
   `qualifizierte-assistenz.de` (primär) und `www.` – nicht anfassen.
@@ -116,8 +118,6 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
 - IONOS: TXT-Eintrag `subdomain-owner-verification` optional löschen.
-- Vorschau-Zweig `vorschau-km-offline` steht auf 0.33.1 und muss vor der nächsten Vorschau auf
-  `origin/produkt` gebracht werden.
 - Noch nicht gebaut: weitere Cloud-Anbieter (WebDAV: Nextcloud, HiDrive, MagentaCloud, Hetzner) und
   „Nur dieses Gerät“ für Dokumente/Belege. Ordner/externe Festplatte für die Datensicherung gibt es nur in
   Chrome/Edge am Computer (Apple erlaubt Webseiten keinen Ordnerzugriff).
