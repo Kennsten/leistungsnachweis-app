@@ -5,6 +5,19 @@ Verkaufsversion: **jeder Push dorthin ist sofort online.** Stand und Entscheidun
 Projekt-Dokumenten (`claude/…`, zuerst `claude/version-2-stand-und-uebergabe.md` und die neuesten
 `claude/stand-…`-Dokumente).
 
+## 0. Stand kennen und aufschreiben (Olli, 14.11.2026)
+Jede Sitzung – Chat oder Code-Agent – beginnt ohne Erinnerung. Gemeinsam ist nur, was
+aufgeschrieben ist. Am 14.11.2026 bekam Olli deshalb eine Anleitung für etwas, das in einer anderen
+Sitzung schon eingerichtet war (eigene Domain). Das darf nicht wieder passieren.
+- **Vorher nachsehen:** Zuerst `STAND.md` lesen. Vor jeder Anleitung für Einstellungen bei Netlify,
+  IONOS, Supabase, pCloud, Geoapify o. Ä. Olli um ein Foto des aktuellen Stands bitten und erst
+  danach anleiten. Nie aus einem Plan schließen, dass etwas noch nicht gemacht ist.
+- **Nachher aufschreiben:** Sobald etwas eingerichtet, umgestellt oder entschieden ist, sofort in
+  `STAND.md` eintragen (mit Datum) und pushen – in derselben Sitzung, nicht erst am Ende. Wenn
+  möglich zusätzlich das passende Projekt-Dokument (`claude/…`) aktualisieren.
+- Reine Änderungen an `STAND.md`/`CLAUDE.md` mit `[skip netlify]` in der Commit-Nachricht pushen,
+  damit keine Veröffentlichung (Netlify-Credits) ausgelöst wird.
+
 ## 1. Vorher fragen
 - **Größere Aktionen nur nach Ollis „Ja“.** Größer ist alles, was mehr als eine kleine, klar
   beauftragte Korrektur ist: Funktionen entfernen oder umbauen, mehrere Fenster ändern, Daten oder
