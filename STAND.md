@@ -98,11 +98,10 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   Ollis „Ja“ entfernt werden.
 
 ## Offen
-- **Geoapify/HeiGIT aufräumen** – **14.11.2026 per Foto geprüft:** Supabase → Edge Functions zeigt noch
-  `pcloud-link` (wird gebraucht), `route-km` und `route-km-geo` (nicht mehr gebraucht, noch nicht gelöscht).
-  Secrets noch nicht geprüft. Zu tun: Supabase → Edge Functions
-  `route-km-geo`/`route-km` und Secrets `GEOAPIFY_API_KEY`/`ORS_API_KEY` löschen; Netlify-Variable
-  `ORS_API_KEY` löschen; Geoapify-Konto bzw. -Schlüssel löschen (Anleitung `supabase/LIESMICH.md`).
+- **Geoapify/HeiGIT aufräumen** – **14.11.2026 (Olli):** Edge Functions `route-km` und `route-km-geo`
+  gelöscht; `pcloud-link` bleibt (wird gebraucht). Noch zu tun (nicht bestätigt): Secrets
+  `GEOAPIFY_API_KEY`/`ORS_API_KEY` bei Supabase löschen; Netlify-Variable `ORS_API_KEY` löschen;
+  Geoapify-Konto bzw. -Schlüssel löschen (Anleitung `supabase/LIESMICH.md`).
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
 - IONOS: TXT-Eintrag `subdomain-owner-verification` optional löschen.
