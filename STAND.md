@@ -106,8 +106,10 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   einzige Umgebungsvariable im App-Projekt ist `ORS_API_KEY` (alle Kontexte, 18 Tage alt) – kein Code liest sie
   mehr. **14.11.2026: von Olli gelöscht** – das App-Projekt hat keine Umgebungsvariablen mehr.
   Geoapify per Foto geprüft (14.11.2026): Projekt „QA“ (angelegt 10.11.2026) bei myprojects.geoapify.com,
-  kein Code nutzt Geoapify mehr. Noch zu tun: Projekt „QA“ löschen (Project settings → Delete project),
-  danach ggf. das Geoapify-Konto selbst.
+  kein Code nutzt Geoapify mehr. **14.11.2026: Projekt „QA“ von Olli gelöscht, kein weiteres Projekt
+  vorhanden.** Damit ist das Aufräumen von Geoapify/HeiGIT bei Supabase, Netlify und Geoapify erledigt.
+  Optional: Geoapify-Konto selbst löschen (kostenlos, verursacht keine Kosten); ein HeiGIT-Konto
+  (Reiter war im Browser offen) ggf. ebenfalls prüfen.
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
 - IONOS: TXT-Eintrag `subdomain-owner-verification` optional löschen.
