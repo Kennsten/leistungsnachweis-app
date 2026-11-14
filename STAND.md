@@ -110,7 +110,9 @@ Neueste Einträge oben in den jeweiligen Abschnitt, immer mit Datum.
   vorhanden.** Damit ist das Aufräumen von Geoapify/HeiGIT bei Supabase, Netlify und Geoapify erledigt.
   Optional: Geoapify-Konto selbst löschen (kostenlos, verursacht keine Kosten).
   HeiGIT per Foto geprüft (14.11.2026): Konto bei account.heigit.org besteht noch (Profil, Reiter „API Key“);
-  kein Code nutzt HeiGIT/OpenRouteService mehr. Noch zu tun (optional): Konto löschen („Delete Account“).
+  kein Code der QA-App nutzt HeiGIT/OpenRouteService mehr. **Entscheidung Olli 14.11.2026: Konto bleibt** –
+  er will damit weiterhin Fahrten berechnen lassen, aber außerhalb der QA-App (eigener kleiner Auftrag
+  folgt). Konto und Schlüssel daher nicht löschen.
 - Website-Datenschutzerklärung: Speicherdauer der Protokolle fehlt noch (Platzhalter, Abschnitt Server-Protokolle).
 - Tuta: klären, ob es einen AVV gibt.
 - IONOS: TXT-Eintrag `subdomain-owner-verification` optional löschen.
