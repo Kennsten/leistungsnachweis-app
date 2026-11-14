@@ -12,12 +12,14 @@ Projekt-Dokumenten (`claude/…`, zuerst `claude/version-2-stand-und-uebergabe.m
   schwer zurücknehmen lässt. Vorher kurz und ohne Fachsprache beschreiben, was sich ändert.
 - Im Zweifel fragen. Nichts „nebenbei“ mit aufräumen, was nicht beauftragt ist.
 - **Vorschau-Regel (Olli, 14.11.2026):** Größere Umbauten gehen zuerst auf den festen Zweig
-  `vorschau` (Adresse `vorschau--eloquent-griffin-7c2566.netlify.app`), nicht auf `produkt`.
-  Ablauf: `vorschau` auf den Stand von `origin/produkt` bringen, Änderung dort liefern (mit allen
-  Schritten aus Abschnitt 2), Olli testet, erst nach seinem „Ja“ per `git merge --ff-only` nach
-  `produkt`. Direkt auf `produkt` nur kleine, klar beauftragte Korrekturen oder wenn Olli es
-  ausdrücklich sagt. Keine weiteren Vorschau-Zweige anlegen (jeder braucht eigene Einträge bei
-  Netlify und pCloud); `vorschau` nicht löschen.
+  `vorschau-km-offline` (Adresse `vorschau-km-offline--eloquent-griffin-7c2566.netlify.app`), nicht
+  auf `produkt`. Der Name stammt von einem früheren Vorhaben; der Zweig ist bei Netlify bereits
+  als Vorschau eingerichtet und dient jetzt für alle Vorschauen. Ablauf: den Zweig auf den Stand
+  von `origin/produkt` bringen, Änderung dort liefern (mit allen Schritten aus Abschnitt 2), Olli
+  testet, erst nach seinem „Ja“ per `git merge --ff-only` nach `produkt`. Direkt auf `produkt` nur
+  kleine, klar beauftragte Korrekturen oder wenn Olli es ausdrücklich sagt. Keine weiteren
+  Vorschau-Zweige anlegen (jeder braucht eigene Einträge bei Netlify und pCloud); diesen Zweig
+  nicht löschen.
 
 ## 2. Vor jeder Lieferung (Pflicht, in dieser Reihenfolge)
 1. `git fetch` und auf dem neuesten Stand von `origin/produkt` arbeiten.
